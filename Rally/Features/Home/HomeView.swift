@@ -25,6 +25,7 @@ struct HomeView: View {
                     avatarCard
                     playerBadge
                     quickActions
+                    courtAtlasSection
                     weeklyStats
                     recentJournal
                 }
@@ -200,6 +201,48 @@ struct HomeView: View {
                 }
             }
         }
+    }
+
+    // MARK: - Court atlas (world map)
+
+    private var courtAtlasSection: some View {
+        NavigationLink {
+            CourtsMapView()
+        } label: {
+            HStack(spacing: 14) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 14)
+                        .fill(
+                            LinearGradient(
+                                colors: [Color.blue.opacity(0.45), Color.green.opacity(0.28)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .frame(width: 56, height: 56)
+                    Image(systemName: "globe.americas.fill")
+                        .font(.title2)
+                        .foregroundStyle(.white)
+                }
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("World court atlas")
+                        .font(.system(.headline, design: .rounded).weight(.bold))
+                        .foregroundStyle(.white)
+                    Text("Iconic venues · satellite-style map · official booking links")
+                        .font(.caption)
+                        .foregroundStyle(.white.opacity(0.5))
+                        .multilineTextAlignment(.leading)
+                }
+                Spacer(minLength: 0)
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(.white.opacity(0.35))
+            }
+            .padding(14)
+            .background(RoundedRectangle(cornerRadius: 16).fill(Color.white.opacity(0.04)))
+            .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.green.opacity(0.35), lineWidth: 1))
+        }
+        .buttonStyle(.plain)
     }
 
     private func actionButton(
