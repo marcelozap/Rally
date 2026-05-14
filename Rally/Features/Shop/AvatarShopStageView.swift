@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Shop-centric avatar presenter: SceneKit figure + horizontal emote picker.
+/// Shop-centric avatar presenter: **RealityKit** figure + horizontal emote picker.
 /// Keeps try-on previews (`preview`) in sync with the parent sheet/detail row.
 struct AvatarShopStageView: View {
     let config: AvatarConfig
@@ -24,7 +24,7 @@ struct AvatarShopStageView: View {
                             .stroke(Color.cyan.opacity(0.28), lineWidth: 1)
                     )
 
-                AvatarScene3DView(
+                AvatarRealityKitView(
                     spec: AvatarVisualSpec.from(config: config, preview: preview),
                     emote: emote
                 )
