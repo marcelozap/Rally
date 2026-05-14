@@ -10,6 +10,8 @@ struct AvatarView: View {
     let config: AvatarConfig
     /// Optional override for try-on previews: temporarily replace one slot.
     var preview: (slot: ShopItem.Category, item: ShopItem)? = nil
+    /// Light yaw tilt so Home reads slightly dimensional without SceneKit.
+    var subtlePerspective: Bool = false
 
     var body: some View {
         GeometryReader { geo in
@@ -19,6 +21,12 @@ struct AvatarView: View {
 
                 bodyComposition(size: size)
                     .frame(width: size, height: size)
+                    .rotation3DEffect(
+                        .degrees(subtlePerspective ? -8 : 0),
+                        axis: (x: 0, y: 1, z: 0),
+                        anchor: .center,
+                        perspective: 0.52
+                    )
             }
             .frame(width: geo.size.width, height: geo.size.height)
         }

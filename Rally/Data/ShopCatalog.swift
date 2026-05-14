@@ -8,6 +8,26 @@ struct Vendor: Identifiable, Hashable, Codable {
     let displayName: String
     /// Vendor homepage / storefront — opened from the shop tab "Visit store".
     let websiteURL: URL
+    /// Official membership / rewards hub where shoppers commonly find
+    /// seasonal codes (never fabricated here — UI links out only).
+    let loyaltyProgramURL: URL?
+    /// One-line context shown next to partner links: sign-up offers, apps,
+    /// student programs, etc.
+    let referralSummary: String?
+
+    init(
+        id: String,
+        displayName: String,
+        websiteURL: URL,
+        loyaltyProgramURL: URL? = nil,
+        referralSummary: String? = nil
+    ) {
+        self.id = id
+        self.displayName = displayName
+        self.websiteURL = websiteURL
+        self.loyaltyProgramURL = loyaltyProgramURL
+        self.referralSummary = referralSummary
+    }
 }
 
 // MARK: - Shop item
@@ -55,6 +75,12 @@ struct ShopItem: Identifiable, Hashable, Codable {
     let colorHex: String
     /// Secondary accent (stripe, sole, etc.).
     let accentHex: String?
+    /// Codes **must not** be invented for third-party brands. Use `nil`
+    /// unless you have an authorized partner code. Rally-original SKUs may
+    /// ship fictional codes for the in-app economy demo.
+    let checkoutPromoCode: String?
+    /// Short redemption hint — e.g. "Apply in Nike app during checkout."
+    let promoNote: String?
 }
 
 extension ShopItem {
@@ -66,6 +92,47 @@ extension ShopItem {
         f.currencyCode = "USD"
         f.maximumFractionDigits = 0
         return f.string(from: NSNumber(value: priceUSD)) ?? "$\(Int(priceUSD))"
+    }
+
+    /// Product URL tagged so vendors can attribute Rally traffic in analytics.
+    /// Codes themselves are never embedded in the query string.
+    var trackingProductURL: URL {
+        guard var c = URLComponents(url: productURL, resolvingAgainstBaseURL: false) else {
+            return productURL
+        }
+        var q = c.queryItems ?? []
+        q.append(URLQueryItem(name: "utm_source", value: "rally_ios"))
+        q.append(URLQueryItem(name: "utm_medium", value: "partner_shop"))
+        c.queryItems = q
+        return c.url ?? productURL
+    }
+}
+
+extension ShopItem {
+    init(
+        id: String,
+        category: Category,
+        name: String,
+        brand: String,
+        vendorID: String,
+        productURL: URL,
+        priceUSD: Double,
+        colorHex: String,
+        accentHex: String?,
+        checkoutPromoCode: String? = nil,
+        promoNote: String? = nil
+    ) {
+        self.id = id
+        self.category = category
+        self.name = name
+        self.brand = brand
+        self.vendorID = vendorID
+        self.productURL = productURL
+        self.priceUSD = priceUSD
+        self.colorHex = colorHex
+        self.accentHex = accentHex
+        self.checkoutPromoCode = checkoutPromoCode
+        self.promoNote = promoNote
     }
 }
 
@@ -84,47 +151,72 @@ enum ShopCatalog {
         .init(
             id: "nike",
             displayName: "Nike Tennis",
-            websiteURL: URL(string: "https://www.nike.com/w/tennis-1320s")!
+            websiteURL: URL(string: "https://www.nike.com/w/tennis-1320s")!,
+            loyaltyProgramURL: URL(string: "https://www.nike.com/membership")!,
+            referralSummary: "Nike Membership & the Nike app — official source for member promos and early access."
         ),
         .init(
             id: "adidas",
             displayName: "adidas Tennis",
-            websiteURL: URL(string: "https://www.adidas.com/us/tennis")!
+            websiteURL: URL(string: "https://www.adidas.com/us/tennis")!,
+            loyaltyProgramURL: URL(string: "https://www.adidas.com/us/creators-club")!,
+            referralSummary: "adidas Creators Club — points and member offers; verify any code at checkout on adidas.com."
         ),
         .init(
             id: "uniqlo",
             displayName: "UNIQLO Tennis",
-            websiteURL: URL(string: "https://www.uniqlo.com/us/en/feature/lifewear/sports/tennis.html")!
+            websiteURL: URL(string: "https://www.uniqlo.com/us/en/feature/lifewear/sports/tennis.html")!,
+            loyaltyProgramURL: URL(string: "https://www.uniqlo.com/us/en/special-feature/app")!,
+            referralSummary: "UNIQLO app & mailers — limited-time coupons vary by region and season."
         ),
         .init(
             id: "wilson",
             displayName: "Wilson",
-            websiteURL: URL(string: "https://www.wilson.com/en-us/tennis")!
+            websiteURL: URL(string: "https://www.wilson.com/en-us/tennis")!,
+            loyaltyProgramURL: URL(string: "https://www.wilson.com/en-us/account")!,
+            referralSummary: "Create a Wilson account for alerts; promotions rotate on wilson.com."
         ),
         .init(
             id: "babolat",
             displayName: "Babolat",
-            websiteURL: URL(string: "https://www.babolat.com/us/tennis")!
+            websiteURL: URL(string: "https://www.babolat.com/us/tennis")!,
+            loyaltyProgramURL: URL(string: "https://www.babolat.com/us/account/login")!,
+            referralSummary: "Subscribe at Babolat — seasonal sales & bundles vary by region."
         ),
         .init(
             id: "head",
             displayName: "HEAD",
-            websiteURL: URL(string: "https://www.head.com/en_US/sports/tennis/")!
+            websiteURL: URL(string: "https://www.head.com/en_US/sports/tennis/")!,
+            loyaltyProgramURL: URL(string: "https://www.head.com/en_US/customer/account/login")!,
+            referralSummary: "HEAD newsletter & account — regional promos announced on head.com."
         ),
         .init(
             id: "yonex",
             displayName: "Yonex",
-            websiteURL: URL(string: "https://www.yonex.com/tennis")!
+            websiteURL: URL(string: "https://www.yonex.com/tennis")!,
+            loyaltyProgramURL: URL(string: "https://www.yonex.com/account/register")!,
+            referralSummary: "Yonex USA promotions — follow official channels for authorized discounts."
         ),
         .init(
             id: "lacoste",
             displayName: "Lacoste",
-            websiteURL: URL(string: "https://www.lacoste.com/us/lacoste/men/clothing/sport/tennis/")!
+            websiteURL: URL(string: "https://www.lacoste.com/us/lacoste/men/clothing/sport/tennis/")!,
+            loyaltyProgramURL: URL(string: "https://www.lacoste.com/us/account-login")!,
+            referralSummary: "Lacoste Le Club — rewards & exclusive offers when logged in."
+        ),
+        .init(
+            id: "asics",
+            displayName: "ASICS Tennis",
+            websiteURL: URL(string: "https://www.asics.com/us/en-us/c/tennis/")!,
+            loyaltyProgramURL: URL(string: "https://www.asics.com/us/en-us/mk/oneasics/rewards-program")!,
+            referralSummary: "OneASICS Rewards — official loyalty perks on asics.com."
         ),
         .init(
             id: "rally-co",
             displayName: "Rally Originals",
-            websiteURL: URL(string: "https://rally.app")!
+            websiteURL: URL(string: "https://rally.app")!,
+            loyaltyProgramURL: nil,
+            referralSummary: "In-app cosmetics — fictional promo codes below demo the UX until live commerce ships."
         )
     ]
 
@@ -132,21 +224,30 @@ enum ShopCatalog {
         // Default kit (free) ---------------------------------------------
         .init(id: defaultTopID,    category: .top,    name: "Rally Tee",      brand: "Rally", vendorID: "rally-co",
               productURL: URL(string: "https://rally.app/shop/default-top")!,
-              priceUSD: 0, colorHex: "#FFFFFF", accentHex: nil),
+              priceUSD: 0, colorHex: "#FFFFFF", accentHex: nil,
+              checkoutPromoCode: "RALLYKIT",
+              promoNote: "Rally-original — demo code for in-app cosmetics."),
         .init(id: defaultBottomID, category: .bottom, name: "Court Shorts",   brand: "Rally", vendorID: "rally-co",
               productURL: URL(string: "https://rally.app/shop/default-bottom")!,
-              priceUSD: 0, colorHex: "#1A1A1A", accentHex: nil),
+              priceUSD: 0, colorHex: "#1A1A1A", accentHex: nil,
+              checkoutPromoCode: "RALLYKIT",
+              promoNote: "Rally-original — demo code for in-app cosmetics."),
         .init(id: defaultShoesID,  category: .shoes,  name: "Baseliners",     brand: "Rally", vendorID: "rally-co",
               productURL: URL(string: "https://rally.app/shop/default-shoes")!,
-              priceUSD: 0, colorHex: "#FFFFFF", accentHex: "#00E5FF"),
+              priceUSD: 0, colorHex: "#FFFFFF", accentHex: "#00E5FF",
+              checkoutPromoCode: "RALLYKIT",
+              promoNote: "Rally-original — demo code for in-app cosmetics."),
         .init(id: defaultRacketID, category: .racket, name: "Rally R-1",      brand: "Rally", vendorID: "rally-co",
               productURL: URL(string: "https://rally.app/shop/default-racket")!,
-              priceUSD: 0, colorHex: "#C0C0C0", accentHex: "#00E5FF"),
+              priceUSD: 0, colorHex: "#C0C0C0", accentHex: "#00E5FF",
+              checkoutPromoCode: "RALLYKIT",
+              promoNote: "Rally-original — demo code for in-app cosmetics."),
 
         // Tops -----------------------------------------------------------
         .init(id: "nike.dri-fit.tee.cobalt", category: .top, name: "Dri-FIT Slam Tee", brand: "Nike", vendorID: "nike",
               productURL: URL(string: "https://www.nike.com/w/tennis-tops-tshirts")!,
-              priceUSD: 55, colorHex: "#0044AA", accentHex: "#FFFFFF"),
+              priceUSD: 55, colorHex: "#0044AA", accentHex: "#FFFFFF",
+              promoNote: "Third-party SKU — only use codes issued by Nike; none are bundled here."),
         .init(id: "adidas.club.polo.lime",   category: .top, name: "Club 3-Stripes Polo", brand: "adidas", vendorID: "adidas",
               productURL: URL(string: "https://www.adidas.com/us/men-tennis-tops")!,
               priceUSD: 60, colorHex: "#C8FF36", accentHex: "#000000"),
@@ -175,7 +276,7 @@ enum ShopCatalog {
         .init(id: "adidas.barricade.red",    category: .shoes, name: "Barricade 13", brand: "adidas", vendorID: "adidas",
               productURL: URL(string: "https://www.adidas.com/us/tennis-shoes")!,
               priceUSD: 140, colorHex: "#E32B2B", accentHex: "#000000"),
-        .init(id: "asics.gel.resolution",    category: .shoes, name: "GEL-Resolution 9", brand: "ASICS", vendorID: "yonex",
+        .init(id: "asics.gel.resolution",    category: .shoes, name: "GEL-Resolution 9", brand: "ASICS", vendorID: "asics",
               productURL: URL(string: "https://www.asics.com/us/en-us/mens-tennis-shoes/c/aa10000000/")!,
               priceUSD: 150, colorHex: "#0A2B5C", accentHex: "#FFD400"),
 
@@ -202,7 +303,9 @@ enum ShopCatalog {
               priceUSD: 18, colorHex: "#FFFFFF", accentHex: nil),
         .init(id: "rally.wristband.neon",    category: .accessory, name: "Neon Wristband", brand: "Rally", vendorID: "rally-co",
               productURL: URL(string: "https://rally.app/shop/neon-wristband")!,
-              priceUSD: 12, colorHex: "#00E5FF", accentHex: "#FF1A8C")
+              priceUSD: 12, colorHex: "#00E5FF", accentHex: "#FF1A8C",
+              checkoutPromoCode: "NEON10",
+              promoNote: "Rally-original accessory — demo promo field."),
     ]
 
     // MARK: - Lookup

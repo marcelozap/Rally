@@ -5,6 +5,7 @@ struct ShopView: View {
     @Query private var avatarConfigs: [AvatarConfig]
     @State private var selectedCategory: ShopItem.Category? = nil
     @State private var groupByVendor: Bool = false
+    @State private var shopEmote: AvatarShopEmote = .shopLook
 
     private var avatar: AvatarConfig? { avatarConfigs.first }
 
@@ -12,6 +13,12 @@ struct ShopView: View {
         NavigationStack {
             ScrollView {
                 LazyVStack(spacing: 16, pinnedViews: [.sectionHeaders]) {
+                    if let avatar = avatar {
+                        AvatarShopStageView(config: avatar, preview: nil, emote: $shopEmote)
+                            .padding(.horizontal, 16)
+                            .padding(.top, 4)
+                    }
+
                     categoryFilter
 
                     if groupByVendor {
@@ -93,18 +100,35 @@ struct ShopView: View {
     }
 
     private func vendorHeader(_ vendor: Vendor) -> some View {
-        HStack {
-            Text(vendor.displayName)
-                .font(.system(.title3, design: .rounded).weight(.bold))
-                .foregroundStyle(.white)
-            Spacer()
-            Link(destination: vendor.websiteURL) {
-                HStack(spacing: 4) {
-                    Text("Store")
-                    Image(systemName: "arrow.up.right.square")
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text(vendor.displayName)
+                    .font(.system(.title3, design: .rounded).weight(.bold))
+                    .foregroundStyle(.white)
+                Spacer()
+                Link(destination: vendor.websiteURL) {
+                    HStack(spacing: 4) {
+                        Text("Store")
+                        Image(systemName: "arrow.up.right.square")
+                    }
+                    .font(.caption)
+                    .foregroundStyle(.cyan)
                 }
-                .font(.caption)
-                .foregroundStyle(.cyan)
+            }
+            if let loyalty = vendor.loyaltyProgramURL {
+                Link(destination: loyalty) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "gift.circle.fill")
+                            .foregroundStyle(.yellow.opacity(0.9))
+                        Text("Official member / referral hub")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.yellow.opacity(0.95))
+                        Spacer()
+                        Image(systemName: "arrow.up.right")
+                            .font(.caption2)
+                            .foregroundStyle(.white.opacity(0.45))
+                    }
+                }
             }
         }
         .padding(.vertical, 6)

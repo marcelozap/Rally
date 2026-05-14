@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import UIKit
 
 struct ShopItemDetailView: View {
     let item: ShopItem
@@ -7,6 +8,7 @@ struct ShopItemDetailView: View {
 
     @Environment(\.modelContext) private var modelContext
     @State private var tryingOn: Bool = true
+    @State private var stageEmote: AvatarShopEmote = .shopLook
 
     private var vendor: Vendor? { ShopCatalog.vendor(id: item.vendorID) }
 
@@ -21,13 +23,13 @@ struct ShopItemDetailView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 24) {
-                AvatarView(
+                AvatarShopStageView(
                     config: avatar,
                     preview: tryingOn && item.category != .bag && item.category != .accessory
                         ? (slot: item.category, item: item)
-                        : nil
+                        : nil,
+                    emote: $stageEmote
                 )
-                .frame(height: 320)
                 .padding(.horizontal)
 
                 VStack(alignment: .leading, spacing: 16) {
@@ -37,6 +39,7 @@ struct ShopItemDetailView: View {
                         tryOnToggle
                     }
                     actionRow
+                    referralSection
                     if let vendor = vendor {
                         vendorCard(vendor)
                     }
@@ -134,7 +137,7 @@ struct ShopItemDetailView: View {
                 }
             }
 
-            Link(destination: item.productURL) {
+            Link(destination: item.trackingProductURL) {
                 HStack(spacing: 8) {
                     Image(systemName: "cart.fill")
                     Text(item.priceUSD == 0 ? "View on rally.app" : "Buy at \(item.brand)")
@@ -151,6 +154,72 @@ struct ShopItemDetailView: View {
                 .foregroundStyle(.cyan)
             }
         }
+    }
+
+    private var referralSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Codes & referrals")
+                .font(.system(.headline, design: .rounded))
+                .foregroundStyle(.white)
+
+            if let code = item.checkoutPromoCode, !code.isEmpty {
+                HStack {
+                    Text(code)
+                        .font(.title3.monospaced().weight(.bold))
+                        .foregroundStyle(.yellow)
+                    Spacer()
+                    Button {
+                        UIPasteboard.general.string = code
+                    } label: {
+                        Label("Copy", systemImage: "doc.on.doc")
+                            .font(.caption.weight(.semibold))
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.cyan)
+                }
+                .padding(12)
+                .background(RoundedRectangle(cornerRadius: 12).fill(Color.white.opacity(0.06)))
+            }
+
+            if let note = item.promoNote, !note.isEmpty {
+                Text(note)
+                    .font(.caption)
+                    .foregroundStyle(.white.opacity(0.65))
+            }
+
+            if item.checkoutPromoCode == nil || item.checkoutPromoCode?.isEmpty == true {
+                Text("No Rally-hosted promo code for this SKU — use each brand’s official loyalty hub so discounts stay legitimate.")
+                    .font(.caption)
+                    .foregroundStyle(.white.opacity(0.55))
+            }
+
+            if let vendor = vendor {
+                if let summary = vendor.referralSummary {
+                    Text(summary)
+                        .font(.caption)
+                        .foregroundStyle(.cyan.opacity(0.85))
+                }
+                if let loyalty = vendor.loyaltyProgramURL {
+                    Link(destination: loyalty) {
+                        HStack {
+                            Image(systemName: "gift.fill")
+                            Text("Official loyalty & member offers")
+                            Spacer()
+                            Image(systemName: "arrow.up.right")
+                        }
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.white)
+                        .padding(12)
+                        .background(RoundedRectangle(cornerRadius: 12).stroke(Color.cyan.opacity(0.35)))
+                    }
+                }
+            }
+
+            Text("Discounts change constantly. Rally never fabricates third-party codes — always verify at checkout.")
+                .font(.caption2)
+                .foregroundStyle(.white.opacity(0.35))
+        }
+        .padding(.vertical, 4)
     }
 
     private func vendorCard(_ vendor: Vendor) -> some View {

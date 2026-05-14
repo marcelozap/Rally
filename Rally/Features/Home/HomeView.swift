@@ -69,7 +69,7 @@ struct HomeView: View {
         Group {
             if let avatar = avatar {
                 ZStack(alignment: .bottomLeading) {
-                    AvatarView(config: avatar)
+                    AvatarView(config: avatar, subtlePerspective: true)
                         .frame(height: 320)
                     VStack(alignment: .leading, spacing: 4) {
                         Text(avatar.playerName)
