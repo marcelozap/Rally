@@ -113,6 +113,20 @@ enum Tunables {
     static let spawnLineYRatio:       CGFloat = 1.05
     static let cullBelowStrikePoints: CGFloat = 40
 
+    // MARK: - Swing gesture (Pokemon-Go-style drag-and-release)
+
+    /// Minimum drag distance in points before a pan registers as a swing.
+    /// Shorter motions are treated as accidental contact and ignored.
+    static let swingMinDistance:      CGFloat = 36
+
+    /// Pan velocity (pt/s) above which the swing counts as "committed."
+    /// Below this we still register the swing but emit a softer trail.
+    static let swingFastVelocity:     CGFloat = 1400
+
+    /// Trail color & visual.
+    static let swingTrailGlowWidth:   CGFloat = 14
+    static let swingTrailLineWidth:   CGFloat = 5
+
     // MARK: - Scoring
 
     static let comboTier1: Int = 5

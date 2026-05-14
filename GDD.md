@@ -43,8 +43,11 @@ a future native marketplace).
    haptic) coordinated to the millisecond.
 2. **The game is the soundtrack.** Music is generated _by your run_, not
    played _under_ it. Stop hitting → instruments drop out.
-3. **One thumb, zero learning curve.** Swipe left or right. That is the entire
-   verb. All depth comes from timing, combos, and risk.
+3. **One thumb, zero learning curve.** A single continuous swing gesture
+   (Pokémon-Go-style drag-and-release): touch anywhere, drag in the
+   direction you want to swing, release. The release vector decides the
+   lane; the release velocity grades commitment. All depth comes from
+   timing, combos, and risk.
 4. **Silently viral.** The game must be visually mesmerizing _with the sound
    off_ — because that is how 80% of TikTok/Reels viewers will first see it.
 

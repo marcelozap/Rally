@@ -45,6 +45,11 @@ final class GameScene: SKScene {
     private var timeLabel: SKLabelNode!
     private var strikeLine: SKShapeNode!
 
+    // Pan-gesture swing state — see `handlePan(_:)`.
+    private var swingOriginScene: CGPoint?
+    private var swingTrailNode: SKShapeNode?
+    private weak var swingPanRecognizer: UIPanGestureRecognizer?
+
     // MARK: - Lifecycle
 
     override func didMove(to view: SKView) {
@@ -147,13 +152,20 @@ final class GameScene: SKScene {
         timeLabel = time
     }
 
+    /// Wires the single-finger pan recognizer used for the swing input. Pan
+    /// (vs. discrete `UISwipeGestureRecognizer`) gives us the full touch
+    /// trajectory — start point, live position, release velocity — which we
+    /// need to render the swing trail and grade swing commitment.
     private func setupSwipeRecognizers(in view: SKView) {
-        let left = UISwipeGestureRecognizer(target: self, action: #selector(handleSwipeLeft))
-        left.direction = .left
-        let right = UISwipeGestureRecognizer(target: self, action: #selector(handleSwipeRight))
-        right.direction = .right
-        view.addGestureRecognizer(left)
-        view.addGestureRecognizer(right)
+        // Remove any stale recognizer from a previous scene presentation.
+        if let stale = swingPanRecognizer {
+            view.removeGestureRecognizer(stale)
+        }
+        let pan = UIPanGestureRecognizer(target: self, action: #selector(handlePan(_:)))
+        pan.minimumNumberOfTouches = 1
+        pan.maximumNumberOfTouches = 1
+        view.addGestureRecognizer(pan)
+        swingPanRecognizer = pan
     }
 
     // MARK: - Update loop
@@ -224,12 +236,116 @@ final class GameScene: SKScene {
         activeBalls.append(ball)
     }
 
-    // MARK: - Input
+    // MARK: - Input — Pokemon-Go-style pan gesture
 
-    @objc private func handleSwipeLeft()  { resolveSwipe(lane: .left) }
-    @objc private func handleSwipeRight() { resolveSwipe(lane: .right) }
+    /// Single-finger swing recognizer.
+    ///
+    /// - `.began`: capture the touch origin in scene coords, instantiate the
+    ///   swing trail node.
+    /// - `.changed`: redraw the trail from origin → current finger position.
+    /// - `.ended`: compute the release vector + velocity. If the drag is
+    ///   long enough (`Tunables.swingMinDistance`), resolve a swing on the
+    ///   lane indicated by the dominant horizontal sign and grade with the
+    ///   existing hit-timing logic. Short flicks below the threshold are
+    ///   ignored — they're how the player adjusts grip without committing.
+    @objc private func handlePan(_ pan: UIPanGestureRecognizer) {
+        guard let view = self.view else { return }
+        let viewPoint = pan.location(in: view)
+        let scenePoint = convertPoint(fromView: viewPoint)
 
-    private func resolveSwipe(lane: Lane) {
+        switch pan.state {
+        case .began:
+            swingOriginScene = scenePoint
+            installSwingTrail(at: scenePoint)
+
+        case .changed:
+            guard let origin = swingOriginScene else { return }
+            updateSwingTrail(from: origin, to: scenePoint)
+
+        case .ended:
+            defer {
+                swingOriginScene = nil
+                fadeSwingTrail()
+            }
+            guard let origin = swingOriginScene else { return }
+            let dx = scenePoint.x - origin.x
+            let dy = scenePoint.y - origin.y
+            let distance = hypot(dx, dy)
+
+            let v = pan.velocity(in: view)
+            let speed = hypot(v.x, v.y)
+
+            // Ignore taps and accidental contact — only deliberate motion
+            // commits a swing.
+            guard distance >= Tunables.swingMinDistance else { return }
+
+            // Lane is decided by the dominant horizontal sign. Verticality
+            // is currently informational only (reserved for future "lob" or
+            // "drop shot" variants).
+            let lane: Lane = dx < 0 ? .left : .right
+            resolveSwing(lane: lane, swingSpeed: speed)
+
+        case .cancelled, .failed:
+            swingOriginScene = nil
+            fadeSwingTrail()
+
+        default:
+            break
+        }
+    }
+
+    // MARK: - Swing trail rendering
+
+    private func installSwingTrail(at origin: CGPoint) {
+        let trail = SKShapeNode()
+        trail.strokeColor = UIColor(red: 0, green: 1, blue: 1, alpha: 0.85)
+        trail.fillColor = .clear
+        trail.lineWidth = Tunables.swingTrailLineWidth
+        trail.glowWidth = Tunables.swingTrailGlowWidth
+        trail.lineCap = .round
+        trail.zPosition = 60
+
+        let path = CGMutablePath()
+        path.move(to: origin)
+        path.addLine(to: origin)
+        trail.path = path
+
+        addChild(trail)
+        swingTrailNode = trail
+    }
+
+    private func updateSwingTrail(from origin: CGPoint, to current: CGPoint) {
+        guard let trail = swingTrailNode else { return }
+        let path = CGMutablePath()
+        path.move(to: origin)
+        path.addLine(to: current)
+        trail.path = path
+
+        // Trail brightens as the swing gets longer — visual reward for
+        // committing.
+        let distance = hypot(current.x - origin.x, current.y - origin.y)
+        let intensity = min(1, distance / 220)
+        trail.strokeColor = UIColor(
+            red: 0,
+            green: 1,
+            blue: 1,
+            alpha: 0.4 + 0.5 * intensity
+        )
+        trail.glowWidth = Tunables.swingTrailGlowWidth + 10 * intensity
+    }
+
+    private func fadeSwingTrail() {
+        guard let trail = swingTrailNode else { return }
+        swingTrailNode = nil
+        trail.run(.sequence([
+            .fadeOut(withDuration: 0.18),
+            .removeFromParent()
+        ]))
+    }
+
+    // MARK: - Swing resolution
+
+    private func resolveSwing(lane: Lane, swingSpeed: CGFloat) {
         guard !isDying else { return }
 
         guard let target = nearestBall(in: lane) else {
@@ -241,7 +357,18 @@ final class GameScene: SKScene {
         let trackTime = CACurrentMediaTime() - startTime
         let arrivalTime = target.spawnTime + Tunables.ballTravelSeconds
         let delta = abs(trackTime - arrivalTime)
-        let quality = HitQuality.grade(absDelta: delta)
+        var quality = HitQuality.grade(absDelta: delta)
+
+        // A committed (fast) swing nudges a `.great` into `.perfect` when
+        // the timing was on the very edge of the perfect window. Casual
+        // taps never get this bump — they don't carry enough momentum to
+        // earn it.
+        if quality == .great,
+           swingSpeed >= Tunables.swingFastVelocity,
+           delta <= HitQuality.perfect.windowSeconds * 1.25
+        {
+            quality = .perfect
+        }
 
         if quality == .miss {
             registerMiss(lane: lane)
