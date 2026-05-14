@@ -44,6 +44,13 @@ final class GameScene: SKScene {
     private var isDying = false
     private var sessionEnded = false
 
+    /// Set to `true` for the first `countdownSeconds` after the scene
+    /// appears. Spawner is paused and input is ignored during this window
+    /// so the player has time to settle. We don't gate gestures with a
+    /// flag inside `handlePan`; we simply don't start the spawner clock
+    /// until the countdown is done.
+    private var isCountingDown = true
+
     private var spawner: RhythmSpawner?
 
     private var cameraNode: SKCameraNode!
@@ -51,6 +58,12 @@ final class GameScene: SKScene {
     private var comboLabel: SKLabelNode!
     private var timeLabel: SKLabelNode!
     private var strikeLine: SKShapeNode!
+    private var leftLaneGlow: SKShapeNode!
+    private var rightLaneGlow: SKShapeNode!
+    private var background: SynthwaveBackground!
+    private var currentBPM: Double = 120
+    private var lastBeatTime: TimeInterval = 0
+    private var sessionStartWallTime: TimeInterval = 0
 
     // Pan-gesture swing state — see `handlePan(_:)`.
     private var swingOriginScene: CGPoint?
@@ -62,8 +75,11 @@ final class GameScene: SKScene {
     override func didMove(to view: SKView) {
         backgroundColor = .black
         physicsWorld.gravity = .zero
+        anchorPoint = CGPoint(x: 0, y: 0)
 
         setupCamera()
+        setupBackground()
+        setupLaneGlow()
         setupStrikeLine()
         setupHUD()
         setupSwipeRecognizers(in: view)
@@ -71,6 +87,7 @@ final class GameScene: SKScene {
         ParticleManager.shared.attach(scene: self, shakeTarget: cameraNode)
 
         let beatmap = Beatmap.procedural(durationSeconds: sessionDurationSeconds)
+        currentBPM = beatmap.bpm
         spawner = RhythmSpawner(
             beatmap: beatmap,
             travelSeconds: Tunables.ballTravelSeconds
@@ -78,8 +95,62 @@ final class GameScene: SKScene {
             self?.spawnBall(lane: note.lane, arrivalTime: note.arrivalTime)
         }
 
+        // Pre-set startTime so update() can run without crashing, but the
+        // spawner won't advance until we flip `isCountingDown = false`
+        // below. After the countdown we re-anchor `startTime` so trackTime
+        // begins at zero from the player's perspective.
         startTime = CACurrentMediaTime()
+        sessionStartWallTime = startTime
+        lastBeatTime = startTime
         GameEventBus.shared.publish(.sessionStart)
+        runCountdown()
+    }
+
+    // MARK: - Countdown
+
+    /// Shows a 3-2-1-GO sequence above the strike line. While it's running
+    /// the spawner is paused so the player has time to settle. Total
+    /// duration: ~1.6s. We re-anchor `startTime` when it ends so the
+    /// session timer always begins at 0:0X from the player's point of view.
+    private func runCountdown() {
+        isCountingDown = true
+        let label = SKLabelNode(fontNamed: "AvenirNext-Heavy")
+        label.fontSize = 120
+        label.fontColor = UIColor(red: 0, green: 1, blue: 1, alpha: 1)
+        label.position = CGPoint(x: size.width / 2, y: size.height / 2)
+        label.zPosition = 100
+        label.alpha = 0
+        addChild(label)
+
+        let steps: [(String, UIColor)] = [
+            ("3", UIColor(red: 0, green: 1, blue: 1, alpha: 1)),
+            ("2", UIColor(red: 0.4, green: 1, blue: 1, alpha: 1)),
+            ("1", UIColor(red: 0.8, green: 1, blue: 0.4, alpha: 1)),
+            ("GO", UIColor(red: 1.0, green: 0.2, blue: 0.7, alpha: 1))
+        ]
+        let perStep: TimeInterval = 0.4
+        var seq: [SKAction] = []
+        for (text, color) in steps {
+            seq.append(.run { [weak label] in
+                label?.text = text
+                label?.fontColor = color
+                label?.setScale(0.6)
+            })
+            seq.append(.group([
+                .fadeAlpha(to: 1.0, duration: 0.08),
+                .scale(to: 1.0, duration: 0.18)
+            ]))
+            seq.append(.fadeAlpha(to: 0.0, duration: perStep - 0.18))
+        }
+        seq.append(.run { [weak self, weak label] in
+            label?.removeFromParent()
+            guard let self = self else { return }
+            self.isCountingDown = false
+            // Re-anchor trackTime so the timer starts fresh.
+            self.startTime = CACurrentMediaTime()
+            self.lastBeatTime = CACurrentMediaTime()
+        })
+        label.run(.sequence(seq))
     }
 
     private func setupCamera() {
@@ -115,13 +186,54 @@ final class GameScene: SKScene {
         }
     }
 
+    private func setupBackground() {
+        let bg = SynthwaveBackground(size: size, strikeYRatio: Tunables.strikeLineYRatio)
+        bg.zPosition = -100
+        addChild(bg)
+        background = bg
+    }
+
+    /// Two soft, lane-aligned vertical glows. They sit behind the play
+    /// field, just hinting at where each lane lives. Lane glow gives a
+    /// "stage track" feel — the player's eye locks to the swipe target
+    /// before the ball even arrives.
+    private func setupLaneGlow() {
+        let strikeY = size.height * Tunables.strikeLineYRatio
+        let glowWidth = size.width * 0.18
+        let glowHeight = size.height * (Tunables.spawnLineYRatio - Tunables.strikeLineYRatio) + 60
+
+        let left = SKShapeNode(rect: CGRect(
+            x: -glowWidth / 2, y: 0,
+            width: glowWidth, height: glowHeight
+        ), cornerRadius: glowWidth / 2)
+        left.position = CGPoint(x: size.width * 0.3, y: strikeY)
+        left.strokeColor = .clear
+        left.fillColor = UIColor(red: 0, green: 1, blue: 1, alpha: 0.06)
+        left.glowWidth = 24
+        left.zPosition = -80
+        addChild(left)
+        leftLaneGlow = left
+
+        let right = SKShapeNode(rect: CGRect(
+            x: -glowWidth / 2, y: 0,
+            width: glowWidth, height: glowHeight
+        ), cornerRadius: glowWidth / 2)
+        right.position = CGPoint(x: size.width * 0.7, y: strikeY)
+        right.strokeColor = .clear
+        right.fillColor = UIColor(red: 1, green: 0.2, blue: 0.7, alpha: 0.06)
+        right.glowWidth = 24
+        right.zPosition = -80
+        addChild(right)
+        rightLaneGlow = right
+    }
+
     private func setupStrikeLine() {
         let y = size.height * Tunables.strikeLineYRatio
-        let line = SKShapeNode(rect: CGRect(x: -size.width / 2, y: -1, width: size.width, height: 2))
+        let line = SKShapeNode(rect: CGRect(x: -size.width / 2, y: -1.5, width: size.width, height: 3))
         line.position = CGPoint(x: size.width / 2, y: y)
         line.strokeColor = .clear
-        line.fillColor = UIColor(red: 0, green: 1, blue: 1, alpha: 0.4)
-        line.glowWidth = 8
+        line.fillColor = UIColor(red: 0, green: 1, blue: 1, alpha: 0.85)
+        line.glowWidth = 12
         line.zPosition = 10
         addChild(line)
         strikeLine = line
@@ -186,16 +298,39 @@ final class GameScene: SKScene {
 
         let trackTime = currentTime - startTime
 
-        if !sessionEnded {
+        if !sessionEnded, !isCountingDown {
             spawner?.tick(trackTime: trackTime)
         }
         moveBalls(trackTime: trackTime)
         cullMissedBalls(trackTime: trackTime)
         updateTimeLabel(trackTime: trackTime)
+        pulseOnBeatIfDue(currentTime: currentTime)
 
         if !sessionEnded, trackTime >= sessionDurationSeconds, activeBalls.isEmpty {
             sessionEnded = true
             GameEventBus.shared.publish(.sessionEnd(buildResult()))
+        }
+    }
+
+    /// Throbs the strike line on every quarter-note tick of the current
+    /// beatmap BPM. The pulse is short (`alpha`-only animation, no
+    /// position) so it never visually conflicts with shake or frame-stop.
+    private func pulseOnBeatIfDue(currentTime: TimeInterval) {
+        guard !sessionEnded, currentBPM > 0, strikeLine != nil else { return }
+        let beatSeconds = 60.0 / currentBPM
+        if currentTime - lastBeatTime >= beatSeconds {
+            lastBeatTime = currentTime
+            let pulse = SKAction.sequence([
+                .group([
+                    .fadeAlpha(to: 1.0, duration: 0.05),
+                    .scaleY(to: 2.4, duration: 0.05)
+                ]),
+                .group([
+                    .fadeAlpha(to: 0.85, duration: 0.22),
+                    .scaleY(to: 1.0, duration: 0.22)
+                ])
+            ])
+            strikeLine.run(pulse)
         }
     }
 
@@ -213,7 +348,10 @@ final class GameScene: SKScene {
 
     private func updateTimeLabel(trackTime: Double) {
         guard let timeLabel = timeLabel else { return }
-        let remaining = max(0, sessionDurationSeconds - trackTime)
+        // Freeze the timer at the full session length during the countdown
+        // so the player doesn't see it tick down before they can even play.
+        let effectiveTrackTime = isCountingDown ? 0 : trackTime
+        let remaining = max(0, sessionDurationSeconds - effectiveTrackTime)
         let minutes = Int(remaining) / 60
         let seconds = Int(remaining) % 60
         timeLabel.text = String(format: "%d:%02d", minutes, seconds)
@@ -365,7 +503,7 @@ final class GameScene: SKScene {
     // MARK: - Swing resolution
 
     private func resolveSwing(lane: Lane, swingSpeed: CGFloat) {
-        guard !isDying else { return }
+        guard !isDying, !isCountingDown, !sessionEnded else { return }
 
         guard let target = nearestBall(in: lane) else {
             // No ball to hit — count as a miss so the player feels the cost
@@ -407,7 +545,15 @@ final class GameScene: SKScene {
 
     private func registerHit(ball: BallNode, quality: HitQuality) {
         activeBalls.removeAll { $0 === ball }
-        ball.removeFromParent()
+        // Perfect hits get the ball-shatter treatment; other grades just
+        // disappear cleanly so the impact-emphasis stays earned.
+        if quality == .perfect {
+            shatterBall(ball)
+        } else {
+            ball.removeFromParent()
+        }
+
+        flashLaneGlow(lane: ball.lane, quality: quality)
 
         combo += 1
         maxCombo = max(maxCombo, combo)
@@ -491,6 +637,114 @@ final class GameScene: SKScene {
             comboLabel?.text = "x\(combo)"
         } else {
             comboLabel?.text = ""
+        }
+        punchHUD()
+    }
+
+    /// Quick scale-spring on the score label so each hit visibly *lands*
+    /// in the HUD. Combo label punches at slightly different rhythm so the
+    /// two pieces feel alive rather than synchronized.
+    private func punchHUD() {
+        if let s = scoreLabel {
+            s.removeAction(forKey: "punch")
+            let punch = SKAction.sequence([
+                .scale(to: 1.18, duration: 0.06),
+                .scale(to: 1.0, duration: 0.16)
+            ])
+            punch.timingMode = .easeOut
+            s.run(punch, withKey: "punch")
+        }
+        if combo > 1, let c = comboLabel {
+            c.removeAction(forKey: "punch")
+            let punch = SKAction.sequence([
+                .scale(to: 1.25, duration: 0.06),
+                .scale(to: 1.0, duration: 0.20)
+            ])
+            punch.timingMode = .easeOut
+            c.run(punch, withKey: "punch")
+        }
+    }
+
+    // MARK: - Premium impact effects
+
+    /// Replaces the ball with N small shards that fan out radially in the
+    /// direction of the swing. Runs SKActions, so it respects frame-stop —
+    /// the shatter "freezes" with the hit pause and resumes when the
+    /// scene's `speed` returns to 1.
+    private func shatterBall(_ ball: BallNode) {
+        let center = ball.position
+        ball.removeFromParent()
+
+        let shardCount = 8
+        let baseRadius = Tunables.ballRadiusPoints * 0.6
+        let baseColor = ball.fillColor
+        for i in 0..<shardCount {
+            let shard = SKShapeNode(
+                circleOfRadius: baseRadius * CGFloat.random(in: 0.35...0.55)
+            )
+            shard.fillColor = baseColor
+            shard.strokeColor = .white
+            shard.lineWidth = 0.5
+            shard.glowWidth = 4
+            shard.position = center
+            shard.zPosition = 25
+            addChild(shard)
+
+            // Even angular distribution + small jitter so shards don't look
+            // mechanical. Trajectory is upward-fanning (toward the spawn
+            // line) to read as "ball powered back into the rally".
+            let angle = -CGFloat.pi / 2 + (CGFloat(i) / CGFloat(shardCount) - 0.5) * .pi * 0.9
+            let dist  = CGFloat.random(in: 120...220)
+            let target = CGPoint(
+                x: center.x + cos(angle) * dist,
+                y: center.y - sin(angle) * dist
+            )
+            let dur = TimeInterval.random(in: 0.35...0.55)
+            let move = SKAction.move(to: target, duration: dur)
+            move.timingMode = .easeOut
+            shard.run(.sequence([
+                .group([
+                    move,
+                    .fadeOut(withDuration: dur),
+                    .scale(to: 0.2, duration: dur)
+                ]),
+                .removeFromParent()
+            ]))
+        }
+    }
+
+    /// Brightens the corresponding lane glow for a beat, then fades back.
+    /// Perfect hits get a much louder flash than `.great`/`.good`.
+    private func flashLaneGlow(lane: Lane, quality: HitQuality) {
+        let glow = lane == .left ? leftLaneGlow : rightLaneGlow
+        guard let glow else { return }
+        let peak: CGFloat
+        let durationUp: TimeInterval
+        let durationDown: TimeInterval
+        switch quality {
+        case .perfect:
+            peak = 0.35
+            durationUp = 0.04
+            durationDown = 0.32
+        case .great:
+            peak = 0.20
+            durationUp = 0.05
+            durationDown = 0.25
+        case .good:
+            peak = 0.12
+            durationUp = 0.06
+            durationDown = 0.20
+        case .miss:
+            return
+        }
+        glow.removeAllActions()
+        glow.run(.sequence([
+            .fadeAlpha(to: peak, duration: durationUp),
+            .fadeAlpha(to: 1.0, duration: 0),
+            .fadeAlpha(to: 0.4, duration: durationDown)
+        ]))
+        if quality == .perfect {
+            background?.pulseHorizon(intensity: 1.0)
         }
     }
 
