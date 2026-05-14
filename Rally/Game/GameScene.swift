@@ -31,6 +31,13 @@ final class GameScene: SKScene {
     private var score: Int = 0
     private var lastComboTier: Int = 0
 
+    // Hit-quality histogram, accumulated across the whole session. Drives
+    // the end-of-run accuracy %, perfect rate, and reward math.
+    private var perfectHits: Int = 0
+    private var greatHits:   Int = 0
+    private var goodHits:    Int = 0
+    private var totalMisses: Int = 0
+
     private var activeBalls: [BallNode] = []
     private var startTime: TimeInterval = 0
     private var frameStopUntil: TimeInterval = 0
@@ -188,8 +195,20 @@ final class GameScene: SKScene {
 
         if !sessionEnded, trackTime >= sessionDurationSeconds, activeBalls.isEmpty {
             sessionEnded = true
-            GameEventBus.shared.publish(.sessionEnd(finalScore: score, maxCombo: maxCombo))
+            GameEventBus.shared.publish(.sessionEnd(buildResult()))
         }
+    }
+
+    /// Snapshot of the current run state. Cheap — just copies counters.
+    func buildResult() -> GameResult {
+        GameResult(
+            finalScore: score,
+            maxCombo: maxCombo,
+            perfectHits: perfectHits,
+            greatHits: greatHits,
+            goodHits: goodHits,
+            misses: totalMisses
+        )
     }
 
     private func updateTimeLabel(trackTime: Double) {
@@ -393,6 +412,12 @@ final class GameScene: SKScene {
         combo += 1
         maxCombo = max(maxCombo, combo)
         score += quality.baseScore * max(1, combo / 5)
+        switch quality {
+        case .perfect: perfectHits += 1
+        case .great:   greatHits   += 1
+        case .good:    goodHits    += 1
+        case .miss:    break
+        }
         updateHUD()
 
         let freezeMs: Double
@@ -418,6 +443,7 @@ final class GameScene: SKScene {
     }
 
     private func registerMiss(lane: Lane) {
+        totalMisses += 1
         let previous = combo
         if combo > 0 {
             // The Flappy moment.
@@ -483,7 +509,7 @@ final class GameScene: SKScene {
     override func willMove(from view: SKView) {
         if !sessionEnded {
             sessionEnded = true
-            GameEventBus.shared.publish(.sessionEnd(finalScore: score, maxCombo: maxCombo))
+            GameEventBus.shared.publish(.sessionEnd(buildResult()))
         }
     }
 }

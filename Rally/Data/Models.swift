@@ -245,3 +245,66 @@ enum AvatarBodyType: String, CaseIterable, Identifiable {
     var id: String { rawValue }
     var displayName: String { rawValue.capitalized }
 }
+
+// MARK: - Player progress
+
+/// Singleton-style record of the player's long-term progression. There is
+/// one row, inserted by `RallyApp.seedIfNeeded`. The end-of-run flow reads,
+/// mutates, and re-saves it in a single transaction.
+///
+/// Why a `@Model` instead of `UserDefaults`? We already pay for a SwiftData
+/// store and want progression to back up + sync alongside training/match
+/// data when CloudKit is eventually wired up.
+@Model
+final class PlayerProgress {
+    var id: UUID = UUID()
+
+    /// Spendable in-game currency. Earned from runs.
+    var coins: Int = 0
+
+    /// Cumulative experience. Level is derived (see `level`).
+    var xp: Int = 0
+
+    /// Best single-run score, all-time.
+    var bestScore: Int = 0
+
+    /// Best single-run combo, all-time.
+    var bestCombo: Int = 0
+
+    var totalSessions: Int = 0
+    var totalPerfectHits: Int = 0
+    var totalGreatHits: Int = 0
+    var totalGoodHits: Int = 0
+    var totalMisses: Int = 0
+
+    /// Consecutive calendar days the player has completed at least one run.
+    /// Resets to 1 on the first run of a new day if the previous run was
+    /// yesterday; resets to 1 (broken) if there was a gap.
+    var dailyStreak: Int = 0
+
+    /// `startOfDay`-normalized date of the most recent completed run.
+    var lastPlayDate: Date? = nil
+
+    init() {
+        self.id = UUID()
+    }
+
+    /// Player level. Linear at first (every 1000 XP), then slows down so the
+    /// numbers don't run away. A real game would tune this curve later; for
+    /// now the simple version reads well in the UI.
+    var level: Int { 1 + xp / Self.xpPerLevel }
+
+    /// 0…1 progress through the current level, for the home-screen bar.
+    var levelProgress: Double {
+        let inLevel = xp % Self.xpPerLevel
+        return Double(inLevel) / Double(Self.xpPerLevel)
+    }
+
+    /// XP needed to reach the next level boundary from the current xp.
+    var xpToNextLevel: Int {
+        Self.xpPerLevel - (xp % Self.xpPerLevel)
+    }
+
+    static let xpPerLevel: Int = 1000
+}
+

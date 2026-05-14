@@ -17,7 +17,8 @@ struct RallyApp: App {
                 for: AvatarConfig.self,
                 TrainingSession.self,
                 MatchEntry.self,
-                JournalEntry.self
+                JournalEntry.self,
+                PlayerProgress.self
             )
             Self.seedIfNeeded(container: modelContainer)
         } catch {
@@ -43,15 +44,25 @@ struct RallyApp: App {
         .modelContainer(modelContainer)
     }
 
-    /// Insert a single empty `AvatarConfig` row on a fresh install. The
-    /// customizer will mark it `hasCompletedSetup = true` once the player
-    /// finishes the first-launch flow.
+    /// Seed the singleton rows on a fresh install:
+    ///
+    /// - `AvatarConfig` — gates the first-launch customizer.
+    /// - `PlayerProgress` — backing record for coins/XP/streak/best scores.
+    ///
+    /// Both are idempotent: we only insert when the table is empty.
     private static func seedIfNeeded(container: ModelContainer) {
         let context = ModelContext(container)
-        let descriptor = FetchDescriptor<AvatarConfig>()
-        let existing = (try? context.fetch(descriptor)) ?? []
-        guard existing.isEmpty else { return }
-        context.insert(AvatarConfig())
+
+        let avatars = (try? context.fetch(FetchDescriptor<AvatarConfig>())) ?? []
+        if avatars.isEmpty {
+            context.insert(AvatarConfig())
+        }
+
+        let progress = (try? context.fetch(FetchDescriptor<PlayerProgress>())) ?? []
+        if progress.isEmpty {
+            context.insert(PlayerProgress())
+        }
+
         try? context.save()
     }
 }

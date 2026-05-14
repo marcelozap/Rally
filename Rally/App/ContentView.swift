@@ -1,6 +1,5 @@
 import SwiftUI
 import SwiftData
-import SpriteKit
 
 // MARK: - Tab identity
 
@@ -50,7 +49,7 @@ struct ContentView: View {
                 .tabItem { Label("Home", systemImage: "house.fill") }
                 .tag(RallyTab.home)
 
-            GameContainerView()
+            GameSessionView(onExit: { selectedTab = .home })
                 .tabItem { Label("Play", systemImage: "tennis.racket") }
                 .tag(RallyTab.play)
 
@@ -70,44 +69,3 @@ struct ContentView: View {
     }
 }
 
-// MARK: - Game container
-
-/// Hosts the SpriteKit `GameScene`. Lives inside the Play tab. The scene is
-/// (re)created when this view appears so each visit starts a fresh session.
-struct GameContainerView: View {
-    @State private var scene: GameScene? = nil
-    @State private var sessionKey = UUID()
-
-    var body: some View {
-        ZStack(alignment: .topTrailing) {
-            Color.black.ignoresSafeArea()
-
-            if let scene = scene {
-                SpriteView(scene: scene, options: [.ignoresSiblingOrder])
-                    .ignoresSafeArea()
-                    .id(sessionKey)
-            }
-
-            Button {
-                sessionKey = UUID()
-                scene = makeScene()
-            } label: {
-                Image(systemName: "arrow.clockwise.circle.fill")
-                    .font(.system(size: 28))
-                    .foregroundStyle(.white.opacity(0.7))
-                    .padding()
-            }
-        }
-        .onAppear {
-            if scene == nil {
-                scene = makeScene()
-            }
-        }
-    }
-
-    private func makeScene() -> GameScene {
-        let s = GameScene(size: UIScreen.main.bounds.size)
-        s.scaleMode = .resizeFill
-        return s
-    }
-}

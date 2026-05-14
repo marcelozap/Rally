@@ -3,6 +3,7 @@ import SwiftData
 
 struct HomeView: View {
     @Query private var avatarConfigs: [AvatarConfig]
+    @Query private var progressRecords: [PlayerProgress]
     @Query(sort: \TrainingSession.date, order: .reverse) private var trainings: [TrainingSession]
     @Query(sort: \MatchEntry.date, order: .reverse) private var matches: [MatchEntry]
     @Query(sort: \JournalEntry.date, order: .reverse) private var journal: [JournalEntry]
@@ -15,12 +16,14 @@ struct HomeView: View {
     @State private var showingJournalEditor = false
 
     private var avatar: AvatarConfig? { avatarConfigs.first }
+    private var progress: PlayerProgress? { progressRecords.first }
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 20) {
                     avatarCard
+                    playerBadge
                     quickActions
                     weeklyStats
                     recentJournal
@@ -86,6 +89,96 @@ struct HomeView: View {
         let top = ShopCatalog.item(id: avatar.equippedTopID)?.name ?? "—"
         let racket = ShopCatalog.item(id: avatar.equippedRacketID)?.name ?? "—"
         return "\(top) · \(racket)"
+    }
+
+    // MARK: - Player badge (level / coins / best)
+
+    @ViewBuilder
+    private var playerBadge: some View {
+        if let p = progress {
+            VStack(spacing: 12) {
+                HStack(spacing: 16) {
+                    levelBadge(p)
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Level \(p.level)")
+                            .font(.system(.title3, design: .rounded).weight(.heavy))
+                            .foregroundStyle(.white)
+                        Text("\(p.xpToNextLevel) XP to lv. \(p.level + 1)")
+                            .font(.caption)
+                            .foregroundStyle(.white.opacity(0.55))
+                        levelBar(progress: p.levelProgress)
+                            .frame(height: 5)
+                    }
+                    Spacer()
+                }
+                HStack(spacing: 10) {
+                    badgeChip(icon: "circle.hexagongrid.fill", value: "\(p.coins)", label: "coins", tint: .yellow)
+                    badgeChip(icon: "star.fill",               value: "\(p.bestScore)", label: "best",  tint: .cyan)
+                    badgeChip(icon: "flame.fill",              value: "\(p.dailyStreak)d", label: "streak", tint: .pink)
+                }
+            }
+            .padding(14)
+            .background(
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(Color.white.opacity(0.04))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(Color.cyan.opacity(0.25), lineWidth: 1)
+            )
+        }
+    }
+
+    private func levelBadge(_ p: PlayerProgress) -> some View {
+        ZStack {
+            Circle()
+                .fill(LinearGradient(
+                    colors: [Color.cyan, Color(red: 0.0, green: 0.5, blue: 0.9)],
+                    startPoint: .topLeading, endPoint: .bottomTrailing
+                ))
+                .frame(width: 56, height: 56)
+            Text("\(p.level)")
+                .font(.system(.title2, design: .rounded).weight(.heavy))
+                .foregroundStyle(.black)
+        }
+        .shadow(color: .cyan.opacity(0.5), radius: 8, x: 0, y: 0)
+    }
+
+    private func levelBar(progress: Double) -> some View {
+        GeometryReader { geo in
+            ZStack(alignment: .leading) {
+                Capsule().fill(Color.white.opacity(0.08))
+                Capsule()
+                    .fill(LinearGradient(
+                        colors: [Color.cyan, Color.pink],
+                        startPoint: .leading, endPoint: .trailing
+                    ))
+                    .frame(width: geo.size.width * CGFloat(max(0.02, progress)))
+            }
+        }
+    }
+
+    private func badgeChip(icon: String, value: String, label: String, tint: Color) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: icon)
+                .font(.caption)
+                .foregroundStyle(tint)
+            VStack(alignment: .leading, spacing: -2) {
+                Text(value)
+                    .font(.system(.subheadline, design: .rounded).weight(.bold))
+                    .foregroundStyle(.white)
+                Text(label)
+                    .font(.system(.caption2, design: .rounded))
+                    .foregroundStyle(.white.opacity(0.5))
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
+        .background(
+            RoundedRectangle(cornerRadius: 10)
+                .fill(Color.white.opacity(0.03))
+        )
     }
 
     // MARK: - Quick actions
