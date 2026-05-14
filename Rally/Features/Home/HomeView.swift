@@ -2,6 +2,7 @@ import SwiftUI
 import SwiftData
 
 struct HomeView: View {
+    @EnvironmentObject private var auth: AuthSession
     @Query private var avatarConfigs: [AvatarConfig]
     @Query private var progressRecords: [PlayerProgress]
     @Query(sort: \TrainingSession.date, order: .reverse) private var trainings: [TrainingSession]
@@ -35,6 +36,20 @@ struct HomeView: View {
             .background(Color.black.ignoresSafeArea())
             .navigationTitle(greeting)
             .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Menu {
+                        if let email = auth.userEmail {
+                            Label(email, systemImage: "envelope.fill")
+                        }
+                        Button("Sign out", role: .destructive) {
+                            auth.logout()
+                        }
+                    } label: {
+                        Image(systemName: "person.text.rectangle")
+                            .foregroundStyle(.cyan)
+                    }
+                    .accessibilityLabel("Account")
+                }
                 ToolbarItem(placement: .topBarTrailing) {
                     if let avatar = avatar {
                         NavigationLink {

@@ -53,6 +53,8 @@ Rally/
 project.yml       XcodeGen spec (use to regenerate Rally.xcodeproj)
 ```
 
+See [`backend/README.md`](./backend/README.md) for the optional Node sync API (accounts + avatar / logs backup).
+
 ## Generating the Xcode project
 
 This repo ships source + an [XcodeGen](https://github.com/yonaskolb/XcodeGen)

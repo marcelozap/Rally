@@ -18,6 +18,7 @@ struct AvatarCustomizerView: View {
 
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var auth: AuthSession
     @FocusState private var nameFieldFocused: Bool
 
     var isFirstLaunch: Bool = false
@@ -230,6 +231,11 @@ struct AvatarCustomizerView: View {
         if config.playerName.isEmpty { config.playerName = "Player" }
         config.hasCompletedSetup = true
         try? modelContext.save()
+        if auth.isAuthenticated {
+            Task {
+                await RallySyncCoordinator.pushIfAuthenticated(modelContext: modelContext)
+            }
+        }
         if !isFirstLaunch {
             dismiss()
         }

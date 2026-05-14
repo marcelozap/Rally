@@ -48,6 +48,10 @@ fastlane/test_output
 *.swp
 *~
 
+# Node backend
+backend/node_modules/
+backend/data/
+
 # Secrets / local config
 *.env
 .env.local

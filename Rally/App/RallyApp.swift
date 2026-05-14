@@ -9,6 +9,8 @@ struct RallyApp: App {
     /// vendors) is not in SwiftData — it lives in code.
     let modelContainer: ModelContainer
 
+    @StateObject private var authSession = AuthSession()
+
     init() {
         // Build the container before touching any view code so first-launch
         // queries don't race the schema bring-up.
@@ -38,8 +40,8 @@ struct RallyApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
-                .preferredColorScheme(.dark)
+            RootView()
+                .environmentObject(authSession)
         }
         .modelContainer(modelContainer)
     }

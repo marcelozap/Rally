@@ -19,6 +19,15 @@ targets:
     platform: iOS
     sources:
       - path: Rally
+    info:
+      properties:
+        NSAppTransportSecurity:
+          NSAllowsLocalNetworking: true
+          NSExceptionDomains:
+            localhost:
+              NSExceptionAllowsInsecureHTTPLoads: true
+            "127.0.0.1":
+              NSExceptionAllowsInsecureHTTPLoads: true
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.marcelozap.rally
