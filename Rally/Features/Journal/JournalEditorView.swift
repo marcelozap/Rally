@@ -1,6 +1,8 @@
 import SwiftUI
 import SwiftData
 
+/// Composer patterned after **Day One** / **Journey**: calm dark surfaces, focus
+/// buckets, guided prompts, mood & tags — persisted with `JournalFocus` + optional `promptId`.
 struct JournalEditorView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
@@ -11,99 +13,271 @@ struct JournalEditorView: View {
     @State private var mood: Int
     @State private var tags: [String]
     @State private var tagInput: String = ""
+    @State private var focus: JournalFocus
+    @State private var promptId: String
 
     private let existing: JournalEntry?
 
-    init(entry: JournalEntry?) {
+    init(entry: JournalEntry?, seedPrompt: JournalPrompt? = nil) {
         self.existing = entry
-        _date  = State(initialValue: entry?.date ?? Date())
-        _title = State(initialValue: entry?.title ?? "")
-        _body_ = State(initialValue: entry?.body ?? "")
-        _mood  = State(initialValue: entry?.mood ?? 3)
-        _tags  = State(initialValue: entry?.tags ?? [])
+        if let entry = entry {
+            _date = State(initialValue: entry.date)
+            _title = State(initialValue: entry.title)
+            _body_ = State(initialValue: entry.body)
+            _mood = State(initialValue: entry.mood)
+            _tags = State(initialValue: entry.tags)
+            _focus = State(initialValue: entry.focus)
+            _promptId = State(initialValue: entry.promptId)
+        } else if let seed = seedPrompt {
+            _date = State(initialValue: Date())
+            _title = State(initialValue: seed.title)
+            _body_ = State(initialValue: seed.bodyStarter)
+            _mood = State(initialValue: 3)
+            _tags = State(initialValue: [])
+            _focus = State(initialValue: seed.focus)
+            _promptId = State(initialValue: seed.id)
+        } else {
+            _date = State(initialValue: Date())
+            _title = State(initialValue: "")
+            _body_ = State(initialValue: "")
+            _mood = State(initialValue: 3)
+            _tags = State(initialValue: [])
+            _focus = State(initialValue: .general)
+            _promptId = State(initialValue: "")
+        }
+    }
+
+    private var promptsForFocus: [JournalPrompt] {
+        JournalPromptLibrary.prompts(for: focus)
     }
 
     var body: some View {
-        Form {
-            Section("When") {
-                DatePicker("Date", selection: $date, displayedComponents: [.date, .hourAndMinute])
-            }
+        ScrollView {
+            VStack(alignment: .leading, spacing: 18) {
+                focusSection
+                promptsSection
+                cardSection(title: "When") {
+                    DatePicker("Date & time", selection: $date, displayedComponents: [.date, .hourAndMinute])
+                        .foregroundStyle(.white)
+                        .tint(.cyan)
+                }
 
-            Section("Entry") {
-                TextField("Title", text: $title)
-                TextEditor(text: $body_)
-                    .frame(minHeight: 180)
-            }
+                cardSection(title: "Entry") {
+                    TextField("Title", text: $title)
+                        .foregroundStyle(.white)
+                        .padding(12)
+                        .background(RoundedRectangle(cornerRadius: 10).fill(Color.white.opacity(0.06)))
 
-            Section("Mood") {
-                HStack {
-                    ForEach(1...5, id: \.self) { i in
-                        Button {
-                            mood = i
-                        } label: {
-                            Text(moodEmoji(i))
-                                .font(.system(size: 28))
-                                .opacity(mood == i ? 1 : 0.35)
-                                .scaleEffect(mood == i ? 1.15 : 1)
+                    ZStack(alignment: .topLeading) {
+                        if body_.isEmpty {
+                            Text("Write freely…")
+                                .foregroundStyle(.white.opacity(0.28))
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 14)
                         }
-                        .buttonStyle(.plain)
-                        .frame(maxWidth: .infinity)
+                        TextEditor(text: $body_)
+                            .scrollContentBackground(.hidden)
+                            .foregroundStyle(.white.opacity(0.92))
+                            .frame(minHeight: 200)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 6)
                     }
+                    .background(RoundedRectangle(cornerRadius: 10).fill(Color.white.opacity(0.05)))
                 }
-            }
 
-            Section("Tags") {
-                HStack {
-                    TextField("Add tag (then return)", text: $tagInput)
-                        .autocapitalization(.none)
-                        .onSubmit(addTag)
-                    Button {
-                        addTag()
-                    } label: {
-                        Image(systemName: "plus.circle.fill")
-                            .foregroundStyle(.cyan)
-                    }
-                }
-                if !tags.isEmpty {
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 8) {
-                            ForEach(tags, id: \.self) { tag in
-                                HStack(spacing: 4) {
-                                    Text("#\(tag)")
-                                    Button {
-                                        tags.removeAll { $0 == tag }
-                                    } label: {
-                                        Image(systemName: "xmark.circle.fill")
-                                            .imageScale(.small)
-                                    }
-                                }
-                                .font(.caption.weight(.medium))
-                                .padding(.vertical, 4)
-                                .padding(.horizontal, 8)
-                                .background(
-                                    Capsule().fill(Color.cyan.opacity(0.18))
-                                )
-                                .foregroundStyle(.cyan)
+                cardSection(title: "Mood") {
+                    HStack(spacing: 6) {
+                        ForEach(1...5, id: \.self) { i in
+                            Button {
+                                mood = i
+                            } label: {
+                                Text(moodEmoji(i))
+                                    .font(.system(size: 30))
+                                    .opacity(mood == i ? 1 : 0.35)
+                                    .scaleEffect(mood == i ? 1.12 : 1)
                             }
+                            .buttonStyle(.plain)
+                            .frame(maxWidth: .infinity)
                         }
                     }
                 }
+
+                cardSection(title: "Tags") {
+                    HStack {
+                        TextField("Add tag, press return", text: $tagInput)
+                            .foregroundStyle(.white)
+                            .textInputAutocapitalization(.never)
+                            .onSubmit(addTag)
+                        Button(action: addTag) {
+                            Image(systemName: "plus.circle.fill")
+                                .foregroundStyle(.cyan)
+                        }
+                    }
+                    .padding(12)
+                    .background(RoundedRectangle(cornerRadius: 10).fill(Color.white.opacity(0.06)))
+
+                    if !tags.isEmpty {
+                        FlowTagWrap(tags: tags, onRemove: { tag in
+                            tags.removeAll { $0 == tag }
+                        })
+                    }
+                }
             }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+            .padding(.bottom, 40)
         }
+        .background(Color.black.ignoresSafeArea())
         .navigationTitle(existing == nil ? "New entry" : "Edit entry")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
                 Button("Cancel") { dismiss() }
+                    .foregroundStyle(.white.opacity(0.85))
             }
             ToolbarItem(placement: .topBarTrailing) {
                 Button("Save") {
                     save()
                     dismiss()
                 }
-                .bold()
+                .fontWeight(.bold)
+                .foregroundStyle(.cyan)
             }
         }
+        .onChange(of: focus) { _, _ in
+            if promptsForFocus.allSatisfy({ $0.id != promptId }) {
+                promptId = ""
+            }
+        }
+    }
+
+    // MARK: - Sections
+
+    private var focusSection: some View {
+        cardSection(title: "Practice · Match · Game") {
+            Text("Where does this entry live? (filters your timeline)")
+                .font(.caption)
+                .foregroundStyle(.white.opacity(0.45))
+            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
+                ForEach(JournalFocus.allCases) { f in
+                    Button {
+                        focus = f
+                    } label: {
+                        HStack(spacing: 8) {
+                            Image(systemName: f.symbolName)
+                            Text(f.displayName)
+                                .font(.caption.weight(.semibold))
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.85)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
+                        .background(
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(focus == f ? Color.cyan.opacity(0.28) : Color.white.opacity(0.06))
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(focus == f ? Color.cyan : Color.white.opacity(0.08), lineWidth: 1)
+                        )
+                        .foregroundStyle(focus == f ? Color.black : Color.white.opacity(0.88))
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
+    }
+
+    private var promptsSection: some View {
+        cardSection(title: "Guided prompts") {
+            Text("Templates like Journey — tap to insert text (you can edit everything).")
+                .font(.caption)
+                .foregroundStyle(.white.opacity(0.45))
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 10) {
+                    ForEach(promptsForFocus) { prompt in
+                        Button {
+                            apply(prompt)
+                        } label: {
+                            VStack(alignment: .leading, spacing: 6) {
+                                Text(prompt.title)
+                                    .font(.caption.weight(.bold))
+                                    .foregroundStyle(.white)
+                                    .lineLimit(2)
+                                Text("Tap to use")
+                                    .font(.caption2.weight(.semibold))
+                                    .foregroundStyle(.cyan.opacity(0.9))
+                            }
+                            .padding(12)
+                            .frame(width: 160, alignment: .leading)
+                            .background(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .fill(prompt.id == promptId ? Color.yellow.opacity(0.14) : Color.white.opacity(0.06))
+                            )
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .stroke(prompt.id == promptId ? Color.yellow.opacity(0.55) : Color.white.opacity(0.08), lineWidth: 1)
+                            )
+                        }
+                        .buttonStyle(.plain)
+                    }
+
+                    Button {
+                        let daily = JournalPromptLibrary.dailyPrompt(for: date, focus: focus)
+                        apply(daily)
+                    } label: {
+                        VStack(spacing: 6) {
+                            Image(systemName: "shuffle")
+                                .font(.title3)
+                            Text("Today's pick")
+                                .font(.caption.weight(.bold))
+                                .multilineTextAlignment(.center)
+                        }
+                        .foregroundStyle(.white.opacity(0.85))
+                        .padding(12)
+                        .frame(width: 100, height: 76)
+                        .background(RoundedRectangle(cornerRadius: 12).fill(Color.purple.opacity(0.22)))
+                        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.purple.opacity(0.45), lineWidth: 1))
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+
+            if !promptId.isEmpty {
+                Button("Clear guided template link") {
+                    promptId = ""
+                }
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.white.opacity(0.45))
+            }
+        }
+    }
+
+    private func cardSection(title: String, @ViewBuilder content: () -> some View) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(title.uppercased())
+                .font(.caption.weight(.bold))
+                .tracking(1.1)
+                .foregroundStyle(.white.opacity(0.38))
+            content()
+        }
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(Color.white.opacity(0.04))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(Color.white.opacity(0.07), lineWidth: 1)
+        )
+    }
+
+    private func apply(_ prompt: JournalPrompt) {
+        title = prompt.title
+        body_ = prompt.bodyStarter
+        focus = prompt.focus
+        promptId = prompt.id
     }
 
     private func moodEmoji(_ i: Int) -> String {
@@ -130,16 +304,49 @@ struct JournalEditorView: View {
             existing.body = body_
             existing.mood = mood
             existing.tags = tags
+            existing.focus = focus
+            existing.promptId = promptId
         } else {
             let new = JournalEntry(
                 date: date,
                 title: title,
                 body: body_,
                 mood: mood,
-                tags: tags
+                tags: tags,
+                focus: focus,
+                promptId: promptId
             )
             modelContext.insert(new)
         }
         try? modelContext.save()
+    }
+}
+
+// MARK: - Simple tag flow wrap
+
+private struct FlowTagWrap: View {
+    let tags: [String]
+    let onRemove: (String) -> Void
+
+    var body: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(tags, id: \.self) { tag in
+                    HStack(spacing: 4) {
+                        Text("#\(tag)")
+                        Button {
+                            onRemove(tag)
+                        } label: {
+                            Image(systemName: "xmark.circle.fill").imageScale(.small)
+                        }
+                    }
+                    .font(.caption.weight(.medium))
+                    .padding(.vertical, 6)
+                    .padding(.horizontal, 10)
+                    .background(Capsule().fill(Color.cyan.opacity(0.16)))
+                    .foregroundStyle(.cyan)
+                }
+            }
+        }
     }
 }
