@@ -55,7 +55,8 @@ struct HomeView: View {
     }
 
     private var greeting: String {
-        let name = avatar?.playerName ?? "Player"
+        let raw = avatar?.playerName.trimmingCharacters(in: .whitespaces) ?? ""
+        let name = raw.isEmpty ? "Player" : raw
         return "Hey, \(name)"
     }
 

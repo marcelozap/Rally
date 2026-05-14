@@ -24,14 +24,15 @@ struct ContentView: View {
                     mainTabs
                 } else {
                     NavigationStack {
-                        AvatarCustomizerView(config: avatar)
+                        AvatarCustomizerView(config: avatar, isFirstLaunch: true)
                     }
+                    .transition(.opacity)
                 }
             } else {
-                // First launch with empty store — RallyApp inserts a config
-                // on `didEnterBackground` recovery, but to be defensive we
-                // also insert here and let SwiftData publish the update.
+                // Defensive fallback — `RallyApp.seedIfNeeded` should already
+                // have inserted one before this view appears.
                 ProgressView()
+                    .tint(.cyan)
                     .onAppear {
                         let cfg = AvatarConfig()
                         modelContext.insert(cfg)
@@ -40,6 +41,7 @@ struct ContentView: View {
             }
         }
         .preferredColorScheme(.dark)
+        .animation(.easeInOut(duration: 0.3), value: avatarConfigs.first?.hasCompletedSetup ?? false)
     }
 
     private var mainTabs: some View {

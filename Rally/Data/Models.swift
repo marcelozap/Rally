@@ -179,7 +179,10 @@ final class JournalEntry {
 @Model
 final class AvatarConfig {
     var id: UUID = UUID()
-    var playerName: String = "Player"
+    /// Empty on a fresh install so the first-launch customizer forces the
+    /// player to type their own name. The customizer re-applies "Player" as
+    /// a defensive fallback if they save without entering one.
+    var playerName: String = ""
     var skinToneRaw: String = AvatarSkinTone.medium.rawValue
     var hairStyleRaw: String = AvatarHairStyle.short.rawValue
     var hairColorHex: String = "#3A2A1A"   // brown
