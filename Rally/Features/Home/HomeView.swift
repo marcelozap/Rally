@@ -1,0 +1,234 @@
+import SwiftUI
+import SwiftData
+
+struct HomeView: View {
+    @Query private var avatarConfigs: [AvatarConfig]
+    @Query(sort: \TrainingSession.date, order: .reverse) private var trainings: [TrainingSession]
+    @Query(sort: \MatchEntry.date, order: .reverse) private var matches: [MatchEntry]
+    @Query(sort: \JournalEntry.date, order: .reverse) private var journal: [JournalEntry]
+
+    @Binding var selectedTab: RallyTab
+    @Binding var logsSection: LogsSection
+
+    @State private var showingTrainingEditor = false
+    @State private var showingMatchEditor = false
+    @State private var showingJournalEditor = false
+
+    private var avatar: AvatarConfig? { avatarConfigs.first }
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(spacing: 20) {
+                    avatarCard
+                    quickActions
+                    weeklyStats
+                    recentJournal
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
+            }
+            .background(Color.black.ignoresSafeArea())
+            .navigationTitle(greeting)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    if let avatar = avatar {
+                        NavigationLink {
+                            AvatarCustomizerView(config: avatar)
+                        } label: {
+                            Image(systemName: "person.crop.circle")
+                                .foregroundStyle(.cyan)
+                        }
+                    }
+                }
+            }
+            .sheet(isPresented: $showingTrainingEditor) {
+                NavigationStack { TrainingEditorView(session: nil) }
+            }
+            .sheet(isPresented: $showingMatchEditor) {
+                NavigationStack { MatchEditorView(match: nil) }
+            }
+            .sheet(isPresented: $showingJournalEditor) {
+                NavigationStack { JournalEditorView(entry: nil) }
+            }
+        }
+    }
+
+    private var greeting: String {
+        let name = avatar?.playerName ?? "Player"
+        return "Hey, \(name)"
+    }
+
+    // MARK: - Avatar card
+
+    private var avatarCard: some View {
+        Group {
+            if let avatar = avatar {
+                ZStack(alignment: .bottomLeading) {
+                    AvatarView(config: avatar)
+                        .frame(height: 320)
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(avatar.playerName)
+                            .font(.system(.title, design: .rounded).weight(.heavy))
+                            .foregroundStyle(.white)
+                        Text(equippedSummary(avatar))
+                            .font(.caption)
+                            .foregroundStyle(.white.opacity(0.5))
+                    }
+                    .padding()
+                }
+            }
+        }
+    }
+
+    private func equippedSummary(_ avatar: AvatarConfig) -> String {
+        let top = ShopCatalog.item(id: avatar.equippedTopID)?.name ?? "—"
+        let racket = ShopCatalog.item(id: avatar.equippedRacketID)?.name ?? "—"
+        return "\(top) · \(racket)"
+    }
+
+    // MARK: - Quick actions
+
+    private var quickActions: some View {
+        VStack(spacing: 10) {
+            actionButton(icon: "tennis.racket", label: "Practice", tint: .cyan, big: true) {
+                selectedTab = .play
+            }
+            HStack(spacing: 10) {
+                actionButton(icon: "figure.tennis", label: "Log training", tint: Color(hex: "#C8FF36") ?? .green) {
+                    showingTrainingEditor = true
+                }
+                actionButton(icon: "trophy", label: "Log match", tint: Color(hex: "#FF8C00") ?? .orange) {
+                    showingMatchEditor = true
+                }
+                actionButton(icon: "book.closed", label: "Quick note", tint: Color(hex: "#D63384") ?? .pink) {
+                    showingJournalEditor = true
+                }
+            }
+        }
+    }
+
+    private func actionButton(
+        icon: String,
+        label: String,
+        tint: Color,
+        big: Bool = false,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            Group {
+                if big {
+                    HStack(spacing: 10) {
+                        Image(systemName: icon)
+                            .font(.title2)
+                        Text(label)
+                            .font(.system(.headline, design: .rounded).weight(.bold))
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 20)
+                } else {
+                    VStack(spacing: 6) {
+                        Image(systemName: icon)
+                            .font(.title3)
+                        Text(label)
+                            .font(.caption.weight(.semibold))
+                            .multilineTextAlignment(.center)
+                            .lineLimit(2)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 14)
+                }
+            }
+            .background(
+                RoundedRectangle(cornerRadius: 14)
+                    .fill(tint.opacity(0.18))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 14)
+                    .stroke(tint, lineWidth: 1)
+            )
+            .foregroundStyle(tint)
+        }
+        .buttonStyle(.plain)
+    }
+
+    // MARK: - Stats
+
+    private var weeklyStats: some View {
+        let cal = Calendar.current
+        let lastWeek = cal.date(byAdding: .day, value: -7, to: Date()) ?? Date()
+        let recentTrain = trainings.filter { $0.date >= lastWeek }
+        let recentMatches = matches.filter { $0.date >= lastWeek }
+        let totalMins = recentTrain.reduce(0) { $0 + $1.durationMinutes }
+        let wins = recentMatches.filter(\.resultWon).count
+        let losses = recentMatches.count - wins
+
+        return VStack(alignment: .leading, spacing: 12) {
+            Text("This week")
+                .font(.system(.headline, design: .rounded))
+                .foregroundStyle(.white)
+            HStack(spacing: 12) {
+                statTile(value: "\(recentTrain.count)", label: "sessions", tint: .cyan)
+                statTile(value: "\(totalMins)m", label: "trained", tint: .cyan)
+                statTile(value: "\(wins)-\(losses)", label: "record", tint: Color(hex: "#FF8C00") ?? .orange)
+            }
+        }
+    }
+
+    private func statTile(value: String, label: String, tint: Color) -> some View {
+        VStack(spacing: 4) {
+            Text(value)
+                .font(.system(.title2, design: .rounded).weight(.bold))
+                .foregroundStyle(tint)
+            Text(label)
+                .font(.caption)
+                .foregroundStyle(.white.opacity(0.5))
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 14)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color.white.opacity(0.04))
+        )
+    }
+
+    // MARK: - Journal preview
+
+    @ViewBuilder
+    private var recentJournal: some View {
+        if let entry = journal.first {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack {
+                    Text("From the journal")
+                        .font(.system(.headline, design: .rounded))
+                        .foregroundStyle(.white)
+                    Spacer()
+                    Button {
+                        selectedTab = .journal
+                    } label: {
+                        Text("See all")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.cyan)
+                    }
+                }
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(entry.title.isEmpty ? "Untitled entry" : entry.title)
+                        .font(.system(.body, design: .rounded).weight(.semibold))
+                        .foregroundStyle(.white)
+                    Text(entry.body.isEmpty ? "No body yet." : entry.body)
+                        .font(.subheadline)
+                        .foregroundStyle(.white.opacity(0.7))
+                        .lineLimit(3)
+                    Text(entry.date, format: .dateTime.month().day().year())
+                        .font(.caption)
+                        .foregroundStyle(.white.opacity(0.4))
+                }
+                .padding(14)
+                .background(
+                    RoundedRectangle(cornerRadius: 14)
+                        .fill(Color.white.opacity(0.04))
+                )
+            }
+        }
+    }
+}

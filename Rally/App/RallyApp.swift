@@ -1,18 +1,36 @@
 import SwiftUI
+import SwiftData
 
 @main
 struct RallyApp: App {
 
+    /// Shared SwiftData container. Holds the user's avatar config plus all
+    /// log entries (training, match, journal). Catalog content (shop items,
+    /// vendors) is not in SwiftData — it lives in code.
+    let modelContainer: ModelContainer
+
     init() {
-        // Wire managers to the event bus at process start. Order is
-        // irrelevant — each subscribes independently.
+        // Build the container before touching any view code so first-launch
+        // queries don't race the schema bring-up.
+        do {
+            modelContainer = try ModelContainer(
+                for: AvatarConfig.self,
+                TrainingSession.self,
+                MatchEntry.self,
+                JournalEntry.self
+            )
+            Self.seedIfNeeded(container: modelContainer)
+        } catch {
+            fatalError("Rally: failed to bring up SwiftData store — \(error)")
+        }
+
+        // Wire managers to the event bus. Order is irrelevant.
         _ = HapticManager.shared
         _ = AudioManager.shared
         _ = ParticleManager.shared
 
-        // Eliminate first-touch latency: force one no-op pass through each
-        // engine so the audio I/O graph and the haptic dispatch path are
-        // already warm by the time the player taps PLAY.
+        // Eliminate first-touch latency: prime the audio I/O graph and the
+        // haptic engine before the player even sees the menu.
         AudioManager.shared.prewarm()
         HapticManager.shared.prewarm()
     }
@@ -21,8 +39,19 @@ struct RallyApp: App {
         WindowGroup {
             ContentView()
                 .preferredColorScheme(.dark)
-                .statusBarHidden()
-                .persistentSystemOverlays(.hidden)
         }
+        .modelContainer(modelContainer)
+    }
+
+    /// Insert a single empty `AvatarConfig` row on a fresh install. The
+    /// customizer will mark it `hasCompletedSetup = true` once the player
+    /// finishes the first-launch flow.
+    private static func seedIfNeeded(container: ModelContainer) {
+        let context = ModelContext(container)
+        let descriptor = FetchDescriptor<AvatarConfig>()
+        let existing = (try? context.fetch(descriptor)) ?? []
+        guard existing.isEmpty else { return }
+        context.insert(AvatarConfig())
+        try? context.save()
     }
 }

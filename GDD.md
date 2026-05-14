@@ -1,14 +1,43 @@
-# Rally — Game Design Document
+# Rally — Product & Game Design Document
 
-> _Working title in source: **SwipeBeat**. Shipping name: **Rally**._
->
-> A high-polish rhythm-adjacent iPhone game. The whole product is engineered
-> around one feeling: a **Perfect Hit** should feel like the screen, the
-> phone, the speakers, and your spine all snap to the same beat.
+> Rally is a **tennis lifestyle app** built around one daily-engagement hook.
+> Players keep their training log, match log, and journal in one place,
+> customize a tennis avatar that wears real-brand apparel from in-app
+> vendors (with deep links out to buy), and tap into a high-polish
+> rhythm-swipe mini-game whenever they want a few minutes of dopamine.
+
+## A. Product surface (5 tabs)
+
+| Tab        | Purpose                                                                                 | Backed by                                                  |
+|------------|-----------------------------------------------------------------------------------------|------------------------------------------------------------|
+| **Home**   | Avatar hero, weekly stats, quick log shortcuts, latest journal preview                  | SwiftData queries across all entities                      |
+| **Play**   | The rhythm-swipe mini-game (SpriteKit, see §0–§4 below)                                 | `GameScene` + procedural beatmap                           |
+| **Logs**   | Training sessions + match results, segmented control at top                              | `TrainingSession`, `MatchEntry` @Model                      |
+| **Journal**| Free-form entries with mood + tags                                                       | `JournalEntry` @Model                                       |
+| **Shop**   | Browse apparel/rackets by category or by vendor; "try on" overlays item on avatar; deep link to vendor product page | `ShopCatalog` (code), `Vendor` + `ShopItem` (code)         |
+
+### Avatar lifecycle
+
+1. **First launch:** an empty `AvatarConfig` is seeded; the customizer
+   gates the main tabs until `hasCompletedSetup` is set.
+2. **Steady state:** the avatar is visible on Home and on every Shop item
+   detail (with a try-on toggle that previews the item on a copy of the
+   config without committing).
+3. **Equip:** "Equip" writes to `AvatarConfig.equipped<Slot>ID`. Every
+   surface that renders the avatar re-fetches the linked `ShopItem` from
+   `ShopCatalog` so equipped color/accent updates instantly.
+
+### Why this scope
+
+The mini-game alone has a low retention ceiling; pure rhythm games churn
+hard. Pairing it with a tennis-life journal + shop turns Rally into a
+daily-open app where the mini-game is the carrot, not the entire product.
+The shop with deep links is the monetization wedge (affiliate revenue or
+a future native marketplace).
 
 ---
 
-## 0. Pillars
+## 0. Game pillars
 
 1. **ASMR-grade impact.** Every hit is a multi-system event (visual + audio +
    haptic) coordinated to the millisecond.
@@ -223,14 +252,14 @@ team can add skins via a remote-config drop without an App Store release.
 ```
 Rally/
   App/
-    RallyApp.swift            # @main, SwiftUI App, prewarms audio + haptics
-    ContentView.swift         # main menu router, hosts SpriteView
+    RallyApp.swift            # @main, ModelContainer, prewarms audio + haptics
+    ContentView.swift         # TabView root + first-launch avatar gate
   Game/
     GameScene.swift           # SpriteKit scene + camera node + frame-stop
-    GameEvent.swift           # the typed event payload
+    GameEvent.swift           # typed event payload
     HitQuality.swift
     Lane.swift
-    RhythmSpawner.swift       # beatmap-driven, engine-agnostic
+    RhythmSpawner.swift       # procedural + beatmap-driven spawner
     Tunables.swift            # every "feel" number, single source of truth
   Audio/
     ToneSynth.swift           # programmatic SFX synth (no asset files)
@@ -240,12 +269,29 @@ Rally/
     AudioManager.swift        # AVAudioEngine + ToneSynth wiring
     ParticleManager.swift     # bursts, flashes, death sequence
     CameraShake.swift         # damped-sine shake utility
+  Data/
+    Models.swift              # @Model classes (Avatar, Training, Match, Journal)
+    ShopCatalog.swift         # static vendor + shop item catalog
+  Features/
+    Home/HomeView.swift
+    Logs/LogsView.swift
+    Training/TrainingLogView.swift
+    Training/TrainingEditorView.swift
+    Match/MatchLogView.swift
+    Match/MatchEditorView.swift
+    Journal/JournalView.swift
+    Journal/JournalEditorView.swift
+    Shop/ShopView.swift
+    Shop/ShopItemDetailView.swift
+    Avatar/AvatarView.swift           # SwiftUI composition (skin, hair, kit, racket)
+    Avatar/AvatarCustomizerView.swift # first-launch flow
   Cosmetics/
+    # (In-game ball-skin cosmetics — distinct from Shop apparel. Future.)
     Cosmetic.swift
     CosmeticCatalog.swift
   Resources/
     Assets.xcassets/          # (added in Xcode)
-    cosmetics.json            # catalog seed
+    cosmetics.json            # in-game cosmetics seed (future)
 ```
 
 ---
