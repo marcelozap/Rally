@@ -18,6 +18,12 @@ import UIKit
 /// generously on death.
 final class GameScene: SKScene {
 
+    // MARK: - Configuration
+
+    /// How long a single rally session lasts before `sessionEnd` is fired.
+    /// The procedural beatmap is generated to match.
+    var sessionDurationSeconds: Double = 180
+
     // MARK: - Runtime state
 
     private var combo: Int = 0
@@ -29,10 +35,14 @@ final class GameScene: SKScene {
     private var startTime: TimeInterval = 0
     private var frameStopUntil: TimeInterval = 0
     private var isDying = false
+    private var sessionEnded = false
+
+    private var spawner: RhythmSpawner?
 
     private var cameraNode: SKCameraNode!
     private var scoreLabel: SKLabelNode!
     private var comboLabel: SKLabelNode!
+    private var timeLabel: SKLabelNode!
     private var strikeLine: SKShapeNode!
 
     // MARK: - Lifecycle
@@ -47,6 +57,14 @@ final class GameScene: SKScene {
         setupSwipeRecognizers(in: view)
 
         ParticleManager.shared.attach(scene: self, shakeTarget: cameraNode)
+
+        let beatmap = Beatmap.procedural(durationSeconds: sessionDurationSeconds)
+        spawner = RhythmSpawner(
+            beatmap: beatmap,
+            travelSeconds: Tunables.ballTravelSeconds
+        ) { [weak self] note in
+            self?.spawnBall(lane: note.lane, arrivalTime: note.arrivalTime)
+        }
 
         startTime = CACurrentMediaTime()
         GameEventBus.shared.publish(.sessionStart)
@@ -117,6 +135,16 @@ final class GameScene: SKScene {
         combo.horizontalAlignmentMode = .center
         addChild(combo)
         comboLabel = combo
+
+        let time = SKLabelNode(fontNamed: "AvenirNext-Medium")
+        time.text = "3:00"
+        time.fontSize = 18
+        time.fontColor = UIColor(white: 1, alpha: 0.5)
+        time.position = CGPoint(x: size.width / 2, y: size.height * 0.93)
+        time.zPosition = 50
+        time.horizontalAlignmentMode = .center
+        addChild(time)
+        timeLabel = time
     }
 
     private func setupSwipeRecognizers(in view: SKView) {
@@ -138,8 +166,26 @@ final class GameScene: SKScene {
         speed = 1
 
         let trackTime = currentTime - startTime
+
+        if !sessionEnded {
+            spawner?.tick(trackTime: trackTime)
+        }
         moveBalls(trackTime: trackTime)
         cullMissedBalls(trackTime: trackTime)
+        updateTimeLabel(trackTime: trackTime)
+
+        if !sessionEnded, trackTime >= sessionDurationSeconds, activeBalls.isEmpty {
+            sessionEnded = true
+            GameEventBus.shared.publish(.sessionEnd(finalScore: score, maxCombo: maxCombo))
+        }
+    }
+
+    private func updateTimeLabel(trackTime: Double) {
+        guard let timeLabel = timeLabel else { return }
+        let remaining = max(0, sessionDurationSeconds - trackTime)
+        let minutes = Int(remaining) / 60
+        let seconds = Int(remaining) % 60
+        timeLabel.text = String(format: "%d:%02d", minutes, seconds)
     }
 
     private func moveBalls(trackTime: Double) {
@@ -267,7 +313,8 @@ final class GameScene: SKScene {
         // Clear in-flight balls so the player isn't immediately killed again
         // when the freeze ends.
         for ball in activeBalls {
-            ball.removeFromParent()
+            let fade = SKAction.fadeOut(withDuration: 0.18)
+            ball.run(.sequence([fade, .removeFromParent()]))
         }
         activeBalls.removeAll()
 
@@ -277,6 +324,13 @@ final class GameScene: SKScene {
             self?.isDying = false
         }
     }
+
+    // MARK: - Public score accessors (for SwiftUI overlays)
+
+    var currentScore: Int { score }
+    var currentCombo: Int { combo }
+    var currentMaxCombo: Int { maxCombo }
+    var sessionIsOver: Bool { sessionEnded }
 
     private func updateHUD() {
         scoreLabel?.text = "\(score)"
@@ -300,7 +354,10 @@ final class GameScene: SKScene {
     // MARK: - Teardown
 
     override func willMove(from view: SKView) {
-        GameEventBus.shared.publish(.sessionEnd(finalScore: score, maxCombo: maxCombo))
+        if !sessionEnded {
+            sessionEnded = true
+            GameEventBus.shared.publish(.sessionEnd(finalScore: score, maxCombo: maxCombo))
+        }
     }
 }
 
