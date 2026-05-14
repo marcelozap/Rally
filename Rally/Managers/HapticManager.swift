@@ -1,57 +1,125 @@
 import CoreHaptics
 import UIKit
 
-/// Owns the `CHHapticEngine` lifecycle and emits hit-quality-tuned patterns.
+/// Owns the `CHHapticEngine` and fires hit-quality-tuned patterns.
 ///
-/// Strategy (see `GDD.md §1.1`):
-/// - One engine, started once, restarted on `.stoppedNotification`.
-/// - Patterns are **pre-built** at launch and cached, not constructed on the
-///   hot path.
-/// - Fallback to `UIImpactFeedbackGenerator` on devices without Core Haptics.
+/// ## Latency budget
+///
+/// Flappy Bird's feel hinges on the haptic firing within the same vsync as
+/// the visual. `CHHapticEngine`'s first play after process launch has a
+/// non-trivial warm-up cost, so we:
+///
+/// 1. Start the engine eagerly in `init`.
+/// 2. Pre-build every pattern as a `CHHapticPatternPlayer` and keep them
+///    cached. Subsequent plays only call `start(atTime:)`.
+/// 3. Fire a zero-intensity "primer" pattern on `prewarm()`, which forces
+///    the engine through its first dispatch before the player touches the
+///    screen.
+///
+/// ## Graceful degradation
+///
+/// On devices without Core Haptics (or if the engine dies), we fall back to
+/// `UIImpactFeedbackGenerator`. Gameplay never depends on haptics succeeding.
 final class HapticManager {
     static let shared = HapticManager()
 
     var isEnabled: Bool = true
 
-    private var engine: CHHapticEngine?
     private let supportsHaptics: Bool
+    private var engine: CHHapticEngine?
 
-    private let lightFallback = UIImpactFeedbackGenerator(style: .light)
+    private var hitPlayers: [HitQuality: CHHapticPatternPlayer] = [:]
+    private var missPlayer: CHHapticPatternPlayer?
+    private var breakPlayer: CHHapticPatternPlayer?
+    private var tierPlayers: [Int: CHHapticPatternPlayer] = [:]
+    private var primerPlayer: CHHapticPatternPlayer?
+
+    private let lightFallback  = UIImpactFeedbackGenerator(style: .light)
     private let mediumFallback = UIImpactFeedbackGenerator(style: .medium)
-    private let heavyFallback = UIImpactFeedbackGenerator(style: .heavy)
+    private let heavyFallback  = UIImpactFeedbackGenerator(style: .heavy)
 
     private init() {
         supportsHaptics = CHHapticEngine.capabilitiesForHardware().supportsHaptics
+
         if supportsHaptics {
             startEngine()
+            buildPatternCache()
         } else {
-            lightFallback.prepare()
-            mediumFallback.prepare()
-            heavyFallback.prepare()
+            [lightFallback, mediumFallback, heavyFallback].forEach { $0.prepare() }
         }
+
         GameEventBus.shared.subscribe(self) { [weak self] event in
             self?.handle(event)
         }
     }
 
+    /// Force the first dispatch through the engine so a real hit isn't the
+    /// first one. Safe to call multiple times.
+    func prewarm() {
+        guard supportsHaptics, let player = primerPlayer else {
+            mediumFallback.prepare()
+            return
+        }
+        try? player.start(atTime: 0)
+    }
+
+    // MARK: - Engine
+
     private func startEngine() {
         do {
             let engine = try CHHapticEngine()
+            engine.isAutoShutdownEnabled = false
             engine.stoppedHandler = { [weak self] _ in
                 self?.startEngine()
+                self?.buildPatternCache()
             }
             engine.resetHandler = { [weak self] in
                 try? self?.engine?.start()
+                self?.buildPatternCache()
             }
             try engine.start()
             self.engine = engine
         } catch {
-            // Silently degrade — `play(...)` below will fall back to UIKit.
             self.engine = nil
         }
     }
 
-    // MARK: Event routing
+    private func buildPatternCache() {
+        guard let engine = engine else { return }
+
+        hitPlayers = [:]
+        for quality in [HitQuality.perfect, .great, .good] {
+            if let pattern = makeHitPattern(quality: quality),
+               let player = try? engine.makePlayer(with: pattern) {
+                hitPlayers[quality] = player
+            }
+        }
+
+        if let pattern = makeMissPattern(),
+           let player = try? engine.makePlayer(with: pattern) {
+            missPlayer = player
+        }
+
+        if let pattern = makeBreakPattern(),
+           let player = try? engine.makePlayer(with: pattern) {
+            breakPlayer = player
+        }
+
+        tierPlayers = [:]
+        for tier in 1...4 {
+            if let pattern = makeTierPattern(tier: tier),
+               let player = try? engine.makePlayer(with: pattern) {
+                tierPlayers[tier] = player
+            }
+        }
+
+        if let pattern = makePrimerPattern(),
+           let player = try? engine.makePlayer(with: pattern) {
+            primerPlayer = player
+        }
+    }
+
+    // MARK: - Event routing
 
     private func handle(_ event: GameEvent) {
         guard isEnabled else { return }
@@ -61,7 +129,7 @@ final class HapticManager {
         case .miss:
             playMiss()
         case .comboTier(let tier) where tier > 0:
-            playTierBump(tier: tier)
+            playTier(tier: tier)
         case .comboBreak:
             playBreak()
         default:
@@ -69,10 +137,10 @@ final class HapticManager {
         }
     }
 
-    // MARK: Patterns
+    // MARK: - Play
 
     private func play(quality: HitQuality) {
-        guard supportsHaptics, let engine = engine else {
+        guard supportsHaptics, let player = hitPlayers[quality] else {
             switch quality {
             case .perfect: heavyFallback.impactOccurred(intensity: 1.0)
             case .great:   mediumFallback.impactOccurred(intensity: 0.8)
@@ -81,14 +149,40 @@ final class HapticManager {
             }
             return
         }
+        try? player.start(atTime: 0)
+    }
 
+    private func playMiss() {
+        guard supportsHaptics, let player = missPlayer else {
+            lightFallback.impactOccurred(intensity: 0.3)
+            return
+        }
+        try? player.start(atTime: 0)
+    }
+
+    private func playTier(tier: Int) {
+        guard supportsHaptics, let player = tierPlayers[min(tier, 4)] else { return }
+        try? player.start(atTime: 0)
+    }
+
+    private func playBreak() {
+        guard supportsHaptics, let player = breakPlayer else {
+            heavyFallback.impactOccurred(intensity: 1.0)
+            return
+        }
+        try? player.start(atTime: 0)
+    }
+
+    // MARK: - Pattern definitions
+
+    private func makeHitPattern(quality: HitQuality) -> CHHapticPattern? {
         let intensity: Float
         let sharpness: Float
         switch quality {
-        case .perfect: intensity = 1.0; sharpness = 0.9
-        case .great:   intensity = 0.7; sharpness = 0.6
-        case .good:    intensity = 0.4; sharpness = 0.3
-        case .miss:    return
+        case .perfect: intensity = Tunables.hapticPerfect; sharpness = 0.9
+        case .great:   intensity = Tunables.hapticGreat;   sharpness = 0.65
+        case .good:    intensity = Tunables.hapticGood;    sharpness = 0.4
+        case .miss:    return nil
         }
 
         let transient = CHHapticEvent(
@@ -102,45 +196,61 @@ final class HapticManager {
         let continuous = CHHapticEvent(
             eventType: .hapticContinuous,
             parameters: [
-                .init(parameterID: .hapticIntensity, value: intensity * 0.6),
+                .init(parameterID: .hapticIntensity, value: intensity * 0.5),
                 .init(parameterID: .hapticSharpness, value: sharpness * 0.4)
             ],
-            relativeTime: 0.002,
-            duration: 0.030
+            relativeTime: 0.003,
+            duration: 0.028
         )
-
-        do {
-            let pattern = try CHHapticPattern(events: [transient, continuous], parameters: [])
-            let player = try engine.makePlayer(with: pattern)
-            try player.start(atTime: 0)
-        } catch {
-            // Best-effort fallback.
-            mediumFallback.impactOccurred()
-        }
+        return try? CHHapticPattern(events: [transient, continuous], parameters: [])
     }
 
-    private func playMiss() {
-        guard supportsHaptics, let engine = engine else {
-            lightFallback.impactOccurred(intensity: 0.3)
-            return
-        }
+    private func makeMissPattern() -> CHHapticPattern? {
         let dull = CHHapticEvent(
             eventType: .hapticContinuous,
             parameters: [
-                .init(parameterID: .hapticIntensity, value: 0.3),
-                .init(parameterID: .hapticSharpness, value: 0.0)
+                .init(parameterID: .hapticIntensity, value: Tunables.hapticMiss),
+                .init(parameterID: .hapticSharpness, value: 0.05)
             ],
             relativeTime: 0,
             duration: 0.080
         )
-        do {
-            let pattern = try CHHapticPattern(events: [dull], parameters: [])
-            try engine.makePlayer(with: pattern).start(atTime: 0)
-        } catch {}
+        return try? CHHapticPattern(events: [dull], parameters: [])
     }
 
-    private func playTierBump(tier: Int) {
-        guard supportsHaptics, let engine = engine else { return }
+    /// The "Flappy death" haptic — heavy thump followed by a descending
+    /// second-tap. Calibrated to coincide with the death-thump audio and
+    /// the extended frame-stop.
+    private func makeBreakPattern() -> CHHapticPattern? {
+        let thump = CHHapticEvent(
+            eventType: .hapticTransient,
+            parameters: [
+                .init(parameterID: .hapticIntensity, value: Tunables.hapticDeath),
+                .init(parameterID: .hapticSharpness, value: 0.15)
+            ],
+            relativeTime: 0
+        )
+        let rumble = CHHapticEvent(
+            eventType: .hapticContinuous,
+            parameters: [
+                .init(parameterID: .hapticIntensity, value: 0.8),
+                .init(parameterID: .hapticSharpness, value: 0.1)
+            ],
+            relativeTime: 0.005,
+            duration: 0.180
+        )
+        let tail = CHHapticEvent(
+            eventType: .hapticTransient,
+            parameters: [
+                .init(parameterID: .hapticIntensity, value: 0.55),
+                .init(parameterID: .hapticSharpness, value: 0.05)
+            ],
+            relativeTime: 0.220
+        )
+        return try? CHHapticPattern(events: [thump, rumble, tail], parameters: [])
+    }
+
+    private func makeTierPattern(tier: Int) -> CHHapticPattern? {
         let intensity = min(1.0, 0.4 + 0.15 * Float(tier))
         let event = CHHapticEvent(
             eventType: .hapticTransient,
@@ -150,37 +260,18 @@ final class HapticManager {
             ],
             relativeTime: 0
         )
-        do {
-            let pattern = try CHHapticPattern(events: [event], parameters: [])
-            try engine.makePlayer(with: pattern).start(atTime: 0)
-        } catch {}
+        return try? CHHapticPattern(events: [event], parameters: [])
     }
 
-    private func playBreak() {
-        guard supportsHaptics, let engine = engine else {
-            heavyFallback.impactOccurred()
-            return
-        }
-        // Descending double-tap.
-        let e1 = CHHapticEvent(
+    private func makePrimerPattern() -> CHHapticPattern? {
+        let silent = CHHapticEvent(
             eventType: .hapticTransient,
             parameters: [
-                .init(parameterID: .hapticIntensity, value: 0.9),
-                .init(parameterID: .hapticSharpness, value: 0.2)
+                .init(parameterID: .hapticIntensity, value: 0.001),
+                .init(parameterID: .hapticSharpness, value: 0.001)
             ],
             relativeTime: 0
         )
-        let e2 = CHHapticEvent(
-            eventType: .hapticTransient,
-            parameters: [
-                .init(parameterID: .hapticIntensity, value: 0.6),
-                .init(parameterID: .hapticSharpness, value: 0.1)
-            ],
-            relativeTime: 0.07
-        )
-        do {
-            let pattern = try CHHapticPattern(events: [e1, e2], parameters: [])
-            try engine.makePlayer(with: pattern).start(atTime: 0)
-        } catch {}
+        return try? CHHapticPattern(events: [silent], parameters: [])
     }
 }

@@ -1,20 +1,24 @@
 import SpriteKit
 import UIKit
 
-/// Core SpriteKit scene. The only thing in the entire app that publishes
-/// `GameEvent`s. Feedback (haptics, audio, particles) is decoupled via
-/// `GameEventBus`.
+/// Core SpriteKit scene. The single publisher of `GameEvent`s. All feedback
+/// (audio, haptics, particles, shake) is decoupled via `GameEventBus`.
+///
+/// ## Camera
+///
+/// We use an `SKCameraNode` even though the world is static, so that screen
+/// shake is a single position offset on the camera rather than translating
+/// every node. The camera is what `ParticleManager` shakes via
+/// `CameraShake.shake(_:)`.
+///
+/// ## Frame-stop
+///
+/// `scene.speed = 0` halts all `SKAction`s and the update loop, achieving a
+/// classic "hit pause." We use it sparingly on hits (per `Tunables`) and
+/// generously on death.
 final class GameScene: SKScene {
 
-    // MARK: Tunables
-
-    /// How long a ball takes to travel from spawn line to strike line.
-    private var travelSeconds: Double = 1.4
-
-    private let strikeLineYRatio: CGFloat = 0.25
-    private let spawnLineYRatio:  CGFloat = 1.05
-
-    // MARK: Runtime state
+    // MARK: - Runtime state
 
     private var combo: Int = 0
     private var maxCombo: Int = 0
@@ -24,28 +28,95 @@ final class GameScene: SKScene {
     private var activeBalls: [BallNode] = []
     private var startTime: TimeInterval = 0
     private var frameStopUntil: TimeInterval = 0
+    private var isDying = false
 
-    // MARK: Lifecycle
+    private var cameraNode: SKCameraNode!
+    private var scoreLabel: SKLabelNode!
+    private var comboLabel: SKLabelNode!
+    private var strikeLine: SKShapeNode!
+
+    // MARK: - Lifecycle
 
     override func didMove(to view: SKView) {
         backgroundColor = .black
         physicsWorld.gravity = .zero
 
+        setupCamera()
         setupStrikeLine()
+        setupHUD()
         setupSwipeRecognizers(in: view)
+
+        ParticleManager.shared.attach(scene: self, shakeTarget: cameraNode)
 
         startTime = CACurrentMediaTime()
         GameEventBus.shared.publish(.sessionStart)
     }
 
+    private func setupCamera() {
+        let cam = SKCameraNode()
+        cam.position = CGPoint(x: 0, y: 0)
+        addChild(cam)
+        camera = cam
+        cameraNode = cam
+        // Keep the camera at scene-center so position offsets from
+        // CameraShake read as "screen shake" rather than "scroll".
+        cam.position = CGPoint(x: 0, y: 0)
+    }
+
+    override func didChangeSize(_ oldSize: CGSize) {
+        // SKCameraNode's position is in scene coordinates. With anchorPoint
+        // (0,0), camera at (size.width/2, size.height/2) shows centered.
+        anchorPoint = CGPoint(x: 0, y: 0)
+        cameraNode?.position = CGPoint(x: size.width / 2, y: size.height / 2)
+
+        // Re-layout strike line if it exists.
+        if let line = strikeLine {
+            line.position = CGPoint(x: size.width / 2, y: size.height * Tunables.strikeLineYRatio)
+            line.path = CGPath(
+                rect: CGRect(x: -size.width / 2, y: -1, width: size.width, height: 2),
+                transform: nil
+            )
+        }
+        if let label = scoreLabel {
+            label.position = CGPoint(x: size.width / 2, y: size.height * 0.88)
+        }
+        if let combo = comboLabel {
+            combo.position = CGPoint(x: size.width / 2, y: size.height * 0.82)
+        }
+    }
+
     private func setupStrikeLine() {
-        let y = size.height * strikeLineYRatio
-        let line = SKShapeNode(rectOf: CGSize(width: size.width, height: 1.5))
+        let y = size.height * Tunables.strikeLineYRatio
+        let line = SKShapeNode(rect: CGRect(x: -size.width / 2, y: -1, width: size.width, height: 2))
         line.position = CGPoint(x: size.width / 2, y: y)
         line.strokeColor = .clear
-        line.fillColor = UIColor(red: 0, green: 1, blue: 1, alpha: 0.35)
-        line.glowWidth = 6
+        line.fillColor = UIColor(red: 0, green: 1, blue: 1, alpha: 0.4)
+        line.glowWidth = 8
+        line.zPosition = 10
         addChild(line)
+        strikeLine = line
+    }
+
+    private func setupHUD() {
+        let score = SKLabelNode(fontNamed: "AvenirNext-Bold")
+        score.text = "0"
+        score.fontSize = 48
+        score.fontColor = .white
+        score.position = CGPoint(x: size.width / 2, y: size.height * 0.88)
+        score.zPosition = 50
+        score.horizontalAlignmentMode = .center
+        addChild(score)
+        scoreLabel = score
+
+        let combo = SKLabelNode(fontNamed: "AvenirNext-Medium")
+        combo.text = ""
+        combo.fontSize = 22
+        combo.fontColor = UIColor(white: 1, alpha: 0.6)
+        combo.position = CGPoint(x: size.width / 2, y: size.height * 0.82)
+        combo.zPosition = 50
+        combo.horizontalAlignmentMode = .center
+        addChild(combo)
+        comboLabel = combo
     }
 
     private func setupSwipeRecognizers(in view: SKView) {
@@ -57,7 +128,7 @@ final class GameScene: SKScene {
         view.addGestureRecognizer(right)
     }
 
-    // MARK: Update loop
+    // MARK: - Update loop
 
     override func update(_ currentTime: TimeInterval) {
         if currentTime < frameStopUntil {
@@ -67,29 +138,26 @@ final class GameScene: SKScene {
         speed = 1
 
         let trackTime = currentTime - startTime
-        moveBalls(deltaTrackTime: trackTime)
+        moveBalls(trackTime: trackTime)
         cullMissedBalls(trackTime: trackTime)
-
-        // TODO: drive RhythmSpawner here once a beatmap is wired up.
     }
 
-    private func moveBalls(deltaTrackTime: Double) {
-        let strikeY = size.height * strikeLineYRatio
-        let spawnY  = size.height * spawnLineYRatio
+    private func moveBalls(trackTime: Double) {
+        let strikeY = size.height * Tunables.strikeLineYRatio
+        let spawnY  = size.height * Tunables.spawnLineYRatio
         let distance = spawnY - strikeY
 
         for ball in activeBalls {
-            // Linear travel for now; ease-in can come later.
-            let progress = max(0, min(1, (deltaTrackTime - ball.spawnTime) / travelSeconds))
+            let progress = max(0, min(1, (trackTime - ball.spawnTime) / Tunables.ballTravelSeconds))
             ball.position.y = spawnY - distance * CGFloat(progress)
         }
     }
 
     private func cullMissedBalls(trackTime: Double) {
-        let strikeY = size.height * strikeLineYRatio
+        let strikeY = size.height * Tunables.strikeLineYRatio
         var stillAlive: [BallNode] = []
         for ball in activeBalls {
-            if ball.position.y < strikeY - 40 {
+            if ball.position.y < strikeY - Tunables.cullBelowStrikePoints {
                 ball.removeFromParent()
                 registerMiss(lane: ball.lane)
             } else {
@@ -99,31 +167,33 @@ final class GameScene: SKScene {
         activeBalls = stillAlive
     }
 
-    // MARK: Spawning (called by RhythmSpawner)
+    // MARK: - Spawning (called by RhythmSpawner)
 
-    /// Spawn a ball that should _arrive_ at the strike line at `arrivalTime`
-    /// (track-relative seconds).
     func spawnBall(lane: Lane, arrivalTime: Double) {
-        let spawnTime = arrivalTime - travelSeconds
+        let spawnTime = arrivalTime - Tunables.ballTravelSeconds
         let ball = BallNode(lane: lane, spawnTime: spawnTime)
         let x = lane == .left ? size.width * 0.3 : size.width * 0.7
-        ball.position = CGPoint(x: x, y: size.height * spawnLineYRatio)
+        ball.position = CGPoint(x: x, y: size.height * Tunables.spawnLineYRatio)
         addChild(ball)
         activeBalls.append(ball)
     }
 
-    // MARK: Input
+    // MARK: - Input
 
     @objc private func handleSwipeLeft()  { resolveSwipe(lane: .left) }
     @objc private func handleSwipeRight() { resolveSwipe(lane: .right) }
 
     private func resolveSwipe(lane: Lane) {
+        guard !isDying else { return }
+
         guard let target = nearestBall(in: lane) else {
+            // No ball to hit — count as a miss so the player feels the cost
+            // of mashing.
             registerMiss(lane: lane)
             return
         }
         let trackTime = CACurrentMediaTime() - startTime
-        let arrivalTime = target.spawnTime + travelSeconds
+        let arrivalTime = target.spawnTime + Tunables.ballTravelSeconds
         let delta = abs(trackTime - arrivalTime)
         let quality = HitQuality.grade(absDelta: delta)
 
@@ -131,18 +201,17 @@ final class GameScene: SKScene {
             registerMiss(lane: lane)
             return
         }
-
         registerHit(ball: target, quality: quality)
     }
 
     private func nearestBall(in lane: Lane) -> BallNode? {
-        let strikeY = size.height * strikeLineYRatio
+        let strikeY = size.height * Tunables.strikeLineYRatio
         return activeBalls
             .filter { $0.lane == lane }
             .min { abs($0.position.y - strikeY) < abs($1.position.y - strikeY) }
     }
 
-    // MARK: Hit / miss resolution — the _only_ event publishers
+    // MARK: - Hit / miss
 
     private func registerHit(ball: BallNode, quality: HitQuality) {
         activeBalls.removeAll { $0 === ball }
@@ -151,9 +220,17 @@ final class GameScene: SKScene {
         combo += 1
         maxCombo = max(maxCombo, combo)
         score += quality.baseScore * max(1, combo / 5)
+        updateHUD()
 
-        if quality.frameStopSeconds > 0 {
-            frameStopUntil = CACurrentMediaTime() + quality.frameStopSeconds
+        let freezeMs: Double
+        switch quality {
+        case .perfect: freezeMs = Tunables.frameStopPerfectMs
+        case .great:   freezeMs = Tunables.frameStopGreatMs
+        case .good:    freezeMs = Tunables.frameStopGoodMs
+        case .miss:    freezeMs = Tunables.frameStopMissMs
+        }
+        if freezeMs > 0 {
+            frameStopUntil = CACurrentMediaTime() + freezeMs.seconds
         }
 
         GameEventBus.shared.publish(
@@ -170,25 +247,57 @@ final class GameScene: SKScene {
     private func registerMiss(lane: Lane) {
         let previous = combo
         if combo > 0 {
-            combo = 0
-            lastComboTier = 0
-            GameEventBus.shared.publish(.comboBreak(previous: previous))
+            // The Flappy moment.
+            triggerDeathSequence(previousCombo: previous)
+        } else {
+            // Soft miss — no combo to break, just a little buzz.
+            GameEventBus.shared.publish(.miss(lane: lane))
         }
-        GameEventBus.shared.publish(.miss(lane: lane))
     }
 
-    /// 0 → none, 1 → 5+, 2 → 15+, 3 → 30+, 4 → 50+. Used to gate audio stems.
+    private func triggerDeathSequence(previousCombo: Int) {
+        isDying = true
+        combo = 0
+        lastComboTier = 0
+        updateHUD()
+
+        frameStopUntil = CACurrentMediaTime() + Tunables.frameStopDeathMs.seconds
+        GameEventBus.shared.publish(.comboBreak(previous: previousCombo))
+
+        // Clear in-flight balls so the player isn't immediately killed again
+        // when the freeze ends.
+        for ball in activeBalls {
+            ball.removeFromParent()
+        }
+        activeBalls.removeAll()
+
+        // Brief cooldown after the freeze ends before we accept input again.
+        DispatchQueue.main.asyncAfter(deadline: .now() + Tunables.frameStopDeathMs.seconds + 0.15) {
+            [weak self] in
+            self?.isDying = false
+        }
+    }
+
+    private func updateHUD() {
+        scoreLabel?.text = "\(score)"
+        if combo > 1 {
+            comboLabel?.text = "x\(combo)"
+        } else {
+            comboLabel?.text = ""
+        }
+    }
+
     private func comboTier(for combo: Int) -> Int {
         switch combo {
-        case 0..<5:    return 0
-        case 5..<15:   return 1
-        case 15..<30:  return 2
-        case 30..<50:  return 3
-        default:       return 4
+        case 0..<Tunables.comboTier1: return 0
+        case Tunables.comboTier1..<Tunables.comboTier2: return 1
+        case Tunables.comboTier2..<Tunables.comboTier3: return 2
+        case Tunables.comboTier3..<Tunables.comboTier4: return 3
+        default: return 4
         }
     }
 
-    // MARK: Cleanup
+    // MARK: - Teardown
 
     override func willMove(from view: SKView) {
         GameEventBus.shared.publish(.sessionEnd(finalScore: score, maxCombo: maxCombo))
@@ -199,14 +308,13 @@ final class GameScene: SKScene {
 
 final class BallNode: SKShapeNode {
     let lane: Lane
-    /// Track-relative time at which this ball was spawned.
     let spawnTime: Double
 
     init(lane: Lane, spawnTime: Double) {
         self.lane = lane
         self.spawnTime = spawnTime
         super.init()
-        let r: CGFloat = 22
+        let r = Tunables.ballRadiusPoints
         path = CGPath(ellipseIn: CGRect(x: -r, y: -r, width: 2 * r, height: 2 * r), transform: nil)
         fillColor = lane == .left
             ? UIColor(red: 0, green: 1, blue: 1, alpha: 1)
@@ -216,5 +324,5 @@ final class BallNode: SKShapeNode {
         glowWidth = 10
     }
 
-    required init?(coder aDecoder: NSCoder) { fatalError("init(coder:) is not supported") }
+    required init?(coder: NSCoder) { fatalError("init(coder:) is not supported") }
 }

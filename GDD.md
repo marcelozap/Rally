@@ -19,6 +19,27 @@
 4. **Silently viral.** The game must be visually mesmerizing _with the sound
    off_ — because that is how 80% of TikTok/Reels viewers will first see it.
 
+## 0.5. Feel Target — "Flappy Bird grade"
+
+Before any of the layered-soundtrack work below, the **per-tap feel must
+match Flappy Bird**. That is the floor. Flappy's lasting power came from
+four engineered properties; we explicitly target all four:
+
+| Property                    | Flappy mechanism                                    | Rally implementation                                                       |
+|-----------------------------|-----------------------------------------------------|----------------------------------------------------------------------------|
+| Sub-frame input → SFX       | Single short asset, pre-loaded                       | `ToneSynth` (programmatic synth via `AVAudioSourceNode`) — zero buffer schedule latency |
+| No first-tap warmup         | Apps were cold-loaded from disk; assets pre-decoded | `AudioManager.prewarm()` + `HapticManager.prewarm()` fire at `RallyApp.init` |
+| Iconic SFX palette          | `wing.wav`, `point.wav`, `hit.wav`, `die.wav`        | Same four roles, synthesized: see `Tunables.Audio.{wing,point,hit,die}`     |
+| Hard freeze on impact       | World pauses ~150 ms on pipe collision               | `Tunables.frameStopDeathMs = 220` on `comboBreak`, applied via `scene.speed = 0` |
+
+The per-hit feedback (point/hit/wing) is intentionally tight: a 24 ms
+freeze on `perfect`, 12 ms on `great`, none on `good`. That gives a hit
+"weight" without breaking the 16th-note flow. The 220 ms death freeze is
+reserved for `comboBreak` — that is the Flappy moment.
+
+All numeric knobs live in one file: [`Rally/Game/Tunables.swift`](Rally/Game/Tunables.swift).
+Re-tuning the feel never requires touching gameplay logic.
+
 ---
 
 ## 1. Creative Evolution
@@ -202,19 +223,23 @@ team can add skins via a remote-config drop without an App Store release.
 ```
 Rally/
   App/
-    RallyApp.swift            # @main, SwiftUI App
-    ContentView.swift         # main menu router
+    RallyApp.swift            # @main, SwiftUI App, prewarms audio + haptics
+    ContentView.swift         # main menu router, hosts SpriteView
   Game/
-    GameScene.swift           # SpriteKit scene, update loop
-    GameEvent.swift           # enum + supporting types
+    GameScene.swift           # SpriteKit scene + camera node + frame-stop
+    GameEvent.swift           # the typed event payload
     HitQuality.swift
     Lane.swift
-    RhythmSpawner.swift       # beatmap-driven ball spawning (stub)
+    RhythmSpawner.swift       # beatmap-driven, engine-agnostic
+    Tunables.swift            # every "feel" number, single source of truth
+  Audio/
+    ToneSynth.swift           # programmatic SFX synth (no asset files)
   Managers/
     GameEventBus.swift
-    HapticManager.swift
-    AudioManager.swift
-    ParticleManager.swift
+    HapticManager.swift       # CHHapticEngine + cached pattern players
+    AudioManager.swift        # AVAudioEngine + ToneSynth wiring
+    ParticleManager.swift     # bursts, flashes, death sequence
+    CameraShake.swift         # damped-sine shake utility
   Cosmetics/
     Cosmetic.swift
     CosmeticCatalog.swift

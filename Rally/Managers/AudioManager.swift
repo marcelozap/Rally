@@ -1,12 +1,25 @@
 import AVFoundation
 
-/// Owns the `AVAudioEngine` and the layered stem mixer. See `GDD.md §1.2`.
+/// Owns the audio engine and routes `GameEvent`s to the right SFX.
 ///
-/// The hot path here is intentionally allocation-free:
-///   - All stem buffers are loaded once at session start.
-///   - All player nodes are attached / wired exactly once.
-///   - Tier transitions only adjust target volumes; the per-frame `tick(_:)`
-///     ramps current volume toward the target.
+/// ## Day-N goal vs. Day-0 reality
+///
+/// The GDD describes a layered-stems adaptive soundtrack
+/// (`§1.2 Adaptive Audio System`). Building that requires authored stems
+/// which we don't have yet. **In the meantime**, the per-hit SFX — the
+/// thing that actually determines whether the game feels like Flappy Bird
+/// — is provided by `ToneSynth`, a programmatic synthesizer that needs no
+/// assets.
+///
+/// When real stems land later, plug them into `stemNodes` here and the
+/// per-hit SFX pipeline doesn't change.
+///
+/// ## Hot-path discipline
+///
+/// - `AVAudioEngine` is started once at process launch and stays running.
+/// - The synth is wired before the engine starts so the audio I/O thread
+///   sees a stable graph.
+/// - All `play(_:)` calls happen on the main thread and return in <1 µs.
 final class AudioManager {
     static let shared = AudioManager()
 
@@ -16,34 +29,37 @@ final class AudioManager {
 
     private let engine = AVAudioEngine()
     private let mixer = AVAudioMixerNode()
-
-    /// One player node per stem. Index lines up with `StemTier`.
-    private var stemNodes: [AVAudioPlayerNode] = []
-    private var stemBuffers: [AVAudioPCMBuffer] = []
-    private var stemTargetVolumes: [Float] = []
-    private var stemCurrentVolumes: [Float] = []
-
-    /// Pool of stinger nodes used for hit cues. Round-robin to avoid
-    /// re-allocating per hit.
-    private var stingerPool: [AVAudioPlayerNode] = []
-    private var stingerCursor: Int = 0
-
-    /// Per-hit-quality stinger buffer cache.
-    private var stingerBuffers: [HitQuality: AVAudioPCMBuffer] = [:]
+    private let synth = ToneSynth()
 
     private init() {
         engine.attach(mixer)
         engine.connect(mixer, to: engine.mainMixerNode, format: nil)
 
+        engine.attach(synth.sourceNode)
+        engine.connect(synth.sourceNode, to: mixer, format: synth.outputFormat)
+
+        configureSession()
+        startEngine()
+
         GameEventBus.shared.subscribe(self) { [weak self] event in
             self?.handle(event)
         }
-
-        configureSession()
-        // Real stems get loaded on `.sessionStart`; this just gets the engine
-        // running so the first hit isn't cold.
-        try? engine.start()
     }
+
+    /// Called from `RallyApp.init` to force first-touch latency to zero.
+    func prewarm() {
+        // Play a silent voice through the synth pipeline so the audio I/O
+        // graph is fully spun up before the first real hit.
+        let primer = ToneSynth.Patch(
+            freqStartHz: 880, freqEndHz: 880,
+            durationMs: 30, waveform: .sine,
+            noiseMix: 0, peak: 0.0001,
+            attackMs: 1, releaseMs: 1
+        )
+        synth.play(primer)
+    }
+
+    // MARK: - Session lifecycle
 
     private func configureSession() {
         let session = AVAudioSession.sharedInstance()
@@ -51,106 +67,55 @@ final class AudioManager {
             try session.setCategory(.ambient, mode: .default, options: [.mixWithOthers])
             try session.setActive(true)
         } catch {
-            // Audio failures should never crash gameplay.
+            // Audio failures must never crash gameplay.
         }
     }
 
-    // MARK: Event routing
+    private func startEngine() {
+        do {
+            try engine.start()
+        } catch {
+            // Try once more after a session reset before giving up.
+            try? AVAudioSession.sharedInstance().setActive(true)
+            try? engine.start()
+        }
+    }
+
+    // MARK: - Event routing
 
     private func handle(_ event: GameEvent) {
-        guard isEnabled else { return }
+        guard isEnabled, engine.isRunning else { return }
         switch event {
-        case .sessionStart:
-            prepareDefaultTrack()
-        case .sessionEnd:
-            stopAllStems()
         case .hit(let quality, _, _, _):
-            playStinger(quality: quality)
-        case .comboTier(let tier):
-            setActiveTier(tier)
+            handleHit(quality: quality)
+        case .miss:
+            synth.play(ToneSynth.patchWing)
+        case .comboTier(let tier) where tier > 0:
+            synth.play(ToneSynth.patchTier(tier))
         case .comboBreak:
-            setActiveTier(0)
-        default:
+            synth.play(ToneSynth.patchDie)
+        case .sessionStart, .sessionEnd, .comboTier, .cosmeticEquipped:
             break
         }
     }
 
-    // MARK: Stems
-
-    /// Stub: load a built-in track. Once real assets ship, replace this with
-    /// a `loadTrack(_ trackID: String)` that reads from `Resources/Tracks/`.
-    private func prepareDefaultTrack() {
-        // No assets yet — just wire the topology so the indexing works.
-        // Add ≤5 stems matching the GDD's tier table.
-        let stemCount = 5
-        guard stemNodes.isEmpty else { return }
-
-        for _ in 0..<stemCount {
-            let node = AVAudioPlayerNode()
-            engine.attach(node)
-            engine.connect(node, to: mixer, format: nil)
-            stemNodes.append(node)
+    private func handleHit(quality: HitQuality) {
+        switch quality {
+        case .perfect:
+            // Two voices for that Flappy chunky-thump feel: a low bonk plus
+            // a high chime, fired simultaneously.
+            synth.play(ToneSynth.patchHit)
+            synth.play(ToneSynth.patchPoint)
+        case .great:
+            synth.play(ToneSynth.patchPoint)
+        case .good:
+            var soft = ToneSynth.patchPoint
+            soft.peak *= 0.6
+            soft.freqStartHz *= 0.8
+            soft.freqEndHz *= 0.8
+            synth.play(soft)
+        case .miss:
+            break
         }
-        stemTargetVolumes = Array(repeating: 0, count: stemCount)
-        stemCurrentVolumes = Array(repeating: 0, count: stemCount)
-        // Tier 0 (drums) is always on once a buffer is loaded.
-        stemTargetVolumes[0] = 1.0
-
-        // Stinger pool.
-        for _ in 0..<8 {
-            let node = AVAudioPlayerNode()
-            engine.attach(node)
-            engine.connect(node, to: mixer, format: nil)
-            stingerPool.append(node)
-        }
-    }
-
-    private func stopAllStems() {
-        for node in stemNodes { node.stop() }
-        stemCurrentVolumes = stemCurrentVolumes.map { _ in 0 }
-        stemTargetVolumes = stemTargetVolumes.map { _ in 0 }
-    }
-
-    /// Activate stems `[0...tier]` and silence the rest. Volumes ramp via
-    /// `tick(_:)`.
-    private func setActiveTier(_ tier: Int) {
-        for i in stemTargetVolumes.indices {
-            stemTargetVolumes[i] = i <= tier ? 1.0 : 0.0
-        }
-    }
-
-    /// Drive this from `GameScene.update(_:)` (or a CADisplayLink) once the
-    /// audio assets are real. For now it's wired but a no-op (volumes stay
-    /// at their targets since there are no buffers).
-    func tick(deltaSeconds: Float) {
-        let rampRate: Float = 1.0 / 0.25 // 250 ms to reach target
-        for i in stemTargetVolumes.indices {
-            let target = stemTargetVolumes[i]
-            let current = stemCurrentVolumes[i]
-            let step = rampRate * deltaSeconds
-            let next: Float
-            if abs(target - current) <= step {
-                next = target
-            } else {
-                next = current + (target > current ? step : -step)
-            }
-            stemCurrentVolumes[i] = next
-            stemNodes[i].volume = next
-        }
-    }
-
-    // MARK: Stingers
-
-    private func playStinger(quality: HitQuality) {
-        guard let buffer = stingerBuffers[quality] else {
-            // No buffer authored yet for this grade — silently skip.
-            return
-        }
-        let node = stingerPool[stingerCursor]
-        stingerCursor = (stingerCursor + 1) % stingerPool.count
-
-        node.stop()
-        node.scheduleBuffer(buffer, at: nil, options: .interrupts, completionHandler: nil)
-        node.play()
     }
 }
