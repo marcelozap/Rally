@@ -267,6 +267,7 @@ struct JournalView: View {
             modelContext.delete(sectionEntries[index])
         }
         try? modelContext.save()
+        RallySyncTriggers.pushAfterLocalSave(modelContext: modelContext)
     }
 }
 

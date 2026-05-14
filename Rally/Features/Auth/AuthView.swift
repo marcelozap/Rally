@@ -72,6 +72,19 @@ struct AuthView: View {
                     }
                     .disabled(busy || !canSubmit)
 
+                    Button {
+                        auth.enterGuestMode()
+                    } label: {
+                        Text("Continue offline")
+                            .font(.system(.headline, design: .rounded))
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 16)
+                            .background(RoundedRectangle(cornerRadius: 14).stroke(Color.white.opacity(0.28), lineWidth: 1))
+                            .foregroundStyle(.white.opacity(0.9))
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(busy)
+
                     DisclosureGroup(isExpanded: $devOpen) {
                         VStack(alignment: .leading, spacing: 8) {
                             Text("API base URL (simulator default: http://127.0.0.1:8787)")
@@ -97,7 +110,11 @@ struct AuthView: View {
                     }
                     .tint(.cyan)
 
-                    Text("Your avatar, progression, logs and journal sync to your account after login.")
+                    Text(
+                        "Signed-in accounts back up avatar, progression, training, matches, and journal to the Rally API. "
+                            + "Cloud saves use last-writer-wins snapshots — sign in on one device at a time when testing. "
+                            + "Offline mode keeps everything on this phone only until you create an account."
+                    )
                         .font(.caption)
                         .foregroundStyle(.white.opacity(0.4))
                         .multilineTextAlignment(.center)
@@ -125,7 +142,7 @@ struct AuthView: View {
                 .font(.system(.title2, design: .rounded).weight(.heavy))
                 .foregroundStyle(.white)
                 .multilineTextAlignment(.center)
-            Text("Create an account to back up your avatar and stats.")
+            Text("Sign in for cloud backup, or continue offline on this device.")
                 .font(.subheadline)
                 .foregroundStyle(.white.opacity(0.5))
                 .multilineTextAlignment(.center)

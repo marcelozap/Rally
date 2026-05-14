@@ -267,5 +267,6 @@ struct ShopItemDetailView: View {
         case .bag, .accessory: return
         }
         try? modelContext.save()
+        RallySyncTriggers.pushAfterLocalSave(modelContext: modelContext)
     }
 }

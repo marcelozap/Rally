@@ -23,6 +23,9 @@ struct HomeView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 20) {
+                    if auth.isGuestMode {
+                        guestOfflineBanner
+                    }
                     avatarCard
                     playerBadge
                     quickActions
@@ -38,10 +41,13 @@ struct HomeView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Menu {
+                        if auth.isGuestMode {
+                            Label("Offline on this device", systemImage: "wifi.slash")
+                        }
                         if let email = auth.userEmail {
                             Label(email, systemImage: "envelope.fill")
                         }
-                        Button("Sign out", role: .destructive) {
+                        Button(auth.isGuestMode ? "Leave offline mode…" : "Sign out", role: .destructive) {
                             auth.logout()
                         }
                     } label: {
@@ -71,6 +77,21 @@ struct HomeView: View {
                 NavigationStack { JournalEditorView(entry: nil) }
             }
         }
+    }
+
+    private var guestOfflineBanner: some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: "icloud.slash")
+                .font(.title3)
+                .foregroundStyle(.orange.opacity(0.95))
+            Text("You're offline — data stays on this device. Tap Account (top left) → Leave offline mode… when you want to sign in and sync.")
+                .font(.caption.weight(.medium))
+                .foregroundStyle(.white.opacity(0.72))
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(12)
+        .background(RoundedRectangle(cornerRadius: 14).fill(Color.orange.opacity(0.12)))
+        .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.orange.opacity(0.35), lineWidth: 1))
     }
 
     private var greeting: String {

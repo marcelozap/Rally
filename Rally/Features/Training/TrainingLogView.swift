@@ -90,6 +90,7 @@ struct TrainingLogView: View {
             modelContext.delete(sessions[index])
         }
         try? modelContext.save()
+        RallySyncTriggers.pushAfterLocalSave(modelContext: modelContext)
     }
 }
 

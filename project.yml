@@ -42,3 +42,21 @@ targets:
         INFOPLIST_KEY_UISupportedInterfaceOrientations: "UIInterfaceOrientationPortrait"
         INFOPLIST_KEY_CFBundleDisplayName: Rally
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+    scheme:
+      testTargets:
+        - RallyTests
+
+  RallyTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: RallyTests
+    dependencies:
+      - target: Rally
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.marcelozap.rally.tests
+        PRODUCT_NAME: RallyTests
+        GENERATE_INFOPLIST_FILE: YES
+        SWIFT_VERSION: "5.9"
+        IPHONEOS_DEPLOYMENT_TARGET: "17.0"

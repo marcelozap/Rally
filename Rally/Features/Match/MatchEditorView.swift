@@ -108,6 +108,7 @@ struct MatchEditorView: View {
             modelContext.insert(new)
         }
         try? modelContext.save()
+        RallySyncTriggers.pushAfterLocalSave(modelContext: modelContext)
     }
 }
 

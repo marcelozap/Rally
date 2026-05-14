@@ -31,4 +31,4 @@ Health: `GET /health`
 
 - Passwords are hashed with bcrypt; JWTs expire in 30 days.
 - Sync is **replace-by-snapshot**: `PUT` stores the entire JSON document the client sends.
-- For production, run behind HTTPS, use PostgreSQL instead of SQLite, and rotate secrets.
+- **[Production checklist → `./DEPLOYMENT.md`](./DEPLOYMENT.md)** — HTTPS, Postgres, rate limits, ATS on iOS, etc.

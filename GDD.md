@@ -273,8 +273,10 @@ Rally/
     ParticleManager.swift     # bursts, flashes, death sequence
     CameraShake.swift         # damped-sine shake utility
   Data/
-    Models.swift              # @Model classes (Avatar, Training, Match, Journal)
+    TrainingSession.swift, MatchModels.swift (CourtSurface, SetScore), JournalModels.swift,
+    AvatarModels.swift, PlayerProgress.swift  # SwiftData @Model types (split files)
     ShopCatalog.swift         # static vendor + shop item catalog
+  Services/                 # optional cloud: AuthSession, API, sync coordinator + triggers
   Features/
     Home/HomeView.swift
     Logs/LogsView.swift

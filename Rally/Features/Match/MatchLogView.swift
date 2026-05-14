@@ -86,6 +86,7 @@ struct MatchLogView: View {
             modelContext.delete(matches[index])
         }
         try? modelContext.save()
+        RallySyncTriggers.pushAfterLocalSave(modelContext: modelContext)
     }
 }
 

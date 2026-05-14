@@ -1,7 +1,7 @@
 import SwiftUI
 import SwiftData
 
-/// Boots JWT validation before handing off to `ContentView` or `AuthView`.
+/// Boots JWT validation (or guest flag) before handing off to `ContentView` or `AuthView`.
 struct RootView: View {
     @EnvironmentObject private var auth: AuthSession
     @Environment(\.modelContext) private var modelContext
@@ -16,7 +16,7 @@ struct RootView: View {
                         .tint(.cyan)
                         .foregroundStyle(.white)
                 }
-            } else if auth.isAuthenticated {
+            } else if auth.hasEnteredApp {
                 ContentView()
             } else {
                 AuthView()

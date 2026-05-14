@@ -84,6 +84,7 @@ struct GameSessionView: View {
         }
         let outcome = Rewards.applying(result: result, to: progress)
         try? modelContext.save()
+        RallySyncTriggers.pushAfterLocalSave(modelContext: modelContext)
         viewModel.present(result: result, outcome: outcome)
     }
 
