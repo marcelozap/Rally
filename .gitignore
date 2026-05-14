@@ -52,3 +52,6 @@ fastlane/test_output
 *.env
 .env.local
 secrets.plist
+
+# Unrelated nested repo that lives in this workspace by accident
+Green-Machine/
