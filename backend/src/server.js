@@ -174,11 +174,67 @@ app.get("/api/me/sync", authMiddleware, (req, res) => {
   res.json(payload);
 });
 
+/**
+ * Conflict-aware PUT.
+ *
+ * - PlayerProgress numerics (best*, total*, dailyStreak, coins, xp,
+ *   lastPlayDate) merge max-wins against whatever the server already has.
+ *   That keeps multi-device users from losing accrued totals when a stale
+ *   device pushes after a fresh one.
+ * - Avatar, collections (training/match/journal), and singleton IDs come
+ *   from the request body — these are user-edited, not accrued, so
+ *   client-wins is correct there.
+ *
+ * The merged snapshot is echoed in the response under `merged` so the
+ * client can apply just the reconciled progress fields locally without a
+ * second GET round-trip. See `RallySyncPayload.swift` for the mirrored
+ * client-side merge helper.
+ */
+function mergeProgressMaxWins(serverProgress, clientProgress) {
+  if (!serverProgress) return clientProgress;
+  if (!clientProgress) return serverProgress;
+  const max = (a, b) => Math.max(Number(a) || 0, Number(b) || 0);
+  const latestDate = (a, b) => {
+    if (!a) return b;
+    if (!b) return a;
+    return new Date(a) > new Date(b) ? a : b;
+  };
+  return {
+    id: clientProgress.id || serverProgress.id,
+    coins: max(serverProgress.coins, clientProgress.coins),
+    xp: max(serverProgress.xp, clientProgress.xp),
+    bestScore: max(serverProgress.bestScore, clientProgress.bestScore),
+    bestCombo: max(serverProgress.bestCombo, clientProgress.bestCombo),
+    totalSessions: max(serverProgress.totalSessions, clientProgress.totalSessions),
+    totalPerfectHits: max(serverProgress.totalPerfectHits, clientProgress.totalPerfectHits),
+    totalGreatHits: max(serverProgress.totalGreatHits, clientProgress.totalGreatHits),
+    totalGoodHits: max(serverProgress.totalGoodHits, clientProgress.totalGoodHits),
+    totalMisses: max(serverProgress.totalMisses, clientProgress.totalMisses),
+    dailyStreak: max(serverProgress.dailyStreak, clientProgress.dailyStreak),
+    lastPlayDate: latestDate(serverProgress.lastPlayDate, clientProgress.lastPlayDate),
+  };
+}
+
 app.put("/api/me/sync", authMiddleware, (req, res) => {
   const body = req.body;
   if (!body || typeof body !== "object") {
     return res.status(400).json({ error: "JSON body required" });
   }
+
+  let serverSnapshot = null;
+  const existing = selectSync.get(req.user.sub);
+  if (existing) {
+    try {
+      serverSnapshot = JSON.parse(existing.payload);
+    } catch {
+      serverSnapshot = null;
+    }
+  }
+
+  if (serverSnapshot && body.progress) {
+    body.progress = mergeProgressMaxWins(serverSnapshot.progress, body.progress);
+  }
+
   const updatedAt = new Date().toISOString();
   body.updatedAt = updatedAt;
   const json = JSON.stringify(body);
@@ -186,7 +242,7 @@ app.put("/api/me/sync", authMiddleware, (req, res) => {
   if (result.changes === 0) {
     return res.status(404).json({ error: "No sync row — re-register or contact support" });
   }
-  res.json({ ok: true, updatedAt });
+  res.json({ ok: true, updatedAt, merged: body });
 });
 
 app.listen(PORT, () => {

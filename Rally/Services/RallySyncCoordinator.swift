@@ -17,7 +17,19 @@ enum RallySyncCoordinator {
     static func push(modelContext: ModelContext) async throws {
         guard let token = KeychainStore.shared.token else { return }
         let envelope = try encode(modelContext: modelContext)
-        try await RallyAPIClient.putSync(token: token, envelope: envelope)
+        let response = try await RallyAPIClient.putSync(token: token, envelope: envelope)
+
+        // Server merge-back: if a second device pushed first, the server
+        // reconciled our PlayerProgress numerics with max-wins and returned
+        // the merged result. Apply just the progress side locally so we
+        // don't lose another device's accrued totals on the next push.
+        if let merged = response.merged,
+           let progressRows = try? modelContext.fetch(FetchDescriptor<PlayerProgress>()),
+           let progress = progressRows.first
+        {
+            applyProgress(merged.progress, to: progress)
+            try? modelContext.save()
+        }
     }
 
     /// Soft-fail push for UI hooks (avatar save, etc.).

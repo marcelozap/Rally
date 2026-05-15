@@ -22,6 +22,45 @@ struct SyncEnvelope: Codable {
     var journalEntries: [JournalPayload]
 }
 
+extension ProgressPayload {
+    /// Conflict-aware merge of two snapshots of the same player record.
+    ///
+    /// "best" and "total" fields are accrued across all of a player's
+    /// devices, so for those we keep the **maximum** value rather than
+    /// letting whichever device PUTs second blow them away. Streak
+    /// information also takes the max-by-`lastPlayDate` so a device that
+    /// hasn't played in a week doesn't reset a fresh streak. `coins` and
+    /// `xp` keep the max too — there's no legitimate scenario where a
+    /// player should *lose* currency by syncing a stale device.
+    ///
+    /// IDs follow the locally-edited side (`other`); the server mirrors
+    /// this rule by using the request body for non-accrued fields.
+    static func mergedMaxWins(server: ProgressPayload, client: ProgressPayload) -> ProgressPayload {
+        ProgressPayload(
+            id: client.id,
+            coins: max(server.coins, client.coins),
+            xp: max(server.xp, client.xp),
+            bestScore: max(server.bestScore, client.bestScore),
+            bestCombo: max(server.bestCombo, client.bestCombo),
+            totalSessions: max(server.totalSessions, client.totalSessions),
+            totalPerfectHits: max(server.totalPerfectHits, client.totalPerfectHits),
+            totalGreatHits: max(server.totalGreatHits, client.totalGreatHits),
+            totalGoodHits: max(server.totalGoodHits, client.totalGoodHits),
+            totalMisses: max(server.totalMisses, client.totalMisses),
+            dailyStreak: max(server.dailyStreak, client.dailyStreak),
+            lastPlayDate: latestDate(server.lastPlayDate, client.lastPlayDate)
+        )
+    }
+
+    private static func latestDate(_ a: Date?, _ b: Date?) -> Date? {
+        switch (a, b) {
+        case (nil, nil): return nil
+        case (nil, let x?), (let x?, nil): return x
+        case (let x?, let y?): return x > y ? x : y
+        }
+    }
+}
+
 struct AvatarPayload: Codable {
     var id: UUID
     var playerName: String

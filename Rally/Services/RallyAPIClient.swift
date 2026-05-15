@@ -19,8 +19,15 @@ enum RallyAPIClient {
         let password: String
     }
 
-    private struct SyncPutResponse: Codable {
+    /// Server's response to a `PUT /api/me/sync`. When `merged` is present,
+    /// the server has reconciled the client's envelope against the stored
+    /// row using `ProgressPayload.mergedMaxWins`. The client should apply
+    /// the merged numerics locally so a single round-trip is enough to
+    /// converge.
+    struct SyncPutResponse: Codable {
         let ok: Bool?
+        let updatedAt: Date?
+        let merged: SyncEnvelope?
     }
 
     static func register(email: String, password: String) async throws -> AuthTokenResponse {
@@ -68,7 +75,8 @@ enum RallyAPIClient {
         return try jsonDecoder.decode(SyncEnvelope.self, from: data)
     }
 
-    static func putSync(token: String, envelope: SyncEnvelope) async throws {
+    @discardableResult
+    static func putSync(token: String, envelope: SyncEnvelope) async throws -> SyncPutResponse {
         let url = RallyAPIConfig.baseURL.appendingPathComponent("api/me/sync")
         var req = URLRequest(url: url)
         req.httpMethod = "PUT"
@@ -85,6 +93,6 @@ enum RallyAPIClient {
             let msg = try? jsonDecoder.decode(APIErrorPayload.self, from: data).error
             throw RallyAPIError.http(http.statusCode, msg)
         }
-        _ = try jsonDecoder.decode(SyncPutResponse.self, from: data)
+        return try jsonDecoder.decode(SyncPutResponse.self, from: data)
     }
 }
