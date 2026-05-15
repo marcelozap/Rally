@@ -133,6 +133,33 @@ enum Tunables {
     static let comboTier2: Int = 15
     static let comboTier3: Int = 30
     static let comboTier4: Int = 50
+
+    // MARK: - Match-flow phases (see MatchFlow.swift)
+    //
+    // Phase progression is driven by *whichever of clock-time or combo is
+    // higher*. The clock-time thresholds keep the late session interesting
+    // even when the player isn't comboing; the combo thresholds let a strong
+    // player accelerate into Pressure / Breaker early.
+
+    enum MatchFlow {
+        /// 0…1 fractions of session duration at which the clock-driven phase
+        /// floor escalates. A player at 0 combo who never misses still moves
+        /// `warm-up → exchange → pressure → breaker` at these marks.
+        static let warmUpProgress:   Double = 0.15
+        static let pressureProgress: Double = 0.60
+        static let breakerProgress:  Double = 0.85
+
+        /// BPM per phase. The procedural beatmap regenerates chart chunks at
+        /// these tempos so the spawn density visibly shifts.
+        static let bpmWarmUp:    Double = 84
+        static let bpmExchange:  Double = 110
+        static let bpmPressure:  Double = 140
+        static let bpmBreaker:   Double = 168
+
+        /// How long the spawner stays in `.recovery` after a combo break.
+        /// Short — just enough to clear the death-freeze + a beat or two.
+        static let recoverySeconds: TimeInterval = 3.0
+    }
 }
 
 extension Double {

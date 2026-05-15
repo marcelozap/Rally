@@ -52,6 +52,7 @@ final class GameScene: SKScene {
     private var isCountingDown = true
 
     private var spawner: RhythmSpawner?
+    private var flow: MatchFlowCoordinator?
 
     private var cameraNode: SKCameraNode!
     private var scoreLabel: SKLabelNode!
@@ -64,6 +65,21 @@ final class GameScene: SKScene {
     private var currentBPM: Double = 120
     private var lastBeatTime: TimeInterval = 0
     private var sessionStartWallTime: TimeInterval = 0
+
+    // First-third / middle-third / last-third hit counters, so the end-of-run
+    // summary can tell a story ("slow start — strong finish"). We bucket on
+    // arrival, not on hit-time, so a missed ball at 2:55 still counts toward
+    // the last third.
+    private var segmentHits: [HitQuality: [Int]] = [
+        .perfect: [0, 0, 0],
+        .great:   [0, 0, 0],
+        .good:    [0, 0, 0],
+        .miss:    [0, 0, 0]
+    ]
+
+    #if DEBUG
+    private var phaseDebugLabel: SKLabelNode?
+    #endif
 
     // Pan-gesture swing state — see `handlePan(_:)`.
     private var swingOriginScene: CGPoint?
@@ -86,14 +102,26 @@ final class GameScene: SKScene {
 
         ParticleManager.shared.attach(scene: self, shakeTarget: cameraNode)
 
-        let beatmap = Beatmap.procedural(durationSeconds: sessionDurationSeconds)
-        currentBPM = beatmap.bpm
+        // Phase coordinator drives BPM, density, timing windows, double-ball
+        // probability. The spawner asks it for a profile every time it needs
+        // to author the next note.
+        let coordinator = MatchFlowCoordinator(sessionDurationSeconds: sessionDurationSeconds)
+        coordinator.onPhaseChange = { [weak self] from, to in
+            self?.handlePhaseChange(from: from, to: to)
+        }
+        flow = coordinator
+        currentBPM = coordinator.currentProfile().bpm
+
         spawner = RhythmSpawner(
-            beatmap: beatmap,
+            flow: coordinator,
             travelSeconds: Tunables.ballTravelSeconds
         ) { [weak self] note in
             self?.spawnBall(lane: note.lane, arrivalTime: note.arrivalTime)
         }
+
+        #if DEBUG
+        installPhaseDebugLabel()
+        #endif
 
         // Pre-set startTime so update() can run without crashing, but the
         // spawner won't advance until we flip `isCountingDown = false`
@@ -299,6 +327,14 @@ final class GameScene: SKScene {
         let trackTime = currentTime - startTime
 
         if !sessionEnded, !isCountingDown {
+            flow?.update(trackTime: trackTime, combo: combo)
+            if let profile = flow?.currentProfile() {
+                // Travel time scales per phase — warm-up balls drift in,
+                // breaker balls snap through. Update before the spawner ticks
+                // so new spawns get the right horizon.
+                spawner?.travelSeconds = Tunables.ballTravelSeconds * profile.travelScalar
+                currentBPM = profile.bpm
+            }
             spawner?.tick(trackTime: trackTime)
         }
         moveBalls(trackTime: trackTime)
@@ -336,15 +372,47 @@ final class GameScene: SKScene {
 
     /// Snapshot of the current run state. Cheap — just copies counters.
     func buildResult() -> GameResult {
-        GameResult(
+        let segments = (0..<3).map { i in
+            SegmentStats(
+                perfectHits: segmentHits[.perfect]?[i] ?? 0,
+                greatHits:   segmentHits[.great]?[i]   ?? 0,
+                goodHits:    segmentHits[.good]?[i]    ?? 0,
+                misses:      segmentHits[.miss]?[i]    ?? 0
+            )
+        }
+        return GameResult(
             finalScore: score,
             maxCombo: maxCombo,
             perfectHits: perfectHits,
             greatHits: greatHits,
             goodHits: goodHits,
-            misses: totalMisses
+            misses: totalMisses,
+            segments: segments
         )
     }
+
+    // MARK: - Phase handling
+
+    private func handlePhaseChange(from: MatchFlowPhase, to: MatchFlowPhase) {
+        GameEventBus.shared.publish(.phaseChanged(from: from, to: to))
+        #if DEBUG
+        phaseDebugLabel?.text = "Phase: \(to.rawValue)"
+        #endif
+    }
+
+    #if DEBUG
+    private func installPhaseDebugLabel() {
+        let label = SKLabelNode(fontNamed: "Menlo")
+        label.text = "Phase: WARM-UP"
+        label.fontSize = 11
+        label.fontColor = UIColor(white: 1, alpha: 0.45)
+        label.horizontalAlignmentMode = .left
+        label.position = CGPoint(x: 12, y: size.height - 18)
+        label.zPosition = 200
+        addChild(label)
+        phaseDebugLabel = label
+    }
+    #endif
 
     private func updateTimeLabel(trackTime: Double) {
         guard let timeLabel = timeLabel else { return }
@@ -514,7 +582,11 @@ final class GameScene: SKScene {
         let trackTime = CACurrentMediaTime() - startTime
         let arrivalTime = target.spawnTime + Tunables.ballTravelSeconds
         let delta = abs(trackTime - arrivalTime)
-        var quality = HitQuality.grade(absDelta: delta)
+
+        // Phase tightens / loosens the timing windows. Warm-up gives the
+        // player a 10% wider perfect window; breaker shaves 15% off.
+        let windowScalar = flow?.currentProfile().timingWindowScalar ?? 1.0
+        var quality = HitQuality.grade(absDelta: delta, windowScalar: windowScalar)
 
         // A committed (fast) swing nudges a `.great` into `.perfect` when
         // the timing was on the very edge of the perfect window. Casual
@@ -522,7 +594,7 @@ final class GameScene: SKScene {
         // earn it.
         if quality == .great,
            swingSpeed >= Tunables.swingFastVelocity,
-           delta <= HitQuality.perfect.windowSeconds * 1.25
+           delta <= HitQuality.perfect.windowSeconds * windowScalar * 1.25
         {
             quality = .perfect
         }
@@ -564,6 +636,7 @@ final class GameScene: SKScene {
         case .good:    goodHits    += 1
         case .miss:    break
         }
+        recordInCurrentSegment(quality: quality)
         updateHUD()
 
         let freezeMs: Double
@@ -590,6 +663,7 @@ final class GameScene: SKScene {
 
     private func registerMiss(lane: Lane) {
         totalMisses += 1
+        recordInCurrentSegment(quality: .miss)
         let previous = combo
         if combo > 0 {
             // The Flappy moment.
@@ -600,6 +674,22 @@ final class GameScene: SKScene {
         }
     }
 
+    /// Bucket the hit/miss into the third of the session it belongs to.
+    /// Drives the segmented stats shown on the end-of-run summary.
+    private func recordInCurrentSegment(quality: HitQuality) {
+        let trackTime = CACurrentMediaTime() - startTime
+        let progress = sessionDurationSeconds <= 0
+            ? 0
+            : min(1, max(0, trackTime / sessionDurationSeconds))
+        let segment: Int
+        switch progress {
+        case ..<(1.0 / 3.0): segment = 0
+        case ..<(2.0 / 3.0): segment = 1
+        default:             segment = 2
+        }
+        segmentHits[quality]?[segment] += 1
+    }
+
     private func triggerDeathSequence(previousCombo: Int) {
         isDying = true
         combo = 0
@@ -607,6 +697,7 @@ final class GameScene: SKScene {
         updateHUD()
 
         frameStopUntil = CACurrentMediaTime() + Tunables.frameStopDeathMs.seconds
+        flow?.registerComboBreak(at: CACurrentMediaTime() - startTime)
         GameEventBus.shared.publish(.comboBreak(previous: previousCombo))
 
         // Clear in-flight balls so the player isn't immediately killed again

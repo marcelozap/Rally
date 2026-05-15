@@ -39,11 +39,14 @@ enum HitQuality: String, CaseIterable {
         }
     }
 
-    /// Grade a swipe given the signed time delta (positive = late) in seconds.
-    static func grade(absDelta: Double) -> HitQuality {
-        if absDelta <= HitQuality.perfect.windowSeconds { return .perfect }
-        if absDelta <= HitQuality.great.windowSeconds   { return .great }
-        if absDelta <= HitQuality.good.windowSeconds    { return .good }
+    /// Grade a swipe given the absolute time delta (seconds) and a per-phase
+    /// `windowScalar`. The scalar widens (>1) or tightens (<1) every window
+    /// uniformly so the relative ordering of grades is preserved.
+    static func grade(absDelta: Double, windowScalar: Double = 1.0) -> HitQuality {
+        let scale = max(0.1, windowScalar)
+        if absDelta <= HitQuality.perfect.windowSeconds * scale { return .perfect }
+        if absDelta <= HitQuality.great.windowSeconds   * scale { return .great }
+        if absDelta <= HitQuality.good.windowSeconds    * scale { return .good }
         return .miss
     }
 }

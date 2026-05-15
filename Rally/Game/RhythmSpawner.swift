@@ -48,6 +48,9 @@ extension Beatmap {
     /// and forth) but with deliberate "same-lane repeats" sprinkled in to
     /// keep them honest. A 5% double-ball probability kicks in past 60%
     /// elapsed for the visual impact of two simultaneous neon hits.
+    ///
+    /// Retained as a fallback / unit-test fixture; live gameplay now uses
+    /// `RhythmSpawner` in phase-driven mode (see `MatchFlowCoordinator`).
     static func procedural(
         durationSeconds: Double,
         startBPM: Double = 90,
@@ -117,41 +120,125 @@ struct SeededRandom {
     }
 
     mutating func bool(p: Double) -> Bool { unit() < p }
+
+    /// Pick an index according to non-negative weights.
+    mutating func weightedIndex(weights: [Double]) -> Int {
+        let total = weights.reduce(0, +)
+        guard total > 0 else { return 0 }
+        let r = unit() * total
+        var acc: Double = 0
+        for (i, w) in weights.enumerated() {
+            acc += w
+            if r <= acc { return i }
+        }
+        return weights.count - 1
+    }
 }
 
-/// Pulls notes out of a `Beatmap` and emits them to a sink as their
-/// _spawn_ time arrives, accounting for travel time from spawn point to
-/// strike line.
+/// Spawner. Two operating modes:
+///
+/// 1. **Precomputed beatmap** (legacy / test fixture) — feed a `Beatmap` and
+///    notes are emitted as their arrival horizon is reached.
+///
+/// 2. **Phase-driven** — feed a `MatchFlowCoordinator` and the spawner
+///    authors the next note on the fly using the coordinator's current
+///    `PhaseProfile`. BPM, density, double-ball probability and subdivision
+///    weights all change as the match flow shifts.
 final class RhythmSpawner {
 
     /// How long a ball takes to traverse the screen, in seconds, at the
-    /// current difficulty. The scene owns this and updates it as the run
-    /// progresses.
+    /// current difficulty. Scene owns this and updates it as the phase
+    /// changes (warm-up = slower, breaker = faster).
     var travelSeconds: Double
 
-    private let beatmap: Beatmap
-    private var nextIndex: Int = 0
-
-    /// `sink` is invoked at the moment a note should be spawned.
     private let sink: (BeatmapNote) -> Void
 
+    // Mode 1 (precomputed)
+    private let beatmap: Beatmap?
+    private var nextIndex: Int = 0
+
+    // Mode 2 (phase-driven)
+    private let flow: MatchFlowCoordinator?
+    private let leadInSeconds: Double
+    private var rng: SeededRandom
+    /// Arrival time of the *next* not-yet-emitted note in phase-driven mode.
+    private var nextArrivalTime: Double
+    private var lastLane: Lane = .left
+
+    /// Designated init for legacy precomputed-beatmap mode.
     init(beatmap: Beatmap, travelSeconds: Double, sink: @escaping (BeatmapNote) -> Void) {
         self.beatmap = beatmap
+        self.flow = nil
         self.travelSeconds = travelSeconds
         self.sink = sink
+        self.leadInSeconds = 0
+        self.rng = SeededRandom(seed: 0)
+        self.nextArrivalTime = 0
+    }
+
+    /// Designated init for phase-driven live authoring. `flow` provides the
+    /// `PhaseProfile` used for each new note.
+    init(
+        flow: MatchFlowCoordinator,
+        travelSeconds: Double,
+        leadInSeconds: Double = 1.5,
+        seed: UInt64 = 0xBADC0FFEE,
+        sink: @escaping (BeatmapNote) -> Void
+    ) {
+        self.beatmap = nil
+        self.flow = flow
+        self.travelSeconds = travelSeconds
+        self.sink = sink
+        self.leadInSeconds = leadInSeconds
+        self.rng = SeededRandom(seed: seed)
+        self.nextArrivalTime = leadInSeconds
     }
 
     /// Drive this every frame from `GameScene.update(_:)`. `trackTime` is
     /// the current playhead position of the soundtrack, in seconds.
     func tick(trackTime: Double) {
         let spawnHorizon = trackTime + travelSeconds
-        while nextIndex < beatmap.notes.count,
-              beatmap.notes[nextIndex].arrivalTime <= spawnHorizon
-        {
-            sink(beatmap.notes[nextIndex])
-            nextIndex += 1
+
+        if let beatmap = beatmap {
+            while nextIndex < beatmap.notes.count,
+                  beatmap.notes[nextIndex].arrivalTime <= spawnHorizon
+            {
+                sink(beatmap.notes[nextIndex])
+                nextIndex += 1
+            }
+            return
+        }
+
+        guard let flow = flow else { return }
+
+        // Phase-driven authoring. Emit *all* notes whose arrival time has
+        // dropped past the spawn horizon, then advance `nextArrivalTime` by
+        // one phase-shaped beat increment for the next call.
+        while nextArrivalTime <= spawnHorizon {
+            let profile = flow.currentProfile()
+            let arrival = nextArrivalTime
+
+            // Density: occasionally insert a rest (chart hole).
+            if rng.unit() < profile.density {
+                let lane: Lane = rng.bool(p: 0.75) ? lastLane.opposite : lastLane
+                sink(BeatmapNote(arrivalTime: arrival, lane: lane, kind: .normal))
+                lastLane = lane
+
+                if rng.bool(p: profile.doubleNoteProbability) {
+                    sink(BeatmapNote(arrivalTime: arrival, lane: lane.opposite, kind: .double))
+                }
+            }
+
+            let subdivision = profile.subdivisions[
+                rng.weightedIndex(weights: profile.subdivisionWeights)
+            ]
+            let beatSeconds = 60.0 / profile.bpm
+            nextArrivalTime += beatSeconds * subdivision
         }
     }
 
-    func reset() { nextIndex = 0 }
+    func reset() {
+        nextIndex = 0
+        nextArrivalTime = leadInSeconds
+    }
 }
