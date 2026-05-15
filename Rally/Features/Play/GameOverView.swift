@@ -13,6 +13,11 @@ struct GameOverView: View {
     let outcome: Rewards.Outcome
     let onPlayAgain: () -> Void
     let onExit: () -> Void
+    /// Optional — when provided, a "Log how it felt" CTA appears between
+    /// "Play Again" and "Back to Home" and routes the player into the
+    /// journal editor with a Rally-focus prompt prefilled from `result`.
+    /// Default is a no-op so existing previews/tests don't need updating.
+    var onLogReflection: (() -> Void)? = nil
 
     @State private var displayScore: Int = 0
     @State private var fanfareIn: Bool = false
@@ -295,6 +300,22 @@ struct GameOverView: View {
                             startPoint: .top, endPoint: .bottom
                         ))
                 )
+            }
+            if let onLogReflection = onLogReflection {
+                Button(action: onLogReflection) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "square.and.pencil")
+                        Text("Log how it felt")
+                    }
+                    .font(.system(.subheadline, design: .rounded).weight(.semibold))
+                    .foregroundStyle(.cyan)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
+                    .background(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(Color.cyan.opacity(0.5), lineWidth: 1)
+                    )
+                }
             }
             Button(action: onExit) {
                 Text("Back to Home")

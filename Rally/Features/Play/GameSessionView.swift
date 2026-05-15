@@ -18,6 +18,7 @@ struct GameSessionView: View {
     @StateObject private var viewModel = GameSessionViewModel()
     @State private var scene: GameScene? = nil
     @State private var sessionKey = UUID()
+    @State private var reflectionPrompt: JournalPrompt? = nil
 
     /// Called when the player taps "Back to Home" from the overlay.
     /// Wired by `ContentView` so we can switch the selected tab.
@@ -41,6 +42,13 @@ struct GameSessionView: View {
                     onExit: {
                         viewModel.dismiss()
                         onExit()
+                    },
+                    onLogReflection: {
+                        // Build the prefilled prompt lazily so the body
+                        // reflects whatever the latest run was, not the one
+                        // that opened the view.
+                        reflectionPrompt = JournalPromptLibrary
+                            .sessionReflectionPrompt(for: result, outcome: outcome)
                     }
                 )
                 .transition(.opacity.combined(with: .scale(scale: 1.02)))
@@ -51,6 +59,11 @@ struct GameSessionView: View {
             if scene == nil { scene = makeScene() }
             viewModel.bindIfNeeded { result in
                 handleSessionEnded(result: result)
+            }
+        }
+        .sheet(item: $reflectionPrompt) { prompt in
+            NavigationStack {
+                JournalEditorView(entry: nil, seedPrompt: prompt)
             }
         }
         .animation(.easeOut(duration: 0.35), value: viewModel.lastResult != nil)

@@ -52,6 +52,37 @@ enum JournalPromptLibrary {
         allPrompts.filter { $0.focus == focus }
     }
 
+    /// Build a Rally-focus prompt seeded with the freshly-completed run's
+    /// numbers. Drives the "Log how it felt" CTA on `GameOverView` so the
+    /// player can drop into journal flow without retyping the basics.
+    static func sessionReflectionPrompt(for result: GameResult, outcome: Rewards.Outcome) -> JournalPrompt {
+        let accuracyPct = Int((result.accuracy * 100).rounded())
+        var lines: [String] = [
+            "Score: \(result.finalScore)",
+            "Max combo: \(result.maxCombo)",
+            "Accuracy: \(accuracyPct)% (Perfects: \(result.perfectHits))"
+        ]
+        if result.segments.count == 3 {
+            lines.append("Shape: \(result.narrativeHeadline)")
+        }
+        if outcome.isNewBestScore {
+            lines.append("This was a new personal best.")
+        } else if outcome.didLevelUp {
+            lines.append("Levelled up to Lv. \(outcome.newLevel).")
+        }
+        lines.append("")
+        lines.append("Flow state (1-10):")
+        lines.append("When I lost rhythm:")
+        lines.append("One cue for next session:")
+
+        return JournalPrompt(
+            id: "r.session.auto",
+            focus: .rallyGame,
+            title: "After a Rally session",
+            bodyStarter: lines.joined(separator: "\n")
+        )
+    }
+
     /// Deterministic “prompt of the day” — same calendar day → same prompt for a focus.
     static func dailyPrompt(for date: Date = Date(), focus: JournalFocus = .general) -> JournalPrompt {
         let list = prompts(for: focus)
