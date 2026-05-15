@@ -34,6 +34,13 @@ final class HapticManager {
     private var tierPlayers: [Int: CHHapticPatternPlayer] = [:]
     private var primerPlayer: CHHapticPatternPlayer?
 
+    /// Last-play timestamps per quality. Used to suppress duplicate plays
+    /// inside the same vsync (~16ms) or whenever the spawner pumps two hits
+    /// in very fast succession — without this the device buzzes into mush
+    /// during a streak through the breaker phase.
+    private var lastPlayAt: [HitQuality: TimeInterval] = [:]
+    private let minRepeatGapSeconds: TimeInterval = 0.022
+
     private let lightFallback  = UIImpactFeedbackGenerator(style: .light)
     private let mediumFallback = UIImpactFeedbackGenerator(style: .medium)
     private let heavyFallback  = UIImpactFeedbackGenerator(style: .heavy)
@@ -140,6 +147,15 @@ final class HapticManager {
     // MARK: - Play
 
     private func play(quality: HitQuality) {
+        // Throttle: never fire the same-quality pattern more often than
+        // `minRepeatGapSeconds`. Prevents back-to-back perfects from melting
+        // into one indistinct rumble at high hit rates.
+        let now = CACurrentMediaTime()
+        if let last = lastPlayAt[quality], now - last < minRepeatGapSeconds {
+            return
+        }
+        lastPlayAt[quality] = now
+
         guard supportsHaptics, let player = hitPlayers[quality] else {
             switch quality {
             case .perfect: heavyFallback.impactOccurred(intensity: 1.0)
@@ -175,34 +191,101 @@ final class HapticManager {
 
     // MARK: - Pattern definitions
 
+    /// Per-quality patterns are *shape-distinct*, not just amplitude-scaled.
+    /// The fingertip should be able to tell perfect from great even on a
+    /// device set to its loudest gameplay haptic intensity.
+    ///
+    /// | Quality | Shape                                      | Total |
+    /// |---------|--------------------------------------------|-------|
+    /// | Perfect | snap → echo-snap → short bright rumble     | ~70ms |
+    /// | Great   | single snap → short crisp body             | ~45ms |
+    /// | Good    | continuous-only soft pad (no transient)    | ~70ms |
+    ///
+    /// All numbers are tuned for an iPhone 13/14 Taptic Engine; the brief
+    /// is "blind A/B in Simulator/device notes OK". Sharpness controls the
+    /// *spectral feel* — high sharpness reads as a metallic snap, low
+    /// sharpness reads as a wooden thud / cushion bump.
     private func makeHitPattern(quality: HitQuality) -> CHHapticPattern? {
-        let intensity: Float
-        let sharpness: Float
         switch quality {
-        case .perfect: intensity = Tunables.hapticPerfect; sharpness = 0.9
-        case .great:   intensity = Tunables.hapticGreat;   sharpness = 0.65
-        case .good:    intensity = Tunables.hapticGood;    sharpness = 0.4
-        case .miss:    return nil
+        case .perfect:
+            return makePerfectPattern()
+        case .great:
+            return makeGreatPattern()
+        case .good:
+            return makeGoodPattern()
+        case .miss:
+            return nil
         }
+    }
 
-        let transient = CHHapticEvent(
+    private func makePerfectPattern() -> CHHapticPattern? {
+        // Sharp double-snap with a bright, short rumble tail. Two transients
+        // 22ms apart give the unmistakable "thwack" of a clean strike.
+        let snap1 = CHHapticEvent(
             eventType: .hapticTransient,
             parameters: [
-                .init(parameterID: .hapticIntensity, value: intensity),
-                .init(parameterID: .hapticSharpness, value: sharpness)
+                .init(parameterID: .hapticIntensity, value: Tunables.hapticPerfect),
+                .init(parameterID: .hapticSharpness, value: 1.0)
             ],
             relativeTime: 0
         )
-        let continuous = CHHapticEvent(
+        let snap2 = CHHapticEvent(
+            eventType: .hapticTransient,
+            parameters: [
+                .init(parameterID: .hapticIntensity, value: 0.72),
+                .init(parameterID: .hapticSharpness, value: 0.9)
+            ],
+            relativeTime: 0.022
+        )
+        let tail = CHHapticEvent(
             eventType: .hapticContinuous,
             parameters: [
-                .init(parameterID: .hapticIntensity, value: intensity * 0.5),
-                .init(parameterID: .hapticSharpness, value: sharpness * 0.4)
+                .init(parameterID: .hapticIntensity, value: 0.45),
+                .init(parameterID: .hapticSharpness, value: 0.85)
             ],
-            relativeTime: 0.003,
-            duration: 0.028
+            relativeTime: 0.005,
+            duration: 0.050
         )
-        return try? CHHapticPattern(events: [transient, continuous], parameters: [])
+        return try? CHHapticPattern(events: [snap1, snap2, tail], parameters: [])
+    }
+
+    private func makeGreatPattern() -> CHHapticPattern? {
+        // Single confident snap with a short, crisp body. No echo-tap —
+        // that's what differentiates this from .perfect on the fingertip.
+        let snap = CHHapticEvent(
+            eventType: .hapticTransient,
+            parameters: [
+                .init(parameterID: .hapticIntensity, value: 0.85),
+                .init(parameterID: .hapticSharpness, value: 0.7)
+            ],
+            relativeTime: 0
+        )
+        let body = CHHapticEvent(
+            eventType: .hapticContinuous,
+            parameters: [
+                .init(parameterID: .hapticIntensity, value: Tunables.hapticGreat * 0.6),
+                .init(parameterID: .hapticSharpness, value: 0.55)
+            ],
+            relativeTime: 0.004,
+            duration: 0.038
+        )
+        return try? CHHapticPattern(events: [snap, body], parameters: [])
+    }
+
+    private func makeGoodPattern() -> CHHapticPattern? {
+        // Soft pad with *no* transient — the ball glanced off the strings.
+        // Low sharpness reads as a cushion bump rather than a sharp snap so
+        // the player physically feels the grade gap with .great.
+        let pad = CHHapticEvent(
+            eventType: .hapticContinuous,
+            parameters: [
+                .init(parameterID: .hapticIntensity, value: Tunables.hapticGood * 0.9),
+                .init(parameterID: .hapticSharpness, value: 0.20)
+            ],
+            relativeTime: 0,
+            duration: 0.065
+        )
+        return try? CHHapticPattern(events: [pad], parameters: [])
     }
 
     private func makeMissPattern() -> CHHapticPattern? {
