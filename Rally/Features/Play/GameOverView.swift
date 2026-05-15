@@ -26,6 +26,7 @@ struct GameOverView: View {
                 fanfare
                 scoreCounter
                 statsGrid
+                segmentedNarrative
                 rewardsStrip
                 actionButtons
             }
@@ -85,7 +86,68 @@ struct GameOverView: View {
     private var headline: String {
         if outcome.isNewBestScore { return "NEW BEST" }
         if outcome.didLevelUp     { return "LEVEL UP" }
+        // Promote the narrative headline only when we have segment data —
+        // older payloads (no segments[]) fall back to "RUN COMPLETE".
+        if !result.segments.isEmpty {
+            return result.narrativeHeadline.uppercased()
+        }
         return "RUN COMPLETE"
+    }
+
+    /// Per-third accuracy strip plus an optional subhead ("Most Perfects
+    /// landed mid-match"). Rendered between the stat tiles and the rewards
+    /// strip so the *story* of the run gets a beat of its own.
+    @ViewBuilder
+    private var segmentedNarrative: some View {
+        if result.segments.count == 3 {
+            VStack(spacing: 8) {
+                HStack(spacing: 10) {
+                    segmentBar(label: "1st", stats: result.segments[0])
+                    segmentBar(label: "2nd", stats: result.segments[1])
+                    segmentBar(label: "3rd", stats: result.segments[2])
+                }
+                if let subhead = result.narrativeSubhead {
+                    Text(subhead)
+                        .font(.system(.caption, design: .rounded).weight(.medium))
+                        .foregroundStyle(.white.opacity(0.6))
+                        .multilineTextAlignment(.center)
+                        .frame(maxWidth: .infinity)
+                }
+            }
+            .opacity(statsIn ? 1 : 0)
+            .offset(y: statsIn ? 0 : 16)
+        }
+    }
+
+    private func segmentBar(label: String, stats: SegmentStats) -> some View {
+        let accuracy = stats.accuracy
+        let tint: Color = {
+            switch accuracy {
+            case 0.85...: return .cyan
+            case 0.65...: return .yellow
+            default:      return .pink
+            }
+        }()
+        return VStack(spacing: 4) {
+            Text(label.uppercased())
+                .font(.system(.caption2, design: .rounded).weight(.semibold))
+                .tracking(2)
+                .foregroundStyle(.white.opacity(0.55))
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    Capsule().fill(Color.white.opacity(0.06))
+                    Capsule()
+                        .fill(tint.opacity(0.85))
+                        .frame(width: max(2, geo.size.width * CGFloat(accuracy)))
+                }
+            }
+            .frame(height: 8)
+            Text("\(Int((accuracy * 100).rounded()))%")
+                .font(.system(.caption, design: .rounded).weight(.bold))
+                .foregroundStyle(tint)
+                .monospacedDigit()
+        }
+        .frame(maxWidth: .infinity)
     }
 
     private var headlineGradient: LinearGradient {
