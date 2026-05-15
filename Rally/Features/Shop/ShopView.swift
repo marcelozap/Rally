@@ -6,8 +6,14 @@ struct ShopView: View {
     @State private var selectedCategory: ShopItem.Category? = nil
     @State private var groupByVendor: Bool = false
     @State private var shopEmote: AvatarShopEmote = .shopLook
+    @ObservedObject private var unlocks = CourtUnlocks.shared
 
     private var avatar: AvatarConfig? { avatarConfigs.first }
+
+    private var equippedIDs: Set<String> {
+        guard let a = avatar else { return [] }
+        return Set([a.equippedTopID, a.equippedBottomID, a.equippedShoesID, a.equippedRacketID])
+    }
 
     var body: some View {
         NavigationStack {
@@ -67,8 +73,13 @@ struct ShopView: View {
     // MARK: - Filtering / grouping
 
     private func filtered(_ items: [ShopItem]) -> [ShopItem] {
-        guard let cat = selectedCategory else { return items }
-        return items.filter { $0.category == cat }
+        let visible = ShopCatalog.visibleItems(
+            items,
+            unlockedCourtIDs: unlocks.unlockedCourtIDs,
+            equippedIDs: equippedIDs
+        )
+        guard let cat = selectedCategory else { return visible }
+        return visible.filter { $0.category == cat }
     }
 
     private var categoryFilter: some View {

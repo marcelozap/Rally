@@ -306,7 +306,32 @@ enum ShopCatalog {
               priceUSD: 12, colorHex: "#00E5FF", accentHex: "#FF1A8C",
               checkoutPromoCode: "NEON10",
               promoNote: "Rally-original accessory — demo promo field."),
+
+        // Tour-edition cosmetics — gated by court-atlas check-ins. Hidden
+        // until `CourtUnlocks` reports the matching `courtID` is unlocked.
+        .init(id: "rally.wristband.tour.wimbledon", category: .accessory, name: "Lawn Tour Band", brand: "Rally", vendorID: "rally-co",
+              productURL: URL(string: "https://rally.app/shop/tour-wimbledon")!,
+              priceUSD: 18, colorHex: "#1F6F3A", accentHex: "#FFFFFF",
+              checkoutPromoCode: "TOURGRASS",
+              promoNote: "Tour edition — unlocked by checking in at Centre Court."),
+        .init(id: "rally.wristband.tour.roland",    category: .accessory, name: "Terre Battue Band", brand: "Rally", vendorID: "rally-co",
+              productURL: URL(string: "https://rally.app/shop/tour-roland")!,
+              priceUSD: 18, colorHex: "#B14424", accentHex: "#FFFFFF",
+              checkoutPromoCode: "TOURCLAY",
+              promoNote: "Tour edition — unlocked by checking in at Philippe Chatrier."),
     ]
+
+    /// Court-atlas → shop-item gating. Items listed as a value here are
+    /// hidden from `visibleItems(...)` until their court is in
+    /// `CourtUnlocks.shared.unlockedCourtIDs`. The reverse-lookup is also
+    /// used by `CourtDetailView` to show "Tap to unlock the Lawn Tour Band".
+    static let courtUnlockToShopItem: [String: String] = [
+        "wimbledon.cc":   "rally.wristband.tour.wimbledon",
+        "rolandgarros.pc": "rally.wristband.tour.roland"
+    ]
+
+    /// Set of shop item IDs that are court-gated. Cheap precomputed lookup.
+    static let courtGatedItemIDs: Set<String> = Set(courtUnlockToShopItem.values)
 
     // MARK: - Lookup
 
@@ -327,6 +352,22 @@ enum ShopCatalog {
         return vendors.compactMap { v in
             guard let items = byVendor[v.id], !items.isEmpty else { return nil }
             return (v, items)
+        }
+    }
+
+    /// Filters `items` down to whatever the player can currently see,
+    /// hiding court-gated tour cosmetics until their corresponding court
+    /// is unlocked. Equipped items always pass through so a snapshot pull
+    /// that already lists a tour item doesn't suddenly disappear.
+    static func visibleItems(_ items: [ShopItem], unlockedCourtIDs: Set<String>, equippedIDs: Set<String> = []) -> [ShopItem] {
+        let unlockedItemIDs: Set<String> = Set(
+            unlockedCourtIDs.compactMap { courtUnlockToShopItem[$0] }
+        )
+        return items.filter { item in
+            if !courtGatedItemIDs.contains(item.id) { return true }
+            if unlockedItemIDs.contains(item.id) { return true }
+            if equippedIDs.contains(item.id) { return true }
+            return false
         }
     }
 }

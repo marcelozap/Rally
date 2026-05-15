@@ -21,6 +21,7 @@ targets:
       - path: Rally
     info:
       properties:
+        NSLocationWhenInUseUsageDescription: "Rally checks your location once when you tap “I'm here” on an iconic court so we can unlock a tour cosmetic. We never track you in the background and never store coordinates."
         NSAppTransportSecurity:
           NSAllowsLocalNetworking: true
           NSExceptionDomains:
