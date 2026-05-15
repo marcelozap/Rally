@@ -40,9 +40,20 @@ final class MusicEngine {
     // MARK: - Public surface
 
     /// Set by `AudioManager` from the combo-tier event. Clamped to 0…4.
+    /// The *effective* tier driving stem gates is
+    /// `max(targetTier, phaseFloor)` — so a `.breaker` phase keeps the bass
+    /// + arp alive even when the player's combo dropped back to zero.
     var targetTier: Int {
         get { _targetTier.withLockUnchecked { $0 } }
         set { _targetTier.withLockUnchecked { $0 = max(0, min(4, newValue)) } }
+    }
+
+    /// Match-flow floor. Driven by `.phaseChanged` events. 0 in warm-up /
+    /// exchange / recovery, escalates to 1 in pressure and 2 in breaker so
+    /// the texture *fills in* visibly even on a stoic player.
+    var phaseFloor: Int {
+        get { _phaseFloor.withLockUnchecked { $0 } }
+        set { _phaseFloor.withLockUnchecked { $0 = max(0, min(4, newValue)) } }
     }
 
     /// 0…1 fade gates per stem. Smooth so re-entry after a combo break
@@ -114,12 +125,15 @@ final class MusicEngine {
 
     private let _gates = OSAllocatedUnfairLock(initialState: StemGates())
     private let _targetTier = OSAllocatedUnfairLock(initialState: 0)
+    private let _phaseFloor = OSAllocatedUnfairLock(initialState: 0)
 
     private enum Constants {
         static let bpm: Double = 110
-        // Per-tick fade speed (linear). At 16th-note intervals of ~136 ms,
-        // a 0.03 step crossfades in ~1 second.
-        static let tierFadeStep: Float = 0.03
+        /// Per-tick fade speed (linear). At 16th-note intervals of ~136 ms,
+        /// a `0.0625` step crossfades a stem fully in/out in ~16 ticks, i.e.
+        /// roughly 4 beats — squarely inside the 2-6 beat brief and slow
+        /// enough that re-entry after a combo break never pops.
+        static let tierFadeStep: Float = 0.0625
     }
 
     // MARK: - Sequencer step
@@ -168,10 +182,14 @@ final class MusicEngine {
     }
 
     /// Fades each stem's gate toward 1.0 if that stem is enabled by the
-    /// current `targetTier`, otherwise toward 0.0. The fades are linear and
-    /// take ~1 second to fully open or close (see `tierFadeStep`).
+    /// current effective tier, otherwise toward 0.0. The fades are linear
+    /// and take ~4 beats to fully open or close (see `tierFadeStep`).
+    /// Drums (kick + hat) are intentionally outside this loop — the pulse
+    /// never dies, even on a combo break.
     private func advanceGates() {
-        let tier = _targetTier.withLockUnchecked { $0 }
+        let combo = _targetTier.withLockUnchecked { $0 }
+        let floor = _phaseFloor.withLockUnchecked { $0 }
+        let tier  = max(combo, floor)
         _gates.withLockUnchecked { gates in
             gates.bass = step(gates.bass, towards: tier >= 1 ? 1.0 : 0.0)
             gates.arp  = step(gates.arp,  towards: tier >= 2 ? 1.0 : 0.0)

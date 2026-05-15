@@ -122,11 +122,25 @@ final class AudioManager {
             musicEngine.duckAfterComboBreak()
         case .sessionStart:
             musicEngine.targetTier = 0
+            musicEngine.phaseFloor = 0
             musicEngine.start()
         case .sessionEnd:
             musicEngine.stop()
+        case .phaseChanged(_, let to):
+            // Phase floor guarantees a minimum stem richness so the bed
+            // visibly *fills in* with match-flow even if the player isn't
+            // currently in a high combo tier.
+            musicEngine.phaseFloor = phaseFloor(for: to)
         case .cosmeticEquipped:
             break
+        }
+    }
+
+    private func phaseFloor(for phase: MatchFlowPhase) -> Int {
+        switch phase {
+        case .warmUp, .exchange, .recovery: return 0
+        case .pressure:                     return 1
+        case .breaker:                      return 2
         }
     }
 
