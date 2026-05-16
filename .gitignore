@@ -57,5 +57,11 @@ backend/data/
 .env.local
 secrets.plist
 
+# Python tooling (not part of Rally)
+.resume-venv/
+venv/
+.venv/
+*.docx
+
 # Unrelated nested repo that lives in this workspace by accident
 Green-Machine/
