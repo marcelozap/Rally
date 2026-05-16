@@ -111,6 +111,22 @@ app.get("/health", (_, res) => {
   res.json({ ok: true });
 });
 
+/**
+ * Remote tunables stub. The iOS client (`RemoteTunables.swift`) fetches
+ * this when the in-app feature flag is on; missing fields mean "use the
+ * bundled default." Edit these numbers to live-adjust the match-flow BPM
+ * curve without shipping a build.
+ */
+app.get("/api/tunables", (_, res) => {
+  res.json({
+    bpmWarmUp: 84,
+    bpmExchange: 110,
+    bpmPressure: 140,
+    bpmBreaker: 168,
+    recoverySeconds: 3.0,
+  });
+});
+
 app.post("/api/auth/register", (req, res) => {
   const email = String(req.body?.email || "")
     .trim()

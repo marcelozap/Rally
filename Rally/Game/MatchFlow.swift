@@ -84,8 +84,20 @@ final class MatchFlowCoordinator {
     private var combo: Int = 0
     private var recoveryUntil: TimeInterval = 0
 
-    init(sessionDurationSeconds: Double) {
+    /// Designated init. `bpmResolver` defaults to bundled `Tunables` so
+    /// unit tests are deterministic; production callers can pass a closure
+    /// over `RemoteTunables.shared.bpm(for:)`.
+    init(sessionDurationSeconds: Double, bpmResolver: BPMResolver? = nil) {
         self.sessionDurationSeconds = sessionDurationSeconds
+        self.bpmResolver = bpmResolver ?? { phase in
+            switch phase {
+            case .warmUp:   return Tunables.MatchFlow.bpmWarmUp
+            case .exchange: return Tunables.MatchFlow.bpmExchange
+            case .pressure: return Tunables.MatchFlow.bpmPressure
+            case .breaker:  return Tunables.MatchFlow.bpmBreaker
+            case .recovery: return Tunables.MatchFlow.bpmExchange
+            }
+        }
     }
 
     /// Drive every frame from `GameScene.update(_:)`.
@@ -142,12 +154,21 @@ final class MatchFlowCoordinator {
         profile(for: currentPhase)
     }
 
-    /// Phase profile lookup. Pure — exposed for tests.
+    /// BPM resolver. Defaults to bundled `Tunables`, but a `RemoteTunables`
+    /// manifest can override per-phase BPM live without shipping a build.
+    /// Injected (rather than calling `RemoteTunables.shared` directly) so
+    /// tests don't reach across actor boundaries.
+    typealias BPMResolver = (MatchFlowPhase) -> Double
+    private let bpmResolver: BPMResolver
+
+    /// Phase profile lookup. Pure given the injected `bpmResolver` —
+    /// exposed for tests.
     func profile(for phase: MatchFlowPhase) -> PhaseProfile {
+        let bpm = bpmResolver(phase)
         switch phase {
         case .warmUp:
             return PhaseProfile(
-                bpm: Tunables.MatchFlow.bpmWarmUp,
+                bpm: bpm,
                 travelScalar: 1.15,
                 timingWindowScalar: 1.10,
                 doubleNoteProbability: 0.0,
@@ -157,7 +178,7 @@ final class MatchFlowCoordinator {
             )
         case .exchange:
             return PhaseProfile(
-                bpm: Tunables.MatchFlow.bpmExchange,
+                bpm: bpm,
                 travelScalar: 1.0,
                 timingWindowScalar: 1.0,
                 doubleNoteProbability: 0.02,
@@ -167,7 +188,7 @@ final class MatchFlowCoordinator {
             )
         case .pressure:
             return PhaseProfile(
-                bpm: Tunables.MatchFlow.bpmPressure,
+                bpm: bpm,
                 travelScalar: 0.92,
                 timingWindowScalar: 0.9,
                 doubleNoteProbability: 0.06,
@@ -177,7 +198,7 @@ final class MatchFlowCoordinator {
             )
         case .breaker:
             return PhaseProfile(
-                bpm: Tunables.MatchFlow.bpmBreaker,
+                bpm: bpm,
                 travelScalar: 0.85,
                 timingWindowScalar: 0.85,
                 doubleNoteProbability: 0.10,
@@ -189,7 +210,7 @@ final class MatchFlowCoordinator {
             // Recovery is intentionally sparse — the player has just been
             // killed; give them a moment.
             return PhaseProfile(
-                bpm: Tunables.MatchFlow.bpmExchange,
+                bpm: bpm,
                 travelScalar: 1.05,
                 timingWindowScalar: 1.05,
                 doubleNoteProbability: 0.0,

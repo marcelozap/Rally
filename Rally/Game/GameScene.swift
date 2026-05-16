@@ -104,8 +104,17 @@ final class GameScene: SKScene {
 
         // Phase coordinator drives BPM, density, timing windows, double-ball
         // probability. The spawner asks it for a profile every time it needs
-        // to author the next note.
-        let coordinator = MatchFlowCoordinator(sessionDurationSeconds: sessionDurationSeconds)
+        // to author the next note. BPM resolution goes through
+        // `RemoteTunables` so a live-ops manifest can shift the tempo curve
+        // without shipping a build; falls back to bundled `Tunables`.
+        let coordinator = MatchFlowCoordinator(
+            sessionDurationSeconds: sessionDurationSeconds,
+            bpmResolver: { phase in
+                MainActor.assumeIsolated {
+                    RemoteTunables.shared.bpm(for: phase)
+                }
+            }
+        )
         coordinator.onPhaseChange = { [weak self] from, to in
             self?.handlePhaseChange(from: from, to: to)
         }

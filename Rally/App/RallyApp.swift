@@ -38,12 +38,24 @@ struct RallyApp: App {
         HapticManager.shared.prewarm()
     }
 
+    @Environment(\.scenePhase) private var scenePhase
+
     var body: some Scene {
         WindowGroup {
             RootView()
                 .environmentObject(authSession)
+                .task {
+                    // Optional remote-tunables refresh. No-op when the
+                    // feature flag is off — see RemoteTunables.swift.
+                    await RemoteTunables.shared.refreshIfEnabled()
+                }
         }
         .modelContainer(modelContainer)
+        .onChange(of: scenePhase) { _, newPhase in
+            if newPhase == .active {
+                Task { await RemoteTunables.shared.refreshIfEnabled() }
+            }
+        }
     }
 
     /// Seed the singleton rows on a fresh install:
