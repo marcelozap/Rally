@@ -48,24 +48,30 @@ struct ContentView: View {
             HomeView(selectedTab: $selectedTab, logsSection: $logsSection)
                 .tabItem { Label("Home", systemImage: "house.fill") }
                 .tag(RallyTab.home)
+                .transition(.asymmetric(insertion: .opacity.combined(with: .scale(scale: 0.95)), removal: .opacity))
 
             GameSessionView(onExit: { selectedTab = .home })
                 .tabItem { Label("Play", systemImage: "tennis.racket") }
                 .tag(RallyTab.play)
+                .transition(.asymmetric(insertion: .opacity.combined(with: .scale(scale: 0.95)), removal: .opacity))
 
             LogsView(section: $logsSection)
                 .tabItem { Label("Logs", systemImage: "list.clipboard.fill") }
                 .tag(RallyTab.logs)
+                .transition(.asymmetric(insertion: .opacity.combined(with: .scale(scale: 0.95)), removal: .opacity))
 
             JournalView()
                 .tabItem { Label("Journal", systemImage: "book.fill") }
                 .tag(RallyTab.journal)
+                .transition(.asymmetric(insertion: .opacity.combined(with: .scale(scale: 0.95)), removal: .opacity))
 
             ShopView()
                 .tabItem { Label("Shop", systemImage: "bag.fill") }
                 .tag(RallyTab.shop)
+                .transition(.asymmetric(insertion: .opacity.combined(with: .scale(scale: 0.95)), removal: .opacity))
         }
         .tint(.cyan)
+        .animation(.easeInOut(duration: 0.25), value: selectedTab)
     }
 }
 

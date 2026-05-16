@@ -23,6 +23,7 @@ struct GameOverView: View {
     @State private var fanfareIn: Bool = false
     @State private var statsIn: Bool = false
     @State private var actionsIn: Bool = false
+    @State private var showingShareSheet: Bool = false
 
     var body: some View {
         ZStack {
@@ -33,6 +34,7 @@ struct GameOverView: View {
                 statsGrid
                 segmentedNarrative
                 rewardsStrip
+                newAchievementsStrip
                 actionButtons
             }
             .padding(.horizontal, 28)
@@ -40,6 +42,9 @@ struct GameOverView: View {
         }
         .ignoresSafeArea()
         .onAppear { runEntranceTimeline() }
+        .sheet(isPresented: $showingShareSheet) {
+            shareSheet
+        }
     }
 
     // MARK: - Sections
@@ -255,6 +260,47 @@ struct GameOverView: View {
         .offset(y: statsIn ? 0 : 18)
     }
 
+    @ViewBuilder
+    private var newAchievementsStrip: some View {
+        if !outcome.newBadgesEarned.isEmpty {
+            VStack(spacing: 10) {
+                HStack(spacing: 8) {
+                    Image(systemName: "star.fill")
+                        .foregroundStyle(.yellow)
+                    Text("New Achievement!")
+                        .font(.system(.callout, design: .rounded).weight(.bold))
+                        .foregroundStyle(.white)
+                    Spacer()
+                }
+                HStack(spacing: 12) {
+                    ForEach(outcome.newBadgesEarned, id: \.self) { badgeId in
+                        if let badge = BadgeDefinition(rawValue: badgeId) {
+                            let metadata = badge.metadata
+                            VStack(spacing: 4) {
+                                Image(systemName: metadata.icon)
+                                    .font(.title3)
+                                    .foregroundStyle(Color(hex: metadata.color) ?? .cyan)
+                                Text(metadata.title)
+                                    .font(.caption2.weight(.semibold))
+                                    .foregroundStyle(.white)
+                                    .lineLimit(1)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(10)
+                            .background(RoundedRectangle(cornerRadius: 10).fill(Color.white.opacity(0.04)))
+                            .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color(hex: metadata.color)?.opacity(0.5) ?? Color.cyan.opacity(0.5), lineWidth: 1))
+                        }
+                    }
+                }
+            }
+            .padding(12)
+            .background(RoundedRectangle(cornerRadius: 14).fill(Color.yellow.opacity(0.08)))
+            .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.yellow.opacity(0.35), lineWidth: 1))
+            .opacity(statsIn ? 1 : 0)
+            .offset(y: statsIn ? 0 : 18)
+        }
+    }
+
     private func rewardChip(icon: String, text: String, sub: String, tint: Color) -> some View {
         HStack(spacing: 10) {
             Image(systemName: icon)
@@ -301,6 +347,20 @@ struct GameOverView: View {
                         ))
                 )
             }
+            Button(action: { showingShareSheet = true }) {
+                HStack(spacing: 8) {
+                    Image(systemName: "square.and.arrow.up")
+                    Text("Share Score")
+                }
+                .font(.system(.subheadline, design: .rounded).weight(.semibold))
+                .foregroundStyle(.white.opacity(0.8))
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 12)
+                .background(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(Color.white.opacity(0.3), lineWidth: 1)
+                )
+            }
             if let onLogReflection = onLogReflection {
                 Button(action: onLogReflection) {
                     HStack(spacing: 8) {
@@ -327,6 +387,13 @@ struct GameOverView: View {
         }
         .opacity(actionsIn ? 1 : 0)
         .offset(y: actionsIn ? 0 : 16)
+    }
+
+    private var shareSheet: some View {
+        let shareText = "🎾 I just scored \(result.finalScore) points in Rally! Max combo: \(result.maxCombo) 🔥 \(outcome.isNewBestScore ? "New personal best!" : "") #RallyGame"
+        return ShareLink(item: shareText) {
+            Label("Share", systemImage: "square.and.arrow.up")
+        }
     }
 
     // MARK: - Entrance

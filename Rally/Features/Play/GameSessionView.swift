@@ -57,6 +57,8 @@ struct GameSessionView: View {
         }
         .onAppear {
             if scene == nil { scene = makeScene() }
+            // Generate today's challenges if they don't exist yet
+            DailyChallengeMgr.generateDailyIfNeeded(modelContext: modelContext)
             viewModel.bindIfNeeded { result in
                 handleSessionEnded(result: result)
             }
@@ -96,6 +98,20 @@ struct GameSessionView: View {
             return
         }
         let outcome = Rewards.applying(result: result, to: progress)
+        
+        // Update daily challenges
+        DailyChallengeMgr.updateChallenges(from: result, modelContext: modelContext)
+        
+        // Award achievements for newly earned badges and avoid duplicates
+        for badgeId in outcome.newBadgesEarned {
+            let fetchDescriptor = FetchDescriptor<Achievement>(predicate: NSPredicate(format: "badgeId == %@", badgeId))
+            let existingBadges = (try? modelContext.fetch(fetchDescriptor)) ?? []
+            guard existingBadges.isEmpty, let badgeDef = BadgeDefinition(rawValue: badgeId) else { continue }
+            let achievement = badgeDef.create()
+            modelContext.insert(achievement)
+            NotificationManager.notifyAchievementEarned(achievement)
+        }
+        
         try? modelContext.save()
         RallySyncTriggers.pushAfterLocalSave(modelContext: modelContext)
         viewModel.present(result: result, outcome: outcome)

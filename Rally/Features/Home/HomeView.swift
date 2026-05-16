@@ -8,6 +8,8 @@ struct HomeView: View {
     @Query(sort: \TrainingSession.date, order: .reverse) private var trainings: [TrainingSession]
     @Query(sort: \MatchEntry.date, order: .reverse) private var matches: [MatchEntry]
     @Query(sort: \JournalEntry.date, order: .reverse) private var journal: [JournalEntry]
+    @Query(sort: \DailyChallenge.createdDate, order: .reverse) private var dailyChallenges: [DailyChallenge]
+    @Query(sort: \Achievement.earnedDate, order: .reverse) private var achievements: [Achievement]
 
     @Binding var selectedTab: RallyTab
     @Binding var logsSection: LogsSection
@@ -29,6 +31,8 @@ struct HomeView: View {
                     avatarCard
                     playerBadge
                     quickActions
+                    dailyChallengesSection
+                    recentAchievementsSection
                     courtAtlasSection
                     weeklyStats
                     recentJournal
@@ -404,4 +408,109 @@ struct HomeView: View {
             }
         }
     }
+
+    // MARK: - Daily Challenges
+
+    private var dailyChallengesSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Today's challenges")
+                .font(.system(.headline, design: .rounded))
+                .foregroundStyle(.white)
+            let todaysChallenge = dailyChallenges.filter { Calendar.current.isDateInToday($0.createdDate) }
+            if todaysChallenge.isEmpty {
+                Text("No challenges today yet. Tap Play to get started!")
+                    .font(.caption)
+                    .foregroundStyle(.white.opacity(0.5))
+            } else {
+                VStack(spacing: 10) {
+                    ForEach(todaysChallenge, id: \.id) { challenge in
+                        HStack(spacing: 12) {
+                            ZStack(alignment: .center) {
+                                Circle()
+                                    .fill(Color(hex: challenge.colorHex) ?? .cyan)
+                                    .frame(width: 44, height: 44)
+                                    .opacity(0.2)
+                                Image(systemName: challenge.iconName)
+                                    .font(.system(.caption, design: .default).weight(.bold))
+                                    .foregroundStyle(Color(hex: challenge.colorHex) ?? .cyan)
+                            }
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(challenge.title)
+                                    .font(.system(.callout, design: .rounded).weight(.semibold))
+                                    .foregroundStyle(.white)
+                                HStack(spacing: 8) {
+                                    ProgressView(value: challenge.progress)
+                                        .tint(Color(hex: challenge.colorHex) ?? .cyan)
+                                    Text("\(challenge.currentProgress)/\(challenge.target)")
+                                        .font(.caption2)
+                                        .foregroundStyle(.white.opacity(0.6))
+                                }
+                            }
+                            Spacer()
+                            if challenge.isCompleted {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .foregroundStyle(.green)
+                                    .font(.title3)
+                            } else {
+                                Text("+\(challenge.rewardCoins)")
+                                    .font(.caption.weight(.bold))
+                                    .foregroundStyle(Color(hex: challenge.colorHex) ?? .cyan)
+                            }
+                        }
+                        .padding(12)
+                        .background(RoundedRectangle(cornerRadius: 12).fill(Color.white.opacity(0.04)))
+                        .overlay(RoundedRectangle(cornerRadius: 12).stroke(
+                            challenge.isCompleted ? Color.green.opacity(0.5) : Color(hex: challenge.colorHex)?.opacity(0.2) ?? Color.cyan.opacity(0.2),
+                            lineWidth: 1
+                        ))
+                    }
+                }
+            }
+        }
+    }
+
+    // MARK: - Recent Achievements
+
+    private var recentAchievementsSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Recent achievements")
+                .font(.system(.headline, design: .rounded))
+                .foregroundStyle(.white)
+            let recent = achievements.prefix(4)
+            if recent.isEmpty {
+                Text("Unlock achievements by hitting milestones!")
+                    .font(.caption)
+                    .foregroundStyle(.white.opacity(0.5))
+            } else {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 80))], spacing: 10) {
+                    ForEach(recent, id: \.id) { achievement in
+                        VStack(spacing: 8) {
+                            ZStack {
+                                Circle()
+                                    .fill(Color(hex: achievement.colorHex) ?? .cyan)
+                                    .frame(width: 56, height: 56)
+                                    .opacity(0.15)
+                                Image(systemName: achievement.iconName)
+                                    .font(.title2)
+                                    .foregroundStyle(Color(hex: achievement.colorHex) ?? .cyan)
+                            }
+                            Text(achievement.title)
+                                .font(.caption2.weight(.semibold))
+                                .foregroundStyle(.white)
+                                .lineLimit(2)
+                                .multilineTextAlignment(.center)
+                            Text(achievement.rarity)
+                                .font(.caption2)
+                                .foregroundStyle(.white.opacity(0.5))
+                        }
+                        .padding(8)
+                        .frame(maxWidth: .infinity)
+                        .background(RoundedRectangle(cornerRadius: 12).fill(Color.white.opacity(0.04)))
+                        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color(hex: achievement.colorHex)?.opacity(0.3) ?? Color.cyan.opacity(0.3), lineWidth: 1))
+                    }
+                }
+            }
+        }
+    }
 }
+

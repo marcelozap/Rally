@@ -33,6 +33,7 @@ enum Rewards {
         var newLevel: Int
         var newStreak: Int
         var streakIncreased: Bool
+        var newBadgesEarned: [String] = []  // badgeIds of newly earned achievements
     }
 
     /// Compute the reward outcome AND apply it to the given progress
@@ -67,6 +68,32 @@ enum Rewards {
         progress.dailyStreak = streakInfo.streak
         progress.lastPlayDate = Calendar.current.startOfDay(for: now)
 
+        // Check for newly earned badges
+        var newBadges: Set<String> = []
+        if progress.totalSessions == 1 { newBadges.insert(BadgeDefinition.firstPlay.rawValue) }
+        if progress.bestScore >= 100 && isNewScore { newBadges.insert(BadgeDefinition.firstScore100.rawValue) }
+        if result.perfectHits > 0 { newBadges.insert(BadgeDefinition.firstPerfectHit.rawValue) }
+        if result.maxCombo >= Tunables.comboTier1 { newBadges.insert(BadgeDefinition.firstCombo.rawValue) }
+
+        if streakInfo.streak >= 7 { newBadges.insert(BadgeDefinition.streak7Days.rawValue) }
+        if streakInfo.streak >= 30 { newBadges.insert(BadgeDefinition.streak30Days.rawValue) }
+        if streakInfo.streak >= 100 { newBadges.insert(BadgeDefinition.streak100Days.rawValue) }
+
+        if result.maxCombo >= 50 { newBadges.insert(BadgeDefinition.perfectCombo50.rawValue) }
+        if result.maxCombo >= 100 { newBadges.insert(BadgeDefinition.perfectCombo100.rawValue) }
+
+        if result.accuracy >= 0.90 { newBadges.insert(BadgeDefinition.accuracy90.rawValue) }
+        if result.accuracy >= 0.95 { newBadges.insert(BadgeDefinition.accuracy95.rawValue) }
+
+        if progress.level >= 5 { newBadges.insert(BadgeDefinition.level5.rawValue) }
+        if progress.level >= 10 { newBadges.insert(BadgeDefinition.level10.rawValue) }
+        if progress.level >= 25 { newBadges.insert(BadgeDefinition.level25.rawValue) }
+        if progress.level >= 50 { newBadges.insert(BadgeDefinition.level50.rawValue) }
+
+        if progress.totalSessions >= 10 { newBadges.insert(BadgeDefinition.session10.rawValue) }
+        if progress.totalSessions >= 50 { newBadges.insert(BadgeDefinition.session50.rawValue) }
+        if progress.bestScore >= 1000 { newBadges.insert(BadgeDefinition.totalScore1000.rawValue) }
+
         return Outcome(
             coinsEarned: coins + streakBonus,
             xpEarned: xp,
@@ -75,7 +102,8 @@ enum Rewards {
             didLevelUp: progress.level > previousLevel,
             newLevel: progress.level,
             newStreak: streakInfo.streak,
-            streakIncreased: streakInfo.increased
+            streakIncreased: streakInfo.increased,
+            newBadgesEarned: Array(newBadges).sorted()
         )
     }
 

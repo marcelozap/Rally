@@ -20,7 +20,9 @@ struct RallyApp: App {
                 TrainingSession.self,
                 MatchEntry.self,
                 JournalEntry.self,
-                PlayerProgress.self
+                PlayerProgress.self,
+                Achievement.self,
+                DailyChallenge.self
             )
             Self.seedIfNeeded(container: modelContainer)
         } catch {
@@ -36,6 +38,11 @@ struct RallyApp: App {
         // haptic engine before the player even sees the menu.
         AudioManager.shared.prewarm()
         HapticManager.shared.prewarm()
+
+        // Request notification permissions and schedule recurring reminders
+        NotificationManager.requestPermission()
+        NotificationManager.scheduleDailyReminder(hour: 9, minute: 0)
+        NotificationManager.scheduleStreakWarning(hour: 22, minute: 0)
     }
 
     @Environment(\.scenePhase) private var scenePhase
