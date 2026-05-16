@@ -10,6 +10,9 @@ struct HomeView: View {
     @Query(sort: \JournalEntry.date, order: .reverse) private var journal: [JournalEntry]
     @Query(sort: \DailyChallenge.createdDate, order: .reverse) private var dailyChallenges: [DailyChallenge]
     @Query(sort: \Achievement.earnedDate, order: .reverse) private var achievements: [Achievement]
+    @Query private var battlePasses: [BattlePass]
+    @Query(sort: \SeasonalEvent.startDate, order: .reverse) private var seasonalEvents: [SeasonalEvent]
+    @Query(sort: \RivalChallenge.completedDate, order: .reverse) private var rivalHistory: [RivalChallenge]
 
     @Binding var selectedTab: RallyTab
     @Binding var logsSection: LogsSection
@@ -31,6 +34,8 @@ struct HomeView: View {
                     avatarCard
                     playerBadge
                     quickActions
+                    competitionSummarySection
+                    seasonalEventSection
                     dailyChallengesSection
                     recentAchievementsSection
                     courtAtlasSection
@@ -241,6 +246,94 @@ struct HomeView: View {
                 }
             }
         }
+    }
+
+    private var competitionSummarySection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Text("Competition")
+                    .font(.system(.headline, design: .rounded))
+                    .foregroundStyle(.white)
+                Spacer()
+                NavigationLink {
+                    CompetitionOverviewView()
+                } label: {
+                    Text("Explore")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.cyan)
+                }
+                .buttonStyle(.plain)
+            }
+
+            HStack(spacing: 12) {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Leaderboard")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.white)
+                    Text(battlePasses.first?.currentTier == nil ? "Join the race" : "Top 10 chase")
+                        .font(.caption)
+                        .foregroundStyle(.white.opacity(0.55))
+                }
+                Spacer()
+                NavigationLink {
+                    CompetitionOverviewView()
+                } label: {
+                    Image(systemName: "chevron.right")
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(.white.opacity(0.6))
+                        .padding(10)
+                        .background(Circle().fill(Color.white.opacity(0.06)))
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(14)
+            .background(RoundedRectangle(cornerRadius: 16).fill(Color.white.opacity(0.04)))
+            .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.purple.opacity(0.2), lineWidth: 1))
+        }
+    }
+
+    private var seasonalEventSection: some View {
+        guard let event = seasonalEvents.first else {
+            return AnyView(EmptyView())
+        }
+        return AnyView(
+            VStack(alignment: .leading, spacing: 12) {
+                HStack {
+                    Text("Season event")
+                        .font(.system(.headline, design: .rounded))
+                        .foregroundStyle(.white)
+                    Spacer()
+                    Text(event.isActive ? "Live now" : "Upcoming")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(event.isActive ? .green : .cyan)
+                }
+                Text(event.description)
+                    .font(.caption)
+                    .foregroundStyle(.white.opacity(0.65))
+                    .lineLimit(2)
+                HStack(spacing: 8) {
+                    Text("Level")
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(.white.opacity(0.7))
+                    Text(event.levelName)
+                        .font(.caption2.weight(.bold))
+                        .foregroundStyle(.white)
+                    Spacer()
+                    NavigationLink {
+                        SeasonalEventsView()
+                    } label: {
+                        Text("View season")
+                            .font(.caption.weight(.bold))
+                            .foregroundStyle(.cyan)
+                    }
+                    .buttonStyle(.plain)
+                }
+                .padding(.vertical, 6)
+            }
+            .padding(14)
+            .background(RoundedRectangle(cornerRadius: 16).fill(Color.white.opacity(0.04)))
+            .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.blue.opacity(0.2), lineWidth: 1))
+        )
     }
 
     // MARK: - Court atlas (world map)

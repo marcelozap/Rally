@@ -20,6 +20,9 @@ struct GameSessionView: View {
     @State private var sessionKey = UUID()
     @State private var reflectionPrompt: JournalPrompt? = nil
 
+    /// Optional rival opponent when launching a rival challenge session.
+    var rivalOpponent: RivalOpponent? = nil
+
     /// Called when the player taps "Back to Home" from the overlay.
     /// Wired by `ContentView` so we can switch the selected tab.
     var onExit: () -> Void = {}
@@ -98,10 +101,31 @@ struct GameSessionView: View {
             return
         }
         let outcome = Rewards.applying(result: result, to: progress)
-        
+
+        // Update battle pass progression from earned XP.
+        BattlePassManager.grantXP(outcome.xpEarned, to: modelContext)
+
+        // Update seasonal event progress for this run.
+        SeasonalEventManager.updateProgress(from: result, modelContext: modelContext)
+
         // Update daily challenges
         DailyChallengeMgr.updateChallenges(from: result, modelContext: modelContext)
-        
+
+        // Store rival results when this session was launched as a rival challenge.
+        if let opponent = rivalOpponent {
+            let didWin = result.finalScore >= opponent.targetScore
+            let challengeResult = RivalChallenge(
+                opponentName: opponent.name,
+                targetScore: opponent.targetScore,
+                playerScore: result.finalScore,
+                didWin: didWin
+            )
+            RivalModeManager.addChallengeResult(challengeResult, modelContext: modelContext)
+            if didWin {
+                progress.coins += opponent.rewardCoins
+            }
+        }
+
         // Award achievements for newly earned badges and avoid duplicates
         for badgeId in outcome.newBadgesEarned {
             let fetchDescriptor = FetchDescriptor<Achievement>(predicate: NSPredicate(format: "badgeId == %@", badgeId))
@@ -111,7 +135,7 @@ struct GameSessionView: View {
             modelContext.insert(achievement)
             NotificationManager.notifyAchievementEarned(achievement)
         }
-        
+
         try? modelContext.save()
         RallySyncTriggers.pushAfterLocalSave(modelContext: modelContext)
         viewModel.present(result: result, outcome: outcome)

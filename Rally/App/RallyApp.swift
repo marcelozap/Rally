@@ -22,7 +22,11 @@ struct RallyApp: App {
                 JournalEntry.self,
                 PlayerProgress.self,
                 Achievement.self,
-                DailyChallenge.self
+                DailyChallenge.self,
+                LeaderboardEntry.self,
+                BattlePass.self,
+                SeasonalEvent.self,
+                RivalChallenge.self
             )
             Self.seedIfNeeded(container: modelContainer)
         } catch {
@@ -83,6 +87,10 @@ struct RallyApp: App {
         if progress.isEmpty {
             context.insert(PlayerProgress())
         }
+
+        LeaderboardManager.seedIfNeeded(modelContext: context)
+        BattlePassManager.seedIfNeeded(modelContext: context)
+        SeasonalEventManager.seedCurrentSeasonIfNeeded(modelContext: context)
 
         try? context.save()
     }
