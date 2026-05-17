@@ -20,15 +20,7 @@ targets:
     sources:
       - path: Rally
     info:
-      properties:
-        NSLocationWhenInUseUsageDescription: "Rally checks your location once when you tap “I'm here” on an iconic court so we can unlock a tour cosmetic. We never track you in the background and never store coordinates."
-        NSAppTransportSecurity:
-          NSAllowsLocalNetworking: true
-          NSExceptionDomains:
-            localhost:
-              NSExceptionAllowsInsecureHTTPLoads: true
-            "127.0.0.1":
-              NSExceptionAllowsInsecureHTTPLoads: true
+      path: Rally/Info.plist
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.marcelozap.rally

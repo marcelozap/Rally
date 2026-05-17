@@ -81,34 +81,7 @@ struct ShopItem: Identifiable, Hashable, Codable {
     let checkoutPromoCode: String?
     /// Short redemption hint — e.g. "Apply in Nike app during checkout."
     let promoNote: String?
-}
 
-extension ShopItem {
-    var color: Color { Color(hex: colorHex) ?? .gray }
-    var accentColor: Color? { accentHex.flatMap { Color(hex: $0) } }
-    var priceDisplay: String {
-        let f = NumberFormatter()
-        f.numberStyle = .currency
-        f.currencyCode = "USD"
-        f.maximumFractionDigits = 0
-        return f.string(from: NSNumber(value: priceUSD)) ?? "$\(Int(priceUSD))"
-    }
-
-    /// Product URL tagged so vendors can attribute Rally traffic in analytics.
-    /// Codes themselves are never embedded in the query string.
-    var trackingProductURL: URL {
-        guard var c = URLComponents(url: productURL, resolvingAgainstBaseURL: false) else {
-            return productURL
-        }
-        var q = c.queryItems ?? []
-        q.append(URLQueryItem(name: "utm_source", value: "rally_ios"))
-        q.append(URLQueryItem(name: "utm_medium", value: "partner_shop"))
-        c.queryItems = q
-        return c.url ?? productURL
-    }
-}
-
-extension ShopItem {
     init(
         id: String,
         category: Category,
@@ -133,6 +106,31 @@ extension ShopItem {
         self.accentHex = accentHex
         self.checkoutPromoCode = checkoutPromoCode
         self.promoNote = promoNote
+    }
+}
+
+extension ShopItem {
+    var color: Color { Color(hex: colorHex) ?? .gray }
+    var accentColor: Color? { accentHex.flatMap { Color(hex: $0) } }
+    var priceDisplay: String {
+        let f = NumberFormatter()
+        f.numberStyle = .currency
+        f.currencyCode = "USD"
+        f.maximumFractionDigits = 0
+        return f.string(from: NSNumber(value: priceUSD)) ?? "$\(Int(priceUSD))"
+    }
+
+    /// Product URL tagged so vendors can attribute Rally traffic in analytics.
+    /// Codes themselves are never embedded in the query string.
+    var trackingProductURL: URL {
+        guard var c = URLComponents(url: productURL, resolvingAgainstBaseURL: false) else {
+            return productURL
+        }
+        var q = c.queryItems ?? []
+        q.append(URLQueryItem(name: "utm_source", value: "rally_ios"))
+        q.append(URLQueryItem(name: "utm_medium", value: "partner_shop"))
+        c.queryItems = q
+        return c.url ?? productURL
     }
 }
 

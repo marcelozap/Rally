@@ -256,7 +256,7 @@ struct AvatarRealityKitView: UIViewRepresentable {
             SimpleMaterial(
                 color: ui,
                 roughness: .float(roughness),
-                isMetallic: .float(metallic)
+                isMetallic: metallic > 0.5
             )
         }
 
@@ -281,7 +281,15 @@ struct AvatarRealityKitView: UIViewRepresentable {
         }
 
         private static func cylinderEntity(height: Float, radius: Float, position: SIMD3<Float>) -> ModelEntity {
-            let mesh = MeshResource.generateCylinder(height: height, radius: radius)
+            let mesh: MeshResource
+            if #available(iOS 18.0, *) {
+                mesh = MeshResource.generateCylinder(height: height, radius: radius)
+            } else {
+                mesh = MeshResource.generateBox(
+                    size: SIMD3(radius * 2, height, radius * 2),
+                    cornerRadius: radius * 0.35
+                )
+            }
             let e = ModelEntity(mesh: mesh, materials: [mat(.white)])
             e.position = position
             return e

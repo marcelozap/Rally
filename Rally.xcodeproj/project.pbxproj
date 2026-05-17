@@ -1,0 +1,826 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		0372CBCE0196735089EF883D /* MusicEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE13BF1EBDC5059E4F20BEEB /* MusicEngine.swift */; };
+		069610F1C3B9299C84500DD3 /* MatchModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B66F0FAC9F8323F42183523 /* MatchModels.swift */; };
+		0C78487A9E0F7030727B4CED /* KeychainStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E9A11ECE79F4FB6B6098C72 /* KeychainStore.swift */; };
+		1117A353A6FF8D1541DD1DC5 /* Avatar3DModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = EACD026C83B818DF48EF4E4B /* Avatar3DModels.swift */; };
+		11AE665F6E2FA4C7CA3DFFB4 /* AvatarRealityKitView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A92DA030BF2C2A8AB120C12A /* AvatarRealityKitView.swift */; };
+		1287C6B347DF9BFFA077903A /* RhythmSpawner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B7B0A4F703FB2055D568AC2 /* RhythmSpawner.swift */; };
+		13D814DAB8B1AF983893D5C2 /* CourtUnlockTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2196B585C7FBD2B2E5900066 /* CourtUnlockTests.swift */; };
+		1FEEAF40C267A40437FE363B /* HitQuality.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA5D439297231AE3C62B5D0B /* HitQuality.swift */; };
+		21438F305AFF94C5062FB1B3 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4675C61EBF543F8D31C57935 /* ContentView.swift */; };
+		23291AC23C63715A3E5E98F1 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22068F277EDC6210C0336E91 /* HomeView.swift */; };
+		249EF6F26621D5253E341656 /* CosmeticCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5BEF789C7E0103FF5132ED0 /* CosmeticCatalog.swift */; };
+		26B9BB1B96A6AB89F7BC169A /* RallySyncCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB416C67D6CC9010A61D663E /* RallySyncCoordinator.swift */; };
+		26E1997DF1ED3DE9F7B87524 /* ShopView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10B2D2FE254CFA21997D684 /* ShopView.swift */; };
+		2848A93141309C76592F0014 /* TrainingSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = FBC1ED5ADA3A75CB66CAF89C /* TrainingSession.swift */; };
+		2D12B008074F30D1CFF54DDF /* ToneSynth.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6BE9289BAF7906ED282E02C /* ToneSynth.swift */; };
+		33208CE9F660364A43317B23 /* SynthwaveBackground.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6FA371D6335598E1318326D /* SynthwaveBackground.swift */; };
+		34E80699D27B49B7B20DB2E6 /* CameraShake.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C1341F3A82E2A3B48222B4B /* CameraShake.swift */; };
+		3587646CDB85274CE231179A /* Lane.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70E2F5538362AD6A21014D2C /* Lane.swift */; };
+		394F08D0916D44B7E140C370 /* MatchFlow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C34580C7EF0C10E74CE82D2 /* MatchFlow.swift */; };
+		3B5ED5A7ABD2F4480E6B4EF8 /* RemoteTunables.swift in Sources */ = {isa = PBXBuildFile; fileRef = A09FD90A857F3D4040CF3D7A /* RemoteTunables.swift */; };
+		3C76C0D63513653412C379FA /* JournalPromptLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14B239410687A69AFA0799E1 /* JournalPromptLibrary.swift */; };
+		3CAD6CE7F6C885156B0B7494 /* AvatarModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 751C4EC6ECE2262FBEE6AB80 /* AvatarModels.swift */; };
+		3DA73D1D05D5B30351481DDF /* PlayerProgress.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19B9540F48A06D3217BA03F5 /* PlayerProgress.swift */; };
+		4E7C213773943E76E7E283C1 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88FB6AB7F6EAF7D9373D8FEA /* RootView.swift */; };
+		5D9CFE64163D635B0897ED29 /* Tunables.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FF97D13B33F95D4038D84BA /* Tunables.swift */; };
+		5E517627E805E761E926734B /* ProgressMergeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B930D3F395CCB54159AC82A2 /* ProgressMergeTests.swift */; };
+		642147ADC6EE4CB4BBDE028C /* CourtCheckIn.swift in Sources */ = {isa = PBXBuildFile; fileRef = 216CCA2F4C6606F9276264E3 /* CourtCheckIn.swift */; };
+		6569857B125B6BD6F65B96C4 /* ShopCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = D71AC95E7DB7F6CB77636E5E /* ShopCatalog.swift */; };
+		669B00937AF624E06AF19082 /* Cosmetic.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9B44161739A9150FA935999 /* Cosmetic.swift */; };
+		67E54BAEB79829134B98C3F2 /* ParticleManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1ED5831C7C3E0B755DC58BDE /* ParticleManager.swift */; };
+		6F031884A1F85F9B11EA9FE1 /* RemoteTunablesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8CEDAD6E64A2A13DCE5BDBD /* RemoteTunablesTests.swift */; };
+		708436CF42C8FE74950A23D5 /* GameEvent.swift in Sources */ = {isa = PBXBuildFile; fileRef = B239FE19473AF14BFC06A92B /* GameEvent.swift */; };
+		71A2DB6BF50C1A2148376240 /* RallyApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA5277DAA9817D00740967B5 /* RallyApp.swift */; };
+		724C7145C9EB658FA09B737D /* AuthView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC726C0D5BF2A68A3701997D /* AuthView.swift */; };
+		7289404C87B1182F67C339CE /* TrainingLogView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8880E58BAC2316D9FFE6BC2F /* TrainingLogView.swift */; };
+		757F93169098EDAB89D9CB81 /* HapticManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F753E2A11078C906B1CAF07 /* HapticManager.swift */; };
+		75EC90744422830FC39B7963 /* MatchLogView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A0B11FEDA1668A36AC5D3FA /* MatchLogView.swift */; };
+		796C0168452200F49E3997AA /* TrainingEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 482DB2F33284C209BE33EE0E /* TrainingEditorView.swift */; };
+		82C67C56F779D0AC0010AA26 /* JournalEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CFD3B25EF14785E4C2963B4 /* JournalEditorView.swift */; };
+		845079EA54148E89DC5887B6 /* CourtUnlocks.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1449DD6A4ED30E2180181485 /* CourtUnlocks.swift */; };
+		8852C13862BFBDABFCABA8DE /* GameEventBus.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF925085C27A6B0342C490D9 /* GameEventBus.swift */; };
+		8C172C3912A676FF96D3B959 /* GameOverView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 628611C9410B1556FD645FEB /* GameOverView.swift */; };
+		8D8DD1BE9E18B6C4150384C9 /* RallyAPIConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = A32D251BD4D45B9C510D75DE /* RallyAPIConfig.swift */; };
+		935352B627F7E785E4CD9E32 /* ShopItemDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6D1D4111797CC3D55BC2AC6 /* ShopItemDetailView.swift */; };
+		A46B7ECE1A74A088E04CAC41 /* MatchEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B346B396CF6AF4D90ECB3D4 /* MatchEditorView.swift */; };
+		AC6FF132662B27EE9AEEFAA8 /* JournalModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00F928F99BF076A334C45826 /* JournalModels.swift */; };
+		AF230EBD8A92A1086D85667C /* AuthSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2E2C3CF5CC506E9C98BF427 /* AuthSession.swift */; };
+		B2F8207D8355E282E620DE21 /* IconicCourtsCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6ABA4495A191BBDE097363C /* IconicCourtsCatalog.swift */; };
+		B4C755E779DFB84262C0CF13 /* JournalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0835A476258CF5AA3F6BC53 /* JournalView.swift */; };
+		B546CFB14A1CDAEDD1C79EEF /* AvatarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5040308F046A11C93FCC563D /* AvatarView.swift */; };
+		B64A1FFC930F7B6FEF4F69D8 /* SyncPayloadCodingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E415C7F8BB889E45B50472A /* SyncPayloadCodingTests.swift */; };
+		BEFDB81BF0B0C353E305069D /* RallySyncPayload.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84CA5D296FAB35196526607E /* RallySyncPayload.swift */; };
+		BF3BA3ED396EAB559530CBD0 /* LogsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 379DA97B8C58687215605C0B /* LogsView.swift */; };
+		C2F030C09DFD8783FD225E3A /* RallySyncTriggers.swift in Sources */ = {isa = PBXBuildFile; fileRef = B24BA739041936DAC2EB83FD /* RallySyncTriggers.swift */; };
+		DC2B33F112316E922847375D /* AvatarShopStageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFCC9312308D7C4ED53CDF48 /* AvatarShopStageView.swift */; };
+		DFAF2F5614AD2E5C96E77D7A /* AudioManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AAED50C9D4E9A83663D4B8F /* AudioManager.swift */; };
+		E33D4125508B73663AA07A62 /* MatchFlowTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB90CCD37FEC5580BDA74365 /* MatchFlowTests.swift */; };
+		ED89128A05608B0C60594251 /* GameSessionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C680172DC875C133CD8B6DBD /* GameSessionView.swift */; };
+		EEFF0A9DAC191198D5646055 /* cosmetics.json in Resources */ = {isa = PBXBuildFile; fileRef = 4565569C11AFDE663466D6F9 /* cosmetics.json */; };
+		F09E62B90668CB09EC338132 /* Rewards.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA53CDAED8953443B2D52F6B /* Rewards.swift */; };
+		F44282B4F3113F5E6EB4FD6A /* CourtDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F9E8281C39A03FC2A65C36CD /* CourtDetailView.swift */; };
+		F75CF955497257B6C587E64A /* CourtsMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C1FB4A46B1518CDE4E9AC78 /* CourtsMapView.swift */; };
+		F81074A916492016015F3124 /* AvatarCustomizerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD57F0B0CB43221C2EFA3BAF /* AvatarCustomizerView.swift */; };
+		FB2E0854AC7A517AA5B926B4 /* GameScene.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EB08BC2D6104E21193BD6A4 /* GameScene.swift */; };
+		FDA280E35E1D56F05338610F /* RallyAPIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3995EF44E60767E70F67213 /* RallyAPIClient.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		C73E635A6B5D3135A85C64E9 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = AAEC549F30618B3219FF8919 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 8B346D1ADB96071AB4B60B12;
+			remoteInfo = Rally;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		00F928F99BF076A334C45826 /* JournalModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JournalModels.swift; sourceTree = "<group>"; };
+		0B66F0FAC9F8323F42183523 /* MatchModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MatchModels.swift; sourceTree = "<group>"; };
+		1449DD6A4ED30E2180181485 /* CourtUnlocks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CourtUnlocks.swift; sourceTree = "<group>"; };
+		14B239410687A69AFA0799E1 /* JournalPromptLibrary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JournalPromptLibrary.swift; sourceTree = "<group>"; };
+		1992FEDC1F9125FC367F6B42 /* Rally.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Rally.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		19B9540F48A06D3217BA03F5 /* PlayerProgress.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerProgress.swift; sourceTree = "<group>"; };
+		1AAED50C9D4E9A83663D4B8F /* AudioManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioManager.swift; sourceTree = "<group>"; };
+		1C1341F3A82E2A3B48222B4B /* CameraShake.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraShake.swift; sourceTree = "<group>"; };
+		1ED5831C7C3E0B755DC58BDE /* ParticleManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParticleManager.swift; sourceTree = "<group>"; };
+		209FC7E269E2E1B3AB831AFE /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		216CCA2F4C6606F9276264E3 /* CourtCheckIn.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CourtCheckIn.swift; sourceTree = "<group>"; };
+		2196B585C7FBD2B2E5900066 /* CourtUnlockTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CourtUnlockTests.swift; sourceTree = "<group>"; };
+		22068F277EDC6210C0336E91 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
+		2B7B0A4F703FB2055D568AC2 /* RhythmSpawner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RhythmSpawner.swift; sourceTree = "<group>"; };
+		2CFD3B25EF14785E4C2963B4 /* JournalEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JournalEditorView.swift; sourceTree = "<group>"; };
+		379DA97B8C58687215605C0B /* LogsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogsView.swift; sourceTree = "<group>"; };
+		446B15BB8FE53901E8CCAC3D /* RallyTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = RallyTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		4565569C11AFDE663466D6F9 /* cosmetics.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = cosmetics.json; sourceTree = "<group>"; };
+		4675C61EBF543F8D31C57935 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		482DB2F33284C209BE33EE0E /* TrainingEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrainingEditorView.swift; sourceTree = "<group>"; };
+		4B346B396CF6AF4D90ECB3D4 /* MatchEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MatchEditorView.swift; sourceTree = "<group>"; };
+		4F753E2A11078C906B1CAF07 /* HapticManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HapticManager.swift; sourceTree = "<group>"; };
+		5040308F046A11C93FCC563D /* AvatarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AvatarView.swift; sourceTree = "<group>"; };
+		5A0B11FEDA1668A36AC5D3FA /* MatchLogView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MatchLogView.swift; sourceTree = "<group>"; };
+		5E415C7F8BB889E45B50472A /* SyncPayloadCodingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncPayloadCodingTests.swift; sourceTree = "<group>"; };
+		628611C9410B1556FD645FEB /* GameOverView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameOverView.swift; sourceTree = "<group>"; };
+		6C1FB4A46B1518CDE4E9AC78 /* CourtsMapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CourtsMapView.swift; sourceTree = "<group>"; };
+		70E2F5538362AD6A21014D2C /* Lane.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Lane.swift; sourceTree = "<group>"; };
+		751C4EC6ECE2262FBEE6AB80 /* AvatarModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AvatarModels.swift; sourceTree = "<group>"; };
+		84CA5D296FAB35196526607E /* RallySyncPayload.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RallySyncPayload.swift; sourceTree = "<group>"; };
+		8880E58BAC2316D9FFE6BC2F /* TrainingLogView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrainingLogView.swift; sourceTree = "<group>"; };
+		88FB6AB7F6EAF7D9373D8FEA /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
+		8E9A11ECE79F4FB6B6098C72 /* KeychainStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainStore.swift; sourceTree = "<group>"; };
+		8FF97D13B33F95D4038D84BA /* Tunables.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tunables.swift; sourceTree = "<group>"; };
+		9C34580C7EF0C10E74CE82D2 /* MatchFlow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MatchFlow.swift; sourceTree = "<group>"; };
+		9EB08BC2D6104E21193BD6A4 /* GameScene.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameScene.swift; sourceTree = "<group>"; };
+		A09FD90A857F3D4040CF3D7A /* RemoteTunables.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteTunables.swift; sourceTree = "<group>"; };
+		A10B2D2FE254CFA21997D684 /* ShopView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShopView.swift; sourceTree = "<group>"; };
+		A2E2C3CF5CC506E9C98BF427 /* AuthSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthSession.swift; sourceTree = "<group>"; };
+		A32D251BD4D45B9C510D75DE /* RallyAPIConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RallyAPIConfig.swift; sourceTree = "<group>"; };
+		A6D1D4111797CC3D55BC2AC6 /* ShopItemDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShopItemDetailView.swift; sourceTree = "<group>"; };
+		A92DA030BF2C2A8AB120C12A /* AvatarRealityKitView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AvatarRealityKitView.swift; sourceTree = "<group>"; };
+		AA5D439297231AE3C62B5D0B /* HitQuality.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HitQuality.swift; sourceTree = "<group>"; };
+		AFCC9312308D7C4ED53CDF48 /* AvatarShopStageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AvatarShopStageView.swift; sourceTree = "<group>"; };
+		B239FE19473AF14BFC06A92B /* GameEvent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameEvent.swift; sourceTree = "<group>"; };
+		B24BA739041936DAC2EB83FD /* RallySyncTriggers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RallySyncTriggers.swift; sourceTree = "<group>"; };
+		B6ABA4495A191BBDE097363C /* IconicCourtsCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IconicCourtsCatalog.swift; sourceTree = "<group>"; };
+		B930D3F395CCB54159AC82A2 /* ProgressMergeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressMergeTests.swift; sourceTree = "<group>"; };
+		BA53CDAED8953443B2D52F6B /* Rewards.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Rewards.swift; sourceTree = "<group>"; };
+		BF925085C27A6B0342C490D9 /* GameEventBus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameEventBus.swift; sourceTree = "<group>"; };
+		C680172DC875C133CD8B6DBD /* GameSessionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameSessionView.swift; sourceTree = "<group>"; };
+		CB416C67D6CC9010A61D663E /* RallySyncCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RallySyncCoordinator.swift; sourceTree = "<group>"; };
+		CD57F0B0CB43221C2EFA3BAF /* AvatarCustomizerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AvatarCustomizerView.swift; sourceTree = "<group>"; };
+		D5BEF789C7E0103FF5132ED0 /* CosmeticCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CosmeticCatalog.swift; sourceTree = "<group>"; };
+		D6FA371D6335598E1318326D /* SynthwaveBackground.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SynthwaveBackground.swift; sourceTree = "<group>"; };
+		D71AC95E7DB7F6CB77636E5E /* ShopCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShopCatalog.swift; sourceTree = "<group>"; };
+		D8CEDAD6E64A2A13DCE5BDBD /* RemoteTunablesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteTunablesTests.swift; sourceTree = "<group>"; };
+		DA5277DAA9817D00740967B5 /* RallyApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RallyApp.swift; sourceTree = "<group>"; };
+		DC726C0D5BF2A68A3701997D /* AuthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthView.swift; sourceTree = "<group>"; };
+		E0835A476258CF5AA3F6BC53 /* JournalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JournalView.swift; sourceTree = "<group>"; };
+		E3995EF44E60767E70F67213 /* RallyAPIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RallyAPIClient.swift; sourceTree = "<group>"; };
+		E9B44161739A9150FA935999 /* Cosmetic.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Cosmetic.swift; sourceTree = "<group>"; };
+		EACD026C83B818DF48EF4E4B /* Avatar3DModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Avatar3DModels.swift; sourceTree = "<group>"; };
+		F6BE9289BAF7906ED282E02C /* ToneSynth.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToneSynth.swift; sourceTree = "<group>"; };
+		F9E8281C39A03FC2A65C36CD /* CourtDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CourtDetailView.swift; sourceTree = "<group>"; };
+		FB90CCD37FEC5580BDA74365 /* MatchFlowTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MatchFlowTests.swift; sourceTree = "<group>"; };
+		FBC1ED5ADA3A75CB66CAF89C /* TrainingSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrainingSession.swift; sourceTree = "<group>"; };
+		FE13BF1EBDC5059E4F20BEEB /* MusicEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MusicEngine.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		093D59465D16CFA4DC14A926 /* Auth */ = {
+			isa = PBXGroup;
+			children = (
+				DC726C0D5BF2A68A3701997D /* AuthView.swift */,
+			);
+			path = Auth;
+			sourceTree = "<group>";
+		};
+		11BAB988789E348720167A27 /* Home */ = {
+			isa = PBXGroup;
+			children = (
+				22068F277EDC6210C0336E91 /* HomeView.swift */,
+			);
+			path = Home;
+			sourceTree = "<group>";
+		};
+		173D5C3D04894A8CEE09EB84 /* Audio */ = {
+			isa = PBXGroup;
+			children = (
+				FE13BF1EBDC5059E4F20BEEB /* MusicEngine.swift */,
+				F6BE9289BAF7906ED282E02C /* ToneSynth.swift */,
+			);
+			path = Audio;
+			sourceTree = "<group>";
+		};
+		1A1248B40BEABA6599EDDBF2 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				A2E2C3CF5CC506E9C98BF427 /* AuthSession.swift */,
+				216CCA2F4C6606F9276264E3 /* CourtCheckIn.swift */,
+				1449DD6A4ED30E2180181485 /* CourtUnlocks.swift */,
+				8E9A11ECE79F4FB6B6098C72 /* KeychainStore.swift */,
+				E3995EF44E60767E70F67213 /* RallyAPIClient.swift */,
+				A32D251BD4D45B9C510D75DE /* RallyAPIConfig.swift */,
+				CB416C67D6CC9010A61D663E /* RallySyncCoordinator.swift */,
+				84CA5D296FAB35196526607E /* RallySyncPayload.swift */,
+				B24BA739041936DAC2EB83FD /* RallySyncTriggers.swift */,
+				A09FD90A857F3D4040CF3D7A /* RemoteTunables.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		2B266108CE4B7D600ADAE064 /* Match */ = {
+			isa = PBXGroup;
+			children = (
+				4B346B396CF6AF4D90ECB3D4 /* MatchEditorView.swift */,
+				5A0B11FEDA1668A36AC5D3FA /* MatchLogView.swift */,
+			);
+			path = Match;
+			sourceTree = "<group>";
+		};
+		36A1D9AA1F46D1665AF2BC5C /* Play */ = {
+			isa = PBXGroup;
+			children = (
+				628611C9410B1556FD645FEB /* GameOverView.swift */,
+				C680172DC875C133CD8B6DBD /* GameSessionView.swift */,
+			);
+			path = Play;
+			sourceTree = "<group>";
+		};
+		3D2FF739D935CAF8F2DF161E = {
+			isa = PBXGroup;
+			children = (
+				8CFBFCD43FE93083878EA3EA /* Rally */,
+				7FE866764E535BBEEA0F53EE /* RallyTests */,
+				9739995A63F3CD966BCD2D13 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		4542D25EC9AE2BA11D13BDE3 /* Logs */ = {
+			isa = PBXGroup;
+			children = (
+				379DA97B8C58687215605C0B /* LogsView.swift */,
+			);
+			path = Logs;
+			sourceTree = "<group>";
+		};
+		54AB985877955FFA6F6DDCBF /* Courts */ = {
+			isa = PBXGroup;
+			children = (
+				F9E8281C39A03FC2A65C36CD /* CourtDetailView.swift */,
+				6C1FB4A46B1518CDE4E9AC78 /* CourtsMapView.swift */,
+			);
+			path = Courts;
+			sourceTree = "<group>";
+		};
+		6B99E788EA4862A3543F69FA /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				4565569C11AFDE663466D6F9 /* cosmetics.json */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		7FE866764E535BBEEA0F53EE /* RallyTests */ = {
+			isa = PBXGroup;
+			children = (
+				2196B585C7FBD2B2E5900066 /* CourtUnlockTests.swift */,
+				FB90CCD37FEC5580BDA74365 /* MatchFlowTests.swift */,
+				B930D3F395CCB54159AC82A2 /* ProgressMergeTests.swift */,
+				D8CEDAD6E64A2A13DCE5BDBD /* RemoteTunablesTests.swift */,
+				5E415C7F8BB889E45B50472A /* SyncPayloadCodingTests.swift */,
+			);
+			path = RallyTests;
+			sourceTree = "<group>";
+		};
+		846C72D44972EA474A96CBB1 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				4675C61EBF543F8D31C57935 /* ContentView.swift */,
+				DA5277DAA9817D00740967B5 /* RallyApp.swift */,
+				88FB6AB7F6EAF7D9373D8FEA /* RootView.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		8CFBFCD43FE93083878EA3EA /* Rally */ = {
+			isa = PBXGroup;
+			children = (
+				846C72D44972EA474A96CBB1 /* App */,
+				173D5C3D04894A8CEE09EB84 /* Audio */,
+				AAF667A11C751C2EF0112E4E /* Cosmetics */,
+				C0097E126974B7FB1D308CBA /* Data */,
+				8D6584F5303EEAF00CA6D60A /* Features */,
+				9CD39A9370ECD21A481559CC /* Game */,
+				AAD39F40C2EFF6E9E9A62B76 /* Managers */,
+				6B99E788EA4862A3543F69FA /* Resources */,
+				1A1248B40BEABA6599EDDBF2 /* Services */,
+				209FC7E269E2E1B3AB831AFE /* Info.plist */,
+			);
+			path = Rally;
+			sourceTree = "<group>";
+		};
+		8D6584F5303EEAF00CA6D60A /* Features */ = {
+			isa = PBXGroup;
+			children = (
+				093D59465D16CFA4DC14A926 /* Auth */,
+				D1CDBA833DEFCAD1351F5F8F /* Avatar */,
+				54AB985877955FFA6F6DDCBF /* Courts */,
+				11BAB988789E348720167A27 /* Home */,
+				9527037DD99B80ACF1CFA3BD /* Journal */,
+				4542D25EC9AE2BA11D13BDE3 /* Logs */,
+				2B266108CE4B7D600ADAE064 /* Match */,
+				36A1D9AA1F46D1665AF2BC5C /* Play */,
+				F845331B5AF2911AF0C89950 /* Shop */,
+				C4FB7E788DE43EF2453FD118 /* Training */,
+			);
+			path = Features;
+			sourceTree = "<group>";
+		};
+		9527037DD99B80ACF1CFA3BD /* Journal */ = {
+			isa = PBXGroup;
+			children = (
+				2CFD3B25EF14785E4C2963B4 /* JournalEditorView.swift */,
+				E0835A476258CF5AA3F6BC53 /* JournalView.swift */,
+			);
+			path = Journal;
+			sourceTree = "<group>";
+		};
+		9739995A63F3CD966BCD2D13 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				1992FEDC1F9125FC367F6B42 /* Rally.app */,
+				446B15BB8FE53901E8CCAC3D /* RallyTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		9CD39A9370ECD21A481559CC /* Game */ = {
+			isa = PBXGroup;
+			children = (
+				B239FE19473AF14BFC06A92B /* GameEvent.swift */,
+				9EB08BC2D6104E21193BD6A4 /* GameScene.swift */,
+				AA5D439297231AE3C62B5D0B /* HitQuality.swift */,
+				70E2F5538362AD6A21014D2C /* Lane.swift */,
+				9C34580C7EF0C10E74CE82D2 /* MatchFlow.swift */,
+				2B7B0A4F703FB2055D568AC2 /* RhythmSpawner.swift */,
+				D6FA371D6335598E1318326D /* SynthwaveBackground.swift */,
+				8FF97D13B33F95D4038D84BA /* Tunables.swift */,
+			);
+			path = Game;
+			sourceTree = "<group>";
+		};
+		AAD39F40C2EFF6E9E9A62B76 /* Managers */ = {
+			isa = PBXGroup;
+			children = (
+				1AAED50C9D4E9A83663D4B8F /* AudioManager.swift */,
+				1C1341F3A82E2A3B48222B4B /* CameraShake.swift */,
+				BF925085C27A6B0342C490D9 /* GameEventBus.swift */,
+				4F753E2A11078C906B1CAF07 /* HapticManager.swift */,
+				1ED5831C7C3E0B755DC58BDE /* ParticleManager.swift */,
+			);
+			path = Managers;
+			sourceTree = "<group>";
+		};
+		AAF667A11C751C2EF0112E4E /* Cosmetics */ = {
+			isa = PBXGroup;
+			children = (
+				E9B44161739A9150FA935999 /* Cosmetic.swift */,
+				D5BEF789C7E0103FF5132ED0 /* CosmeticCatalog.swift */,
+			);
+			path = Cosmetics;
+			sourceTree = "<group>";
+		};
+		C0097E126974B7FB1D308CBA /* Data */ = {
+			isa = PBXGroup;
+			children = (
+				751C4EC6ECE2262FBEE6AB80 /* AvatarModels.swift */,
+				B6ABA4495A191BBDE097363C /* IconicCourtsCatalog.swift */,
+				00F928F99BF076A334C45826 /* JournalModels.swift */,
+				14B239410687A69AFA0799E1 /* JournalPromptLibrary.swift */,
+				0B66F0FAC9F8323F42183523 /* MatchModels.swift */,
+				19B9540F48A06D3217BA03F5 /* PlayerProgress.swift */,
+				BA53CDAED8953443B2D52F6B /* Rewards.swift */,
+				D71AC95E7DB7F6CB77636E5E /* ShopCatalog.swift */,
+				FBC1ED5ADA3A75CB66CAF89C /* TrainingSession.swift */,
+			);
+			path = Data;
+			sourceTree = "<group>";
+		};
+		C4FB7E788DE43EF2453FD118 /* Training */ = {
+			isa = PBXGroup;
+			children = (
+				482DB2F33284C209BE33EE0E /* TrainingEditorView.swift */,
+				8880E58BAC2316D9FFE6BC2F /* TrainingLogView.swift */,
+			);
+			path = Training;
+			sourceTree = "<group>";
+		};
+		D1CDBA833DEFCAD1351F5F8F /* Avatar */ = {
+			isa = PBXGroup;
+			children = (
+				EACD026C83B818DF48EF4E4B /* Avatar3DModels.swift */,
+				CD57F0B0CB43221C2EFA3BAF /* AvatarCustomizerView.swift */,
+				A92DA030BF2C2A8AB120C12A /* AvatarRealityKitView.swift */,
+				5040308F046A11C93FCC563D /* AvatarView.swift */,
+			);
+			path = Avatar;
+			sourceTree = "<group>";
+		};
+		F845331B5AF2911AF0C89950 /* Shop */ = {
+			isa = PBXGroup;
+			children = (
+				AFCC9312308D7C4ED53CDF48 /* AvatarShopStageView.swift */,
+				A6D1D4111797CC3D55BC2AC6 /* ShopItemDetailView.swift */,
+				A10B2D2FE254CFA21997D684 /* ShopView.swift */,
+			);
+			path = Shop;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		8B346D1ADB96071AB4B60B12 /* Rally */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = C6C138202D08E179D40B3F95 /* Build configuration list for PBXNativeTarget "Rally" */;
+			buildPhases = (
+				47A7A744E81F5F22918E3614 /* Sources */,
+				30C1F423D426A2343D1D1B91 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Rally;
+			packageProductDependencies = (
+			);
+			productName = Rally;
+			productReference = 1992FEDC1F9125FC367F6B42 /* Rally.app */;
+			productType = "com.apple.product-type.application";
+		};
+		EE875F876BBF2F3359466742 /* RallyTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 3CF7D07B3A404A4358BF6B96 /* Build configuration list for PBXNativeTarget "RallyTests" */;
+			buildPhases = (
+				3C8744F0767C03D3869A375A /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				60D7116B6489FC896B705BFA /* PBXTargetDependency */,
+			);
+			name = RallyTests;
+			packageProductDependencies = (
+			);
+			productName = RallyTests;
+			productReference = 446B15BB8FE53901E8CCAC3D /* RallyTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		AAEC549F30618B3219FF8919 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+			};
+			buildConfigurationList = 8022BDB212CB630C8A6A873A /* Build configuration list for PBXProject "Rally" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 3D2FF739D935CAF8F2DF161E;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				8B346D1ADB96071AB4B60B12 /* Rally */,
+				EE875F876BBF2F3359466742 /* RallyTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		30C1F423D426A2343D1D1B91 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				EEFF0A9DAC191198D5646055 /* cosmetics.json in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		3C8744F0767C03D3869A375A /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				13D814DAB8B1AF983893D5C2 /* CourtUnlockTests.swift in Sources */,
+				E33D4125508B73663AA07A62 /* MatchFlowTests.swift in Sources */,
+				5E517627E805E761E926734B /* ProgressMergeTests.swift in Sources */,
+				6F031884A1F85F9B11EA9FE1 /* RemoteTunablesTests.swift in Sources */,
+				B64A1FFC930F7B6FEF4F69D8 /* SyncPayloadCodingTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		47A7A744E81F5F22918E3614 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				DFAF2F5614AD2E5C96E77D7A /* AudioManager.swift in Sources */,
+				AF230EBD8A92A1086D85667C /* AuthSession.swift in Sources */,
+				724C7145C9EB658FA09B737D /* AuthView.swift in Sources */,
+				1117A353A6FF8D1541DD1DC5 /* Avatar3DModels.swift in Sources */,
+				F81074A916492016015F3124 /* AvatarCustomizerView.swift in Sources */,
+				3CAD6CE7F6C885156B0B7494 /* AvatarModels.swift in Sources */,
+				11AE665F6E2FA4C7CA3DFFB4 /* AvatarRealityKitView.swift in Sources */,
+				DC2B33F112316E922847375D /* AvatarShopStageView.swift in Sources */,
+				B546CFB14A1CDAEDD1C79EEF /* AvatarView.swift in Sources */,
+				34E80699D27B49B7B20DB2E6 /* CameraShake.swift in Sources */,
+				21438F305AFF94C5062FB1B3 /* ContentView.swift in Sources */,
+				669B00937AF624E06AF19082 /* Cosmetic.swift in Sources */,
+				249EF6F26621D5253E341656 /* CosmeticCatalog.swift in Sources */,
+				642147ADC6EE4CB4BBDE028C /* CourtCheckIn.swift in Sources */,
+				F44282B4F3113F5E6EB4FD6A /* CourtDetailView.swift in Sources */,
+				845079EA54148E89DC5887B6 /* CourtUnlocks.swift in Sources */,
+				F75CF955497257B6C587E64A /* CourtsMapView.swift in Sources */,
+				708436CF42C8FE74950A23D5 /* GameEvent.swift in Sources */,
+				8852C13862BFBDABFCABA8DE /* GameEventBus.swift in Sources */,
+				8C172C3912A676FF96D3B959 /* GameOverView.swift in Sources */,
+				FB2E0854AC7A517AA5B926B4 /* GameScene.swift in Sources */,
+				ED89128A05608B0C60594251 /* GameSessionView.swift in Sources */,
+				757F93169098EDAB89D9CB81 /* HapticManager.swift in Sources */,
+				1FEEAF40C267A40437FE363B /* HitQuality.swift in Sources */,
+				23291AC23C63715A3E5E98F1 /* HomeView.swift in Sources */,
+				B2F8207D8355E282E620DE21 /* IconicCourtsCatalog.swift in Sources */,
+				82C67C56F779D0AC0010AA26 /* JournalEditorView.swift in Sources */,
+				AC6FF132662B27EE9AEEFAA8 /* JournalModels.swift in Sources */,
+				3C76C0D63513653412C379FA /* JournalPromptLibrary.swift in Sources */,
+				B4C755E779DFB84262C0CF13 /* JournalView.swift in Sources */,
+				0C78487A9E0F7030727B4CED /* KeychainStore.swift in Sources */,
+				3587646CDB85274CE231179A /* Lane.swift in Sources */,
+				BF3BA3ED396EAB559530CBD0 /* LogsView.swift in Sources */,
+				A46B7ECE1A74A088E04CAC41 /* MatchEditorView.swift in Sources */,
+				394F08D0916D44B7E140C370 /* MatchFlow.swift in Sources */,
+				75EC90744422830FC39B7963 /* MatchLogView.swift in Sources */,
+				069610F1C3B9299C84500DD3 /* MatchModels.swift in Sources */,
+				0372CBCE0196735089EF883D /* MusicEngine.swift in Sources */,
+				67E54BAEB79829134B98C3F2 /* ParticleManager.swift in Sources */,
+				3DA73D1D05D5B30351481DDF /* PlayerProgress.swift in Sources */,
+				FDA280E35E1D56F05338610F /* RallyAPIClient.swift in Sources */,
+				8D8DD1BE9E18B6C4150384C9 /* RallyAPIConfig.swift in Sources */,
+				71A2DB6BF50C1A2148376240 /* RallyApp.swift in Sources */,
+				26B9BB1B96A6AB89F7BC169A /* RallySyncCoordinator.swift in Sources */,
+				BEFDB81BF0B0C353E305069D /* RallySyncPayload.swift in Sources */,
+				C2F030C09DFD8783FD225E3A /* RallySyncTriggers.swift in Sources */,
+				3B5ED5A7ABD2F4480E6B4EF8 /* RemoteTunables.swift in Sources */,
+				F09E62B90668CB09EC338132 /* Rewards.swift in Sources */,
+				1287C6B347DF9BFFA077903A /* RhythmSpawner.swift in Sources */,
+				4E7C213773943E76E7E283C1 /* RootView.swift in Sources */,
+				6569857B125B6BD6F65B96C4 /* ShopCatalog.swift in Sources */,
+				935352B627F7E785E4CD9E32 /* ShopItemDetailView.swift in Sources */,
+				26E1997DF1ED3DE9F7B87524 /* ShopView.swift in Sources */,
+				33208CE9F660364A43317B23 /* SynthwaveBackground.swift in Sources */,
+				2D12B008074F30D1CFF54DDF /* ToneSynth.swift in Sources */,
+				796C0168452200F49E3997AA /* TrainingEditorView.swift in Sources */,
+				7289404C87B1182F67C339CE /* TrainingLogView.swift in Sources */,
+				2848A93141309C76592F0014 /* TrainingSession.swift in Sources */,
+				5D9CFE64163D635B0897ED29 /* Tunables.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		60D7116B6489FC896B705BFA /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 8B346D1ADB96071AB4B60B12 /* Rally */;
+			targetProxy = C73E635A6B5D3135A85C64E9 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		14A60CBE0333612BB37F0E62 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.9;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+		5BC52118DAF8C7113727A1F5 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Rally/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Rally;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UIRequiresFullScreen = YES;
+				INFOPLIST_KEY_UIStatusBarHidden = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.marcelozap.rally;
+				PRODUCT_NAME = Rally;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		B4070DC4A07D3F3AC9BBE74F /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.marcelozap.rally.tests;
+				PRODUCT_NAME = RallyTests;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.9;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Rally.app/Rally";
+			};
+			name = Debug;
+		};
+		CCC9CAD8056ED3BDBEE3A9CD /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Rally/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Rally;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UIRequiresFullScreen = YES;
+				INFOPLIST_KEY_UIStatusBarHidden = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.marcelozap.rally;
+				PRODUCT_NAME = Rally;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		D207CF3BADA738FE6227CCD1 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.9;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		F4B7DC3AEE641EDE9C965793 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.marcelozap.rally.tests;
+				PRODUCT_NAME = RallyTests;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.9;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Rally.app/Rally";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		3CF7D07B3A404A4358BF6B96 /* Build configuration list for PBXNativeTarget "RallyTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B4070DC4A07D3F3AC9BBE74F /* Debug */,
+				F4B7DC3AEE641EDE9C965793 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		8022BDB212CB630C8A6A873A /* Build configuration list for PBXProject "Rally" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D207CF3BADA738FE6227CCD1 /* Debug */,
+				14A60CBE0333612BB37F0E62 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		C6C138202D08E179D40B3F95 /* Build configuration list for PBXNativeTarget "Rally" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				CCC9CAD8056ED3BDBEE3A9CD /* Debug */,
+				5BC52118DAF8C7113727A1F5 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = AAEC549F30618B3219FF8919 /* Project object */;
+}
