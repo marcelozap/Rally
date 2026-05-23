@@ -64,3 +64,5 @@ Production checklist: [`backend/DEPLOYMENT.md`](./backend/DEPLOYMENT.md).
 ## Status
 
 Active development — gameplay, progression, journal, shop, court atlas, and optional cloud backup are in-repo; see `GDD.md` for the north-star experience.
+
+**Planned overhauls (design docs only):** [Avatar & court visuals](./AVATAR_OVERHAUL_PLAN.md) · [UI & design system](./UI_DESIGN_OVERHAUL_PLAN.md) (XIV premium dark — tokens, buttons, typography, tab bar).
