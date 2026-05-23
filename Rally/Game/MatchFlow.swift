@@ -181,7 +181,7 @@ final class MatchFlowCoordinator {
                 bpm: bpm,
                 travelScalar: 1.0,
                 timingWindowScalar: 1.0,
-                doubleNoteProbability: 0.02,
+                doubleNoteProbability: 0.0,
                 subdivisions: [1.0, 0.5],
                 subdivisionWeights: [0.6, 0.4],
                 density: 1.0
@@ -191,7 +191,7 @@ final class MatchFlowCoordinator {
                 bpm: bpm,
                 travelScalar: 0.92,
                 timingWindowScalar: 0.9,
-                doubleNoteProbability: 0.06,
+                doubleNoteProbability: 0.0,
                 subdivisions: [0.5, 0.25],
                 subdivisionWeights: [0.75, 0.25],
                 density: 1.0
@@ -201,7 +201,7 @@ final class MatchFlowCoordinator {
                 bpm: bpm,
                 travelScalar: 0.85,
                 timingWindowScalar: 0.85,
-                doubleNoteProbability: 0.10,
+                doubleNoteProbability: 0.0,
                 subdivisions: [0.5, 0.25],
                 subdivisionWeights: [0.5, 0.5],
                 density: 1.0

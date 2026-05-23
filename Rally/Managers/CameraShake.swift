@@ -12,6 +12,7 @@ enum CameraShake {
     static func shake(_ target: SKNode, amplitude: CGFloat, durationMs: Double) {
         guard amplitude > 0, durationMs > 0 else { return }
         target.removeAction(forKey: "shake")
+        let home = target.position
         let duration = durationMs.seconds
         let action = SKAction.customAction(withDuration: duration) { node, elapsed in
             let t = elapsed / CGFloat(duration)
@@ -19,9 +20,9 @@ enum CameraShake {
             let phase = CGFloat.random(in: 0..<(.pi * 2))
             let dx = sin(phase) * amplitude * decay
             let dy = cos(phase * 1.3) * amplitude * decay
-            node.position = CGPoint(x: dx, y: dy)
+            node.position = CGPoint(x: home.x + dx, y: home.y + dy)
         }
-        let reset = SKAction.run { target.position = .zero }
+        let reset = SKAction.run { target.position = home }
         target.run(.sequence([action, reset]), withKey: "shake")
     }
 }

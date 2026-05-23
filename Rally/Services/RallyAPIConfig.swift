@@ -4,6 +4,8 @@ enum UserDefaultsKeys {
     static let savedEmail = "rally.savedEmail"
     /// Persisted **Continue offline** choice until sign-in clears it.
     static let guestMode = "rally.guestMode"
+    /// Master mute for music + SFX. Defaults to `false` (muted) on first launch.
+    static let soundEnabled = "rally.soundEnabled"
 }
 
 enum RallyAPIConfig {

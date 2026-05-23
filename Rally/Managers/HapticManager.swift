@@ -32,7 +32,14 @@ final class HapticManager {
     private var missPlayer: CHHapticPatternPlayer?
     private var breakPlayer: CHHapticPatternPlayer?
     private var tierPlayers: [Int: CHHapticPatternPlayer] = [:]
+    private var touchDownPlayer: CHHapticPatternPlayer?
     private var primerPlayer: CHHapticPatternPlayer?
+
+    /// Throttle for `playTouchDown()` — a single swing should fire one
+    /// touch-down haptic even if `.began` is delivered twice in the same
+    /// vsync (rare, but cheap insurance).
+    private var lastTouchDownAt: TimeInterval = 0
+    private let minTouchDownGapSeconds: TimeInterval = 0.040
 
     /// Last-play timestamps per quality. Used to suppress duplicate plays
     /// inside the same vsync (~16ms) or whenever the spawner pumps two hits
@@ -120,6 +127,11 @@ final class HapticManager {
             }
         }
 
+        if let pattern = makeTouchDownPattern(),
+           let player = try? engine.makePlayer(with: pattern) {
+            touchDownPlayer = player
+        }
+
         if let pattern = makePrimerPattern(),
            let player = try? engine.makePlayer(with: pattern) {
             primerPlayer = player
@@ -184,6 +196,24 @@ final class HapticManager {
     private func playBreak() {
         guard supportsHaptics, let player = breakPlayer else {
             heavyFallback.impactOccurred(intensity: 1.0)
+            return
+        }
+        try? player.start(atTime: 0)
+    }
+
+    /// Public: fired by `GameScene` on swing touch-down (`UIPanGestureRecognizer.State.began`).
+    ///
+    /// Intentionally not routed through `GameEventBus` — touch-down is an
+    /// input event, not a game event, and we don't want every manager to
+    /// have to filter it out.
+    func playTouchDown() {
+        guard isEnabled else { return }
+        let now = CACurrentMediaTime()
+        if now - lastTouchDownAt < minTouchDownGapSeconds { return }
+        lastTouchDownAt = now
+
+        guard supportsHaptics, let player = touchDownPlayer else {
+            lightFallback.impactOccurred(intensity: CGFloat(Tunables.hapticTouchDown))
             return
         }
         try? player.start(atTime: 0)
@@ -344,6 +374,21 @@ final class HapticManager {
             relativeTime: 0
         )
         return try? CHHapticPattern(events: [event], parameters: [])
+    }
+
+    /// A single low-intensity, low-sharpness transient. Reads as a "touch
+    /// landed" tap on the fingertip — distinct from any of the hit grades
+    /// so the brain doesn't confuse it with strike feedback.
+    private func makeTouchDownPattern() -> CHHapticPattern? {
+        let tap = CHHapticEvent(
+            eventType: .hapticTransient,
+            parameters: [
+                .init(parameterID: .hapticIntensity, value: Tunables.hapticTouchDown),
+                .init(parameterID: .hapticSharpness, value: 0.35)
+            ],
+            relativeTime: 0
+        )
+        return try? CHHapticPattern(events: [tap], parameters: [])
     }
 
     private func makePrimerPattern() -> CHHapticPattern? {

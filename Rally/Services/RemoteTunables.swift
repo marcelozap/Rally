@@ -16,8 +16,9 @@ import Foundation
 ///   default. The app runs **offline-first** with bundled `Tunables`.
 /// - When enabled, `refreshIfEnabled()` is called from `RallyApp.init` and
 ///   on foreground.
-/// - Manifest is cached in-memory only — no disk persistence. A fresh app
-///   launch with no network falls back to defaults.
+/// - Manifest is persisted to `UserDefaults` after every successful fetch.
+///   A cold launch with no network loads the last known overrides instead
+///   of falling all the way back to the bundled defaults.
 ///
 /// ## Wire format
 ///
@@ -39,22 +40,35 @@ final class RemoteTunables: ObservableObject {
     static let shared = RemoteTunables()
 
     static let featureFlagDefaultsKey = "rally.remoteTunables.enabled"
+    static let persistenceDefaultsKey = "rally.remoteTunables.cachedManifest"
 
     @Published private(set) var current: RemoteTunablesManifest = .empty
     @Published private(set) var lastRefreshedAt: Date?
 
     private let session: URLSession
     private let decoder: JSONDecoder
+    private let encoder: JSONEncoder
 
     init(session: URLSession = .shared) {
         self.session = session
         let d = JSONDecoder()
         d.dateDecodingStrategy = .iso8601
         self.decoder = d
+        let e = JSONEncoder()
+        e.dateEncodingStrategy = .iso8601
+        self.encoder = e
+        // Restore last cached manifest so offline cold-launches still use
+        // the most recently fetched overrides.
+        if let data = UserDefaults.standard.data(forKey: Self.persistenceDefaultsKey),
+           let saved = try? d.decode(RemoteTunablesManifest.self, from: data) {
+            self.current = saved
+        }
     }
 
     /// One-shot fetch. No-op when the feature flag is off. Errors swallow
     /// — the bundled `Tunables` always remain authoritative on failure.
+    /// On success the manifest is persisted to `UserDefaults` so the next
+    /// cold launch (even offline) starts with the last known overrides.
     func refreshIfEnabled() async {
         guard UserDefaults.standard.bool(forKey: Self.featureFlagDefaultsKey) else {
             return
@@ -69,6 +83,10 @@ final class RemoteTunables: ObservableObject {
             let manifest = try decoder.decode(RemoteTunablesManifest.self, from: data)
             self.current = manifest
             self.lastRefreshedAt = Date()
+            // Persist so offline launches start with the last good values.
+            if let encoded = try? encoder.encode(manifest) {
+                UserDefaults.standard.set(encoded, forKey: Self.persistenceDefaultsKey)
+            }
         } catch {
             // Offline / 4xx / decode failure — keep whatever we had.
         }

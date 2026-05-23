@@ -56,6 +56,7 @@ backend/data/
 *.env
 .env.local
 secrets.plist
+Config/Local.xcconfig
 
 # Python tooling (not part of Rally)
 .resume-venv/

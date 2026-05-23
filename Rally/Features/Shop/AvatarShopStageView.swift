@@ -10,18 +10,27 @@ struct AvatarShopStageView: View {
     var body: some View {
         VStack(spacing: 12) {
             ZStack {
-                RoundedRectangle(cornerRadius: 22)
+                RoundedRectangle(cornerRadius: 22, style: .continuous)
                     .fill(
-                        RadialGradient(
-                            colors: [Color(red: 0.06, green: 0.08, blue: 0.14), .black],
-                            center: .center,
-                            startRadius: 20,
-                            endRadius: 220
+                        LinearGradient(
+                            colors: [
+                                Color(red: 0.05, green: 0.07, blue: 0.12),
+                                Color(red: 0.02, green: 0.02, blue: 0.04)
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
                         )
                     )
                     .overlay(
-                        RoundedRectangle(cornerRadius: 22)
-                            .stroke(Color.cyan.opacity(0.28), lineWidth: 1)
+                        RoundedRectangle(cornerRadius: 22, style: .continuous)
+                            .stroke(
+                                LinearGradient(
+                                    colors: [Color.cyan.opacity(0.45), Color.white.opacity(0.08)],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                ),
+                                lineWidth: 1
+                            )
                     )
 
                 AvatarRealityKitView(

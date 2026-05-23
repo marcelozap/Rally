@@ -15,69 +15,163 @@ struct GameSessionView: View {
     @Environment(\.modelContext) private var modelContext
     @Query private var progressRecords: [PlayerProgress]
 
+    @AppStorage(CourtVenue.storageKey) private var courtRaw: String = CourtVenue.miamiHard.rawValue
+
     @StateObject private var viewModel = GameSessionViewModel()
     @State private var scene: GameScene? = nil
+    @State private var viewportSize: CGSize = .zero
     @State private var sessionKey = UUID()
     @State private var reflectionPrompt: JournalPrompt? = nil
+    #if DEBUG
+    @State private var showTunables = false
+    #endif
 
     /// Optional rival opponent when launching a rival challenge session.
     var rivalOpponent: RivalOpponent? = nil
 
-    /// Called when the player taps "Back to Home" from the overlay.
+    /// Called when the player taps "Back to Locker" from the overlay.
     /// Wired by `ContentView` so we can switch the selected tab.
     var onExit: () -> Void = {}
 
     var body: some View {
-        ZStack {
-            Color.black.ignoresSafeArea()
+        GeometryReader { geo in
+            ZStack {
+                Color.black.ignoresSafeArea()
 
-            if let scene = scene {
-                SpriteView(scene: scene, options: [.ignoresSiblingOrder])
-                    .ignoresSafeArea()
-                    .id(sessionKey)
+                if let scene = scene, geo.size.width > 1, geo.size.height > 1 {
+                    SpriteView(scene: scene, options: [.ignoresSiblingOrder])
+                        .frame(width: geo.size.width, height: geo.size.height)
+                        .ignoresSafeArea()
+                        .id(sessionKey)
+                }
+
+                // Top chrome only — never a full-screen hit target over the playfield.
+                sessionTopBar
+                    .zIndex(20)
+
+                if let result = viewModel.lastResult, let outcome = viewModel.lastOutcome {
+                    GameOverView(
+                        result: result,
+                        outcome: outcome,
+                        onPlayAgain: { restart() },
+                        onExit: { exitSession() },
+                        onLogReflection: {
+                            reflectionPrompt = JournalPromptLibrary
+                                .sessionReflectionPrompt(for: result, outcome: outcome)
+                        }
+                    )
+                    .transition(.opacity.combined(with: .scale(scale: 1.02)))
+                    .zIndex(30)
+                }
             }
-
-            if let result = viewModel.lastResult, let outcome = viewModel.lastOutcome {
-                GameOverView(
-                    result: result,
-                    outcome: outcome,
-                    onPlayAgain: { restart() },
-                    onExit: {
-                        viewModel.dismiss()
-                        onExit()
-                    },
-                    onLogReflection: {
-                        // Build the prefilled prompt lazily so the body
-                        // reflects whatever the latest run was, not the one
-                        // that opened the view.
-                        reflectionPrompt = JournalPromptLibrary
-                            .sessionReflectionPrompt(for: result, outcome: outcome)
-                    }
-                )
-                .transition(.opacity.combined(with: .scale(scale: 1.02)))
-                .zIndex(10)
+            .onAppear { applyViewportSize(geo.size) }
+            .onChange(of: geo.size) { _, newSize in
+                applyViewportSize(newSize)
             }
         }
         .onAppear {
-            if scene == nil { scene = makeScene() }
-            // Generate today's challenges if they don't exist yet
             DailyChallengeMgr.generateDailyIfNeeded(modelContext: modelContext)
             viewModel.bindIfNeeded { result in
                 handleSessionEnded(result: result)
             }
+        }
+        .onDisappear {
+            tearDownScene(reportResults: false)
+            viewModel.prepareForExit()
         }
         .sheet(item: $reflectionPrompt) { prompt in
             NavigationStack {
                 JournalEditorView(entry: nil, seedPrompt: prompt)
             }
         }
+        #if DEBUG
+        .sheet(isPresented: $showTunables) {
+            TunablesOverlay()
+        }
+        #endif
         .animation(.easeOut(duration: 0.35), value: viewModel.lastResult != nil)
+    }
+
+    // MARK: - Chrome
+
+    private var sessionTopBar: some View {
+        HStack(spacing: 10) {
+            Menu {
+                ForEach(CourtVenue.allCases) { surface in
+                    Button(surface.displayName) {
+                        courtRaw = surface.rawValue
+                        restart()
+                    }
+                }
+            } label: {
+                Label(courtLabel, systemImage: "sportscourt.fill")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.white.opacity(0.9))
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .background(.ultraThinMaterial, in: Capsule())
+            }
+
+            Spacer(minLength: 0)
+
+            #if DEBUG
+            Button {
+                showTunables = true
+            } label: {
+                Image(systemName: "slider.horizontal.3")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.white.opacity(0.7))
+                    .padding(8)
+                    .background(.ultraThinMaterial, in: Circle())
+            }
+            #endif
+
+            Button(action: exitSession) {
+                Image(systemName: "xmark")
+                    .font(.subheadline.weight(.bold))
+                    .foregroundStyle(.white)
+                    .frame(width: 36, height: 36)
+                    .background(.ultraThinMaterial, in: Circle())
+            }
+            .accessibilityLabel("Exit game")
+        }
+        .padding(.horizontal, 16)
+        .padding(.top, 52)
+        .frame(maxWidth: .infinity, alignment: .top)
     }
 
     // MARK: - Lifecycle helpers
 
-    private func makeScene() -> GameScene {
-        let s = GameScene(size: UIScreen.main.bounds.size)
+    private func applyViewportSize(_ size: CGSize) {
+        guard size.width > 1, size.height > 1 else { return }
+        viewportSize = size
+        if scene == nil {
+            let newScene = makeScene(size: size)
+            newScene.relayoutForPresentation()
+            scene = newScene
+        } else {
+            scene?.size = size
+            scene?.relayoutForPresentation()
+        }
+    }
+
+    private func exitSession() {
+        viewModel.prepareForExit()
+        tearDownScene(reportResults: false)
+        onExit()
+    }
+
+    private func tearDownScene(reportResults: Bool) {
+        if reportResults {
+            scene = nil
+        } else {
+            scene?.abortSessionSilently()
+            scene = nil
+        }
+    }
+
+    private func makeScene(size: CGSize) -> GameScene {
+        let s = GameScene(size: size)
         s.scaleMode = .resizeFill
         return s
     }
@@ -85,7 +179,8 @@ struct GameSessionView: View {
     private func restart() {
         viewModel.dismiss()
         sessionKey = UUID()
-        scene = makeScene()
+        guard viewportSize.width > 1, viewportSize.height > 1 else { return }
+        scene = makeScene(size: viewportSize)
     }
 
     private func handleSessionEnded(result: GameResult) {
@@ -149,6 +244,10 @@ struct GameSessionView: View {
         try? modelContext.save()
         return p
     }
+
+    private var courtLabel: String {
+        CourtVenue(rawValue: courtRaw)?.displayName ?? CourtVenue.miamiHard.displayName
+    }
 }
 
 // MARK: - View model
@@ -166,12 +265,15 @@ final class GameSessionViewModel: ObservableObject {
 
     private var hasBound = false
 
+    private var ignoresSessionEnd = false
+
     func bindIfNeeded(_ onEnd: @escaping (GameResult) -> Void) {
         guard !hasBound else { return }
         hasBound = true
         GameEventBus.shared.subscribe(self) { [weak self] event in
             guard let self = self else { return }
             if case .sessionEnd(let result) = event {
+                guard !self.ignoresSessionEnd else { return }
                 onEnd(result)
                 _ = self // keep reference alive
             }
@@ -186,5 +288,11 @@ final class GameSessionViewModel: ObservableObject {
     func dismiss() {
         self.lastResult = nil
         self.lastOutcome = nil
+    }
+
+    /// Suppresses late `.sessionEnd` events while the cover is dismissing.
+    func prepareForExit() {
+        ignoresSessionEnd = true
+        dismiss()
     }
 }

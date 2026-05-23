@@ -1,0 +1,7 @@
+// Rally signing — simulator builds do not require a paid team.
+// Optional: copy Local.xcconfig.example → Local.xcconfig and set DEVELOPMENT_TEAM for device builds.
+#include? "Local.xcconfig"
+
+CODE_SIGN_STYLE = Automatic
+CODE_SIGNING_ALLOWED[sdk=iphonesimulator*] = NO
+CODE_SIGN_IDENTITY[sdk=iphonesimulator*] = -

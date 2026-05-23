@@ -11,7 +11,7 @@
 | Tab        | Purpose                                                                                 | Backed by                                                  |
 |------------|-----------------------------------------------------------------------------------------|------------------------------------------------------------|
 | **Home**   | Avatar hero, weekly stats, quick log shortcuts, latest journal preview                  | SwiftData queries across all entities                      |
-| **Play**   | The rhythm-swipe mini-game (SpriteKit, see §0–§4 below)                                 | `GameScene` + procedural beatmap                           |
+| **Play**   | Tennis rally mini-game (SpriteKit) — baseline aim & timing, see §0–§4                  | `GameScene` + `TennisBallFeed`                            |
 | **Logs**   | Training sessions + match results, segmented control at top                              | `TrainingSession`, `MatchEntry` @Model                      |
 | **Journal**| Free-form entries with mood + tags                                                       | `JournalEntry` @Model                                       |
 | **Shop**   | Browse apparel/rackets by category or by vendor; "try on" overlays item on avatar; deep link to vendor product page | `ShopCatalog` (code), `Vendor` + `ShopItem` (code)         |
@@ -41,13 +41,12 @@ a future native marketplace).
 
 1. **ASMR-grade impact.** Every hit is a multi-system event (visual + audio +
    haptic) coordinated to the millisecond.
-2. **The game is the soundtrack.** Music is generated _by your run_, not
-   played _under_ it. Stop hitting → instruments drop out.
-3. **One thumb, zero learning curve.** A single continuous swing gesture
-   (Pokémon-Go-style drag-and-release): touch anywhere, drag in the
-   direction you want to swing, release. The release vector decides the
-   lane; the release velocity grades commitment. All depth comes from
-   timing, combos, and risk.
+2. **Readable tennis read.** Venue themes, faux-3D court, net, and depth cues
+   sell “tennis” first; the adaptive music bed still responds to combo tier.
+3. **One thumb, aim + timing.** A single continuous pan: release direction sets
+   **shot direction** (toward the far court); release **when** the ball meets
+   your strike window sets **quality**. Depth comes from timing and streaks —
+   not left/right “lanes.”
 4. **Silently viral.** The game must be visually mesmerizing _with the sound
    off_ — because that is how 80% of TikTok/Reels viewers will first see it.
 
@@ -262,7 +261,8 @@ Rally/
     GameEvent.swift           # typed event payload
     HitQuality.swift
     Lane.swift
-    RhythmSpawner.swift       # procedural + beatmap-driven spawner
+    TennisBallFeed (in GameScene.swift)   # paced incoming balls, no BPM chart
+    RhythmSpawner.swift       # legacy beatmap helpers / tests
     Tunables.swift            # every "feel" number, single source of truth
   Audio/
     ToneSynth.swift           # programmatic SFX synth (no asset files)

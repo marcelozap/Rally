@@ -1,6 +1,6 @@
 # Rally
 
-A high-polish, rhythm-adjacent iPhone game. Swipe left or right to hit incoming neon balls in time with a dynamic soundtrack. Minimalist cyberpunk-arcade aesthetic, dopamine-heavy feedback loop.
+A tennis lifestyle iPhone app with a **SpriteKit rally mini-game**: you stay at the baseline, balls come from the far court, and you **drag and release** to aim — swipe direction chooses where the shot goes; timing vs. the ball’s arrival sets hit quality. Pick **Miami (hard), Wimbledon (grass), or Barcelona/red clay** before you play (local venue theme). Minimal HUD, heavy feedback loop.
 
 > Working title in the GDD: **SwipeBeat**. Repo / shipping name: **Rally**.
 
@@ -24,7 +24,7 @@ Rally/
   Features/         Auth, Home, Play, Logs, Training, Match, Journal, Shop, Avatar, Courts
   Services/         API client, Keychain JWT, AuthSession, snapshot sync + triggers
   Data/             SwiftData models (split files), ShopCatalog, journal prompts, iconic courts
-  Game/             SpriteKit scene, spawner, lanes, tuning
+  Game/             SpriteKit scene, ball feed, tuning (`CourtTheme` / surfaces)
   Managers/         GameEventBus, AudioManager, HapticManager, ParticleManager
   Audio/            MusicEngine, ToneSynth
   Cosmetics/        Ball / trail catalog for gameplay

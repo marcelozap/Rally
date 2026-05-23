@@ -1,10 +1,9 @@
 import SwiftUI
 import SwiftData
 
-/// Journal tab styled after popular apps (**Day One** timeline + daily inspiration,
-/// **Journey** guided templates, **Reflectly** streaks) — scoped to tennis practice,
-/// matches, and Rally rhythm play.
-struct JournalView: View {
+/// Journal content embedded inside **Logbook** (training + matches + journal).
+struct JournalLogSection: View {
+    @Binding var showComposer: Bool
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \JournalEntry.date, order: .reverse) private var entries: [JournalEntry]
 
@@ -29,41 +28,31 @@ struct JournalView: View {
     }
 
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
-                    insightsHeader
-                    featuredPromptCard
-                    filterChips
-                    if filteredEntries.isEmpty {
-                        emptyState
-                    } else {
-                        timelineSections
-                    }
-                }
-                .padding(.horizontal, 16)
-                .padding(.bottom, 28)
-            }
-            .background(Color.black.ignoresSafeArea())
-            .navigationTitle("Journal")
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        composerRoute = .blank
-                    } label: {
-                        Image(systemName: "square.and.pencil")
-                            .foregroundStyle(.cyan)
-                    }
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                insightsHeader
+                featuredPromptCard
+                filterChips
+                if filteredEntries.isEmpty {
+                    emptyState
+                } else {
+                    timelineSections
                 }
             }
-            .sheet(item: $composerRoute) { route in
-                NavigationStack {
-                    switch route {
-                    case .blank:
-                        JournalEditorView(entry: nil)
-                    case .seeded(let prompt):
-                        JournalEditorView(entry: nil, seedPrompt: prompt)
-                    }
+            .padding(.horizontal, 16)
+            .padding(.bottom, 28)
+        }
+        .background(Color.black.ignoresSafeArea())
+        .onChange(of: showComposer) { _, show in
+            if show { composerRoute = .blank; showComposer = false }
+        }
+        .sheet(item: $composerRoute) { route in
+            NavigationStack {
+                switch route {
+                case .blank:
+                    JournalEditorView(entry: nil)
+                case .seeded(let prompt):
+                    JournalEditorView(entry: nil, seedPrompt: prompt)
                 }
             }
         }

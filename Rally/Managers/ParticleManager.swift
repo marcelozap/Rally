@@ -31,9 +31,23 @@ final class ParticleManager {
     private func handle(_ event: GameEvent) {
         guard isEnabled, let scene = scene else { return }
         switch event {
-        case .hit(let quality, _, let position, _):
-            emitHitBurst(quality: quality, at: position, in: scene)
-            applyHitShake(quality: quality)
+        case .hit(let quality, _, let position, let combo):
+            // Perfect hits read as "on the line" — snap their burst to
+            // the strike line center even if the ball happened to be a
+            // few points above/below at swing time. Great/good keep the
+            // ball position so the player gets honest spatial feedback
+            // about how they were grading.
+            let burstPos: CGPoint
+            if quality == .perfect {
+                let strikeY = scene.size.height * Tunables.strikeLineYRatio
+                burstPos = CGPoint(x: scene.size.width / 2, y: strikeY)
+            } else {
+                burstPos = position
+            }
+            let tier = Tunables.comboTier(forCombo: combo)
+            let juice = Tunables.tierJuiceMultiplier(tier: tier)
+            emitHitBurst(quality: quality, at: burstPos, juice: juice, in: scene)
+            applyHitShake(quality: quality, juice: juice)
         case .miss:
             applyMissShake()
         case .comboTier(let tier) where tier > 0:
@@ -47,32 +61,38 @@ final class ParticleManager {
 
     // MARK: - Hit burst
 
-    private func emitHitBurst(quality: HitQuality, at point: CGPoint, in scene: SKScene) {
+    private func emitHitBurst(
+        quality: HitQuality,
+        at point: CGPoint,
+        juice: CGFloat,
+        in scene: SKScene
+    ) {
         let burst = SKShapeNode(circleOfRadius: 4)
         burst.position = point
         burst.strokeColor = color(for: quality)
         burst.fillColor = .clear
-        burst.glowWidth = quality == .perfect ? 14 : 8
+        burst.glowWidth = (quality == .perfect ? 14 : 8) * juice
         burst.lineWidth = 2
         burst.zPosition = 100
         scene.addChild(burst)
 
-        let scaleTo: CGFloat
+        let baseScale: CGFloat
         let durationMs: Double
         switch quality {
         case .perfect:
-            scaleTo = 14
+            baseScale = 14
             durationMs = Tunables.perfectBurstDurationMs
         case .great:
-            scaleTo = 9
+            baseScale = 9
             durationMs = Tunables.hitBurstDurationMs
         case .good:
-            scaleTo = 5
+            baseScale = 5
             durationMs = Tunables.hitBurstDurationMs * 0.8
         case .miss:
-            scaleTo = 2
+            baseScale = 2
             durationMs = Tunables.hitBurstDurationMs * 0.5
         }
+        let scaleTo = baseScale * juice
 
         let expand = SKAction.scale(to: scaleTo, duration: durationMs.seconds)
         expand.timingMode = .easeOut
@@ -141,7 +161,7 @@ final class ParticleManager {
         if let target = shakeTarget {
             CameraShake.shake(
                 target,
-                amplitude: Tunables.shakeAmplitudeDeath,
+                amplitude: Tunables.live.shakeAmplitudeDeath,
                 durationMs: Tunables.shakeDurationDeathMs
             )
         }
@@ -186,16 +206,16 @@ final class ParticleManager {
 
     // MARK: - Shake helpers
 
-    private func applyHitShake(quality: HitQuality) {
+    private func applyHitShake(quality: HitQuality, juice: CGFloat) {
         guard let target = shakeTarget else { return }
         let amp: CGFloat
         switch quality {
-        case .perfect: amp = Tunables.shakeAmplitudePerfect
+        case .perfect: amp = Tunables.live.shakeAmplitudePerfect
         case .great:   amp = Tunables.shakeAmplitudeGreat
         case .good:    amp = Tunables.shakeAmplitudeGood
         case .miss:    return
         }
-        CameraShake.shake(target, amplitude: amp, durationMs: Tunables.shakeDurationHitMs)
+        CameraShake.shake(target, amplitude: amp * juice, durationMs: Tunables.shakeDurationHitMs)
     }
 
     private func applyMissShake() {

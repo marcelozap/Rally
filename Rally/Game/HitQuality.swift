@@ -20,12 +20,17 @@ enum HitQuality: String, CaseIterable {
         }
     }
 
-    /// Frame-stop duration applied on this hit. Zero for non-perfect.
+    /// Frame-stop duration applied on this hit, in seconds.
+    ///
+    /// Single source of truth lives in `Tunables.frameStop*Ms`; this
+    /// accessor exists so callers can ask "how long do I freeze for a
+    /// `.perfect`?" without reaching into Tunables themselves.
     var frameStopSeconds: Double {
         switch self {
-        case .perfect: return 0.006
-        case .great:   return 0.003
-        case .good, .miss: return 0
+        case .perfect: return Tunables.frameStopPerfectMs.seconds
+        case .great:   return Tunables.frameStopGreatMs.seconds
+        case .good:    return Tunables.frameStopGoodMs.seconds
+        case .miss:    return Tunables.frameStopMissMs.seconds
         }
     }
 

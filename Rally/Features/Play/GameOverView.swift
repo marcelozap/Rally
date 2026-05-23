@@ -378,7 +378,7 @@ struct GameOverView: View {
                 }
             }
             Button(action: onExit) {
-                Text("Back to Home")
+                Text("Back to Locker")
                     .font(.system(.subheadline, design: .rounded).weight(.semibold))
                     .foregroundStyle(.white.opacity(0.7))
                     .frame(maxWidth: .infinity)
@@ -387,6 +387,7 @@ struct GameOverView: View {
         }
         .opacity(actionsIn ? 1 : 0)
         .offset(y: actionsIn ? 0 : 16)
+        .allowsHitTesting(true)
     }
 
     private var shareSheet: some View {

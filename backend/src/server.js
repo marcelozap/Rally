@@ -4,8 +4,8 @@ import cors from "cors";
 import dotenv from "dotenv";
 import express from "express";
 import jwt from "jsonwebtoken";
-import { mkdirSync } from "fs";
-import { dirname } from "path";
+import { mkdirSync, readFileSync, writeFileSync, existsSync } from "fs";
+import { dirname, join } from "path";
 import { fileURLToPath } from "url";
 import { v4 as uuidv4 } from "uuid";
 
@@ -30,9 +30,19 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE TABLE IF NOT EXISTS user_sync (
   user_id TEXT PRIMARY KEY NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   payload TEXT NOT NULL,
-  updated_at TEXT NOT NULL
+  updated_at TEXT NOT NULL,
+  revision INTEGER NOT NULL DEFAULT 0
 );
 `);
+
+// Schema migration: add `revision` column to older databases that were
+// created before this column existed (SQLite ALTER TABLE is additive-only).
+try {
+  db.exec(`ALTER TABLE user_sync ADD COLUMN revision INTEGER NOT NULL DEFAULT 0`);
+} catch (_) {
+  // Column already exists — this is expected on a fresh DB or after the
+  // first migration. Ignore the "duplicate column" error.
+}
 
 function defaultSnapshot() {
   const now = new Date().toISOString();
@@ -80,9 +90,13 @@ const insertSync = db.prepare(
 );
 const selectUserByEmail = db.prepare(`SELECT * FROM users WHERE email = ? COLLATE NOCASE`);
 const selectUserById = db.prepare(`SELECT * FROM users WHERE id = ?`);
-const selectSync = db.prepare(`SELECT payload, updated_at FROM user_sync WHERE user_id = ?`);
+const selectSync = db.prepare(`SELECT payload, updated_at, revision FROM user_sync WHERE user_id = ?`);
 const updateSync = db.prepare(
-  `UPDATE user_sync SET payload = ?, updated_at = ? WHERE user_id = ?`
+  `UPDATE user_sync SET payload = ?, updated_at = ?, revision = revision + 1 WHERE user_id = ?`
+);
+const updateSyncIfRevision = db.prepare(
+  `UPDATE user_sync SET payload = ?, updated_at = ?, revision = revision + 1
+   WHERE user_id = ? AND revision = ?`
 );
 
 function signToken(user) {
@@ -112,19 +126,70 @@ app.get("/health", (_, res) => {
 });
 
 /**
- * Remote tunables stub. The iOS client (`RemoteTunables.swift`) fetches
- * this when the in-app feature flag is on; missing fields mean "use the
- * bundled default." Edit these numbers to live-adjust the match-flow BPM
- * curve without shipping a build.
+ * Remote tunables — reads from `data/tunables.json` so live-ops can
+ * edit the file and restart the server without a code deploy.
+ * Falls back to hard-coded defaults if the file is missing or corrupt.
+ *
+ * The iOS client (`RemoteTunables.swift`) fetches this when the in-app
+ * feature flag is on; missing fields mean "use the bundled default."
  */
+const TUNABLES_PATH = join(__dirname, "../data/tunables.json");
+
+const DEFAULT_TUNABLES = {
+  bpmWarmUp: 84,
+  bpmExchange: 110,
+  bpmPressure: 140,
+  bpmBreaker: 168,
+  recoverySeconds: 3.0,
+};
+
+function loadTunables() {
+  try {
+    if (!existsSync(TUNABLES_PATH)) {
+      // Seed the file with defaults on first boot so it's easy to find.
+      mkdirSync(dirname(TUNABLES_PATH), { recursive: true });
+      writeFileSync(TUNABLES_PATH, JSON.stringify(DEFAULT_TUNABLES, null, 2));
+      return DEFAULT_TUNABLES;
+    }
+    const raw = readFileSync(TUNABLES_PATH, "utf8");
+    return { ...DEFAULT_TUNABLES, ...JSON.parse(raw) };
+  } catch (e) {
+    console.error("tunables: failed to load, using defaults:", e.message);
+    return DEFAULT_TUNABLES;
+  }
+}
+
 app.get("/api/tunables", (_, res) => {
-  res.json({
-    bpmWarmUp: 84,
-    bpmExchange: 110,
-    bpmPressure: 140,
-    bpmBreaker: 168,
-    recoverySeconds: 3.0,
-  });
+  res.json(loadTunables());
+});
+
+/**
+ * Admin-only PUT — update tunables without a redeploy.
+ * Protected by a simple `X-Admin-Secret` header matching `ADMIN_SECRET` env.
+ * If `ADMIN_SECRET` is unset this endpoint is disabled (returns 403).
+ */
+app.put("/api/tunables", (req, res) => {
+  const secret = process.env.ADMIN_SECRET;
+  if (!secret) return res.status(403).json({ error: "Admin endpoint disabled — set ADMIN_SECRET in .env" });
+  if (req.headers["x-admin-secret"] !== secret) {
+    return res.status(403).json({ error: "Invalid admin secret" });
+  }
+  const body = req.body;
+  if (!body || typeof body !== "object") return res.status(400).json({ error: "JSON body required" });
+  const allowed = ["bpmWarmUp", "bpmExchange", "bpmPressure", "bpmBreaker", "recoverySeconds"];
+  const filtered = Object.fromEntries(
+    Object.entries(body).filter(([k]) => allowed.includes(k))
+  );
+  const current = loadTunables();
+  const merged = { ...current, ...filtered };
+  try {
+    mkdirSync(dirname(TUNABLES_PATH), { recursive: true });
+    writeFileSync(TUNABLES_PATH, JSON.stringify(merged, null, 2));
+    res.json({ ok: true, tunables: merged });
+  } catch (e) {
+    console.error("tunables: write failed:", e.message);
+    res.status(500).json({ error: "Could not persist tunables" });
+  }
 });
 
 app.post("/api/auth/register", (req, res) => {
@@ -187,6 +252,7 @@ app.get("/api/me/sync", authMiddleware, (req, res) => {
     return res.status(500).json({ error: "Corrupt sync payload" });
   }
   payload.updatedAt = row.updated_at;
+  res.set("X-Rally-Current-Revision", String(row.revision ?? 0));
   res.json(payload);
 });
 
@@ -231,22 +297,47 @@ function mergeProgressMaxWins(serverProgress, clientProgress) {
   };
 }
 
+/**
+ * Conflict-aware PUT.
+ *
+ * - PlayerProgress numerics merge max-wins (see `mergeProgressMaxWins`).
+ * - Avatar + collections are last-writer-wins.
+ * - If the client sends `X-Rally-Expected-Revision`, the server checks it
+ *   against the stored revision. A mismatch means a concurrent avatar edit
+ *   raced in — the server returns 409 with the current revision so the
+ *   client can pull, re-apply its avatar delta, and retry. Progress fields
+ *   are never rejected by the revision check (they always max-win anyway).
+ */
 app.put("/api/me/sync", authMiddleware, (req, res) => {
   const body = req.body;
   if (!body || typeof body !== "object") {
     return res.status(400).json({ error: "JSON body required" });
   }
 
-  let serverSnapshot = null;
   const existing = selectSync.get(req.user.sub);
+  let serverSnapshot = null;
   if (existing) {
-    try {
-      serverSnapshot = JSON.parse(existing.payload);
-    } catch {
-      serverSnapshot = null;
+    try { serverSnapshot = JSON.parse(existing.payload); } catch { /* ignore */ }
+  }
+
+  // Optimistic-concurrency check (avatar only).
+  // If the client provided an expected revision and it doesn't match the
+  // server's current revision, reject so the client can pull & rebase its
+  // avatar changes before retrying.
+  const expectedRevisionHeader = req.headers["x-rally-expected-revision"];
+  if (expectedRevisionHeader !== undefined && existing) {
+    const expected = Number(expectedRevisionHeader);
+    const serverRevision = existing.revision ?? 0;
+    if (!Number.isFinite(expected) || expected !== serverRevision) {
+      res.set("X-Rally-Current-Revision", String(serverRevision));
+      return res.status(409).json({
+        error: "Avatar revision conflict — pull and retry",
+        serverRevision,
+      });
     }
   }
 
+  // Always merge progress with max-wins regardless of revision status.
   if (serverSnapshot && body.progress) {
     body.progress = mergeProgressMaxWins(serverSnapshot.progress, body.progress);
   }
@@ -254,11 +345,28 @@ app.put("/api/me/sync", authMiddleware, (req, res) => {
   const updatedAt = new Date().toISOString();
   body.updatedAt = updatedAt;
   const json = JSON.stringify(body);
-  const result = updateSync.run(json, updatedAt, req.user.sub);
-  if (result.changes === 0) {
-    return res.status(404).json({ error: "No sync row — re-register or contact support" });
+
+  let result;
+  if (expectedRevisionHeader !== undefined && existing) {
+    // Conditional update — only succeeds if revision still matches.
+    result = updateSyncIfRevision.run(json, updatedAt, req.user.sub, existing.revision ?? 0);
+    if (result.changes === 0) {
+      // Lost the race between check and write; tell client to retry.
+      const fresh = selectSync.get(req.user.sub);
+      const rev = fresh?.revision ?? 0;
+      res.set("X-Rally-Current-Revision", String(rev));
+      return res.status(409).json({ error: "Avatar revision conflict — pull and retry", serverRevision: rev });
+    }
+  } else {
+    result = updateSync.run(json, updatedAt, req.user.sub);
+    if (result.changes === 0) {
+      return res.status(404).json({ error: "No sync row — re-register or contact support" });
+    }
   }
-  res.json({ ok: true, updatedAt, merged: body });
+
+  const newRevision = (existing?.revision ?? 0) + 1;
+  res.set("X-Rally-Current-Revision", String(newRevision));
+  res.json({ ok: true, updatedAt, revision: newRevision, merged: body });
 });
 
 app.listen(PORT, () => {

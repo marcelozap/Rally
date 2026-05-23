@@ -1,26 +1,20 @@
 import SwiftUI
 import SwiftData
 
-// MARK: - Tab identity
-
-enum RallyTab: Hashable {
-    case home, play, logs, journal, shop
-}
-
-// MARK: - Root
-
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
     @Query private var avatarConfigs: [AvatarConfig]
 
-    @State private var selectedTab: RallyTab = .home
-    @State private var logsSection: LogsSection = .training
+    @State private var selectedTab: RallyTab = .locker
+    @State private var logbookSection: LogbookSection = .training
+    @State private var isPlaying = false
+    @State private var gameSessionID = UUID()
 
     var body: some View {
         Group {
             if let avatar = avatarConfigs.first {
                 if avatar.hasCompletedSetup {
-                    mainTabs
+                    mainShell
                 } else {
                     NavigationStack {
                         AvatarCustomizerView(config: avatar, isFirstLaunch: true)
@@ -28,8 +22,6 @@ struct ContentView: View {
                     .transition(.opacity)
                 }
             } else {
-                // Defensive fallback — `RallyApp.seedIfNeeded` should already
-                // have inserted one before this view appears.
                 ProgressView()
                     .tint(.cyan)
                     .onAppear {
@@ -43,35 +35,47 @@ struct ContentView: View {
         .animation(.easeInOut(duration: 0.3), value: avatarConfigs.first?.hasCompletedSetup ?? false)
     }
 
-    private var mainTabs: some View {
-        TabView(selection: $selectedTab) {
-            HomeView(selectedTab: $selectedTab, logsSection: $logsSection)
-                .tabItem { Label("Home", systemImage: "house.fill") }
-                .tag(RallyTab.home)
-                .transition(.asymmetric(insertion: .opacity.combined(with: .scale(scale: 0.95)), removal: .opacity))
+    private var mainShell: some View {
+        ZStack(alignment: .bottom) {
+            Group {
+                switch selectedTab {
+                case .locker:
+                    LockerHubView(onPlay: {
+                        gameSessionID = UUID()
+                        isPlaying = true
+                    })
+                case .logbook:
+                    LogbookView(section: $logbookSection)
+                case .courts:
+                    NavigationStack {
+                        CourtsMapView()
+                            .navigationTitle("Courts")
+                            .navigationBarTitleDisplayMode(.inline)
+                            .toolbar {
+                                ToolbarItem(placement: .topBarTrailing) {
+                                    SoundToggleButton()
+                                }
+                            }
+                    }
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .padding(.bottom, 62)
 
-            GameSessionView(onExit: { selectedTab = .home })
-                .tabItem { Label("Play", systemImage: "tennis.racket") }
-                .tag(RallyTab.play)
-                .transition(.asymmetric(insertion: .opacity.combined(with: .scale(scale: 0.95)), removal: .opacity))
-
-            LogsView(section: $logsSection)
-                .tabItem { Label("Logs", systemImage: "list.clipboard.fill") }
-                .tag(RallyTab.logs)
-                .transition(.asymmetric(insertion: .opacity.combined(with: .scale(scale: 0.95)), removal: .opacity))
-
-            JournalView()
-                .tabItem { Label("Journal", systemImage: "book.fill") }
-                .tag(RallyTab.journal)
-                .transition(.asymmetric(insertion: .opacity.combined(with: .scale(scale: 0.95)), removal: .opacity))
-
-            ShopView()
-                .tabItem { Label("Shop", systemImage: "bag.fill") }
-                .tag(RallyTab.shop)
-                .transition(.asymmetric(insertion: .opacity.combined(with: .scale(scale: 0.95)), removal: .opacity))
+            RallyNavBar(selection: $selectedTab)
+                .zIndex(1)
         }
-        .tint(.cyan)
-        .animation(.easeInOut(duration: 0.25), value: selectedTab)
+        .background(Color.black.ignoresSafeArea())
+        .fullScreenCover(isPresented: $isPlaying, onDismiss: {
+            isPlaying = false
+            selectedTab = .locker
+        }) {
+            GameSessionView(onExit: {
+                isPlaying = false
+                selectedTab = .locker
+            })
+            .id(gameSessionID)
+            .interactiveDismissDisabled(false)
+        }
     }
 }
-

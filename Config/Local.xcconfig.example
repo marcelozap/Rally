@@ -1,0 +1,3 @@
+// Copy this file to Local.xcconfig (gitignored) and set your Apple team ID for device signing.
+// Find it: Xcode → Settings → Accounts → your Apple ID → Team ID (10 characters).
+// DEVELOPMENT_TEAM = ABCDE12345
