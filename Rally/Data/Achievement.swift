@@ -13,7 +13,7 @@ final class Achievement {
     var title: String
 
     /// Longer description
-    var description: String
+    var details: String
 
     /// SF Symbol name for the badge icon
     var iconName: String
@@ -27,11 +27,11 @@ final class Achievement {
     /// Rarity tier: "common", "uncommon", "rare", "epic", "legendary"
     var rarity: String
 
-    init(badgeId: String, title: String, description: String, iconName: String, colorHex: String, rarity: String) {
+    init(badgeId: String, title: String, details: String, iconName: String, colorHex: String, rarity: String) {
         self.id = UUID()
         self.badgeId = badgeId
         self.title = title
-        self.description = description
+        self.details = details
         self.iconName = iconName
         self.colorHex = colorHex
         self.earnedDate = Date()
@@ -57,6 +57,9 @@ enum BadgeDefinition: String, CaseIterable {
     case perfectCombo100 = "combo_100"
     case accuracy90 = "accuracy_90"
     case accuracy95 = "accuracy_95"
+    case firstCleanReturn = "clean_return"
+    case changeupWinner3 = "changeup_winner_3"
+    case pressureHold5 = "pressure_hold_5"
 
     // Progression badges
     case level5 = "level_5"
@@ -99,6 +102,12 @@ enum BadgeDefinition: String, CaseIterable {
             ("Precision", "90% accuracy", "target", "#FFD700", "uncommon")
         case .accuracy95:
             ("Sharpshooter", "95% accuracy", "target", "#FF1493", "rare")
+        case .firstCleanReturn:
+            ("Return Game", "Register your first clean return pickup", "arrow.uturn.left.circle.fill", "#00D9FF", "uncommon")
+        case .changeupWinner3:
+            ("Pattern Breaker", "Hit 3 change-up winners in a run", "bolt.badge.clock.fill", "#FF1493", "rare")
+        case .pressureHold5:
+            ("Ice In Veins", "Hold 5 pressure exchanges in a run", "shield.lefthalf.filled", "#FFD700", "epic")
 
         case .level5:
             ("Climbing", "Reach Level 5", "arrow.up", "#00D9FF", "common")
@@ -128,23 +137,10 @@ enum BadgeDefinition: String, CaseIterable {
         return Achievement(
             badgeId: self.rawValue,
             title: metadata.title,
-            description: metadata.description,
+            details: metadata.description,
             iconName: metadata.icon,
             colorHex: metadata.color,
             rarity: metadata.rarity
         )
-    }
-}
-
-/// Extension to PlayerProgress to support achievement tracking
-extension PlayerProgress {
-    /// Track which achievements have been earned (keyed by badgeId)
-    @Transient var earnedBadgeIds: Set<String> = []
-
-    /// Check if a badge should be earned and add it if so
-    mutating func checkAndEarnBadge(_ badge: BadgeDefinition) -> Bool {
-        guard !earnedBadgeIds.contains(badge.rawValue) else { return false }
-        earnedBadgeIds.insert(badge.rawValue)
-        return true
     }
 }

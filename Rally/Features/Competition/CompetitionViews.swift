@@ -4,28 +4,31 @@ import SwiftData
 struct CompetitionOverviewView: View {
     var body: some View {
         ScrollView {
-            VStack(spacing: 16) {
-                Text("Competition Hub")
-                    .font(.system(.largeTitle, design: .rounded).weight(.bold))
-                    .foregroundStyle(.white)
-                    .padding(.top, 12)
-                Text("Jump into leaderboards, rivals, challenges, and seasonal rewards.")
-                    .font(.subheadline)
-                    .foregroundStyle(.white.opacity(0.7))
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 24)
-                VStack(spacing: 14) {
+            VStack(spacing: RallyUIKit.Spacing.md) {
+                RallyUIKit.LuxePanel(tint: RallyUIKit.Palette.champagne) {
+                    VStack(spacing: RallyUIKit.Spacing.sm) {
+                        RallyUIKit.EditorialEyebrow(text: "Competition", tint: RallyUIKit.Palette.champagne)
+                        Text("Competition Hub")
+                            .font(RallyUIKit.Typography.display(34, weight: .bold))
+                            .foregroundStyle(RallyUIKit.Palette.frost)
+                        Text("Jump into leaderboards, rivals, challenges, and seasonal rewards.")
+                            .font(RallyUIKit.Typography.body(.subheadline, weight: .medium))
+                            .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.82))
+                            .multilineTextAlignment(.center)
+                    }
+                }
+                VStack(spacing: RallyUIKit.Spacing.sm) {
                     competitionTile(title: "Leaderboard", subtitle: "See how you rank against other players", icon: "list.number", destination: LeaderboardView())
                     competitionTile(title: "Battle Pass", subtitle: "Earn XP, tiers, and premium rewards", icon: "ticket.fill", destination: BattlePassView())
                     competitionTile(title: "Rivals", subtitle: "Challenge a rival and beat their target score", icon: "person.2.fill", destination: RivalModeView())
                     competitionTile(title: "Analytics", subtitle: "Review performance trends and progress", icon: "chart.bar.doc.horizontal.fill", destination: AnalyticsDashboardView())
                     competitionTile(title: "Seasonal Events", subtitle: "Complete special event goals for bonus rewards", icon: "sparkles", destination: SeasonalEventsView())
                 }
-                .padding(.horizontal, 16)
             }
-            .padding(.bottom, 30)
+            .padding(.horizontal, RallyUIKit.Spacing.md)
+            .padding(.vertical, RallyUIKit.Spacing.md)
         }
-        .background(Color.black.ignoresSafeArea())
+        .background(RallyUIKit.screenBackground)
         .navigationTitle("Competition")
     }
 
@@ -34,27 +37,34 @@ struct CompetitionOverviewView: View {
         NavigationLink(destination: destination) {
             HStack(spacing: 14) {
                 ZStack {
-                    RoundedRectangle(cornerRadius: 14)
-                        .fill(Color.white.opacity(0.05))
+                    RoundedRectangle(cornerRadius: RallyUIKit.Radius.md)
+                        .fill(icon == "ticket.fill" ? RallyUIKit.Palette.gold.opacity(0.16) : RallyUIKit.Palette.cyan.opacity(0.14))
                         .frame(width: 54, height: 54)
                     Image(systemName: icon)
                         .font(.title2)
-                        .foregroundStyle(.cyan)
+                        .foregroundStyle(icon == "ticket.fill" ? RallyUIKit.Palette.gold : RallyUIKit.Palette.cyan)
                 }
                 VStack(alignment: .leading, spacing: 4) {
                     Text(title)
-                        .font(.headline)
-                        .foregroundStyle(.white)
+                        .font(RallyUIKit.Typography.label(.headline, weight: .bold))
+                        .foregroundStyle(RallyUIKit.Palette.frost)
                     Text(subtitle)
-                        .font(.caption)
-                        .foregroundStyle(.white.opacity(0.65))
+                        .font(RallyUIKit.Typography.body(.caption, weight: .medium))
+                        .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.74))
                 }
                 Spacer()
                 Image(systemName: "chevron.right")
-                    .foregroundStyle(.white.opacity(0.6))
+                    .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.54))
             }
-            .padding(16)
-            .background(RoundedRectangle(cornerRadius: 18).fill(Color.white.opacity(0.04)))
+            .padding(RallyUIKit.Spacing.md)
+            .background(
+                RoundedRectangle(cornerRadius: RallyUIKit.Radius.lg)
+                    .fill(Color.white.opacity(0.04))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: RallyUIKit.Radius.lg)
+                    .stroke(RallyUIKit.Palette.line, lineWidth: 1)
+            )
         }
         .buttonStyle(.plain)
     }
@@ -98,7 +108,7 @@ struct BattlePassView: View {
 
     var body: some View {
         ScrollView {
-            VStack(spacing: 18) {
+            VStack(spacing: RallyUIKit.Spacing.md) {
                 if let pass = battlePass {
                     passHeader(pass)
                     progressSection(pass)
@@ -109,64 +119,64 @@ struct BattlePassView: View {
                         .foregroundStyle(.white.opacity(0.7))
                 }
             }
-            .padding(16)
+            .padding(RallyUIKit.Spacing.md)
         }
-        .background(Color.black.ignoresSafeArea())
+        .background(RallyUIKit.screenBackground)
         .navigationTitle("Battle Pass")
     }
 
     private func passHeader(_ pass: BattlePass) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text(pass.seasonName)
-                .font(.system(.title, design: .rounded).weight(.bold))
-                .foregroundStyle(.white)
-            Text("Season ends in \(pass.daysRemaining) days")
-                .font(.subheadline)
-                .foregroundStyle(.cyan.opacity(0.75))
-            Text("XP: \(pass.xp)")
-                .font(.headline)
-                .foregroundStyle(.white)
-            ProgressView(value: pass.tierProgress)
-                .tint(.cyan)
+        RallyUIKit.LuxePanel(tint: RallyUIKit.Palette.gold) {
+            VStack(alignment: .leading, spacing: RallyUIKit.Spacing.xs + 2) {
+                Text(pass.seasonName)
+                    .font(RallyUIKit.Typography.title(.title, weight: .bold))
+                    .foregroundStyle(RallyUIKit.Palette.frost)
+                Text("Season ends in \(pass.daysRemaining) days")
+                    .font(RallyUIKit.Typography.body(.subheadline, weight: .medium))
+                    .foregroundStyle(RallyUIKit.Palette.cyan.opacity(0.8))
+                Text("XP: \(pass.xp)")
+                    .font(RallyUIKit.Typography.label(.headline, weight: .bold))
+                    .foregroundStyle(RallyUIKit.Palette.frost)
+                ProgressView(value: pass.tierProgress)
+                    .tint(RallyUIKit.Palette.cyan)
+            }
         }
-        .padding(18)
-        .background(RoundedRectangle(cornerRadius: 18).fill(Color.white.opacity(0.05)))
     }
 
     private func progressSection(_ pass: BattlePass) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Current tier reward")
-                .font(.headline)
+                .font(RallyUIKit.Typography.label(.headline, weight: .semibold))
             Text(BattlePassManager.rewardFor(currentXP: pass.xp))
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(.white.opacity(0.75))
+                .font(RallyUIKit.Typography.body(.subheadline, weight: .semibold))
+                .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.82))
         }
         .padding(14)
-        .background(RoundedRectangle(cornerRadius: 16).fill(Color.white.opacity(0.03)))
+        .background(RoundedRectangle(cornerRadius: RallyUIKit.Radius.md).fill(Color.white.opacity(0.03)))
     }
 
     private func tiersSection(_ pass: BattlePass) -> some View {
         VStack(alignment: .leading, spacing: 14) {
             Text("Tiers")
-                .font(.headline)
+                .font(RallyUIKit.Typography.label(.headline, weight: .semibold))
             ForEach(pass.activeTiers) { tier in
                 HStack {
                     VStack(alignment: .leading, spacing: 4) {
                         Text(tier.name)
-                            .font(.subheadline.weight(.bold))
+                            .font(RallyUIKit.Typography.label(.subheadline, weight: .bold))
                         Text(tier.rewardDescription)
-                            .font(.caption)
-                            .foregroundStyle(.white.opacity(0.65))
+                            .font(RallyUIKit.Typography.body(.caption, weight: .medium))
+                            .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.74))
                     }
                     Spacer()
                     Text(tier.premiumOnly ? "Premium" : "Free")
-                        .font(.caption.weight(.semibold))
+                        .font(RallyUIKit.Typography.label(.caption, weight: .semibold))
                         .padding(.horizontal, 10)
                         .padding(.vertical, 6)
-                        .background(Capsule().fill(tier.premiumOnly ? Color.pink.opacity(0.2) : Color.cyan.opacity(0.2)))
+                        .background(Capsule().fill(tier.premiumOnly ? RallyUIKit.Palette.rose.opacity(0.18) : RallyUIKit.Palette.cyan.opacity(0.18)))
                 }
                 .padding(12)
-                .background(RoundedRectangle(cornerRadius: 14).fill(Color.white.opacity(0.04)))
+                .background(RoundedRectangle(cornerRadius: RallyUIKit.Radius.md).fill(Color.white.opacity(0.04)))
             }
         }
     }
@@ -174,21 +184,21 @@ struct BattlePassView: View {
     private func premiumOffer(_ pass: BattlePass) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             Text(pass.premiumUnlocked ? "Premium unlocked" : "Upgrade to Premium")
-                .font(.headline)
+                .font(RallyUIKit.Typography.label(.headline, weight: .semibold))
             Text(pass.premiumUnlocked ? "You can claim all battle pass rewards." : "Unlock exclusive tiers, bonus XP, and premium cosmetics.")
-                .font(.subheadline)
-                .foregroundStyle(.white.opacity(0.7))
+                .font(RallyUIKit.Typography.body(.subheadline, weight: .medium))
+                .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.8))
             Button(action: togglePremium) {
                 Text(pass.premiumUnlocked ? "Premium Active" : "Unlock Premium")
-                    .font(.headline)
-                    .foregroundStyle(.black)
+                    .font(RallyUIKit.Typography.label(.headline, weight: .bold))
+                    .foregroundStyle(RallyUIKit.Palette.obsidian)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 14)
-                    .background(RoundedRectangle(cornerRadius: 14).fill(pass.premiumUnlocked ? Color.green : Color.cyan))
+                    .background(RoundedRectangle(cornerRadius: RallyUIKit.Radius.md).fill(pass.premiumUnlocked ? RallyUIKit.Palette.lime : RallyUIKit.Palette.cyan))
             }
         }
         .padding(16)
-        .background(RoundedRectangle(cornerRadius: 18).fill(Color.white.opacity(0.05)))
+        .background(RoundedRectangle(cornerRadius: RallyUIKit.Radius.lg).fill(Color.white.opacity(0.05)))
     }
 
     private func togglePremium() {
@@ -206,10 +216,10 @@ struct RivalModeView: View {
 
     var body: some View {
         ScrollView {
-            VStack(spacing: 18) {
+            VStack(spacing: RallyUIKit.Spacing.md) {
                 Text("Pick a rival and challenge them in a one-on-one run.")
-                    .font(.subheadline)
-                    .foregroundStyle(.white.opacity(0.7))
+                    .font(RallyUIKit.Typography.body(.subheadline, weight: .medium))
+                    .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.8))
                     .padding(.top, 10)
                 ForEach(RivalModeManager.sampleOpponents) { opponent in
                     Button(action: {
@@ -219,57 +229,57 @@ struct RivalModeView: View {
                         HStack(spacing: 16) {
                             VStack(alignment: .leading, spacing: 6) {
                                 Text(opponent.name)
-                                    .font(.headline)
-                                    .foregroundStyle(.white)
+                                    .font(RallyUIKit.Typography.label(.headline, weight: .bold))
+                                    .foregroundStyle(RallyUIKit.Palette.frost)
                                 Text(opponent.style)
-                                    .font(.caption)
-                                    .foregroundStyle(.white.opacity(0.6))
+                                    .font(RallyUIKit.Typography.body(.caption, weight: .medium))
+                                    .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.72))
                                 Text("Target: \(opponent.targetScore)")
-                                    .font(.caption2)
-                                    .foregroundStyle(.cyan)
+                                    .font(RallyUIKit.Typography.label(.caption2, weight: .semibold))
+                                    .foregroundStyle(RallyUIKit.Palette.cyan)
                             }
                             Spacer()
                             VStack(alignment: .trailing) {
                                 Text("Lvl. \(opponent.level)")
-                                    .font(.subheadline.weight(.bold))
+                                    .font(RallyUIKit.Typography.label(.subheadline, weight: .bold))
                                 Text("+\(opponent.rewardCoins) coins")
-                                    .font(.caption2)
-                                    .foregroundStyle(.yellow)
+                                    .font(RallyUIKit.Typography.body(.caption2, weight: .medium))
+                                    .foregroundStyle(RallyUIKit.Palette.gold)
                             }
                         }
                         .padding(14)
-                        .background(RoundedRectangle(cornerRadius: 16).fill(Color.white.opacity(0.04)))
+                        .background(RoundedRectangle(cornerRadius: RallyUIKit.Radius.md).fill(Color.white.opacity(0.04)))
                     }
                 }
                 if !history.isEmpty {
                     VStack(alignment: .leading, spacing: 10) {
                         Text("Recent rival results")
-                            .font(.headline)
-                            .foregroundStyle(.white)
+                            .font(RallyUIKit.Typography.label(.headline, weight: .semibold))
+                            .foregroundStyle(RallyUIKit.Palette.frost)
                         ForEach(history, id: \.id) { result in
                             HStack {
                                 VStack(alignment: .leading) {
                                     Text(result.opponentName)
-                                        .font(.subheadline.weight(.semibold))
-                                        .foregroundStyle(.white)
+                                        .font(RallyUIKit.Typography.label(.subheadline, weight: .semibold))
+                                        .foregroundStyle(RallyUIKit.Palette.frost)
                                     Text("Score: \(result.playerScore) / target: \(result.targetScore)")
-                                        .font(.caption2)
-                                        .foregroundStyle(.white.opacity(0.7))
+                                        .font(RallyUIKit.Typography.body(.caption2, weight: .medium))
+                                        .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.8))
                                 }
                                 Spacer()
                                 Text(result.didWin ? "Win" : "Loss")
-                                    .font(.caption.weight(.bold))
-                                    .foregroundStyle(result.didWin ? .green : .red)
+                                    .font(RallyUIKit.Typography.label(.caption, weight: .bold))
+                                    .foregroundStyle(result.didWin ? RallyUIKit.Palette.lime : RallyUIKit.Palette.coral)
                             }
                             .padding(12)
-                            .background(RoundedRectangle(cornerRadius: 14).fill(Color.white.opacity(0.03)))
+                            .background(RoundedRectangle(cornerRadius: RallyUIKit.Radius.md).fill(Color.white.opacity(0.03)))
                         }
                     }
                 }
             }
-            .padding(16)
+            .padding(RallyUIKit.Spacing.md)
         }
-        .background(Color.black.ignoresSafeArea())
+        .background(RallyUIKit.screenBackground)
         .navigationTitle("Rivals")
         .sheet(isPresented: $showSession) {
             if let opponent = selectedOpponent {
@@ -304,25 +314,25 @@ struct AnalyticsDashboardView: View {
 
     var body: some View {
         ScrollView {
-            VStack(spacing: 18) {
+            VStack(spacing: RallyUIKit.Spacing.md) {
                 summaryCard
                 statTiles
                 engagementCard
             }
-            .padding(16)
+            .padding(RallyUIKit.Spacing.md)
         }
-        .background(Color.black.ignoresSafeArea())
+        .background(RallyUIKit.screenBackground)
         .navigationTitle("Analytics")
     }
 
     private var summaryCard: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Performance Summary")
-                .font(.headline)
-                .foregroundStyle(.white)
+                .font(RallyUIKit.Typography.label(.headline, weight: .semibold))
+                .foregroundStyle(RallyUIKit.Palette.frost)
             Text("Track your progress across score, accuracy, and seasonal goals.")
-                .font(.subheadline)
-                .foregroundStyle(.white.opacity(0.7))
+                .font(RallyUIKit.Typography.body(.subheadline, weight: .medium))
+                .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.8))
             HStack(spacing: 10) {
                 statBubble(label: "Games", value: "\(insights.totalGames)")
                 statBubble(label: "Wins", value: "\(insights.totalWins)")
@@ -330,7 +340,7 @@ struct AnalyticsDashboardView: View {
             }
         }
         .padding(18)
-        .background(RoundedRectangle(cornerRadius: 18).fill(Color.white.opacity(0.05)))
+        .background(RoundedRectangle(cornerRadius: RallyUIKit.Radius.lg).fill(Color.white.opacity(0.05)))
     }
 
     private var statTiles: some View {
@@ -345,48 +355,48 @@ struct AnalyticsDashboardView: View {
     private var engagementCard: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Engagement")
-                .font(.headline)
-                .foregroundStyle(.white)
+                .font(RallyUIKit.Typography.label(.headline, weight: .semibold))
+                .foregroundStyle(RallyUIKit.Palette.frost)
             Text("Achievements unlocked: \(insights.achievementsUnlocked)")
-                .foregroundStyle(.white.opacity(0.7))
+                .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.8))
             ProgressView(value: insights.seasonalProgress)
-                .tint(.pink)
+                .tint(RallyUIKit.Palette.rose)
             Text("Seasonal event completion: \(Int((insights.seasonalProgress * 100).rounded()))%")
-                .font(.caption)
-                .foregroundStyle(.white.opacity(0.65))
+                .font(RallyUIKit.Typography.body(.caption, weight: .medium))
+                .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.74))
         }
         .padding(18)
-        .background(RoundedRectangle(cornerRadius: 18).fill(Color.white.opacity(0.05)))
+        .background(RoundedRectangle(cornerRadius: RallyUIKit.Radius.lg).fill(Color.white.opacity(0.05)))
     }
 
     private func statBubble(label: String, value: String) -> some View {
         VStack(spacing: 6) {
             Text(value)
-                .font(.title2.weight(.bold))
-                .foregroundStyle(.cyan)
+                .font(RallyUIKit.Typography.title(.title2, weight: .bold))
+                .foregroundStyle(RallyUIKit.Palette.cyan)
             Text(label)
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.white.opacity(0.75))
+                .font(RallyUIKit.Typography.label(.caption, weight: .semibold))
+                .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.82))
         }
         .frame(maxWidth: .infinity)
         .padding(12)
-        .background(RoundedRectangle(cornerRadius: 16).fill(Color.white.opacity(0.04)))
+        .background(RoundedRectangle(cornerRadius: RallyUIKit.Radius.md).fill(Color.white.opacity(0.04)))
     }
 
     private func analyticsTile(title: String, value: String) -> some View {
         HStack {
             VStack(alignment: .leading, spacing: 4) {
                 Text(title)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.white)
+                    .font(RallyUIKit.Typography.label(.subheadline, weight: .semibold))
+                    .foregroundStyle(RallyUIKit.Palette.frost)
                 Text(value)
-                    .font(.title3.weight(.bold))
-                    .foregroundStyle(.cyan)
+                    .font(RallyUIKit.Typography.title(.title3, weight: .bold))
+                    .foregroundStyle(RallyUIKit.Palette.cyan)
             }
             Spacer()
         }
         .padding(14)
-        .background(RoundedRectangle(cornerRadius: 16).fill(Color.white.opacity(0.04)))
+        .background(RoundedRectangle(cornerRadius: RallyUIKit.Radius.md).fill(Color.white.opacity(0.04)))
     }
 }
 
@@ -395,46 +405,46 @@ struct SeasonalEventsView: View {
 
     var body: some View {
         ScrollView {
-            VStack(spacing: 18) {
+            VStack(spacing: RallyUIKit.Spacing.md) {
                 if let event = events.first {
                     VStack(alignment: .leading, spacing: 14) {
                         Text(event.title)
-                            .font(.system(.title, design: .rounded).weight(.bold))
-                            .foregroundStyle(.white)
+                            .font(RallyUIKit.Typography.title(.title, weight: .bold))
+                            .foregroundStyle(RallyUIKit.Palette.frost)
                         Text(event.subtitle)
-                            .font(.subheadline)
-                            .foregroundStyle(.cyan.opacity(0.8))
+                            .font(RallyUIKit.Typography.body(.subheadline, weight: .medium))
+                            .foregroundStyle(RallyUIKit.Palette.cyan.opacity(0.82))
                         Text(event.descriptionText)
-                            .font(.body)
-                            .foregroundStyle(.white.opacity(0.75))
+                            .font(RallyUIKit.Typography.body(.body, weight: .medium))
+                            .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.84))
                         Text(event.goalDescription)
-                            .font(.caption)
-                            .foregroundStyle(.white.opacity(0.7))
+                            .font(RallyUIKit.Typography.body(.caption, weight: .medium))
+                            .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.76))
                         ProgressView(value: event.progressFraction)
-                            .tint(.pink)
+                            .tint(RallyUIKit.Palette.rose)
                         HStack {
                             Text("\(event.progress)/\(event.target)")
-                                .font(.headline)
+                                .font(RallyUIKit.Typography.label(.headline, weight: .bold))
                             Spacer()
                             Text(event.isCompleted ? "Complete" : "\(event.daysRemaining)d left")
-                                .font(.caption.weight(.semibold))
-                                .foregroundStyle(event.isCompleted ? .green : .white.opacity(0.7))
+                                .font(RallyUIKit.Typography.label(.caption, weight: .semibold))
+                                .foregroundStyle(event.isCompleted ? RallyUIKit.Palette.lime : RallyUIKit.Palette.cloud.opacity(0.8))
                         }
-                        .foregroundStyle(.white)
+                        .foregroundStyle(RallyUIKit.Palette.frost)
                         Text("Reward: \(event.rewardCoins) coins")
-                            .font(.subheadline.weight(.bold))
-                            .foregroundStyle(.yellow)
+                            .font(RallyUIKit.Typography.label(.subheadline, weight: .bold))
+                            .foregroundStyle(RallyUIKit.Palette.gold)
                     }
                     .padding(18)
-                    .background(RoundedRectangle(cornerRadius: 18).fill(Color.white.opacity(0.05)))
+                    .background(RoundedRectangle(cornerRadius: RallyUIKit.Radius.lg).fill(Color.white.opacity(0.05)))
                 } else {
                     Text("No active seasonal events right now.")
-                        .foregroundStyle(.white.opacity(0.7))
+                        .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.8))
                 }
             }
-            .padding(16)
+            .padding(RallyUIKit.Spacing.md)
         }
-        .background(Color.black.ignoresSafeArea())
+        .background(RallyUIKit.screenBackground)
         .navigationTitle("Seasonal Events")
     }
 }

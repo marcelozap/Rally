@@ -62,6 +62,12 @@ enum JournalPromptLibrary {
             "Max combo: \(result.maxCombo)",
             "Accuracy: \(accuracyPct)% (Perfects: \(result.perfectHits))"
         ]
+        if !result.matchStoryHighlights.isEmpty {
+            let summary = result.matchStoryHighlights
+                .map { "\($0.label): \($0.value)" }
+                .joined(separator: " • ")
+            lines.append("Match story: \(summary)")
+        }
         if result.segments.count == 3 {
             lines.append("Shape: \(result.narrativeHeadline)")
         }

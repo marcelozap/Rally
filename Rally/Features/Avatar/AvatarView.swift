@@ -37,28 +37,86 @@ struct AvatarView: View {
             .fill(
                 LinearGradient(
                     colors: [
-                        Color(white: 0.08),
-                        Color(white: 0.02)
+                        RallyUIKit.Palette.slate,
+                        RallyUIKit.Palette.ink,
+                        Color.black
                     ],
-                    startPoint: .top, endPoint: .bottom
+                    startPoint: .topLeading, endPoint: .bottomTrailing
                 )
             )
+            .overlay(alignment: .topLeading) {
+                Circle()
+                    .fill(RallyUIKit.Palette.cyan.opacity(0.16))
+                    .blur(radius: 30)
+                    .frame(width: 140, height: 140)
+                    .offset(x: -10, y: -10)
+            }
+            .overlay(alignment: .bottomTrailing) {
+                Circle()
+                    .fill(RallyUIKit.Palette.rose.opacity(0.14))
+                    .blur(radius: 34)
+                    .frame(width: 120, height: 120)
+                    .offset(x: 12, y: 16)
+            }
+            .overlay(alignment: .bottom) {
+                Ellipse()
+                    .fill(Color.black.opacity(0.26))
+                    .frame(width: 180, height: 28)
+                    .blur(radius: 10)
+                    .offset(y: 26)
+            }
+            .overlay {
+                courtLines
+                    .clipShape(RoundedRectangle(cornerRadius: 24))
+            }
             .overlay(
                 RoundedRectangle(cornerRadius: 24)
-                    .stroke(Color.cyan.opacity(0.25), lineWidth: 1)
+                    .stroke(Color.white.opacity(0.1), lineWidth: 1)
             )
+    }
+
+    private var courtLines: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 24)
+                .stroke(RallyUIKit.Palette.cyan.opacity(0.08), lineWidth: 1)
+                .padding(18)
+
+            Rectangle()
+                .fill(RallyUIKit.Palette.cyan.opacity(0.05))
+                .frame(width: 1)
+                .padding(.vertical, 24)
+
+            Rectangle()
+                .fill(RallyUIKit.Palette.cyan.opacity(0.04))
+                .frame(height: 1)
+                .padding(.horizontal, 34)
+                .offset(y: 24)
+        }
     }
 
     // MARK: - Composition
 
     private func bodyComposition(size: CGFloat) -> some View {
         ZStack {
+            Ellipse()
+                .fill(RallyUIKit.Palette.champagne.opacity(0.08))
+                .frame(width: size * 0.42, height: size * 0.68)
+                .blur(radius: 18)
+                .offset(y: size * 0.02)
+
             // Racket — behind the body, off to the side.
-            RacketShape(accent: equippedItem(.racket)?.accentColor ?? .cyan)
-                .fill(equippedItem(.racket)?.color ?? Color(white: 0.7))
-                .frame(width: size * 0.22, height: size * 0.65)
-                .offset(x: size * 0.30, y: 0)
-                .shadow(color: (equippedItem(.racket)?.accentColor ?? .cyan).opacity(0.6), radius: 8)
+            ZStack {
+                RacketShape(accent: equippedItem(.racket)?.accentColor ?? .cyan)
+                    .fill(equippedItem(.racket)?.color ?? Color(white: 0.7))
+                RacketStrings()
+                    .stroke((equippedItem(.racket)?.accentColor ?? .cyan).opacity(0.4), lineWidth: 1)
+                    .padding(.top, size * 0.04)
+                    .padding(.horizontal, size * 0.035)
+                    .padding(.bottom, size * 0.23)
+            }
+            .frame(width: size * 0.24, height: size * 0.68)
+            .offset(x: size * 0.29, y: -size * 0.02)
+            .shadow(color: (equippedItem(.racket)?.accentColor ?? .cyan).opacity(0.5), radius: 10, y: 4)
 
             // Legs (skin + shoes)
             HStack(spacing: size * 0.04) {
@@ -78,6 +136,13 @@ struct AvatarView: View {
                 )
                 .offset(y: size * 0.06)
 
+            // Back arm for fuller silhouette.
+            Capsule()
+                .fill(skinColor.opacity(0.92))
+                .frame(width: size * 0.065, height: size * 0.22)
+                .rotationEffect(.degrees(18))
+                .offset(x: -size * 0.18, y: -size * 0.07)
+
             // Top (shirt)
             TopShape()
                 .fill(equippedItem(.top)?.color ?? .white)
@@ -86,23 +151,26 @@ struct AvatarView: View {
                 )
                 .frame(width: size * 0.55 * bodyScale, height: size * 0.32)
                 .offset(y: -size * 0.10)
+                .shadow(color: .black.opacity(0.12), radius: 8, y: 4)
 
-            // Arms — same color as the top sleeves.
-            HStack {
-                Spacer()
-                Capsule()
-                    .fill(skinColor)
-                    .frame(width: size * 0.07, height: size * 0.26)
-                    .rotationEffect(.degrees(-10))
-            }
-            .frame(width: size * 0.60 * bodyScale)
-            .offset(y: -size * 0.05)
+            // Lead arm with clearer extension toward the racquet.
+            Capsule()
+                .fill(skinColor)
+                .frame(width: size * 0.07, height: size * 0.26)
+                .rotationEffect(.degrees(-16))
+                .offset(x: size * 0.17, y: -size * 0.07)
 
             // Head
             Circle()
                 .fill(skinColor)
                 .frame(width: size * 0.22, height: size * 0.22)
                 .overlay(hair(size: size))
+                .overlay(alignment: .bottom) {
+                    Capsule()
+                        .fill(Color.black.opacity(0.08))
+                        .frame(width: size * 0.08, height: size * 0.025)
+                        .offset(y: size * 0.028)
+                }
                 .offset(y: -size * 0.30)
                 .shadow(color: .black.opacity(0.35), radius: 6, y: 3)
         }
@@ -257,6 +325,24 @@ private struct RacketShape: Shape {
             height: rect.height * 0.55
         )
         p.addEllipse(in: headRect)
+        return p
+    }
+}
+
+private struct RacketStrings: Shape {
+    func path(in rect: CGRect) -> Path {
+        var p = Path()
+        let inner = rect.insetBy(dx: rect.width * 0.18, dy: rect.height * 0.12)
+        for xFrac in stride(from: 0.18, through: 0.82, by: 0.16) {
+            let x = inner.minX + inner.width * xFrac
+            p.move(to: CGPoint(x: x, y: inner.minY))
+            p.addLine(to: CGPoint(x: x, y: inner.maxY))
+        }
+        for yFrac in stride(from: 0.2, through: 0.8, by: 0.18) {
+            let y = inner.minY + inner.height * yFrac
+            p.move(to: CGPoint(x: inner.minX, y: y))
+            p.addLine(to: CGPoint(x: inner.maxX, y: y))
+        }
         return p
     }
 }

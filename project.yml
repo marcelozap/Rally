@@ -35,6 +35,7 @@ targets:
         MARKETING_VERSION: "0.1.0"
         CURRENT_PROJECT_VERSION: "1"
         GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_NSLocationWhenInUseUsageDescription: "Rally checks your location once when you tap \"I'm here\" on an iconic court so we can unlock a tour cosmetic. We never track you in the background and never store coordinates."
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
         INFOPLIST_KEY_UIStatusBarHidden: YES
         INFOPLIST_KEY_UIRequiresFullScreen: YES

@@ -14,173 +14,241 @@ struct GameSessionView: View {
 
     @Environment(\.modelContext) private var modelContext
     @Query private var progressRecords: [PlayerProgress]
-
-    @AppStorage(CourtVenue.storageKey) private var courtRaw: String = CourtVenue.miamiHard.rawValue
+    @Query private var avatarConfigs: [AvatarConfig]
 
     @StateObject private var viewModel = GameSessionViewModel()
     @State private var scene: GameScene? = nil
-    @State private var viewportSize: CGSize = .zero
     @State private var sessionKey = UUID()
     @State private var reflectionPrompt: JournalPrompt? = nil
-    #if DEBUG
-    @State private var showTunables = false
-    #endif
 
     /// Optional rival opponent when launching a rival challenge session.
     var rivalOpponent: RivalOpponent? = nil
 
-    /// Called when the player taps "Back to Locker" from the overlay.
+    /// Called when the player taps "Back to Home" from the overlay.
     /// Wired by `ContentView` so we can switch the selected tab.
     var onExit: () -> Void = {}
 
     var body: some View {
-        GeometryReader { geo in
-            ZStack {
-                Color.black.ignoresSafeArea()
+        ZStack {
+            RallyUIKit.screenBackground
 
-                if let scene = scene, geo.size.width > 1, geo.size.height > 1 {
-                    SpriteView(scene: scene, options: [.ignoresSiblingOrder])
-                        .frame(width: geo.size.width, height: geo.size.height)
-                        .ignoresSafeArea()
-                        .id(sessionKey)
-                }
-
-                // Top chrome only — never a full-screen hit target over the playfield.
-                sessionTopBar
-                    .zIndex(20)
-
-                if let result = viewModel.lastResult, let outcome = viewModel.lastOutcome {
-                    GameOverView(
-                        result: result,
-                        outcome: outcome,
-                        onPlayAgain: { restart() },
-                        onExit: { exitSession() },
-                        onLogReflection: {
-                            reflectionPrompt = JournalPromptLibrary
-                                .sessionReflectionPrompt(for: result, outcome: outcome)
-                        }
-                    )
-                    .transition(.opacity.combined(with: .scale(scale: 1.02)))
-                    .zIndex(30)
-                }
+            if let scene = scene {
+                SpriteView(scene: scene, options: [.ignoresSiblingOrder])
+                    .ignoresSafeArea()
+                    .id(sessionKey)
+                    .overlay(alignment: .top) {
+                        sessionChrome
+                    }
+                    .overlay(alignment: .bottom) {
+                        coachingChrome
+                    }
+                    .overlay {
+                        matchAtmosphere
+                    }
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 34)
+                            .stroke(
+                                LinearGradient(
+                                    colors: [
+                                        RallyUIKit.Palette.champagne.opacity(0.14),
+                                        Color.white.opacity(0.02),
+                                        RallyUIKit.Palette.cyan.opacity(0.12)
+                                    ],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                ),
+                                lineWidth: 1
+                            )
+                            .padding(12)
+                            .allowsHitTesting(false)
+                    }
+            } else {
+                loadingState
             }
-            .onAppear { applyViewportSize(geo.size) }
-            .onChange(of: geo.size) { _, newSize in
-                applyViewportSize(newSize)
+
+            if let result = viewModel.lastResult, let outcome = viewModel.lastOutcome {
+                GameOverView(
+                    result: result,
+                    outcome: outcome,
+                    onPlayAgain: { restart() },
+                    onExit: {
+                        viewModel.dismiss()
+                        onExit()
+                    },
+                    onLogReflection: {
+                        // Build the prefilled prompt lazily so the body
+                        // reflects whatever the latest run was, not the one
+                        // that opened the view.
+                        reflectionPrompt = JournalPromptLibrary
+                            .sessionReflectionPrompt(for: result, outcome: outcome)
+                    }
+                )
+                .transition(.opacity.combined(with: .scale(scale: 1.02)))
+                .zIndex(10)
             }
         }
         .onAppear {
+            if scene == nil { scene = makeScene() }
+            // Generate today's challenges if they don't exist yet
             DailyChallengeMgr.generateDailyIfNeeded(modelContext: modelContext)
             viewModel.bindIfNeeded { result in
                 handleSessionEnded(result: result)
             }
-        }
-        .onDisappear {
-            tearDownScene(reportResults: false)
-            viewModel.prepareForExit()
         }
         .sheet(item: $reflectionPrompt) { prompt in
             NavigationStack {
                 JournalEditorView(entry: nil, seedPrompt: prompt)
             }
         }
-        #if DEBUG
-        .sheet(isPresented: $showTunables) {
-            TunablesOverlay()
-        }
-        #endif
         .animation(.easeOut(duration: 0.35), value: viewModel.lastResult != nil)
     }
 
-    // MARK: - Chrome
-
-    private var sessionTopBar: some View {
-        HStack(spacing: 10) {
-            Menu {
-                ForEach(CourtVenue.allCases) { surface in
-                    Button(surface.displayName) {
-                        courtRaw = surface.rawValue
-                        restart()
-                    }
+    private var sessionChrome: some View {
+        VStack(spacing: 0) {
+            HStack(alignment: .center, spacing: 12) {
+                VStack(alignment: .leading, spacing: 6) {
+                    RallyUIKit.EditorialEyebrow(
+                        text: rivalOpponent == nil ? "Center Court Session" : "Rival Session",
+                        tint: RallyUIKit.Palette.champagne
+                    )
+                    Text(rivalOpponent?.name ?? "Rally Performance Match")
+                        .font(RallyUIKit.Typography.label(.headline, weight: .bold))
+                        .foregroundStyle(RallyUIKit.Palette.frost)
                 }
-            } label: {
-                Label(courtLabel, systemImage: "sportscourt.fill")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.white.opacity(0.9))
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 8)
-                    .background(.ultraThinMaterial, in: Capsule())
-            }
 
-            Spacer(minLength: 0)
+                Spacer(minLength: 0)
 
-            #if DEBUG
-            Button {
-                showTunables = true
-            } label: {
-                Image(systemName: "slider.horizontal.3")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.white.opacity(0.7))
-                    .padding(8)
-                    .background(.ultraThinMaterial, in: Circle())
+                VStack(alignment: .trailing, spacing: 8) {
+                    statusPill(icon: "dot.radiowaves.left.and.right", text: "Live")
+                    statusPill(icon: "tennisball.fill", text: "Hard Court")
+                }
             }
-            #endif
-
-            Button(action: exitSession) {
-                Image(systemName: "xmark")
-                    .font(.subheadline.weight(.bold))
-                    .foregroundStyle(.white)
-                    .frame(width: 36, height: 36)
-                    .background(.ultraThinMaterial, in: Circle())
-            }
-            .accessibilityLabel("Exit game")
+            .padding(.horizontal, 16)
+            .padding(.vertical, 14)
+            .background(
+                RoundedRectangle(cornerRadius: 22)
+                    .fill(Color.black.opacity(0.22))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 22)
+                    .stroke(RallyUIKit.Palette.line.opacity(0.92), lineWidth: 1)
+            )
         }
-        .padding(.horizontal, 16)
-        .padding(.top, 52)
-        .frame(maxWidth: .infinity, alignment: .top)
+        .padding(.horizontal, 20)
+        .padding(.top, 18)
+    }
+
+    private var coachingChrome: some View {
+        HStack(spacing: 10) {
+            bottomHint(icon: "figure.tennis", title: "Court Read", copy: "Longer balanced swipes shape cleaner replies.")
+            bottomHint(icon: "arrow.left.and.right", title: "Recovery", copy: "Recentering fast protects the next ball.")
+        }
+        .padding(.horizontal, 20)
+        .padding(.bottom, 18)
+    }
+
+    private var matchAtmosphere: some View {
+        ZStack {
+            LinearGradient(
+                colors: [Color.black.opacity(0.26), .clear, Color.black.opacity(0.34)],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .ignoresSafeArea()
+
+            HStack {
+                LinearGradient(
+                    colors: [RallyUIKit.Palette.champagne.opacity(0.08), .clear],
+                    startPoint: .leading,
+                    endPoint: .trailing
+                )
+                .frame(width: 90)
+
+                Spacer()
+
+                LinearGradient(
+                    colors: [.clear, RallyUIKit.Palette.cyan.opacity(0.08)],
+                    startPoint: .leading,
+                    endPoint: .trailing
+                )
+                .frame(width: 90)
+            }
+        }
+        .allowsHitTesting(false)
+    }
+
+    private var loadingState: some View {
+        VStack(spacing: 18) {
+            RallyUIKit.IconBadge(systemName: "tennisball.fill", tint: RallyUIKit.Palette.gold, size: 60)
+            Text("Preparing center court")
+                .font(RallyUIKit.Typography.display(30, weight: .bold))
+                .foregroundStyle(RallyUIKit.Palette.frost)
+            Text("Loading live court, player rig, and match session.")
+                .font(RallyUIKit.Typography.body(.subheadline, weight: .medium))
+                .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.72))
+            ProgressView()
+                .tint(RallyUIKit.Palette.cyan)
+        }
+        .padding(28)
+    }
+
+    private func statusPill(icon: String, text: String) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: icon)
+            Text(text)
+        }
+        .font(RallyUIKit.Typography.label(.caption, weight: .bold))
+        .foregroundStyle(RallyUIKit.Palette.frost)
+        .padding(.horizontal, 11)
+        .padding(.vertical, 7)
+        .background(
+            Capsule()
+                .fill(Color.white.opacity(0.06))
+        )
+        .overlay(
+            Capsule()
+                .stroke(RallyUIKit.Palette.line, lineWidth: 1)
+        )
+    }
+
+    private func bottomHint(icon: String, title: String, copy: String) -> some View {
+        RallyUIKit.SurfaceTile(tint: RallyUIKit.Palette.cyan) {
+            HStack(alignment: .center, spacing: 10) {
+                RallyUIKit.IconBadge(systemName: icon, tint: RallyUIKit.Palette.cyan, size: 34)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(title)
+                        .font(RallyUIKit.Typography.label(.caption, weight: .bold))
+                        .tracking(1.8)
+                        .foregroundStyle(RallyUIKit.Palette.champagne)
+                    Text(copy)
+                        .font(RallyUIKit.Typography.body(.caption2, weight: .medium))
+                        .foregroundStyle(RallyUIKit.Palette.frost)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer(minLength: 0)
+            }
+        }
     }
 
     // MARK: - Lifecycle helpers
 
-    private func applyViewportSize(_ size: CGSize) {
-        guard size.width > 1, size.height > 1 else { return }
-        viewportSize = size
-        if scene == nil {
-            let newScene = makeScene(size: size)
-            newScene.relayoutForPresentation()
-            scene = newScene
-        } else {
-            scene?.size = size
-            scene?.relayoutForPresentation()
-        }
-    }
-
-    private func exitSession() {
-        viewModel.prepareForExit()
-        tearDownScene(reportResults: false)
-        onExit()
-    }
-
-    private func tearDownScene(reportResults: Bool) {
-        if reportResults {
-            scene = nil
-        } else {
-            scene?.abortSessionSilently()
-            scene = nil
-        }
-    }
-
-    private func makeScene(size: CGSize) -> GameScene {
-        let s = GameScene(size: size)
+    private func makeScene() -> GameScene {
+        let s = GameScene(size: UIScreen.main.bounds.size)
         s.scaleMode = .resizeFill
+        if let avatar = avatarConfigs.first {
+            s.avatarSpec = AvatarVisualSpec.from(config: avatar, preview: nil)
+        }
+        if let equippedRacketID = avatarConfigs.first?.equippedRacketID,
+           let profile = ShopCatalog.racketProfile(id: equippedRacketID) {
+            s.racketTuning = profile.gameplayTuning
+        }
         return s
     }
 
     private func restart() {
         viewModel.dismiss()
         sessionKey = UUID()
-        guard viewportSize.width > 1, viewportSize.height > 1 else { return }
-        scene = makeScene(size: viewportSize)
+        scene = makeScene()
     }
 
     private func handleSessionEnded(result: GameResult) {
@@ -223,8 +291,8 @@ struct GameSessionView: View {
 
         // Award achievements for newly earned badges and avoid duplicates
         for badgeId in outcome.newBadgesEarned {
-            let fetchDescriptor = FetchDescriptor<Achievement>(predicate: NSPredicate(format: "badgeId == %@", badgeId))
-            let existingBadges = (try? modelContext.fetch(fetchDescriptor)) ?? []
+            let existingBadges = ((try? modelContext.fetch(FetchDescriptor<Achievement>())) ?? [])
+                .filter { $0.badgeId == badgeId }
             guard existingBadges.isEmpty, let badgeDef = BadgeDefinition(rawValue: badgeId) else { continue }
             let achievement = badgeDef.create()
             modelContext.insert(achievement)
@@ -244,10 +312,6 @@ struct GameSessionView: View {
         try? modelContext.save()
         return p
     }
-
-    private var courtLabel: String {
-        CourtVenue(rawValue: courtRaw)?.displayName ?? CourtVenue.miamiHard.displayName
-    }
 }
 
 // MARK: - View model
@@ -265,15 +329,12 @@ final class GameSessionViewModel: ObservableObject {
 
     private var hasBound = false
 
-    private var ignoresSessionEnd = false
-
     func bindIfNeeded(_ onEnd: @escaping (GameResult) -> Void) {
         guard !hasBound else { return }
         hasBound = true
         GameEventBus.shared.subscribe(self) { [weak self] event in
             guard let self = self else { return }
             if case .sessionEnd(let result) = event {
-                guard !self.ignoresSessionEnd else { return }
                 onEnd(result)
                 _ = self // keep reference alive
             }
@@ -288,11 +349,5 @@ final class GameSessionViewModel: ObservableObject {
     func dismiss() {
         self.lastResult = nil
         self.lastOutcome = nil
-    }
-
-    /// Suppresses late `.sessionEnd` events while the cover is dismissing.
-    func prepareForExit() {
-        ignoresSessionEnd = true
-        dismiss()
     }
 }

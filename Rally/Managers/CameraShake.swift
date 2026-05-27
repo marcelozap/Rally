@@ -25,4 +25,44 @@ enum CameraShake {
         let reset = SKAction.run { target.position = home }
         target.run(.sequence([action, reset]), withKey: "shake")
     }
+
+    /// A more directed camera move than `shake`: quickly nudges the target
+    /// toward an offset, then settles back to center. Useful for countdown
+    /// release, phase rises, and reset beats where random shake would feel
+    /// too noisy.
+    static func nudge(_ target: SKNode, dx: CGFloat, dy: CGFloat, outMs: Double, backMs: Double) {
+        guard outMs > 0, backMs > 0 else { return }
+        target.removeAction(forKey: "nudge")
+        let push = SKAction.move(to: CGPoint(x: dx, y: dy), duration: outMs.seconds)
+        push.timingMode = .easeOut
+        let settle = SKAction.move(to: .zero, duration: backMs.seconds)
+        settle.timingMode = .easeInEaseOut
+        target.run(.sequence([push, settle]), withKey: "nudge")
+    }
+
+    /// A short two-stage move that gives the camera a little follow-through
+    /// instead of a single push-and-return. Useful for contact reactions
+    /// where we want something more premium than shake, but still subtle.
+    static func drift(
+        _ target: SKNode,
+        dx: CGFloat,
+        dy: CGFloat,
+        settleDx: CGFloat = 0,
+        settleDy: CGFloat = 0,
+        outMs: Double,
+        driftMs: Double,
+        backMs: Double
+    ) {
+        guard outMs > 0, driftMs > 0, backMs > 0 else { return }
+        target.removeAction(forKey: "nudge")
+        target.removeAction(forKey: "drift")
+
+        let push = SKAction.move(to: CGPoint(x: dx, y: dy), duration: outMs.seconds)
+        push.timingMode = .easeOut
+        let drift = SKAction.move(to: CGPoint(x: settleDx, y: settleDy), duration: driftMs.seconds)
+        drift.timingMode = .easeInEaseOut
+        let settle = SKAction.move(to: .zero, duration: backMs.seconds)
+        settle.timingMode = .easeInEaseOut
+        target.run(.sequence([push, drift, settle]), withKey: "drift")
+    }
 }

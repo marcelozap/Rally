@@ -12,7 +12,7 @@ struct CourtDetailView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 VStack(alignment: .leading, spacing: 8) {
-                    Text(court.subtitle.uppercased())
+                    Text("\(court.kind.rawValue) · \(court.region) · \(court.subtitle)".uppercased())
                         .font(.caption.weight(.bold))
                         .tracking(1)
                         .foregroundStyle(.white.opacity(0.45))
@@ -29,15 +29,19 @@ struct CourtDetailView: View {
                     .foregroundStyle(.white.opacity(0.82))
                     .fixedSize(horizontal: false, vertical: true)
 
+                if let profile = court.campProfile {
+                    campProfileSection(profile)
+                }
+
                 mapsActions
 
-                if ShopCatalog.courtUnlockToShopItem[court.id] != nil {
+                if court.kind == .venue, ShopCatalog.courtUnlockToShopItem[court.id] != nil {
                     courtUnlockSection
                 }
 
                 referralSection
 
-                if court.venueWebsiteURL != nil || court.bookingOrMembershipURL != nil {
+                if court.venueWebsiteURL != nil || court.bookingOrMembershipURL != nil || court.officialProgramURL != nil || court.sponsorHostURL != nil {
                     venueLinks
                 }
             }
@@ -45,8 +49,8 @@ struct CourtDetailView: View {
             .padding(.vertical, 16)
             .padding(.bottom, 32)
         }
-        .background(Color.black.ignoresSafeArea())
-        .navigationTitle("Court")
+        .background(RallyUIKit.screenBackground)
+        .navigationTitle(court.kind == .venue ? "Venue" : "Camp")
         .navigationBarTitleDisplayMode(.inline)
     }
 
@@ -121,9 +125,41 @@ struct CourtDetailView: View {
                 linkRow(icon: "map.fill", title: "Open in Apple Maps", subtitle: "Navigate & explore nearby")
             }
             Link(destination: court.googleMapsSatelliteURL) {
-                linkRow(icon: "globe.americas.fill", title: "Satellite view (Google Maps)", subtitle: "Closest web experience to “Earth” — no SDK")
+                linkRow(icon: "globe.americas.fill", title: "Satellite view (Google Maps)", subtitle: "Closest web experience to “Earth” — good for scouting the campus")
             }
         }
+    }
+
+    @ViewBuilder
+    private func campProfileSection(_ profile: CampProfile) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Camp snapshot")
+                .font(.system(.headline, design: .rounded))
+                .foregroundStyle(.white)
+
+            flowFactPills([
+                ("Audience", profile.audience, RallyUIKit.Palette.cyan),
+                ("Best for", profile.bestFor, RallyUIKit.Palette.lime),
+                ("Stay", profile.stayStyle, RallyUIKit.Palette.gold)
+            ])
+
+            factPanel(
+                title: "Training focus",
+                body: profile.programFocus,
+                icon: "scope",
+                tint: RallyUIKit.Palette.rose
+            )
+
+            factPanel(
+                title: "Surface mix",
+                body: profile.surfaceMix,
+                icon: "square.grid.3x3.middle.filled",
+                tint: RallyUIKit.Palette.cyan
+            )
+        }
+        .padding(14)
+        .background(RoundedRectangle(cornerRadius: 14).fill(Color.white.opacity(0.04)))
+        .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.white.opacity(0.08)))
     }
 
     private func linkRow(icon: String, title: String, subtitle: String) -> some View {
@@ -148,6 +184,49 @@ struct CourtDetailView: View {
         .padding(14)
         .background(RoundedRectangle(cornerRadius: 14).fill(Color.white.opacity(0.06)))
         .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.white.opacity(0.08)))
+    }
+
+    private func flowFactPills(_ facts: [(String, String, Color)]) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            ForEach(Array(facts.enumerated()), id: \.offset) { _, fact in
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(fact.0.uppercased())
+                        .font(.caption2.weight(.bold))
+                        .tracking(1)
+                        .foregroundStyle(.white.opacity(0.45))
+                    Text(fact.1)
+                        .font(.system(.subheadline, design: .rounded).weight(.semibold))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 10)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(fact.2.opacity(0.12))
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(fact.2.opacity(0.28), lineWidth: 1)
+                        )
+                }
+            }
+        }
+    }
+
+    private func factPanel(title: String, body: String, icon: String, tint: Color) -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            RallyUIKit.IconBadge(systemName: icon, tint: tint, size: 34)
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(.system(.subheadline, design: .rounded).weight(.bold))
+                    .foregroundStyle(.white)
+                Text(body)
+                    .font(.caption)
+                    .foregroundStyle(.white.opacity(0.68))
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: 0)
+        }
     }
 
     /// SwiftUI-friendly wrapper over `CourtCheckIn`. Keeps the
@@ -230,7 +309,10 @@ struct CourtDetailView: View {
                     .foregroundStyle(.cyan.opacity(0.88))
             }
 
-            Text("Rally only surfaces legitimate venue pages — same honesty bar as the apparel shop.")
+            Text(court.kind == .venue
+                ? "Rally only surfaces legitimate venue pages — same honesty bar as the apparel shop."
+                : "Rally only surfaces official academy, camp, and host pages — no fabricated ambassador or referral codes."
+            )
                 .font(.caption2)
                 .foregroundStyle(.white.opacity(0.35))
         }
@@ -242,18 +324,36 @@ struct CourtDetailView: View {
     @ViewBuilder
     private var venueLinks: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Venue links")
+            Text(court.kind == .venue ? "Venue links" : "Camp links")
                 .font(.system(.headline, design: .rounded))
                 .foregroundStyle(.white)
 
             if let url = court.venueWebsiteURL {
                 Link(destination: court.trackingURL(for: url)) {
-                    linkRow(icon: "safari.fill", title: "Official venue site", subtitle: "Hours, news & visitor info")
+                    linkRow(
+                        icon: court.kind == .venue ? "safari.fill" : "building.columns.fill",
+                        title: court.kind == .venue ? "Official venue site" : "Official academy site",
+                        subtitle: court.kind == .venue ? "Hours, news & visitor info" : "Campus overview, coaching philosophy, and contact info"
+                    )
                 }
             }
             if let url = court.bookingOrMembershipURL {
                 Link(destination: court.trackingURL(for: url)) {
-                    linkRow(icon: "ticket.fill", title: "Tickets / hospitality / membership", subtitle: "Purchase paths vary by event")
+                    linkRow(
+                        icon: court.kind == .venue ? "ticket.fill" : "person.crop.rectangle.badge.plus",
+                        title: court.kind == .venue ? "Tickets / hospitality / membership" : "Official enrollment / booking",
+                        subtitle: court.kind == .venue ? "Purchase paths vary by event" : "Register through the academy or camp operator"
+                    )
+                }
+            }
+            if let url = court.officialProgramURL {
+                Link(destination: court.trackingURL(for: url)) {
+                    linkRow(icon: "figure.tennis", title: "Featured program page", subtitle: "Training format, session type, and camp specifics")
+                }
+            }
+            if let url = court.sponsorHostURL, let name = court.sponsorHostName {
+                Link(destination: court.trackingURL(for: url)) {
+                    linkRow(icon: "rosette", title: "Official host / sponsor", subtitle: name)
                 }
             }
         }

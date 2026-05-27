@@ -28,13 +28,16 @@ struct MatchLogView: View {
                     .scrollContentBackground(.hidden)
                 }
             }
-            .background(Color.black.ignoresSafeArea())
+            .background(RallyUIKit.screenBackground)
             .navigationTitle("Matches")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button { showingEditor = true } label: {
-                        Image(systemName: "plus.circle.fill")
-                            .foregroundStyle(.cyan)
+                        RallyUIKit.IconBadge(
+                            systemName: "plus",
+                            tint: RallyUIKit.Palette.gold,
+                            size: 34
+                        )
                     }
                 }
             }
@@ -49,11 +52,10 @@ struct MatchLogView: View {
         let losses = matches.count - wins
         return HStack(spacing: 24) {
             stat(value: "\(wins)", label: "wins", tint: .cyan)
-            stat(value: "\(losses)", label: "losses", tint: Color(hex: "#FF1A55") ?? .red)
-            stat(value: "\(matches.count)", label: "total", tint: .white.opacity(0.7))
+            stat(value: "\(losses)", label: "losses", tint: RallyUIKit.Palette.rose)
+            stat(value: "\(matches.count)", label: "total", tint: RallyUIKit.Palette.gold)
         }
         .padding(.vertical, 6)
-        .foregroundStyle(.white)
     }
 
     private func stat(value: String, label: String, tint: Color) -> some View {
@@ -62,21 +64,24 @@ struct MatchLogView: View {
                 .font(.system(.title2, design: .rounded).weight(.bold))
                 .foregroundStyle(tint)
             Text(label)
-                .font(.caption)
+                .font(.system(.caption, design: .rounded).weight(.semibold))
                 .foregroundStyle(.white.opacity(0.5))
         }
     }
 
     private var emptyState: some View {
         VStack(spacing: 16) {
-            Image(systemName: "trophy")
-                .font(.system(size: 60))
-                .foregroundStyle(.cyan.opacity(0.6))
+            RallyUIKit.IconBadge(
+                systemName: "trophy.fill",
+                tint: RallyUIKit.Palette.gold,
+                size: 72
+            )
             Text("No matches logged yet")
                 .font(.system(.title3, design: .rounded).weight(.semibold))
                 .foregroundStyle(.white)
             Text("Tap + after your next match.")
-                .foregroundStyle(.white.opacity(0.5))
+                .font(.system(.subheadline, design: .rounded).weight(.medium))
+                .foregroundStyle(.white.opacity(0.58))
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -96,16 +101,16 @@ private struct MatchRow: View {
         HStack(spacing: 14) {
             ZStack {
                 Circle()
-                    .fill((match.resultWon ? Color.cyan : Color(hex: "#FF1A55") ?? .red).opacity(0.25))
+                    .fill((match.resultWon ? RallyUIKit.Palette.cyan : RallyUIKit.Palette.rose).opacity(0.25))
                 Text(match.resultWon ? "W" : "L")
                     .font(.system(.body, design: .rounded).weight(.bold))
-                    .foregroundStyle(match.resultWon ? .cyan : (Color(hex: "#FF1A55") ?? .red))
+                    .foregroundStyle(match.resultWon ? RallyUIKit.Palette.cyan : RallyUIKit.Palette.rose)
             }
             .frame(width: 36, height: 36)
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(match.opponentName.isEmpty ? "Opponent" : "vs \(match.opponentName)")
-                    .font(.system(.body, design: .rounded).weight(.semibold))
+                    .font(.system(.body, design: .rounded).weight(.bold))
                     .foregroundStyle(.white)
                 HStack(spacing: 6) {
                     Text(match.date, style: .date)
@@ -116,11 +121,12 @@ private struct MatchRow: View {
                     Text("·")
                     Text(match.surface.displayName)
                 }
-                .font(.caption)
-                .foregroundStyle(.white.opacity(0.5))
+                .font(.system(.caption, design: .rounded).weight(.medium))
+                .foregroundStyle(.white.opacity(0.55))
             }
             Spacer()
         }
+        .padding(.vertical, 4)
         .listRowBackground(Color.white.opacity(0.04))
     }
 }

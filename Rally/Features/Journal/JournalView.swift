@@ -1,9 +1,10 @@
 import SwiftUI
 import SwiftData
 
-/// Journal content embedded inside **Logbook** (training + matches + journal).
-struct JournalLogSection: View {
-    @Binding var showComposer: Bool
+/// Journal tab styled after popular apps (**Day One** timeline + daily inspiration,
+/// **Journey** guided templates, **Reflectly** streaks) — scoped to tennis practice,
+/// matches, and Rally rhythm play.
+struct JournalView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \JournalEntry.date, order: .reverse) private var entries: [JournalEntry]
 
@@ -28,31 +29,44 @@ struct JournalLogSection: View {
     }
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                insightsHeader
-                featuredPromptCard
-                filterChips
-                if filteredEntries.isEmpty {
-                    emptyState
-                } else {
-                    timelineSections
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 20) {
+                    insightsHeader
+                    featuredPromptCard
+                    filterChips
+                    if filteredEntries.isEmpty {
+                        emptyState
+                    } else {
+                        timelineSections
+                    }
+                }
+                .padding(.horizontal, 16)
+                .padding(.bottom, 28)
+            }
+            .background(RallyUIKit.screenBackground)
+            .navigationTitle("Journal")
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        composerRoute = .blank
+                    } label: {
+                        RallyUIKit.IconBadge(
+                            systemName: "square.and.pencil",
+                            tint: RallyUIKit.Palette.cyan,
+                            size: 34
+                        )
+                    }
                 }
             }
-            .padding(.horizontal, 16)
-            .padding(.bottom, 28)
-        }
-        .background(Color.black.ignoresSafeArea())
-        .onChange(of: showComposer) { _, show in
-            if show { composerRoute = .blank; showComposer = false }
-        }
-        .sheet(item: $composerRoute) { route in
-            NavigationStack {
-                switch route {
-                case .blank:
-                    JournalEditorView(entry: nil)
-                case .seeded(let prompt):
-                    JournalEditorView(entry: nil, seedPrompt: prompt)
+            .sheet(item: $composerRoute) { route in
+                NavigationStack {
+                    switch route {
+                    case .blank:
+                        JournalEditorView(entry: nil)
+                    case .seeded(let prompt):
+                        JournalEditorView(entry: nil, seedPrompt: prompt)
+                    }
                 }
             }
         }
@@ -66,20 +80,22 @@ struct JournalLogSection: View {
                 RoundedRectangle(cornerRadius: 16)
                     .fill(
                         LinearGradient(
-                            colors: [Color.pink.opacity(0.35), Color.orange.opacity(0.22)],
+                            colors: [RallyUIKit.Palette.rose.opacity(0.5), RallyUIKit.Palette.gold.opacity(0.26)],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         )
                     )
-                VStack(spacing: 4) {
-                    Image(systemName: insights.journalingStreakDays > 0 ? "flame.fill" : "sparkles")
-                        .font(.title2)
-                        .foregroundStyle(.orange)
+                VStack(spacing: 6) {
+                    RallyUIKit.IconBadge(
+                        systemName: insights.journalingStreakDays > 0 ? "flame.fill" : "sparkles",
+                        tint: RallyUIKit.Palette.gold,
+                        size: 34
+                    )
                     Text("\(insights.journalingStreakDays)")
                         .font(.system(.title, design: .rounded).weight(.heavy))
                         .foregroundStyle(.white)
                     Text("day streak")
-                        .font(.caption.weight(.semibold))
+                        .font(.system(.caption, design: .rounded).weight(.semibold))
                         .foregroundStyle(.white.opacity(0.75))
                 }
                 .padding(.vertical, 14)
@@ -115,8 +131,11 @@ struct JournalLogSection: View {
     private var featuredPromptCard: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Image(systemName: "lightbulb.max.fill")
-                    .foregroundStyle(.yellow)
+                RallyUIKit.IconBadge(
+                    systemName: "lightbulb.max.fill",
+                    tint: RallyUIKit.Palette.gold,
+                    size: 28
+                )
                 Text("Today's prompt")
                     .font(.caption.weight(.bold))
                     .tracking(1)
@@ -142,18 +161,10 @@ struct JournalLogSection: View {
             } label: {
                 HStack {
                     Text("Write with this prompt")
-                        .font(.system(.subheadline, design: .rounded).weight(.bold))
                     Image(systemName: "arrow.right.circle.fill")
                 }
-                .foregroundStyle(.black)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 12)
-                .background(
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(Color.cyan)
-                )
             }
-            .buttonStyle(.plain)
+            .buttonStyle(PrimaryButtonStyle(tint: RallyUIKit.Palette.cyan))
         }
         .padding(14)
         .background(
@@ -185,19 +196,25 @@ struct JournalLogSection: View {
         return Button {
             filterFocus = focus
         } label: {
-            Text(label)
-                .font(.caption.weight(.semibold))
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
-                .background(
-                    Capsule()
-                        .fill(selected ? Color.cyan.opacity(0.35) : Color.white.opacity(0.06))
-                )
-                .overlay(
-                    Capsule()
-                        .stroke(selected ? Color.cyan : Color.white.opacity(0.12), lineWidth: 1)
-                )
-                .foregroundStyle(selected ? Color.black : Color.white.opacity(0.85))
+            HStack(spacing: 6) {
+                if let focus {
+                    Image(systemName: focus.symbolName)
+                        .font(.caption2.weight(.bold))
+                }
+                Text(label)
+                    .font(.caption.weight(.semibold))
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(
+                Capsule()
+                    .fill(selected ? AnyShapeStyle(RallyUIKit.accentGradient(RallyUIKit.Palette.cyan)) : AnyShapeStyle(Color.white.opacity(0.06)))
+            )
+            .overlay(
+                Capsule()
+                    .stroke(selected ? Color.white.opacity(0.18) : Color.white.opacity(0.12), lineWidth: 1)
+            )
+            .foregroundStyle(selected ? Color.black : Color.white.opacity(0.85))
         }
         .buttonStyle(.plain)
     }
@@ -227,25 +244,26 @@ struct JournalLogSection: View {
 
     private var emptyState: some View {
         VStack(spacing: 14) {
-            Image(systemName: "book.pages.fill")
-                .font(.system(size: 52))
-                .foregroundStyle(.cyan.opacity(0.55))
+            RallyUIKit.IconBadge(
+                systemName: "book.pages.fill",
+                tint: RallyUIKit.Palette.cyan,
+                size: 72
+            )
             Text(filterFocus == nil ? "Start your journal" : "Nothing in \(filterFocus!.shortLabel.lowercased()) yet")
                 .font(.system(.title3, design: .rounded).weight(.semibold))
                 .foregroundStyle(.white)
             Text("Capture practice notes, match debriefs, and Rally sessions — one tap at a time.")
-                .font(.subheadline)
+                .font(.system(.subheadline, design: .rounded).weight(.medium))
                 .multilineTextAlignment(.center)
-                .foregroundStyle(.white.opacity(0.45))
+                .foregroundStyle(.white.opacity(0.52))
                 .padding(.horizontal)
 
             Button {
                 composerRoute = .seeded(featured)
             } label: {
-                Text("Try today's prompt")
-                    .font(.system(.subheadline, design: .rounded).weight(.bold))
-                    .foregroundStyle(.cyan)
+                Label("Try today's prompt", systemImage: "wand.and.stars")
             }
+            .buttonStyle(SecondaryButtonStyle(tint: RallyUIKit.Palette.cyan))
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 36)

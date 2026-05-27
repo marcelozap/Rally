@@ -9,22 +9,39 @@ struct LogsView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            Picker("Section", selection: $section) {
-                ForEach(LogsSection.allCases) { s in
-                    Text(s.displayName).tag(s)
+            HStack(spacing: 12) {
+                RallyUIKit.IconBadge(
+                    systemName: section == .training ? "figure.tennis" : "trophy.fill",
+                    tint: section == .training ? RallyUIKit.Palette.cyan : RallyUIKit.Palette.gold,
+                    size: 36
+                )
+
+                Picker("Section", selection: $section) {
+                    ForEach(LogsSection.allCases) { s in
+                        Text(s.displayName).tag(s)
+                    }
                 }
+                .pickerStyle(.segmented)
             }
-            .pickerStyle(.segmented)
+            .padding(14)
+            .background(
+                RoundedRectangle(cornerRadius: 18)
+                    .fill(Color.white.opacity(0.05))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 18)
+                    .stroke(Color.white.opacity(0.08), lineWidth: 1)
+            )
             .padding(.horizontal, 16)
             .padding(.top, 8)
-            .padding(.bottom, 4)
+            .padding(.bottom, 8)
 
             switch section {
             case .training: TrainingLogView()
             case .matches:  MatchLogView()
             }
         }
-        .background(Color.black.ignoresSafeArea())
+        .background(RallyUIKit.screenBackground)
     }
 }
 

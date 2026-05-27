@@ -253,14 +253,19 @@ struct Chip: View {
     var body: some View {
         Button(action: action) {
             Text(label)
-                .font(.system(.subheadline, design: .rounded).weight(.medium))
-                .padding(.vertical, 8)
+                .font(.system(.subheadline, design: .rounded).weight(.semibold))
+                .tracking(0.2)
+                .padding(.vertical, 9)
                 .padding(.horizontal, 14)
                 .background(
                     RoundedRectangle(cornerRadius: 20)
-                        .fill(selected ? Color.cyan : Color.white.opacity(0.08))
+                        .fill(selected ? AnyShapeStyle(RallyUIKit.accentGradient(RallyUIKit.Palette.cyan)) : AnyShapeStyle(Color.white.opacity(0.08)))
                 )
-                .foregroundStyle(selected ? .black : .white)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 20)
+                        .stroke(selected ? Color.white.opacity(0.18) : Color.white.opacity(0.08), lineWidth: 1)
+                )
+                .foregroundStyle(selected ? .black : .white.opacity(0.88))
         }
         .buttonStyle(.plain)
     }

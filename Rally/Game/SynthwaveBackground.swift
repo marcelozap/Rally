@@ -23,6 +23,14 @@ final class SynthwaveBackground: SKNode {
     private let size: CGSize
     private let strikeY: CGFloat
 
+    private var lowerGradient: SKShapeNode!
+    private var upperGradient: SKShapeNode!
+    private var horizonLine: SKShapeNode!
+    private var leftAura: SKShapeNode!
+    private var rightAura: SKShapeNode!
+    private var centerRunway: SKShapeNode!
+    private var serviceLine: SKShapeNode!
+    private var baselineLine: SKShapeNode!
     private let gridNode = SKNode()
 
     init(size: CGSize, strikeYRatio: CGFloat) {
@@ -46,6 +54,7 @@ final class SynthwaveBackground: SKNode {
         gradient.alpha = 0.85
         gradient.zPosition = -100
         addChild(gradient)
+        lowerGradient = gradient
 
         // A second pass above the horizon line: very subtle navy tone so
         // the upper portion of the screen isn't a void.
@@ -55,6 +64,43 @@ final class SynthwaveBackground: SKNode {
         upper.alpha = 0.7
         upper.zPosition = -100
         addChild(upper)
+        upperGradient = upper
+
+        let auraSize = CGSize(width: size.width * 0.42, height: strikeY * 1.32)
+        let leftAuraNode = SKShapeNode(ellipseOf: auraSize)
+        leftAuraNode.fillColor = UIColor(red: 0.17, green: 0.66, blue: 0.72, alpha: 1)
+        leftAuraNode.strokeColor = .clear
+        leftAuraNode.alpha = 0.06
+        leftAuraNode.position = CGPoint(x: size.width * 0.2, y: strikeY * 0.42)
+        leftAuraNode.zPosition = -99
+        addChild(leftAuraNode)
+        leftAura = leftAuraNode
+
+        let rightAuraNode = SKShapeNode(ellipseOf: auraSize)
+        rightAuraNode.fillColor = UIColor(red: 0.8, green: 0.33, blue: 0.55, alpha: 1)
+        rightAuraNode.strokeColor = .clear
+        rightAuraNode.alpha = 0.05
+        rightAuraNode.position = CGPoint(x: size.width * 0.8, y: strikeY * 0.46)
+        rightAuraNode.zPosition = -99
+        addChild(rightAuraNode)
+        rightAura = rightAuraNode
+
+        let centerSheen = SKShapeNode(ellipseOf: CGSize(width: size.width * 0.5, height: strikeY * 0.72))
+        centerSheen.fillColor = UIColor(white: 1.0, alpha: 1.0)
+        centerSheen.strokeColor = .clear
+        centerSheen.alpha = 0.035
+        centerSheen.position = CGPoint(x: size.width * 0.5, y: strikeY * 0.18)
+        centerSheen.zPosition = -98
+        addChild(centerSheen)
+
+        let runway = SKShapeNode(rectOf: CGSize(width: size.width * 0.18, height: strikeY * 0.9), cornerRadius: size.width * 0.05)
+        runway.fillColor = UIColor(white: 1.0, alpha: 1.0)
+        runway.strokeColor = .clear
+        runway.alpha = 0.04
+        runway.position = CGPoint(x: size.width * 0.5, y: strikeY * 0.16)
+        runway.zPosition = -97
+        addChild(runway)
+        centerRunway = runway
     }
 
     private func buildHorizon() {
@@ -66,6 +112,7 @@ final class SynthwaveBackground: SKNode {
         horizon.alpha = 0.55
         horizon.zPosition = -90
         addChild(horizon)
+        horizonLine = horizon
     }
 
     private func buildGrid() {
@@ -89,8 +136,29 @@ final class SynthwaveBackground: SKNode {
             line.fillColor = UIColor(red: 0.0, green: 1.0, blue: 1.0, alpha: alpha)
             line.strokeColor = .clear
             line.glowWidth = 2
+            let meta = NSMutableDictionary()
+            meta["baseAlpha"] = NSNumber(value: Double(alpha))
+            line.userData = meta
             gridNode.addChild(line)
         }
+
+        let service = SKShapeNode(rect: CGRect(x: 0, y: -0.5, width: size.width * 0.56, height: 1))
+        service.position = CGPoint(x: size.width * 0.22, y: strikeY * 0.46)
+        service.fillColor = UIColor(white: 1.0, alpha: 0.12)
+        service.strokeColor = .clear
+        service.glowWidth = 2
+        service.zPosition = -93
+        addChild(service)
+        serviceLine = service
+
+        let baseline = SKShapeNode(rect: CGRect(x: 0, y: -0.5, width: size.width * 0.8, height: 1))
+        baseline.position = CGPoint(x: size.width * 0.1, y: strikeY * 0.1)
+        baseline.fillColor = UIColor(white: 1.0, alpha: 0.08)
+        baseline.strokeColor = .clear
+        baseline.glowWidth = 1
+        baseline.zPosition = -93
+        addChild(baseline)
+        baselineLine = baseline
 
         // Vertical perspective lines — fan from a single vanishing point at
         // the screen-center / horizon to evenly-spaced points across the
@@ -109,6 +177,9 @@ final class SynthwaveBackground: SKNode {
             line.lineWidth = 1
             line.glowWidth = 1
             line.zPosition = -94
+            let meta = NSMutableDictionary()
+            meta["baseAlpha"] = NSNumber(value: 0.22)
+            line.userData = meta
             gridNode.addChild(line)
         }
 
@@ -133,7 +204,6 @@ final class SynthwaveBackground: SKNode {
     /// Briefly flashes the horizon line — for tier-up / "big moment"
     /// punctuation. Returns immediately; the animation is owned by the node.
     func pulseHorizon(intensity: CGFloat = 1.0) {
-        guard let horizon = children.first(where: { $0.zPosition == -90 }) as? SKShapeNode else { return }
         let burst = SKAction.sequence([
             .group([
                 .fadeAlpha(to: min(1.0, 0.85 * intensity), duration: 0.08),
@@ -144,6 +214,106 @@ final class SynthwaveBackground: SKNode {
                 .scaleY(to: 1.0, duration: 0.42)
             ])
         ])
-        horizon.run(burst)
+        horizonLine?.run(burst)
+    }
+
+    func setMomentum(tier: Int, phase: String, breaking: Bool) {
+        let targetHorizonAlpha: CGFloat
+        let targetGlow: CGFloat
+        let targetGridAlpha: CGFloat
+        let lowerAlpha: CGFloat
+        let upperAlpha: CGFloat
+        let auraLeftAlpha: CGFloat
+        let auraRightAlpha: CGFloat
+        let runwayAlpha: CGFloat
+        let lineAlpha: CGFloat
+
+        if breaking {
+            targetHorizonAlpha = 0.28
+            targetGlow = 6
+            targetGridAlpha = 0.42
+            lowerAlpha = 0.74
+            upperAlpha = 0.56
+            auraLeftAlpha = 0.02
+            auraRightAlpha = 0.02
+            runwayAlpha = 0.02
+            lineAlpha = 0.05
+        } else {
+            switch tier {
+            case 4:
+                targetHorizonAlpha = 0.86
+                targetGlow = 20
+                targetGridAlpha = 1.0
+                lowerAlpha = 0.96
+                upperAlpha = 0.82
+                auraLeftAlpha = 0.1
+                auraRightAlpha = 0.1
+                runwayAlpha = 0.08
+                lineAlpha = 0.14
+            case 3:
+                targetHorizonAlpha = 0.76
+                targetGlow = 18
+                targetGridAlpha = 0.94
+                lowerAlpha = 0.92
+                upperAlpha = 0.78
+                auraLeftAlpha = 0.09
+                auraRightAlpha = 0.09
+                runwayAlpha = 0.07
+                lineAlpha = 0.12
+            case 2:
+                targetHorizonAlpha = 0.68
+                targetGlow = 16
+                targetGridAlpha = 0.88
+                lowerAlpha = 0.9
+                upperAlpha = 0.76
+                auraLeftAlpha = 0.08
+                auraRightAlpha = 0.08
+                runwayAlpha = 0.06
+                lineAlpha = 0.11
+            case 1:
+                targetHorizonAlpha = 0.61
+                targetGlow = 15
+                targetGridAlpha = 0.82
+                lowerAlpha = 0.88
+                upperAlpha = 0.74
+                auraLeftAlpha = 0.07
+                auraRightAlpha = 0.07
+                runwayAlpha = 0.055
+                lineAlpha = 0.1
+            default:
+                targetHorizonAlpha = phase == "breaker" ? 0.62 : 0.55
+                targetGlow = phase == "pressure" || phase == "breaker" ? 16 : 14
+                targetGridAlpha = phase == "pressure" || phase == "breaker" ? 0.84 : 0.76
+                lowerAlpha = phase == "breaker" ? 0.9 : 0.85
+                upperAlpha = phase == "breaker" ? 0.78 : 0.7
+                auraLeftAlpha = phase == "pressure" || phase == "breaker" ? 0.08 : 0.06
+                auraRightAlpha = phase == "pressure" || phase == "breaker" ? 0.08 : 0.05
+                runwayAlpha = phase == "pressure" || phase == "breaker" ? 0.065 : 0.05
+                lineAlpha = phase == "pressure" || phase == "breaker" ? 0.11 : 0.09
+            }
+        }
+
+        let duration = 0.24
+        let fadeNode = { (node: SKNode?, alpha: CGFloat) in
+            node?.run(.fadeAlpha(to: alpha, duration: duration))
+        }
+        fadeNode(horizonLine, targetHorizonAlpha)
+        fadeNode(lowerGradient, lowerAlpha)
+        fadeNode(upperGradient, upperAlpha)
+        fadeNode(leftAura, auraLeftAlpha)
+        fadeNode(rightAura, auraRightAlpha)
+        fadeNode(centerRunway, runwayAlpha)
+        fadeNode(serviceLine, lineAlpha)
+        fadeNode(baselineLine, lineAlpha * 0.84)
+        horizonLine?.run(.customAction(withDuration: duration) { [weak self] _, elapsed in
+            guard let self else { return }
+            let progress = elapsed / CGFloat(duration)
+            let current = self.horizonLine.glowWidth
+            self.horizonLine.glowWidth = current + (targetGlow - current) * progress
+        })
+        gridNode.children.forEach { child in
+            let baseAlpha = CGFloat((child.userData?["baseAlpha"] as? NSNumber)?.doubleValue ?? Double(child.alpha))
+            child.run(.fadeAlpha(to: targetGridAlpha * baseAlpha, duration: duration))
+        }
     }
 }

@@ -70,6 +70,8 @@ struct MatchEditorView: View {
                     .frame(minHeight: 100)
             }
         }
+        .scrollContentBackground(.hidden)
+        .background(RallyUIKit.screenBackground)
         .navigationTitle(existing == nil ? "Log match" : "Edit match")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -81,7 +83,7 @@ struct MatchEditorView: View {
                     save()
                     dismiss()
                 }
-                .bold()
+                .font(.system(.subheadline, design: .rounded).weight(.bold))
             }
         }
     }

@@ -89,6 +89,8 @@ struct TrainingEditorView: View {
                     .frame(minHeight: 100)
             }
         }
+        .scrollContentBackground(.hidden)
+        .background(RallyUIKit.screenBackground)
         .navigationTitle(existing == nil ? "Log training" : "Edit training")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -100,7 +102,7 @@ struct TrainingEditorView: View {
                     save()
                     dismiss()
                 }
-                .bold()
+                .font(.system(.subheadline, design: .rounded).weight(.bold))
             }
         }
     }

@@ -1,4 +1,5 @@
 import Foundation
+import UIKit
 import UserNotifications
 
 /// Manages local and push notifications for engagement and achievements

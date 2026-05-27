@@ -33,7 +33,7 @@ enum Tunables {
     static let frameStopMissMs:    Double = 0
 
     /// Extended freeze on a combo break — the "you died" moment.
-    static let frameStopDeathMs:   Double = 220
+    static let frameStopDeathMs:   Double = 200
 
     // MARK: - Screen shake (in points, applied to the camera)
 
@@ -44,7 +44,7 @@ enum Tunables {
     static let shakeAmplitudeDeath:   CGFloat = 18    // The "Flappy hit"
 
     static let shakeDurationHitMs:    Double = 120
-    static let shakeDurationDeathMs:  Double = 380
+    static let shakeDurationDeathMs:  Double = 340
 
     // MARK: - Visual feedback timing
 
@@ -52,7 +52,7 @@ enum Tunables {
     static let perfectBurstDurationMs: Double = 450
     static let scoreTweenDurationMs:  Double = 220
     static let redFlashDurationMs:    Double = 380
-    static let tierFlashDurationMs:   Double = 600
+    static let tierFlashDurationMs:   Double = 520
 
     // MARK: - Strike-line anticipation pulse
     //
@@ -140,6 +140,38 @@ enum Tunables {
     static let strikeLineYRatio:      CGFloat = 0.25
     static let spawnLineYRatio:       CGFloat = 1.05
     static let cullBelowStrikePoints: CGFloat = 40
+    static let horizonLaneInsetRatio: CGFloat = 0.12
+    static let strikeLaneInsetRatio:  CGFloat = 0.30
+    static let ballSpawnScale:        CGFloat = 0.44
+    static let ballStrikeScale:       CGFloat = 1.14
+    static let ballOverrunScale:      CGFloat = 1.28
+    static let laneCurveAmount:       CGFloat = 0.08
+    static let driveArcHeight:        CGFloat = 10
+    static let topspinArcHeight:      CGFloat = 44
+    static let skidArcHeight:         CGFloat = 6
+    static let floaterArcHeight:      CGFloat = 58
+    static let driveBounceProgress:   CGFloat = 0.76
+    static let topspinBounceProgress: CGFloat = 0.71
+    static let skidBounceProgress:    CGFloat = 0.82
+    static let floaterBounceProgress: CGFloat = 0.68
+    static let driveBounceKick:       CGFloat = 18
+    static let topspinBounceKick:     CGFloat = 34
+    static let skidBounceKick:        CGFloat = 8
+    static let floaterBounceKick:     CGFloat = 24
+    static let driveBounceCompression: CGFloat = 0.16
+    static let topspinBounceCompression: CGFloat = 0.12
+    static let skidBounceCompression: CGFloat = 0.22
+    static let floaterBounceCompression: CGFloat = 0.08
+    static let drivePostBounceAcceleration: CGFloat = 1.08
+    static let topspinPostBounceAcceleration: CGFloat = 1.15
+    static let skidPostBounceAcceleration: CGFloat = 1.22
+    static let floaterPostBounceAcceleration: CGFloat = 0.95
+    static let bounceShadowAlpha:     CGFloat = 0.22
+    static let maxSameLaneRun:        Int      = 2
+    static let maxConsecutiveSixteenths: Int   = 2
+    static let minimumDoubleGapBeats: Double   = 3.0
+    static let minimumPatternLength:  Int      = 2
+    static let maximumPatternLength:  Int      = 4
 
     // MARK: - Swing gesture (Pokemon-Go-style drag-and-release)
 
@@ -150,6 +182,36 @@ enum Tunables {
     /// Pan velocity (pt/s) above which the swing counts as "committed."
     /// Below this we still register the swing but emit a softer trail.
     static let swingFastVelocity:     CGFloat = 1400
+
+    /// Extra grace added on top of the `.good` timing window when deciding
+    /// whether a ball is a legitimate target for the current swing. This is
+    /// slightly wider than scoring itself so we prefer "you swung at the
+    /// right ball but missed the timing" over "there was no target at all."
+    static let swingTargetSlackSeconds: Double = 0.045
+
+    /// Two notes with arrival times inside this threshold are treated as the
+    /// same "double" exchange and can be cleared together.
+    static let doubleArrivalToleranceSeconds: Double = 0.018
+
+    /// How long the onboarding hint remains visible once the session begins.
+    static let openingHintSeconds: Double = 8.0
+
+    /// Vertical drag thresholds used to interpret the swing as a heavier
+    /// topspin lift, flatter drive, or carving slice.
+    static let swingTopspinRisePoints: CGFloat = 42
+    static let swingSliceDropPoints:   CGFloat = -28
+    static let racketReachBasePoints:  CGFloat = 112
+    static let racketReachFromSwingScalar: CGFloat = 0.14
+    static let racketSweetSpotRadius:  CGFloat = 34
+    static let racketOffCenterRadius:  CGFloat = 62
+    static let racketMissRadius:       CGFloat = 104
+    static let recoveryBaseSeconds:    Double = 0.22
+    static let recoveryStretchSeconds: Double = 0.42
+    static let recoveryOppositeLanePenalty: CGFloat = 1.0
+    static let recoverySameLanePenalty: CGFloat = 0.52
+    static let recoveryReachPenalty:   CGFloat = 0.26
+    static let recoveryTimingPenalty:  Double = 0.22
+    static let recoveryCenterOffsetRatio: CGFloat = 0.11
 
     /// Trail color & visual.
     static let swingTrailGlowWidth:   CGFloat = 14

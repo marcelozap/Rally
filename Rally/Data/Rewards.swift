@@ -17,11 +17,13 @@ import Foundation
 ///       + perfectHits * 2
 ///       + bestComboBonus(maxCombo)
 ///       + accuracyBonus(accuracy)
+///       + matchStoryBonus(clean returns / winners / pressure holds)
 ///       + dailyFirstRunBonus(if streak just incremented)
 /// ```
 ///
 /// XP scales similarly but is harder to game with sandbagging — it favors
-/// accuracy + combos over raw score.
+/// accuracy + combos over raw score, with a small bump for cleaner point
+/// construction.
 enum Rewards {
 
     struct Outcome: Equatable {
@@ -61,6 +63,9 @@ enum Rewards {
         progress.totalGreatHits   += result.greatHits
         progress.totalGoodHits    += result.goodHits
         progress.totalMisses      += result.misses
+        progress.totalCleanReturnPickups += result.cleanReturnPickups
+        progress.totalChangeupWinners += result.changeupWinners
+        progress.totalPressureHolds += result.pressureHolds
 
         if isNewScore { progress.bestScore = result.finalScore }
         if isNewCombo { progress.bestCombo = result.maxCombo }
@@ -84,6 +89,9 @@ enum Rewards {
 
         if result.accuracy >= 0.90 { newBadges.insert(BadgeDefinition.accuracy90.rawValue) }
         if result.accuracy >= 0.95 { newBadges.insert(BadgeDefinition.accuracy95.rawValue) }
+        if result.cleanReturnPickups > 0 { newBadges.insert(BadgeDefinition.firstCleanReturn.rawValue) }
+        if result.changeupWinners >= 3 { newBadges.insert(BadgeDefinition.changeupWinner3.rawValue) }
+        if result.pressureHolds >= 5 { newBadges.insert(BadgeDefinition.pressureHold5.rawValue) }
 
         if progress.level >= 5 { newBadges.insert(BadgeDefinition.level5.rawValue) }
         if progress.level >= 10 { newBadges.insert(BadgeDefinition.level10.rawValue) }
@@ -114,7 +122,8 @@ enum Rewards {
         let perfectBonus = result.perfectHits * 2
         let comboBonus = comboCoinBonus(result.maxCombo)
         let accuracyBonus = accuracyCoinBonus(result.accuracy)
-        return max(0, base + perfectBonus + comboBonus + accuracyBonus)
+        let matchStoryBonus = matchStoryCoinBonus(result)
+        return max(0, base + perfectBonus + comboBonus + accuracyBonus + matchStoryBonus)
     }
 
     static func xpFor(result: GameResult) -> Int {
@@ -122,7 +131,8 @@ enum Rewards {
         let baseHits = result.totalHits * 5
         let perfectBoost = result.perfectHits * 10
         let comboFactor = result.maxCombo / 5
-        return max(0, baseHits + perfectBoost + comboFactor * 5)
+        let matchStoryBonus = matchStoryXPBonus(result)
+        return max(0, baseHits + perfectBoost + comboFactor * 5 + matchStoryBonus)
     }
 
     /// Tiered combo bonus — rewards passing the same tier thresholds the
@@ -145,6 +155,20 @@ enum Rewards {
         case 0.75...: return 5
         default:      return 0
         }
+    }
+
+    private static func matchStoryCoinBonus(_ result: GameResult) -> Int {
+        let returnValue = min(10, result.cleanReturnPickups * 2)
+        let winnerValue = min(12, result.changeupWinners * 3)
+        let pressureValue = min(15, result.pressureHolds * 5)
+        return returnValue + winnerValue + pressureValue
+    }
+
+    private static func matchStoryXPBonus(_ result: GameResult) -> Int {
+        let returnValue = result.cleanReturnPickups * 6
+        let winnerValue = result.changeupWinners * 8
+        let pressureValue = result.pressureHolds * 12
+        return returnValue + winnerValue + pressureValue
     }
 
     private static func streakBonusCoins(streak: Int) -> Int {

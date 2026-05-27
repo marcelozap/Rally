@@ -11,6 +11,7 @@ struct BeatmapNote: Codable, Hashable {
     let arrivalTime: Double
     let lane: Lane
     let kind: Kind
+    let role: Role
 
     enum Kind: String, Codable, Hashable {
         case normal
@@ -18,10 +19,18 @@ struct BeatmapNote: Codable, Hashable {
         case hold     // requires held swipe (future)
     }
 
+    enum Role: String, Codable, Hashable {
+        case serve
+        case returnBall
+        case rally
+        case changeup
+    }
+
     enum CodingKeys: String, CodingKey {
         case arrivalTime = "t"
         case lane
         case kind
+        case role
     }
 }
 
@@ -31,6 +40,20 @@ struct Beatmap: Codable {
     let trackID: String
     let bpm: Double
     let notes: [BeatmapNote]
+}
+
+struct RallyInfluence {
+    enum Shape {
+        case drive
+        case topspin
+        case slice
+        case defensive
+    }
+
+    let preferredLane: Lane
+    let alternateLane: Lane
+    let shape: Shape
+    let pressure: Double
 }
 
 extension Beatmap {
@@ -78,11 +101,11 @@ extension Beatmap {
 
             // Alternate lanes 75% of the time; same-lane repeat 25%.
             let lane: Lane = rng.bool(p: 0.75) ? lastLane.opposite : lastLane
-            notes.append(BeatmapNote(arrivalTime: t, lane: lane, kind: .normal))
+            notes.append(BeatmapNote(arrivalTime: t, lane: lane, kind: .normal, role: .rally))
             lastLane = lane
 
             if progress > 0.6, rng.bool(p: 0.05) {
-                notes.append(BeatmapNote(arrivalTime: t, lane: lane.opposite, kind: .double))
+                notes.append(BeatmapNote(arrivalTime: t, lane: lane.opposite, kind: .double, role: .changeup))
             }
 
             t += beatSeconds * subdivision
@@ -146,6 +169,13 @@ struct SeededRandom {
 ///    weights all change as the match flow shifts.
 final class RhythmSpawner {
 
+    private enum RallyPattern {
+        case neutralCrosscourt
+        case pressureChange
+        case servePlusOne
+        case returnScramble
+    }
+
     /// How long a ball takes to traverse the screen, in seconds, at the
     /// current difficulty. Scene owns this and updates it as the phase
     /// changes (warm-up = slower, breaker = faster).
@@ -164,6 +194,14 @@ final class RhythmSpawner {
     /// Arrival time of the *next* not-yet-emitted note in phase-driven mode.
     private var nextArrivalTime: Double
     private var lastLane: Lane = .left
+    private var sameLaneRunLength: Int = 1
+    private var lastSubdivision: Double = 1.0
+    private var consecutiveSixteenthCount: Int = 0
+    private var lastDoubleArrivalTime: Double = -.infinity
+    private var currentPattern: RallyPattern = .neutralCrosscourt
+    private var patternRemainingNotes: Int = 0
+    private var serveSeedLane: Lane = .right
+    private var pendingInfluence: RallyInfluence?
 
     /// Designated init for legacy precomputed-beatmap mode.
     init(beatmap: Beatmap, travelSeconds: Double, sink: @escaping (BeatmapNote) -> Void) {
@@ -216,22 +254,27 @@ final class RhythmSpawner {
         // one phase-shaped beat increment for the next call.
         while nextArrivalTime <= spawnHorizon {
             let profile = flow.currentProfile()
+            let phase = flow.currentPhase
             let arrival = nextArrivalTime
 
             // Density: occasionally insert a rest (chart hole).
             if rng.unit() < profile.density {
-                let lane: Lane = rng.bool(p: 0.75) ? lastLane.opposite : lastLane
-                sink(BeatmapNote(arrivalTime: arrival, lane: lane, kind: .normal))
-                lastLane = lane
+                let lane = chooseLane(for: phase)
+                let role = roleForCurrentPattern()
+                sink(BeatmapNote(arrivalTime: arrival, lane: lane, kind: .normal, role: role))
 
-                if rng.bool(p: profile.doubleNoteProbability) {
-                    sink(BeatmapNote(arrivalTime: arrival, lane: lane.opposite, kind: .double))
+                if shouldEmitDouble(
+                    profile: profile,
+                    phase: phase,
+                    arrivalTime: arrival,
+                    subdivision: lastSubdivision
+                ) {
+                    sink(BeatmapNote(arrivalTime: arrival, lane: lane.opposite, kind: .double, role: .changeup))
+                    lastDoubleArrivalTime = arrival
                 }
             }
 
-            let subdivision = profile.subdivisions[
-                rng.weightedIndex(weights: profile.subdivisionWeights)
-            ]
+            let subdivision = chooseSubdivision(for: profile, phase: phase)
             let beatSeconds = 60.0 / profile.bpm
             nextArrivalTime += beatSeconds * subdivision
         }
@@ -240,5 +283,240 @@ final class RhythmSpawner {
     func reset() {
         nextIndex = 0
         nextArrivalTime = leadInSeconds
+        lastLane = .left
+        sameLaneRunLength = 1
+        lastSubdivision = 1.0
+        consecutiveSixteenthCount = 0
+        lastDoubleArrivalTime = -.infinity
+        currentPattern = .neutralCrosscourt
+        patternRemainingNotes = 0
+        serveSeedLane = .right
+        pendingInfluence = nil
+    }
+
+    func applyInfluence(_ influence: RallyInfluence) {
+        pendingInfluence = influence
+    }
+
+    private func chooseLane(for phase: MatchFlowPhase) -> Lane {
+        refreshPatternIfNeeded(for: phase)
+
+        if let influencedLane = consumeInfluencedLane(for: phase) {
+            patternRemainingNotes = max(0, patternRemainingNotes - 1)
+            updateLaneRunTracking(with: influencedLane)
+            return influencedLane
+        }
+
+        let lane: Lane
+        switch currentPattern {
+        case .neutralCrosscourt:
+            lane = chooseAlternatingLane(repeatProbability: repeatProbability(for: phase) * 0.45)
+        case .pressureChange:
+            lane = choosePressureLane()
+        case .servePlusOne:
+            lane = chooseServePlusOneLane()
+        case .returnScramble:
+            lane = chooseReturnScrambleLane()
+        }
+
+        patternRemainingNotes = max(0, patternRemainingNotes - 1)
+        updateLaneRunTracking(with: lane)
+        return lane
+    }
+
+    private func consumeInfluencedLane(for phase: MatchFlowPhase) -> Lane? {
+        guard let pendingInfluence else { return nil }
+
+        let sameLaneAllowed = sameLaneRunLength < Tunables.maxSameLaneRun
+        let preferred = pendingInfluence.preferredLane
+        let fallback = pendingInfluence.alternateLane
+
+        let preferredProbability: Double
+        switch pendingInfluence.shape {
+        case .drive:
+            preferredProbability = phase == .pressure || phase == .breaker ? 0.78 : 0.68
+        case .topspin:
+            preferredProbability = phase == .pressure || phase == .breaker ? 0.62 : 0.54
+        case .slice:
+            preferredProbability = 0.42
+        case .defensive:
+            preferredProbability = 0.34
+        }
+
+        let weightedPreferred = min(0.9, max(0.18, preferredProbability + pendingInfluence.pressure * 0.16))
+        let choosePreferred = rng.bool(p: weightedPreferred)
+
+        self.pendingInfluence = nil
+
+        if choosePreferred, (preferred != lastLane || sameLaneAllowed) {
+            return preferred
+        }
+        if fallback != lastLane || sameLaneAllowed {
+            return fallback
+        }
+        return lastLane.opposite
+    }
+
+    private func refreshPatternIfNeeded(for phase: MatchFlowPhase) {
+        guard patternRemainingNotes == 0 else { return }
+
+        currentPattern = pickPattern(for: phase)
+        patternRemainingNotes = patternLength(for: currentPattern, phase: phase)
+        if currentPattern == .servePlusOne || currentPattern == .returnScramble {
+            serveSeedLane = rng.bool(p: 0.5) ? .left : .right
+        }
+    }
+
+    private func pickPattern(for phase: MatchFlowPhase) -> RallyPattern {
+        switch phase {
+        case .warmUp:
+            return .servePlusOne
+        case .recovery:
+            return .returnScramble
+        case .exchange:
+            let roll = rng.unit()
+            if roll < 0.18 { return .servePlusOne }
+            if roll < 0.30 { return .returnScramble }
+            return .neutralCrosscourt
+        case .pressure:
+            let roll = rng.unit()
+            if roll < 0.52 { return .pressureChange }
+            if roll < 0.72 { return .servePlusOne }
+            return .neutralCrosscourt
+        case .breaker:
+            let roll = rng.unit()
+            if roll < 0.6 { return .pressureChange }
+            if roll < 0.82 { return .returnScramble }
+            return .servePlusOne
+        }
+    }
+
+    private func patternLength(for pattern: RallyPattern, phase: MatchFlowPhase) -> Int {
+        switch pattern {
+        case .neutralCrosscourt:
+            return min(Tunables.maximumPatternLength, phase == .breaker ? 3 : 4)
+        case .pressureChange:
+            return max(Tunables.minimumPatternLength, 3)
+        case .servePlusOne:
+            return 2
+        case .returnScramble:
+            return phase == .recovery ? 2 : 3
+        }
+    }
+
+    private func chooseAlternatingLane(repeatProbability: Double) -> Lane {
+        let canRepeat = sameLaneRunLength < Tunables.maxSameLaneRun
+        let shouldRepeat = canRepeat && rng.bool(p: repeatProbability)
+        return shouldRepeat ? lastLane : lastLane.opposite
+    }
+
+    private func choosePressureLane() -> Lane {
+        if patternRemainingNotes <= 1 {
+            return lastLane.opposite
+        }
+        let pinProbability = patternRemainingNotes == 3 ? 0.22 : 0.38
+        let canRepeat = sameLaneRunLength < Tunables.maxSameLaneRun
+        if canRepeat && rng.bool(p: pinProbability) {
+            return lastLane
+        }
+        return lastLane.opposite
+    }
+
+    private func chooseServePlusOneLane() -> Lane {
+        switch patternRemainingNotes {
+        case let n where n >= 2:
+            return serveSeedLane
+        default:
+            return serveSeedLane.opposite
+        }
+    }
+
+    private func chooseReturnScrambleLane() -> Lane {
+        switch patternRemainingNotes {
+        case let n where n >= 3:
+            return serveSeedLane.opposite
+        case 2:
+            return serveSeedLane
+        default:
+            return rng.bool(p: 0.7) ? serveSeedLane.opposite : serveSeedLane
+        }
+    }
+
+    private func roleForCurrentPattern() -> BeatmapNote.Role {
+        switch currentPattern {
+        case .neutralCrosscourt:
+            return .rally
+        case .pressureChange:
+            return patternRemainingNotes <= 1 ? .changeup : .rally
+        case .servePlusOne:
+            return patternRemainingNotes >= 2 ? .serve : .returnBall
+        case .returnScramble:
+            if patternRemainingNotes >= 3 { return .returnBall }
+            return patternRemainingNotes == 2 ? .rally : .changeup
+        }
+    }
+
+    private func repeatProbability(for phase: MatchFlowPhase) -> Double {
+        let sameLaneProbability: Double
+        switch phase {
+        case .warmUp, .recovery:
+            sameLaneProbability = 0.10
+        case .exchange:
+            sameLaneProbability = 0.16
+        case .pressure:
+            sameLaneProbability = 0.22
+        case .breaker:
+            sameLaneProbability = 0.28
+        }
+        return sameLaneProbability
+    }
+
+    private func updateLaneRunTracking(with lane: Lane) {
+        if lane == lastLane {
+            sameLaneRunLength += 1
+        } else {
+            sameLaneRunLength = 1
+        }
+        lastLane = lane
+    }
+
+    private func chooseSubdivision(for profile: PhaseProfile, phase: MatchFlowPhase) -> Double {
+        var subdivision = profile.subdivisions[
+            rng.weightedIndex(weights: profile.subdivisionWeights)
+        ]
+
+        if subdivision == 0.25 {
+            let hardCapReached = consecutiveSixteenthCount >= Tunables.maxConsecutiveSixteenths
+            let phaseTooCalm = phase == .warmUp || phase == .exchange || phase == .recovery
+            let cameRightAfterDouble = nextArrivalTime - lastDoubleArrivalTime < 0.4
+            if hardCapReached || phaseTooCalm || cameRightAfterDouble {
+                subdivision = 0.5
+            }
+        }
+
+        if subdivision == 0.25 {
+            consecutiveSixteenthCount += 1
+        } else {
+            consecutiveSixteenthCount = 0
+        }
+        lastSubdivision = subdivision
+        return subdivision
+    }
+
+    private func shouldEmitDouble(
+        profile: PhaseProfile,
+        phase: MatchFlowPhase,
+        arrivalTime: Double,
+        subdivision: Double
+    ) -> Bool {
+        guard profile.doubleNoteProbability > 0 else { return false }
+        guard phase == .pressure || phase == .breaker else { return false }
+        guard subdivision >= 0.5 else { return false }
+
+        let beatSeconds = 60.0 / profile.bpm
+        let minimumGap = max(beatSeconds * Tunables.minimumDoubleGapBeats, 0.8)
+        guard arrivalTime - lastDoubleArrivalTime >= minimumGap else { return false }
+
+        return rng.bool(p: profile.doubleNoteProbability)
     }
 }

@@ -1,8 +1,20 @@
 # Rally
 
-A tennis lifestyle iPhone app with a **SpriteKit rally mini-game**: you stay at the baseline, balls come from the far court, and you **drag and release** to aim — swipe direction chooses where the shot goes; timing vs. the ball’s arrival sets hit quality. Pick **Miami (hard), Wimbledon (grass), or Barcelona/red clay** before you play (local venue theme). Minimal HUD, heavy feedback loop.
+Tennis lifestyle app for iPhone that combines a fast daily-use game loop with training logs, match history, journaling, avatar customization, a branded shop experience, and a high-feedback SpriteKit rally mini-game.
 
 > Working title in the GDD: **SwipeBeat**. Repo / shipping name: **Rally**.
+
+## What this project is
+
+Rally is not just a standalone game prototype. It is a product concept built around one repeatable engagement loop, then extended into a broader tennis experience:
+
+- **Play**: a high-polish rhythm-swipe mini-game designed for fast repeat sessions
+- **Logs**: training sessions and match history
+- **Journal**: tennis-life notes and reflection
+- **Avatar + Shop**: customization and apparel discovery
+- **Optional sync**: account-based backup through a lightweight backend
+
+The core idea is that the game creates the daily-open habit, while the surrounding product makes the app useful beyond a single mechanic.
 
 ## Stack
 
@@ -15,6 +27,13 @@ A tennis lifestyle iPhone app with a **SpriteKit rally mini-game**: you stay at 
 - **iOS 17+**, Swift 5.9+, Xcode 15+
 
 Architecture diagrams and **sync semantics (last-writer-wins, when uploads run)** → **[`ARCHITECTURE.md`](./ARCHITECTURE.md)**.
+
+## Why it stands out
+
+- Local-first product design with optional sync instead of backend-first dependency
+- Clear product surface beyond gameplay alone
+- Strong attention to audio, haptics, and feel
+- Mix of consumer product thinking, iOS engineering, and systems design
 
 ## Repository layout
 
@@ -63,6 +82,6 @@ Production checklist: [`backend/DEPLOYMENT.md`](./backend/DEPLOYMENT.md).
 
 ## Status
 
-Active development — gameplay, progression, journal, shop, court atlas, and optional cloud backup are in-repo; see `GDD.md` for the north-star experience.
+Active development. Gameplay, progression, journal, shop, court atlas, and optional cloud backup are in-repo; see `GDD.md` for the north-star product direction.
 
-**Planned overhauls (design docs only):** [Avatar & court visuals](./AVATAR_OVERHAUL_PLAN.md) · [UI & design system](./UI_DESIGN_OVERHAUL_PLAN.md) (XIV premium dark — tokens, buttons, typography, tab bar).
+**Current planning docs:** [UI & design system](./UI_DESIGN_OVERHAUL_PLAN.md) · [Avatar & court visuals](./AVATAR_OVERHAUL_PLAN.md) · [System polish](./POLISH.md) · [Live match presentation](./PRESENTATION_PLAN.md) · [Animation & modeling](./ANIMATION_MODELING_PLAN.md) · [Execution order](./EXECUTION_ORDER.md)

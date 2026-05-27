@@ -23,9 +23,15 @@ struct AnalyticsInsights {
         let games = progress?.totalSessions ?? 0
         let totalScore = progress?.bestScore ?? 0
         let averageScore = games > 0 ? totalScore / max(games, 1) : 0
-        let accuracy = games > 0 ? Double((progress?.totalPerfectHits ?? 0 + progress?.totalGreatHits ?? 0 + progress?.totalGoodHits ?? 0)) / Double((progress?.totalPerfectHits ?? 0 + progress?.totalGreatHits ?? 0 + progress?.totalGoodHits ?? 0 + progress?.totalMisses ?? 0)) : 0
+        let perfectHits = progress?.totalPerfectHits ?? 0
+        let greatHits = progress?.totalGreatHits ?? 0
+        let goodHits = progress?.totalGoodHits ?? 0
+        let misses = progress?.totalMisses ?? 0
+        let madeHits = perfectHits + greatHits + goodHits
+        let attemptedHits = madeHits + misses
+        let accuracy = attemptedHits > 0 ? Double(madeHits) / Double(attemptedHits) : 0
         let averageCombo = games > 0 ? (progress?.bestCombo ?? 0) : 0
-        let totalPerfectHits = progress?.totalPerfectHits ?? 0
+        let totalPerfectHits = perfectHits
         let wins = matches.filter(\.resultWon).count
         let recentGames = matches.prefix(10)
         let recentWinRate = recentGames.isEmpty ? 0 : Double(recentGames.filter(\.`resultWon`).count) / Double(recentGames.count)

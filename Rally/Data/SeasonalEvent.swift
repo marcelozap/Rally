@@ -47,6 +47,20 @@ final class SeasonalEvent {
         let comps = Calendar.current.dateComponents([.day], from: Date(), to: endDate)
         return max(0, comps.day ?? 0)
     }
+
+    var isActive: Bool {
+        let now = Date()
+        return startDate <= now && endDate >= now && !isCompleted
+    }
+
+    var levelName: String {
+        switch progressFraction {
+        case 0.75...: return "Championship Push"
+        case 0.4..<0.75: return "Center Court"
+        case 0.1..<0.4: return "Qualifier"
+        default: return "Opening Set"
+        }
+    }
 }
 
 struct SeasonalEventManager {
@@ -76,6 +90,9 @@ struct SeasonalEventManager {
         guard !event.isCompleted, event.endDate >= Date() else { return }
 
         event.progress += result.finalScore
+        event.progress += result.cleanReturnPickups * 12
+        event.progress += result.changeupWinners * 18
+        event.progress += result.pressureHolds * 25
         if event.progress >= event.target {
             event.isCompleted = true
         }

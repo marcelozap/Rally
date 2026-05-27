@@ -28,13 +28,16 @@ struct TrainingLogView: View {
                     .scrollContentBackground(.hidden)
                 }
             }
-            .background(Color.black.ignoresSafeArea())
+            .background(RallyUIKit.screenBackground)
             .navigationTitle("Training")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button { showingEditor = true } label: {
-                        Image(systemName: "plus.circle.fill")
-                            .foregroundStyle(.cyan)
+                        RallyUIKit.IconBadge(
+                            systemName: "plus",
+                            tint: RallyUIKit.Palette.cyan,
+                            size: 34
+                        )
                     }
                 }
             }
@@ -48,14 +51,17 @@ struct TrainingLogView: View {
 
     private var emptyState: some View {
         VStack(spacing: 16) {
-            Image(systemName: "figure.tennis")
-                .font(.system(size: 60))
-                .foregroundStyle(.cyan.opacity(0.6))
+            RallyUIKit.IconBadge(
+                systemName: "figure.tennis",
+                tint: RallyUIKit.Palette.cyan,
+                size: 72
+            )
             Text("No training logged yet")
                 .font(.system(.title3, design: .rounded).weight(.semibold))
                 .foregroundStyle(.white)
             Text("Tap + to log your first session.")
-                .foregroundStyle(.white.opacity(0.5))
+                .font(.system(.subheadline, design: .rounded).weight(.medium))
+                .foregroundStyle(.white.opacity(0.58))
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -67,20 +73,20 @@ struct TrainingLogView: View {
         let totalMinutes = recent.reduce(0) { $0 + $1.durationMinutes }
         let totalSessions = recent.count
         return HStack(spacing: 24) {
-            stat(value: "\(totalSessions)", label: "sessions")
-            stat(value: "\(totalMinutes)", label: "minutes")
-            stat(value: "7d", label: "window")
+            stat(value: "\(totalSessions)", label: "sessions", tint: RallyUIKit.Palette.cyan)
+            stat(value: "\(totalMinutes)", label: "minutes", tint: RallyUIKit.Palette.lime)
+            stat(value: "7d", label: "window", tint: RallyUIKit.Palette.cloud)
         }
-        .padding(.vertical, 6)
-        .foregroundStyle(.white)
+        .padding(.vertical, 10)
     }
 
-    private func stat(value: String, label: String) -> some View {
+    private func stat(value: String, label: String, tint: Color) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(value)
                 .font(.system(.title2, design: .rounded).weight(.bold))
+                .foregroundStyle(tint)
             Text(label)
-                .font(.caption)
+                .font(.system(.caption, design: .rounded).weight(.semibold))
                 .foregroundStyle(.white.opacity(0.5))
         }
     }
@@ -102,18 +108,19 @@ private struct TrainingRow: View {
             intensityBadge
             VStack(alignment: .leading, spacing: 4) {
                 Text(session.drillType.isEmpty ? "Session" : session.drillType)
-                    .font(.system(.body, design: .rounded).weight(.semibold))
+                    .font(.system(.body, design: .rounded).weight(.bold))
                     .foregroundStyle(.white)
                 HStack(spacing: 6) {
                     Text(session.date, style: .date)
                     Text("·")
                     Text("\(session.durationMinutes) min")
                 }
-                .font(.caption)
-                .foregroundStyle(.white.opacity(0.5))
+                .font(.system(.caption, design: .rounded).weight(.medium))
+                .foregroundStyle(.white.opacity(0.55))
             }
             Spacer()
         }
+        .padding(.vertical, 4)
         .listRowBackground(Color.white.opacity(0.04))
     }
 

@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 /// Accessibility helpers for Rally
 extension View {
@@ -22,13 +23,13 @@ extension View {
     /// Mark as button for VoiceOver
     func accessibleButton(_ label: String) -> some View {
         accessibility(label: Text(label))
-            .accessibility(traits: .isButton)
+            .accessibility(addTraits: .isButton)
     }
 
     /// Mark as header for VoiceOver
     func accessibleHeader(_ label: String) -> some View {
         accessibility(label: Text(label))
-            .accessibility(traits: .isHeader)
+            .accessibility(addTraits: .isHeader)
     }
 }
 

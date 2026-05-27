@@ -39,50 +39,53 @@ struct AuthView: View {
                             .textContentType(.emailAddress)
                             .keyboardType(.emailAddress)
                             .autocapitalization(.none)
-                            .padding(12)
-                            .background(RoundedRectangle(cornerRadius: 10).fill(Color.white.opacity(0.06)))
+                            .rallyTextFieldStyle()
 
                         fieldLabel("Password")
                         SecureField(mode == .register ? "At least 8 characters" : "Password", text: $password)
                             .textContentType(mode == .register ? .newPassword : .password)
-                            .padding(12)
-                            .background(RoundedRectangle(cornerRadius: 10).fill(Color.white.opacity(0.06)))
+                            .rallyTextFieldStyle()
                     }
                     .foregroundStyle(.white)
+                    .padding(18)
+                    .background(
+                        RoundedRectangle(cornerRadius: 22)
+                            .fill(Color.white.opacity(0.04))
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 22)
+                            .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                    )
 
                     if let err = auth.lastErrorMessage {
                         Text(err)
                             .font(.caption)
-                            .foregroundStyle(.orange)
+                            .foregroundStyle(RallyUIKit.Palette.coral)
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
 
                     Button {
                         Task { await submit() }
                     } label: {
-                        HStack {
+                        HStack(spacing: 10) {
+                            RallyUIKit.IconBadge(
+                                systemName: mode == .register ? "person.crop.circle.badge.plus" : "person.crop.circle.badge.checkmark",
+                                tint: RallyUIKit.Palette.ink,
+                                size: 30
+                            )
                             if busy { ProgressView().tint(.black) }
                             Text(mode == .register ? "Create account" : "Log in")
-                                .font(.headline)
                         }
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 16)
-                        .background(RoundedRectangle(cornerRadius: 14).fill(Color.cyan))
-                        .foregroundStyle(.black)
                     }
+                    .buttonStyle(PrimaryButtonStyle(tint: RallyUIKit.Palette.cyan))
                     .disabled(busy || !canSubmit)
 
                     Button {
                         auth.enterGuestMode()
                     } label: {
-                        Text("Continue offline")
-                            .font(.system(.headline, design: .rounded))
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 16)
-                            .background(RoundedRectangle(cornerRadius: 14).stroke(Color.white.opacity(0.28), lineWidth: 1))
-                            .foregroundStyle(.white.opacity(0.9))
+                        Label("Continue offline", systemImage: "wifi.slash")
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(GhostButtonStyle())
                     .disabled(busy)
 
                     DisclosureGroup(isExpanded: $devOpen) {
@@ -92,15 +95,13 @@ struct AuthView: View {
                                 .foregroundStyle(.white.opacity(0.45))
                             TextField("http://…", text: $apiBaseURL)
                                 .autocapitalization(.none)
-                                .padding(10)
-                                .background(RoundedRectangle(cornerRadius: 8).fill(Color.white.opacity(0.06)))
-                                .foregroundStyle(.white)
+                                .rallyTextFieldStyle()
                             Button("Use simulator default") {
                                 RallyAPIConfig.setBaseURL(nil)
                                 apiBaseURL = RallyAPIConfig.baseURL.absoluteString
                             }
                             .font(.caption.weight(.semibold))
-                            .foregroundStyle(.cyan)
+                            .foregroundStyle(RallyUIKit.Palette.cyan)
                         }
                         .padding(.top, 8)
                     } label: {
@@ -122,7 +123,7 @@ struct AuthView: View {
                 }
                 .padding(24)
             }
-            .background(Color.black.ignoresSafeArea())
+            .background(RallyUIKit.screenBackground)
             .navigationTitle("Rally")
             .navigationBarTitleDisplayMode(.inline)
         }
@@ -135,16 +136,18 @@ struct AuthView: View {
 
     private var header: some View {
         VStack(spacing: 10) {
-            Image(systemName: "person.crop.circle.badge.checkmark")
-                .font(.system(size: 48))
-                .foregroundStyle(.cyan)
+            RallyUIKit.IconBadge(
+                systemName: "person.crop.circle.badge.checkmark",
+                tint: RallyUIKit.Palette.cyan,
+                size: 66
+            )
             Text("Save your player everywhere")
                 .font(.system(.title2, design: .rounded).weight(.heavy))
                 .foregroundStyle(.white)
                 .multilineTextAlignment(.center)
             Text("Sign in for cloud backup, or continue offline on this device.")
-                .font(.subheadline)
-                .foregroundStyle(.white.opacity(0.5))
+                .font(.system(.subheadline, design: .rounded).weight(.medium))
+                .foregroundStyle(.white.opacity(0.6))
                 .multilineTextAlignment(.center)
         }
         .padding(.bottom, 8)

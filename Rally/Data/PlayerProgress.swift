@@ -16,6 +16,9 @@ final class PlayerProgress {
     var totalGreatHits: Int = 0
     var totalGoodHits: Int = 0
     var totalMisses: Int = 0
+    var totalCleanReturnPickups: Int = 0
+    var totalChangeupWinners: Int = 0
+    var totalPressureHolds: Int = 0
 
     var dailyStreak: Int = 0
     var lastPlayDate: Date? = nil

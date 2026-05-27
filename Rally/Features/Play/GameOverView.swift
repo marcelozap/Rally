@@ -28,17 +28,18 @@ struct GameOverView: View {
     var body: some View {
         ZStack {
             backdrop
-            VStack(spacing: 22) {
-                fanfare
-                scoreCounter
-                statsGrid
-                segmentedNarrative
-                rewardsStrip
-                newAchievementsStrip
-                actionButtons
+            ScrollView(showsIndicators: false) {
+                VStack(spacing: RallyUIKit.Spacing.xl - 2) {
+                    heroPanel
+                    matchIdentityStrip
+                    segmentedNarrative
+                    rewardsStrip
+                    newAchievementsStrip
+                    actionButtons
+                }
+                .padding(.horizontal, RallyUIKit.Spacing.lg + 2)
+                .padding(.vertical, RallyUIKit.Spacing.xl + 6)
             }
-            .padding(.horizontal, 28)
-            .padding(.vertical, 36)
         }
         .ignoresSafeArea()
         .onAppear { runEntranceTimeline() }
@@ -47,13 +48,30 @@ struct GameOverView: View {
         }
     }
 
+    private var heroPanel: some View {
+        RallyUIKit.LuxePanel(tint: outcome.isNewBestScore ? RallyUIKit.Palette.gold : RallyUIKit.Palette.cyan) {
+            VStack(spacing: 20) {
+                fanfare
+                scoreCounter
+                statsGrid
+            }
+        }
+        .overlay(alignment: .topLeading) {
+            RallyUIKit.EditorialEyebrow(
+                text: "Post Match",
+                tint: outcome.isNewBestScore ? RallyUIKit.Palette.gold : RallyUIKit.Palette.champagne
+            )
+            .offset(x: 18, y: -12)
+        }
+    }
+
     // MARK: - Sections
 
     private var backdrop: some View {
         ZStack {
-            Color.black.opacity(0.93)
+            RallyUIKit.screenBackground
             RadialGradient(
-                colors: [Color.cyan.opacity(0.18), .clear],
+                colors: [RallyUIKit.Palette.gold.opacity(0.14), .clear],
                 center: .center,
                 startRadius: 20,
                 endRadius: 380
@@ -64,30 +82,30 @@ struct GameOverView: View {
 
     @ViewBuilder
     private var fanfare: some View {
-        VStack(spacing: 6) {
+        VStack(spacing: RallyUIKit.Spacing.xxs + 2) {
             Text(headline)
-                .font(.system(.title3, design: .rounded).weight(.heavy))
+                .font(RallyUIKit.Typography.label(.title3, weight: .heavy))
                 .tracking(2)
                 .foregroundStyle(headlineGradient)
                 .scaleEffect(fanfareIn ? 1 : 0.7)
                 .opacity(fanfareIn ? 1 : 0)
             if outcome.isNewBestScore {
                 Text("NEW PERSONAL BEST")
-                    .font(.system(.caption, design: .rounded).weight(.bold))
+                    .font(RallyUIKit.Typography.label(.caption, weight: .bold))
                     .tracking(3)
-                    .foregroundStyle(Color.yellow)
+                    .foregroundStyle(RallyUIKit.Palette.gold)
                     .opacity(fanfareIn ? 1 : 0)
             } else if outcome.didLevelUp {
                 Text("LEVEL UP — NOW LV. \(outcome.newLevel)")
-                    .font(.system(.caption, design: .rounded).weight(.bold))
+                    .font(RallyUIKit.Typography.label(.caption, weight: .bold))
                     .tracking(3)
-                    .foregroundStyle(Color.cyan)
+                    .foregroundStyle(RallyUIKit.Palette.cyan)
                     .opacity(fanfareIn ? 1 : 0)
             } else if outcome.streakIncreased && outcome.newStreak > 1 {
                 Text("\(outcome.newStreak)-DAY STREAK")
-                    .font(.system(.caption, design: .rounded).weight(.bold))
+                    .font(RallyUIKit.Typography.label(.caption, weight: .bold))
                     .tracking(3)
-                    .foregroundStyle(Color.pink)
+                    .foregroundStyle(RallyUIKit.Palette.rose)
                     .opacity(fanfareIn ? 1 : 0)
             }
         }
@@ -110,16 +128,16 @@ struct GameOverView: View {
     @ViewBuilder
     private var segmentedNarrative: some View {
         if result.segments.count == 3 {
-            VStack(spacing: 8) {
-                HStack(spacing: 10) {
+            VStack(spacing: RallyUIKit.Spacing.xs) {
+                HStack(spacing: RallyUIKit.Spacing.xs + 2) {
                     segmentBar(label: "1st", stats: result.segments[0])
                     segmentBar(label: "2nd", stats: result.segments[1])
                     segmentBar(label: "3rd", stats: result.segments[2])
                 }
                 if let subhead = result.narrativeSubhead {
                     Text(subhead)
-                        .font(.system(.caption, design: .rounded).weight(.medium))
-                        .foregroundStyle(.white.opacity(0.6))
+                        .font(RallyUIKit.Typography.body(.caption, weight: .medium))
+                        .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.62))
                         .multilineTextAlignment(.center)
                         .frame(maxWidth: .infinity)
                 }
@@ -133,16 +151,16 @@ struct GameOverView: View {
         let accuracy = stats.accuracy
         let tint: Color = {
             switch accuracy {
-            case 0.85...: return .cyan
-            case 0.65...: return .yellow
-            default:      return .pink
+            case 0.85...: return RallyUIKit.Palette.cyan
+            case 0.65...: return RallyUIKit.Palette.gold
+            default:      return RallyUIKit.Palette.rose
             }
         }()
-        return VStack(spacing: 4) {
+        return VStack(spacing: RallyUIKit.Spacing.xxs) {
             Text(label.uppercased())
-                .font(.system(.caption2, design: .rounded).weight(.semibold))
+                .font(RallyUIKit.Typography.label(.caption2, weight: .semibold))
                 .tracking(2)
-                .foregroundStyle(.white.opacity(0.55))
+                .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.56))
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
                     Capsule().fill(Color.white.opacity(0.06))
@@ -153,7 +171,7 @@ struct GameOverView: View {
             }
             .frame(height: 8)
             Text("\(Int((accuracy * 100).rounded()))%")
-                .font(.system(.caption, design: .rounded).weight(.bold))
+                .font(RallyUIKit.Typography.label(.caption, weight: .bold))
                 .foregroundStyle(tint)
                 .monospacedDigit()
         }
@@ -163,13 +181,13 @@ struct GameOverView: View {
     private var headlineGradient: LinearGradient {
         if outcome.isNewBestScore {
             return LinearGradient(
-                colors: [Color.yellow, Color.pink],
+                colors: [RallyUIKit.Palette.gold, RallyUIKit.Palette.rose],
                 startPoint: .topLeading, endPoint: .bottomTrailing
             )
         }
         if outcome.didLevelUp {
             return LinearGradient(
-                colors: [Color.cyan, Color.blue],
+                colors: [RallyUIKit.Palette.cyan, RallyUIKit.Palette.teal],
                 startPoint: .topLeading, endPoint: .bottomTrailing
             )
         }
@@ -180,80 +198,105 @@ struct GameOverView: View {
     }
 
     private var scoreCounter: some View {
-        Text("\(displayScore)")
-            .font(.system(size: 96, weight: .heavy, design: .rounded))
-            .foregroundStyle(.white)
-            .shadow(color: .cyan.opacity(0.5), radius: 16, x: 0, y: 0)
-            .contentTransition(.numericText())
-            .monospacedDigit()
+        VStack(spacing: 8) {
+            Text("\(displayScore)")
+                .font(RallyUIKit.Typography.display(92, weight: .bold))
+                .foregroundStyle(
+                    LinearGradient(
+                        colors: [RallyUIKit.Palette.frost, RallyUIKit.Palette.champagne],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+                .shadow(color: RallyUIKit.Palette.cyan.opacity(0.22), radius: 24, x: 0, y: 12)
+                .contentTransition(.numericText())
+                .monospacedDigit()
+            Text("Match score")
+                .font(RallyUIKit.Typography.label(.caption, weight: .bold))
+                .tracking(2.8)
+                .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.62))
+        }
     }
 
     private var statsGrid: some View {
-        HStack(spacing: 14) {
-            statTile(value: "\(result.maxCombo)", label: "Max Combo", tint: .cyan)
-            statTile(value: "\(Int((result.accuracy * 100).rounded()))%", label: "Accuracy", tint: .cyan)
-            statTile(value: "\(result.perfectHits)", label: "Perfects", tint: .pink)
+        HStack(spacing: RallyUIKit.Spacing.sm + 2) {
+            AnimatedStatTile(value: "\(result.maxCombo)", label: "Max Combo", tint: RallyUIKit.Palette.cyan)
+            AnimatedStatTile(value: "\(Int((result.accuracy * 100).rounded()))%", label: "Accuracy", tint: RallyUIKit.Palette.champagne)
+            AnimatedStatTile(value: "\(result.perfectHits)", label: "Perfects", tint: RallyUIKit.Palette.rose)
         }
         .opacity(statsIn ? 1 : 0)
         .offset(y: statsIn ? 0 : 12)
     }
 
-    private func statTile(value: String, label: String, tint: Color) -> some View {
-        VStack(spacing: 6) {
-            Text(value)
-                .font(.system(.title, design: .rounded).weight(.bold))
-                .foregroundStyle(tint)
-                .monospacedDigit()
-            Text(label.uppercased())
-                .font(.system(.caption2, design: .rounded).weight(.semibold))
-                .tracking(2)
-                .foregroundStyle(.white.opacity(0.55))
+    @ViewBuilder
+    private var matchIdentityStrip: some View {
+        let highlights = result.matchStoryHighlights
+        if !highlights.isEmpty {
+            VStack(alignment: .leading, spacing: RallyUIKit.Spacing.xs + 2) {
+                HStack {
+                    RallyUIKit.EditorialEyebrow(text: "Match Story", tint: RallyUIKit.Palette.cyan)
+                    Spacer(minLength: 0)
+                }
+                HStack(spacing: RallyUIKit.Spacing.xs + 2) {
+                    ForEach(Array(highlights.enumerated()), id: \.offset) { item in
+                        matchStoryChip(
+                            value: item.element.value,
+                            label: item.element.label,
+                            tint: colorToken(named: item.element.tint)
+                        )
+                    }
+                }
+            }
+            .padding(RallyUIKit.Spacing.sm + 2)
+            .background(
+                RoundedRectangle(cornerRadius: RallyUIKit.Radius.lg)
+                    .fill(Color.white.opacity(0.05))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: RallyUIKit.Radius.lg)
+                    .stroke(RallyUIKit.Palette.line, lineWidth: 1)
+            )
+            .opacity(statsIn ? 1 : 0)
+            .offset(y: statsIn ? 0 : 14)
         }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 18)
-        .background(
-            RoundedRectangle(cornerRadius: 16)
-                .fill(Color.white.opacity(0.04))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 16)
-                .stroke(tint.opacity(0.35), lineWidth: 1)
-        )
     }
 
     @ViewBuilder
     private var rewardsStrip: some View {
-        VStack(spacing: 12) {
-            HStack(spacing: 12) {
-                rewardChip(
-                    icon: "circle.hexagongrid.fill",
-                    text: "+\(outcome.coinsEarned)",
-                    sub: "coins",
-                    tint: .yellow
-                )
-                rewardChip(
-                    icon: "bolt.fill",
-                    text: "+\(outcome.xpEarned)",
-                    sub: "xp",
-                    tint: .cyan
-                )
-            }
-            if outcome.streakIncreased && outcome.newStreak > 1 {
-                HStack(spacing: 8) {
-                    Image(systemName: "flame.fill")
-                        .foregroundStyle(.pink)
-                    Text("Day \(outcome.newStreak) of your streak — bonus coins added")
-                        .font(.system(.caption, design: .rounded).weight(.medium))
-                        .foregroundStyle(.white.opacity(0.7))
+        RallyUIKit.LuxePanel(tint: RallyUIKit.Palette.gold) {
+            VStack(alignment: .leading, spacing: RallyUIKit.Spacing.sm) {
+                RallyUIKit.EditorialEyebrow(text: "Rewards", tint: RallyUIKit.Palette.gold)
+                HStack(spacing: RallyUIKit.Spacing.sm) {
+                    rewardChip(
+                        icon: "circle.hexagongrid.fill",
+                        text: "+\(outcome.coinsEarned)",
+                        sub: "coins",
+                        tint: RallyUIKit.Palette.gold
+                    )
+                    rewardChip(
+                        icon: "bolt.fill",
+                        text: "+\(outcome.xpEarned)",
+                        sub: "xp",
+                        tint: RallyUIKit.Palette.cyan
+                    )
                 }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
-                .background(
-                    Capsule().fill(Color.pink.opacity(0.12))
-                )
-                .overlay(
-                    Capsule().stroke(Color.pink.opacity(0.35), lineWidth: 1)
-                )
+                if outcome.streakIncreased && outcome.newStreak > 1 {
+                    HStack(spacing: RallyUIKit.Spacing.xs) {
+                        Image(systemName: "flame.fill")
+                            .foregroundStyle(RallyUIKit.Palette.rose)
+                        Text("Day \(outcome.newStreak) of your streak — bonus coins added")
+                            .font(RallyUIKit.Typography.body(.caption, weight: .medium))
+                            .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.74))
+                    }
+                    .padding(.horizontal, RallyUIKit.Spacing.sm)
+                    .padding(.vertical, RallyUIKit.Spacing.xs)
+                    .background(
+                        Capsule().fill(RallyUIKit.Palette.rose.opacity(0.12))
+                    )
+                    .overlay(
+                        Capsule().stroke(RallyUIKit.Palette.rose.opacity(0.35), lineWidth: 1)
+                    )
+                }
             }
         }
         .opacity(statsIn ? 1 : 0)
@@ -262,132 +305,145 @@ struct GameOverView: View {
 
     @ViewBuilder
     private var newAchievementsStrip: some View {
-        if !outcome.newBadgesEarned.isEmpty {
-            VStack(spacing: 10) {
-                HStack(spacing: 8) {
-                    Image(systemName: "star.fill")
-                        .foregroundStyle(.yellow)
-                    Text("New Achievement!")
-                        .font(.system(.callout, design: .rounded).weight(.bold))
-                        .foregroundStyle(.white)
-                    Spacer()
-                }
-                HStack(spacing: 12) {
-                    ForEach(outcome.newBadgesEarned, id: \.self) { badgeId in
-                        if let badge = BadgeDefinition(rawValue: badgeId) {
-                            let metadata = badge.metadata
-                            VStack(spacing: 4) {
-                                Image(systemName: metadata.icon)
-                                    .font(.title3)
-                                    .foregroundStyle(Color(hex: metadata.color) ?? .cyan)
-                                Text(metadata.title)
-                                    .font(.caption2.weight(.semibold))
-                                    .foregroundStyle(.white)
-                                    .lineLimit(1)
-                            }
-                            .frame(maxWidth: .infinity)
-                            .padding(10)
-                            .background(RoundedRectangle(cornerRadius: 10).fill(Color.white.opacity(0.04)))
-                            .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color(hex: metadata.color)?.opacity(0.5) ?? Color.cyan.opacity(0.5), lineWidth: 1))
+        let badges = outcome.newBadgesEarned.compactMap(BadgeDefinition.init(rawValue:))
+        if !badges.isEmpty {
+            RallyUIKit.LuxePanel(tint: RallyUIKit.Palette.gold) {
+                VStack(spacing: RallyUIKit.Spacing.xs + 2) {
+                    HStack(spacing: RallyUIKit.Spacing.xs) {
+                        Image(systemName: "star.fill")
+                            .foregroundStyle(RallyUIKit.Palette.gold)
+                        Text("New Achievement!")
+                            .font(RallyUIKit.Typography.label(.callout, weight: .bold))
+                            .foregroundStyle(RallyUIKit.Palette.frost)
+                        Spacer()
+                    }
+                    HStack(spacing: RallyUIKit.Spacing.sm) {
+                        ForEach(badges, id: \.rawValue) { badge in
+                            achievementBadgeCard(badge)
                         }
                     }
                 }
             }
-            .padding(12)
-            .background(RoundedRectangle(cornerRadius: 14).fill(Color.yellow.opacity(0.08)))
-            .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.yellow.opacity(0.35), lineWidth: 1))
             .opacity(statsIn ? 1 : 0)
             .offset(y: statsIn ? 0 : 18)
         }
     }
 
+    private func achievementBadgeCard(_ badge: BadgeDefinition) -> some View {
+        let metadata = badge.metadata
+        let tint = Color(hex: metadata.color) ?? RallyUIKit.Palette.cyan
+
+        return VStack(spacing: RallyUIKit.Spacing.xxs) {
+            RallyUIKit.IconBadge(systemName: metadata.icon, tint: tint, size: 42)
+            Text(metadata.title)
+                .font(RallyUIKit.Typography.label(.caption2, weight: .semibold))
+                .foregroundStyle(RallyUIKit.Palette.frost)
+                .lineLimit(1)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(RallyUIKit.Spacing.xs + 2)
+        .background(RoundedRectangle(cornerRadius: RallyUIKit.Radius.sm).fill(Color.white.opacity(0.04)))
+        .overlay(
+            RoundedRectangle(cornerRadius: RallyUIKit.Radius.sm)
+                .stroke(tint.opacity(0.5), lineWidth: 1)
+        )
+    }
+
     private func rewardChip(icon: String, text: String, sub: String, tint: Color) -> some View {
-        HStack(spacing: 10) {
-            Image(systemName: icon)
-                .font(.title3)
-                .foregroundStyle(tint)
+        HStack(spacing: RallyUIKit.Spacing.xs + 2) {
+            RallyUIKit.IconBadge(systemName: icon, tint: tint, size: 38)
             VStack(alignment: .leading, spacing: 0) {
                 Text(text)
-                    .font(.system(.title3, design: .rounded).weight(.bold))
-                    .foregroundStyle(.white)
+                    .font(RallyUIKit.Typography.title(.title3, weight: .bold))
+                    .foregroundStyle(RallyUIKit.Palette.frost)
                 Text(sub)
-                    .font(.system(.caption2, design: .rounded))
-                    .foregroundStyle(.white.opacity(0.55))
+                    .font(RallyUIKit.Typography.body(.caption2, weight: .medium))
+                    .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.56))
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
+        .padding(.horizontal, RallyUIKit.Spacing.md)
+        .padding(.vertical, RallyUIKit.Spacing.sm)
         .background(
-            RoundedRectangle(cornerRadius: 14)
+            RoundedRectangle(cornerRadius: RallyUIKit.Radius.md)
                 .fill(Color.white.opacity(0.04))
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 14)
+            RoundedRectangle(cornerRadius: RallyUIKit.Radius.md)
                 .stroke(tint.opacity(0.35), lineWidth: 1)
         )
     }
 
+    private func matchStoryChip(value: Int, label: String, tint: Color) -> some View {
+        VStack(alignment: .leading, spacing: RallyUIKit.Spacing.xxs + 2) {
+            Text("\(value)")
+                .font(RallyUIKit.Typography.title(.title3, weight: .heavy))
+                .foregroundStyle(tint)
+                .monospacedDigit()
+            Text(label.uppercased())
+                .font(RallyUIKit.Typography.label(.caption2, weight: .semibold))
+                .tracking(1.5)
+                .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.62))
+                .lineLimit(2)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, RallyUIKit.Spacing.sm)
+        .padding(.vertical, RallyUIKit.Spacing.sm)
+        .background(
+            RoundedRectangle(cornerRadius: RallyUIKit.Radius.sm)
+                .fill(tint.opacity(0.10))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: RallyUIKit.Radius.sm)
+                .stroke(tint.opacity(0.35), lineWidth: 1)
+        )
+    }
+
+    private func colorToken(named token: String) -> Color {
+        switch token {
+        case "gold":
+            return RallyUIKit.Palette.gold
+        case "rose":
+            return RallyUIKit.Palette.rose
+        default:
+            return RallyUIKit.Palette.cyan
+        }
+    }
+
     private var actionButtons: some View {
-        VStack(spacing: 10) {
-            Button(action: onPlayAgain) {
-                HStack(spacing: 10) {
-                    Image(systemName: "arrow.clockwise")
-                    Text("Play Again")
-                }
-                .font(.system(.headline, design: .rounded).weight(.bold))
-                .foregroundStyle(.black)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 16)
-                .background(
-                    RoundedRectangle(cornerRadius: 14)
-                        .fill(LinearGradient(
-                            colors: [Color.cyan, Color(red: 0.4, green: 0.95, blue: 1.0)],
-                            startPoint: .top, endPoint: .bottom
-                        ))
-                )
-            }
-            Button(action: { showingShareSheet = true }) {
-                HStack(spacing: 8) {
-                    Image(systemName: "square.and.arrow.up")
-                    Text("Share Score")
-                }
-                .font(.system(.subheadline, design: .rounded).weight(.semibold))
-                .foregroundStyle(.white.opacity(0.8))
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 12)
-                .background(
-                    RoundedRectangle(cornerRadius: 12)
-                        .stroke(Color.white.opacity(0.3), lineWidth: 1)
-                )
-            }
-            if let onLogReflection = onLogReflection {
-                Button(action: onLogReflection) {
-                    HStack(spacing: 8) {
-                        Image(systemName: "square.and.pencil")
-                        Text("Log how it felt")
+        RallyUIKit.LuxePanel(tint: RallyUIKit.Palette.champagne) {
+            VStack(spacing: RallyUIKit.Spacing.xs + 2) {
+                Button(action: onPlayAgain) {
+                    HStack(spacing: RallyUIKit.Spacing.xs + 2) {
+                        Image(systemName: "arrow.clockwise")
+                        Text("Play Again")
                     }
-                    .font(.system(.subheadline, design: .rounded).weight(.semibold))
-                    .foregroundStyle(.cyan)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 12)
-                    .background(
-                        RoundedRectangle(cornerRadius: 12)
-                            .stroke(Color.cyan.opacity(0.5), lineWidth: 1)
-                    )
                 }
-            }
-            Button(action: onExit) {
-                Text("Back to Locker")
-                    .font(.system(.subheadline, design: .rounded).weight(.semibold))
-                    .foregroundStyle(.white.opacity(0.7))
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 14)
+                .buttonStyle(PrimaryButtonStyle(tint: RallyUIKit.Palette.cyan))
+                Button(action: { showingShareSheet = true }) {
+                    HStack(spacing: RallyUIKit.Spacing.xs) {
+                        Image(systemName: "square.and.arrow.up")
+                        Text("Share Score")
+                    }
+                }
+                .buttonStyle(GhostButtonStyle())
+                if let onLogReflection = onLogReflection {
+                    Button(action: onLogReflection) {
+                        HStack(spacing: RallyUIKit.Spacing.xs) {
+                            Image(systemName: "square.and.pencil")
+                            Text("Log how it felt")
+                        }
+                    }
+                    .buttonStyle(SecondaryButtonStyle(tint: RallyUIKit.Palette.rose))
+                }
+                Button(action: onExit) {
+                    Text("Back to Home")
+                }
+                .buttonStyle(GhostButtonStyle())
             }
         }
         .opacity(actionsIn ? 1 : 0)
         .offset(y: actionsIn ? 0 : 16)
-        .allowsHitTesting(true)
     }
 
     private var shareSheet: some View {

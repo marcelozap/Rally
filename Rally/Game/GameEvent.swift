@@ -36,6 +36,9 @@ struct GameResult: Sendable, Equatable {
     var greatHits: Int
     var goodHits: Int
     var misses: Int
+    var cleanReturnPickups: Int = 0
+    var changeupWinners: Int = 0
+    var pressureHolds: Int = 0
 
     /// First / middle / last third of the session. Each entry holds the
     /// hits and misses that occurred during that segment, in arrival-time
@@ -59,6 +62,7 @@ struct GameResult: Sendable, Equatable {
     static let empty = GameResult(
         finalScore: 0, maxCombo: 0,
         perfectHits: 0, greatHits: 0, goodHits: 0, misses: 0,
+        cleanReturnPickups: 0, changeupWinners: 0, pressureHolds: 0,
         segments: []
     )
 }
@@ -84,6 +88,15 @@ struct SegmentStats: Sendable, Equatable {
 }
 
 extension GameResult {
+
+    var matchStoryHighlights: [(label: String, value: Int, tint: String)] {
+        [
+            ("Clean returns", cleanReturnPickups, "cyan"),
+            ("Change-up winners", changeupWinners, "rose"),
+            ("Pressure holds", pressureHolds, "gold")
+        ]
+        .filter { $0.value > 0 }
+    }
 
     /// Returns a 1-line "headline" that summarizes the *shape* of the run
     /// across thirds. Pure — exposed for unit testing.

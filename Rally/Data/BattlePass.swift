@@ -20,6 +20,21 @@ final class BattlePass {
 
     static let xpPerTier = 500
 
+    init(
+        xp: Int = 0,
+        seasonName: String = "Summer Smash",
+        seasonEndDate: Date = Calendar.current.date(byAdding: .day, value: 21, to: Date()) ?? Date(),
+        premiumUnlocked: Bool = false,
+        claimedTiersCSV: String = ""
+    ) {
+        self.id = UUID()
+        self.xp = xp
+        self.seasonName = seasonName
+        self.seasonEndDate = seasonEndDate
+        self.premiumUnlocked = premiumUnlocked
+        self.claimedTiersCSV = claimedTiersCSV
+    }
+
     var claimedTierIndices: Set<Int> {
         get { Set(claimedTiersCSV.split(separator: ",").compactMap { Int($0) }) }
         set { claimedTiersCSV = newValue.sorted().map(String.init).joined(separator: ",") }
@@ -34,6 +49,10 @@ final class BattlePass {
 
     var activeTiers: [BattlePassTier] {
         BattlePass.availableTiers
+    }
+
+    var currentTier: BattlePassTier? {
+        BattlePass.availableTiers.last(where: { xp >= $0.xpThreshold })
     }
 
     static var availableTiers: [BattlePassTier] {
@@ -63,7 +82,7 @@ struct BattlePassManager {
 
     static func rewardFor(currentXP: Int) -> String {
         let tier = BattlePass.availableTiers.last(where: { currentXP >= $0.xpThreshold })
-        return tier?.rewardDescription ?? "Start the pass" 
+        return tier?.rewardDescription ?? "Start the pass"
     }
 
     static func claimTier(_ tier: BattlePassTier, modelContext: ModelContext) {

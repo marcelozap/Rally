@@ -134,6 +134,43 @@ extension ShopItem {
     }
 }
 
+// MARK: - Racket profiles
+
+struct RacketGameplayTuning: Hashable {
+    let travelScalar: Double
+    let timingAssistScalar: Double
+    let horizonSpreadScalar: CGFloat
+    let strikeWidthScalar: CGFloat
+    let curveScalar: CGFloat
+    let spawnScaleScalar: CGFloat
+    let strikeScaleScalar: CGFloat
+    let overrunScaleScalar: CGFloat
+
+    static let balanced = RacketGameplayTuning(
+        travelScalar: 1.0,
+        timingAssistScalar: 1.0,
+        horizonSpreadScalar: 1.0,
+        strikeWidthScalar: 1.0,
+        curveScalar: 1.0,
+        spawnScaleScalar: 1.0,
+        strikeScaleScalar: 1.0,
+        overrunScaleScalar: 1.0
+    )
+}
+
+struct RacketProfile: Hashable, Identifiable {
+    let id: String
+    let family: String
+    let playerFit: String
+    let performanceFocus: String
+    let headSizeSqIn: Int
+    let weightGrams: Int
+    let balanceMM: Int
+    let stringPattern: String
+    let summary: String
+    let gameplayTuning: RacketGameplayTuning
+}
+
 // MARK: - Catalog
 
 enum ShopCatalog {
@@ -279,18 +316,27 @@ enum ShopCatalog {
               priceUSD: 150, colorHex: "#0A2B5C", accentHex: "#FFD400"),
 
         // Rackets --------------------------------------------------------
-        .init(id: "wilson.pro.staff.97",     category: .racket, name: "Pro Staff 97 v14", brand: "Wilson", vendorID: "wilson",
-              productURL: URL(string: "https://www.wilson.com/en-us/product/pro-staff-97-v14")!,
+        .init(id: "wilson.pro.staff.97",     category: .racket, name: "Clash 100 V3", brand: "Wilson", vendorID: "wilson",
+              productURL: URL(string: "https://www.wilson.com/en-us/product/clash-100-v3-0-frm-wr17280")!,
               priceUSD: 269, colorHex: "#1B1B1B", accentHex: "#C0392B"),
-        .init(id: "babolat.pure.aero",       category: .racket, name: "Pure Aero", brand: "Babolat", vendorID: "babolat",
-              productURL: URL(string: "https://www.babolat.com/us/rackets-tennis/pure-aero/")!,
-              priceUSD: 279, colorHex: "#F5C518", accentHex: "#1B1B1B"),
+        .init(id: "babolat.pure.aero",       category: .racket, name: "Pure Aero 98", brand: "Babolat", vendorID: "babolat",
+              productURL: URL(string: "https://www.babolat.com/us/pure-aero-98-unstrung/101499.html")!,
+              priceUSD: 299, colorHex: "#F5C518", accentHex: "#1B1B1B"),
         .init(id: "head.speed.mp",           category: .racket, name: "Speed MP", brand: "HEAD", vendorID: "head",
               productURL: URL(string: "https://www.head.com/en_US/sports/tennis/rackets/")!,
               priceUSD: 249, colorHex: "#FFFFFF", accentHex: "#000000"),
-        .init(id: "yonex.ezone.98",          category: .racket, name: "EZONE 98", brand: "Yonex", vendorID: "yonex",
-              productURL: URL(string: "https://www.yonex.com/tennis/rackets/")!,
-              priceUSD: 249, colorHex: "#1F73C2", accentHex: "#FFFFFF"),
+        .init(id: "yonex.ezone.98",          category: .racket, name: "EZONE 100", brand: "Yonex", vendorID: "yonex",
+              productURL: URL(string: "https://us.yonex.com/products/ezone-100")!,
+              priceUSD: 305, colorHex: "#1F73C2", accentHex: "#FFFFFF"),
+        .init(id: "babolat.pure.drive.gen11", category: .racket, name: "Pure Drive Gen11", brand: "Babolat", vendorID: "babolat",
+              productURL: URL(string: "https://www.babolat.com/us/pure-drive-gen11-unstrung/3324922165546.html")!,
+              priceUSD: 299, colorHex: "#1A61D8", accentHex: "#E53935"),
+        .init(id: "yonex.percept.100",        category: .racket, name: "PERCEPT 100", brand: "Yonex", vendorID: "yonex",
+              productURL: URL(string: "https://us.yonex.com/products/percept-100")!,
+              priceUSD: 305, colorHex: "#253B67", accentHex: "#7FD26A"),
+        .init(id: "yonex.vcore.100",          category: .racket, name: "VCORE 100", brand: "Yonex", vendorID: "yonex",
+              productURL: URL(string: "https://us.yonex.com/products/08vcore-100")!,
+              priceUSD: 305, colorHex: "#A41222", accentHex: "#FFFFFF"),
 
         // Bags / accessories ---------------------------------------------
         .init(id: "babolat.bag.6pack",       category: .bag, name: "Pure 6-Pack Bag", brand: "Babolat", vendorID: "babolat",
@@ -345,6 +391,10 @@ enum ShopCatalog {
         vendors.first { $0.id == id }
     }
 
+    static func racketProfile(id: String) -> RacketProfile? {
+        racketProfiles[id]
+    }
+
     static func itemsGroupedByVendor() -> [(Vendor, [ShopItem])] {
         let byVendor = Dictionary(grouping: allItems, by: { $0.vendorID })
         return vendors.compactMap { v in
@@ -368,17 +418,166 @@ enum ShopCatalog {
             return false
         }
     }
-}
 
-// MARK: - Color hex helper
-
-extension Color {
-    init?(hex: String) {
-        let cleaned = hex.trimmingCharacters(in: .whitespacesAndNewlines).replacingOccurrences(of: "#", with: "")
-        guard cleaned.count == 6, let value = UInt32(cleaned, radix: 16) else { return nil }
-        let r = Double((value >> 16) & 0xFF) / 255.0
-        let g = Double((value >> 8)  & 0xFF) / 255.0
-        let b = Double( value        & 0xFF) / 255.0
-        self = Color(.sRGB, red: r, green: g, blue: b, opacity: 1)
-    }
+    private static let racketProfiles: [String: RacketProfile] = [
+        defaultRacketID: .init(
+            id: defaultRacketID,
+            family: "Rally Originals",
+            playerFit: "All-around starter",
+            performanceFocus: "Balanced",
+            headSizeSqIn: 100,
+            weightGrams: 300,
+            balanceMM: 320,
+            stringPattern: "16x19",
+            summary: "Neutral demo frame used as Rally's baseline tuning.",
+            gameplayTuning: .balanced
+        ),
+        "wilson.pro.staff.97": .init(
+            id: "wilson.pro.staff.97",
+            family: "Clash",
+            playerFit: "Club players wanting comfort and easy power",
+            performanceFocus: "Comfort + power",
+            headSizeSqIn: 100,
+            weightGrams: 295,
+            balanceMM: 310,
+            stringPattern: "16x19",
+            summary: "Wilson positions Clash 100 V3 as the versatile club-player option for power, comfort, and control.",
+            gameplayTuning: .init(
+                travelScalar: 0.99,
+                timingAssistScalar: 1.03,
+                horizonSpreadScalar: 0.98,
+                strikeWidthScalar: 1.0,
+                curveScalar: 0.95,
+                spawnScaleScalar: 1.02,
+                strikeScaleScalar: 1.03,
+                overrunScaleScalar: 1.02
+            )
+        ),
+        "babolat.pure.aero": .init(
+            id: "babolat.pure.aero",
+            family: "Pure Aero",
+            playerFit: "Fast modern attackers",
+            performanceFocus: "Spin + precision",
+            headSizeSqIn: 98,
+            weightGrams: 305,
+            balanceMM: 315,
+            stringPattern: "16x20",
+            summary: "Babolat describes the Pure Aero 98 as a spin-friendly 98 with tighter pattern control for aggressive hitters.",
+            gameplayTuning: .init(
+                travelScalar: 1.0,
+                timingAssistScalar: 0.98,
+                horizonSpreadScalar: 1.05,
+                strikeWidthScalar: 0.99,
+                curveScalar: 1.28,
+                spawnScaleScalar: 0.98,
+                strikeScaleScalar: 1.05,
+                overrunScaleScalar: 1.04
+            )
+        ),
+        "head.speed.mp": .init(
+            id: "head.speed.mp",
+            family: "Speed",
+            playerFit: "Balanced tournament baseliners",
+            performanceFocus: "Speed + control",
+            headSizeSqIn: 100,
+            weightGrams: 300,
+            balanceMM: 320,
+            stringPattern: "16x19",
+            summary: "HEAD's Speed family sits in the quick, modern all-court lane with balanced pace and control.",
+            gameplayTuning: .init(
+                travelScalar: 0.99,
+                timingAssistScalar: 1.0,
+                horizonSpreadScalar: 1.0,
+                strikeWidthScalar: 1.0,
+                curveScalar: 1.02,
+                spawnScaleScalar: 1.0,
+                strikeScaleScalar: 1.01,
+                overrunScaleScalar: 1.0
+            )
+        ),
+        "yonex.ezone.98": .init(
+            id: "yonex.ezone.98",
+            family: "EZONE",
+            playerFit: "Intermediate to advanced all-around hitters",
+            performanceFocus: "Power + comfort",
+            headSizeSqIn: 100,
+            weightGrams: 300,
+            balanceMM: 320,
+            stringPattern: "16x19",
+            summary: "Yonex positions EZONE 100 as effortless power with a bigger sweet spot and plush comfort.",
+            gameplayTuning: .init(
+                travelScalar: 0.98,
+                timingAssistScalar: 1.01,
+                horizonSpreadScalar: 1.01,
+                strikeWidthScalar: 1.02,
+                curveScalar: 0.96,
+                spawnScaleScalar: 1.0,
+                strikeScaleScalar: 1.08,
+                overrunScaleScalar: 1.08
+            )
+        ),
+        "babolat.pure.drive.gen11": .init(
+            id: "babolat.pure.drive.gen11",
+            family: "Pure Drive",
+            playerFit: "Aggressive players chasing easy depth",
+            performanceFocus: "Power + versatility",
+            headSizeSqIn: 100,
+            weightGrams: 300,
+            balanceMM: 320,
+            stringPattern: "16x19",
+            summary: "Babolat sells Pure Drive Gen11 around explosive baseline power with enough feel to shape deep heavy shots.",
+            gameplayTuning: .init(
+                travelScalar: 0.97,
+                timingAssistScalar: 0.99,
+                horizonSpreadScalar: 1.0,
+                strikeWidthScalar: 1.03,
+                curveScalar: 0.92,
+                spawnScaleScalar: 1.0,
+                strikeScaleScalar: 1.1,
+                overrunScaleScalar: 1.1
+            )
+        ),
+        "yonex.percept.100": .init(
+            id: "yonex.percept.100",
+            family: "PERCEPT",
+            playerFit: "Intermediate to advanced control players",
+            performanceFocus: "Control + feel",
+            headSizeSqIn: 100,
+            weightGrams: 300,
+            balanceMM: 320,
+            stringPattern: "16x19",
+            summary: "Yonex frames PERCEPT 100 as control and feel with flex and snapback for players who create their own game.",
+            gameplayTuning: .init(
+                travelScalar: 1.01,
+                timingAssistScalar: 1.04,
+                horizonSpreadScalar: 0.97,
+                strikeWidthScalar: 0.99,
+                curveScalar: 1.04,
+                spawnScaleScalar: 1.02,
+                strikeScaleScalar: 0.99,
+                overrunScaleScalar: 0.98
+            )
+        ),
+        "yonex.vcore.100": .init(
+            id: "yonex.vcore.100",
+            family: "VCORE",
+            playerFit: "All-around players who want heavier spin action",
+            performanceFocus: "Spin",
+            headSizeSqIn: 100,
+            weightGrams: 300,
+            balanceMM: 320,
+            stringPattern: "16x19",
+            summary: "Yonex markets VCORE 100 around spin, snapback, speed, and stability for all-around competitors.",
+            gameplayTuning: .init(
+                travelScalar: 0.99,
+                timingAssistScalar: 0.98,
+                horizonSpreadScalar: 1.06,
+                strikeWidthScalar: 1.0,
+                curveScalar: 1.3,
+                spawnScaleScalar: 0.99,
+                strikeScaleScalar: 1.06,
+                overrunScaleScalar: 1.05
+            )
+        )
+    ]
 }

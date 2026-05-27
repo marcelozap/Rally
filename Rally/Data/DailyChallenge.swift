@@ -13,7 +13,7 @@ final class DailyChallenge {
     var title: String
 
     /// Longer description
-    var description: String
+    var details: String
 
     /// Required target value
     var target: Int
@@ -42,7 +42,7 @@ final class DailyChallenge {
     init(
         challengeId: String,
         title: String,
-        description: String,
+        details: String,
         target: Int,
         iconName: String,
         colorHex: String,
@@ -51,7 +51,7 @@ final class DailyChallenge {
         self.id = UUID()
         self.challengeId = challengeId
         self.title = title
-        self.description = description
+        self.details = details
         self.target = target
         self.iconName = iconName
         self.colorHex = colorHex
@@ -78,6 +78,9 @@ enum ChallengeTemplate: String, CaseIterable {
     case accuracy85 = "accuracy_85"
     case twoGames = "two_games"
     case threePerfects = "three_perfects"
+    case cleanReturns5 = "clean_returns_5"
+    case changeupWinners2 = "changeup_winners_2"
+    case pressureHolds2 = "pressure_holds_2"
 
     var definition: (title: String, description: String, target: Int, icon: String, color: String, reward: Int) {
         switch self {
@@ -95,6 +98,12 @@ enum ChallengeTemplate: String, CaseIterable {
             ("Warm Up", "Play 2 games", 2, "gamecontroller.fill", "#FFD700", 40)
         case .threePerfects:
             ("Legend", "Land 3 perfect hits", 3, "crown.fill", "#FF1493", 90)
+        case .cleanReturns5:
+            ("Return Wall", "Register 5 clean returns", 5, "arrow.uturn.left.circle.fill", "#00D9FF", 70)
+        case .changeupWinners2:
+            ("Break The Pattern", "Hit 2 change-up winners", 2, "bolt.badge.clock.fill", "#FF1493", 85)
+        case .pressureHolds2:
+            ("Hold Firm", "Complete 2 pressure holds", 2, "shield.lefthalf.filled", "#FFD700", 95)
         }
     }
 
@@ -103,7 +112,7 @@ enum ChallengeTemplate: String, CaseIterable {
         return DailyChallenge(
             challengeId: rawValue,
             title: def.title,
-            description: def.description,
+            details: def.description,
             target: def.target,
             iconName: def.icon,
             colorHex: def.color,
@@ -116,14 +125,9 @@ enum ChallengeTemplate: String, CaseIterable {
 struct DailyChallengeMgr {
     /// Generate challenges for today (call once per app session)
     static func generateDailyIfNeeded(modelContext: ModelContext) {
-        let fetchDescriptor = FetchDescriptor<DailyChallenge>(
-            predicate: #Predicate { challenge in
-                Calendar.current.isDateInToday(challenge.createdDate)
-            }
-        )
-
         do {
-            let existing = try modelContext.fetch(fetchDescriptor)
+            let existing = try modelContext.fetch(FetchDescriptor<DailyChallenge>())
+                .filter { Calendar.current.isDateInToday($0.createdDate) }
             // If we already have today's challenges, don't regenerate
             guard existing.isEmpty else { return }
         } catch {
@@ -149,15 +153,9 @@ struct DailyChallengeMgr {
         from result: GameResult,
         modelContext: ModelContext
     ) {
-        let today = Date()
-        let fetchDescriptor = FetchDescriptor<DailyChallenge>(
-            predicate: #Predicate { challenge in
-                Calendar.current.isDateInToday(challenge.createdDate) && !challenge.isCompleted
-            }
-        )
-
         do {
-            var challenges = try modelContext.fetch(fetchDescriptor)
+            let challenges = try modelContext.fetch(FetchDescriptor<DailyChallenge>())
+                .filter { Calendar.current.isDateInToday($0.createdDate) && !$0.isCompleted }
 
             for i in challenges.indices {
                 let accuracy = Double(result.perfectHits + result.greatHits) / Double(result.totalHits)
@@ -177,6 +175,12 @@ struct DailyChallengeMgr {
                     challenges[i].currentProgress += 1
                 case ChallengeTemplate.threePerfects.rawValue:
                     challenges[i].currentProgress += result.perfectHits
+                case ChallengeTemplate.cleanReturns5.rawValue:
+                    challenges[i].currentProgress += result.cleanReturnPickups
+                case ChallengeTemplate.changeupWinners2.rawValue:
+                    challenges[i].currentProgress += result.changeupWinners
+                case ChallengeTemplate.pressureHolds2.rawValue:
+                    challenges[i].currentProgress += result.pressureHolds
                 default:
                     break
                 }
