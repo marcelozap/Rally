@@ -251,21 +251,27 @@ struct AvatarRealityKitView: UIViewRepresentable {
 
         func tryLoadBundledHero() {
             guard let url = Bundle.main.url(forResource: "AvatarHero", withExtension: "usdz") else { return }
-            Task { @MainActor in
+            Task {
                 do {
                     let hero: Entity
                     if #available(iOS 18.0, *) {
                         hero = try await Entity(contentsOf: url)
                     } else {
-                        hero = try Entity.load(contentsOf: url)
+                        hero = try await Task.detached(priority: .userInitiated) {
+                            try Entity.load(contentsOf: url)
+                        }.value
                     }
-                    hero.position = SIMD3<Float>(0, -0.58, 0)
-                    staging.addChild(hero)
-                    self.heroUSDZ = hero
-                    self.proceduralRoot.isEnabled = false
+                    await MainActor.run {
+                        hero.position = SIMD3<Float>(0, -0.58, 0)
+                        staging.addChild(hero)
+                        self.heroUSDZ = hero
+                        self.proceduralRoot.isEnabled = false
+                    }
                 } catch {
-                    self.heroUSDZ = nil
-                    self.proceduralRoot.isEnabled = true
+                    await MainActor.run {
+                        self.heroUSDZ = nil
+                        self.proceduralRoot.isEnabled = true
+                    }
                 }
             }
         }

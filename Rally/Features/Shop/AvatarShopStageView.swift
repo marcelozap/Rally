@@ -17,12 +17,9 @@ struct AvatarShopStageView: View {
                                 text: preview == nil ? "Player Studio" : "Try-On Stage",
                                 tint: currentAccent
                             )
-                            Text(preview == nil ? "Premium player fitting" : "Live gear preview")
+                            Text(preview == nil ? "Court fitting" : "Live preview")
                                 .font(RallyUIKit.Typography.title(.title3, weight: .bold))
                                 .foregroundStyle(RallyUIKit.Palette.frost)
-                            Text(stageSummary)
-                                .font(RallyUIKit.Typography.body(.subheadline, weight: .medium))
-                                .foregroundStyle(RallyUIKit.Palette.cloud)
                         }
 
                         Spacer()
@@ -168,9 +165,9 @@ struct AvatarShopStageView: View {
 
     private var stageSummary: String {
         if let preview {
-            return "Inspect how \(preview.item.name) sits on the player silhouette before you equip or buy."
+            return "Preview \(preview.item.name)."
         }
-        return "Browse the current fit with a cleaner silhouette, stronger racquet read, and studio-grade staging."
+        return "Browse the current fit."
     }
 
     private func emoteChip(_ e: AvatarShopEmote) -> some View {

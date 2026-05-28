@@ -66,9 +66,6 @@ struct ShopItemDetailView: View {
                         Text(item.name)
                             .font(RallyUIKit.Typography.title(.title2, weight: .bold))
                             .foregroundStyle(RallyUIKit.Palette.frost)
-                        Text(detailSummary)
-                            .font(RallyUIKit.Typography.body(.subheadline, weight: .medium))
-                            .foregroundStyle(RallyUIKit.Palette.cloud)
                     }
 
                     Spacer(minLength: 12)
@@ -239,7 +236,7 @@ struct ShopItemDetailView: View {
                 }
 
                 if item.checkoutPromoCode == nil || item.checkoutPromoCode?.isEmpty == true {
-                    Text("No Rally-hosted promo code for this SKU — use each brand’s official loyalty hub so discounts stay legitimate.")
+                    Text("No bundled code for this item.")
                         .font(.caption)
                         .foregroundStyle(.white.opacity(0.55))
                 }
@@ -266,7 +263,7 @@ struct ShopItemDetailView: View {
                     }
                 }
 
-                Text("Discounts change constantly. Rally never fabricates third-party codes — always verify at checkout.")
+                Text("Verify offers at checkout.")
                     .font(.caption2)
                     .foregroundStyle(.white.opacity(0.35))
             }
@@ -327,7 +324,7 @@ struct ShopItemDetailView: View {
                         Text(vendor.displayName)
                             .font(RallyUIKit.Typography.body(.body, weight: .semibold))
                             .foregroundStyle(RallyUIKit.Palette.frost)
-                        Text("Official storefront and partner destination.")
+                        Text("Official storefront")
                             .font(RallyUIKit.Typography.body(.caption, weight: .medium))
                             .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.76))
                     }
@@ -341,9 +338,9 @@ struct ShopItemDetailView: View {
 
     private var detailSummary: String {
         if let racketProfile {
-            return "\(racketProfile.performanceFocus) frame built for \(racketProfile.playerFit.lowercased())."
+            return "\(racketProfile.performanceFocus) frame for \(racketProfile.playerFit.lowercased())."
         }
-        return "Curated \(item.category.displayName.lowercased()) from \(item.brand) for the Rally premium kit."
+        return "\(item.category.displayName) by \(item.brand)."
     }
 
     private func detailChip(_ text: String, tint: Color) -> some View {

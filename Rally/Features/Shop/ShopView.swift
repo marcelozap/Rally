@@ -451,9 +451,23 @@ private struct FloatingKitHeroCard: View {
             FloatingKitStageOverlay(accent: RallyUIKit.Palette.champagne)
                 .clipShape(RoundedRectangle(cornerRadius: RallyUIKit.Radius.xl))
 
-            FloatingKitFigure()
-                .padding(.top, 16)
-                .offset(y: -4)
+            TimelineView(.animation) { context in
+                let t = context.date.timeIntervalSinceReferenceDate
+                let floatY = sin(t * 1.35) * 8
+                let sway = sin(t * 0.82) * 3.4
+                let shimmer = 0.12 + ((sin(t * 1.08) + 1) * 0.06)
+
+                FloatingKitFigure()
+                    .padding(.top, 16)
+                    .offset(x: sway, y: floatY - 4)
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 30)
+                            .stroke(Color.white.opacity(shimmer), lineWidth: 1)
+                            .blur(radius: 2)
+                            .padding(.horizontal, 34)
+                            .padding(.vertical, 18)
+                    }
+            }
 
             VStack {
                 Spacer()
