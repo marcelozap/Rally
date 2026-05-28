@@ -1,20 +1,8 @@
 # Rally
 
-Tennis lifestyle app for iPhone that combines a fast daily-use game loop with training logs, match history, journaling, avatar customization, a branded shop experience, and a high-feedback SpriteKit rally mini-game.
+A high-polish, rhythm-adjacent iPhone game. Swipe left or right to hit incoming neon balls in time with a dynamic soundtrack. Minimalist cyberpunk-arcade aesthetic, dopamine-heavy feedback loop.
 
 > Working title in the GDD: **SwipeBeat**. Repo / shipping name: **Rally**.
-
-## What this project is
-
-Rally is not just a standalone game prototype. It is a product concept built around one repeatable engagement loop, then extended into a broader tennis experience:
-
-- **Play**: a high-polish rhythm-swipe mini-game designed for fast repeat sessions
-- **Logs**: training sessions and match history
-- **Journal**: tennis-life notes and reflection
-- **Avatar + Shop**: customization and apparel discovery
-- **Optional sync**: account-based backup through a lightweight backend
-
-The core idea is that the game creates the daily-open habit, while the surrounding product makes the app useful beyond a single mechanic.
 
 ## Stack
 
@@ -28,13 +16,6 @@ The core idea is that the game creates the daily-open habit, while the surroundi
 
 Architecture diagrams and **sync semantics (last-writer-wins, when uploads run)** → **[`ARCHITECTURE.md`](./ARCHITECTURE.md)**.
 
-## Why it stands out
-
-- Local-first product design with optional sync instead of backend-first dependency
-- Clear product surface beyond gameplay alone
-- Strong attention to audio, haptics, and feel
-- Mix of consumer product thinking, iOS engineering, and systems design
-
 ## Repository layout
 
 ```text
@@ -43,7 +24,7 @@ Rally/
   Features/         Auth, Home, Play, Logs, Training, Match, Journal, Shop, Avatar, Courts
   Services/         API client, Keychain JWT, AuthSession, snapshot sync + triggers
   Data/             SwiftData models (split files), ShopCatalog, journal prompts, iconic courts
-  Game/             SpriteKit scene, ball feed, tuning (`CourtTheme` / surfaces)
+  Game/             SpriteKit scene, spawner, lanes, tuning
   Managers/         GameEventBus, AudioManager, HapticManager, ParticleManager
   Audio/            MusicEngine, ToneSynth
   Cosmetics/        Ball / trail catalog for gameplay
@@ -82,6 +63,4 @@ Production checklist: [`backend/DEPLOYMENT.md`](./backend/DEPLOYMENT.md).
 
 ## Status
 
-Active development. Gameplay, progression, journal, shop, court atlas, and optional cloud backup are in-repo; see `GDD.md` for the north-star product direction.
-
-**Current planning docs:** [UI & design system](./UI_DESIGN_OVERHAUL_PLAN.md) · [Avatar & court visuals](./AVATAR_OVERHAUL_PLAN.md) · [System polish](./POLISH.md) · [Live match presentation](./PRESENTATION_PLAN.md) · [Animation & modeling](./ANIMATION_MODELING_PLAN.md) · [Execution order](./EXECUTION_ORDER.md)
+Active development — gameplay, progression, journal, shop, court atlas, and optional cloud backup are in-repo; see `GDD.md` for the north-star experience.
