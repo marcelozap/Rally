@@ -32,6 +32,7 @@ struct ShopItemDetailView: View {
 
                 VStack(alignment: .leading, spacing: RallyUIKit.Spacing.md) {
                     header
+                    productVisual
                     identityRow
                     if let racketProfile {
                         racketSpecsSection(racketProfile)
@@ -90,6 +91,74 @@ struct ShopItemDetailView: View {
                     }
                 }
             }
+        }
+    }
+
+    private var productVisual: some View {
+        let accent = item.accentColor ?? RallyUIKit.Palette.cyan
+
+        return RallyUIKit.SectionCard(stroke: accent.opacity(0.28)) {
+            ZStack {
+                RoundedRectangle(cornerRadius: RallyUIKit.Radius.lg)
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                RallyUIKit.Palette.obsidian,
+                                item.color.opacity(0.22),
+                                accent.opacity(0.16)
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+
+                Circle()
+                    .fill(item.color.opacity(0.24))
+                    .frame(width: 170, height: 170)
+                    .blur(radius: 26)
+                    .offset(x: -86, y: -44)
+
+                Circle()
+                    .fill(accent.opacity(0.22))
+                    .frame(width: 150, height: 150)
+                    .blur(radius: 24)
+                    .offset(x: 112, y: -12)
+
+                VStack(spacing: 16) {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 26)
+                            .fill(
+                                LinearGradient(
+                                    colors: [
+                                        item.color.opacity(0.96),
+                                        accent.opacity(0.74),
+                                        RallyUIKit.Palette.obsidian.opacity(0.92)
+                                    ],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                            .frame(width: 128, height: 138)
+
+                        RoundedRectangle(cornerRadius: 26)
+                            .stroke(Color.white.opacity(0.18), lineWidth: 1)
+                            .frame(width: 128, height: 138)
+
+                        Image(systemName: item.category.iconSystemName)
+                            .font(.system(size: 44, weight: .bold))
+                            .foregroundStyle(.white)
+                            .shadow(color: Color.black.opacity(0.22), radius: 10, y: 6)
+                    }
+
+                    HStack(spacing: 10) {
+                        detailChip(item.brand, tint: accent)
+                        detailChip(item.category.displayName, tint: item.color)
+                    }
+                }
+                .padding(.vertical, 18)
+            }
+            .frame(height: 240)
+            .clipShape(RoundedRectangle(cornerRadius: RallyUIKit.Radius.lg))
         }
     }
 
@@ -207,7 +276,7 @@ struct ShopItemDetailView: View {
     private var referralSection: some View {
         RallyUIKit.SectionCard(stroke: (item.accentColor ?? RallyUIKit.Palette.cyan).opacity(0.24)) {
             VStack(alignment: .leading, spacing: 12) {
-                Text("Codes & referrals")
+                Text("Offers")
                     .font(RallyUIKit.Typography.title(.headline, weight: .bold))
                     .foregroundStyle(RallyUIKit.Palette.frost)
 
@@ -244,7 +313,7 @@ struct ShopItemDetailView: View {
                 if let vendor = vendor {
                     if let summary = vendor.referralSummary {
                         Text(summary)
-                            .font(.caption)
+                        .font(.caption)
                             .foregroundStyle(.cyan.opacity(0.85))
                     }
                     if let loyalty = vendor.loyaltyProgramURL {
@@ -262,10 +331,6 @@ struct ShopItemDetailView: View {
                         .buttonStyle(SecondaryButtonStyle(tint: RallyUIKit.Palette.cyan))
                     }
                 }
-
-                Text("Verify offers at checkout.")
-                    .font(.caption2)
-                    .foregroundStyle(.white.opacity(0.35))
             }
         }
     }
