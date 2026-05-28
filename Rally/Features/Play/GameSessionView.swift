@@ -20,6 +20,7 @@ struct GameSessionView: View {
     @State private var scene: GameScene? = nil
     @State private var sessionKey = UUID()
     @State private var reflectionPrompt: JournalPrompt? = nil
+    @State private var viewportSize: CGSize = .zero
 
     /// Optional rival opponent when launching a rival challenge session.
     var rivalOpponent: RivalOpponent? = nil
@@ -29,70 +30,84 @@ struct GameSessionView: View {
     var onExit: () -> Void = {}
 
     var body: some View {
-        ZStack {
-            RallyUIKit.screenBackground
+        GeometryReader { proxy in
+            let size = proxy.size
 
-            if let scene = scene {
-                SpriteView(scene: scene, options: [.ignoresSiblingOrder])
-                    .ignoresSafeArea()
-                    .id(sessionKey)
-                    .overlay(alignment: .top) {
-                        sessionChrome
-                    }
-                    .overlay(alignment: .bottom) {
-                        coachingChrome
-                    }
-                    .overlay {
-                        matchAtmosphere
-                    }
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 34)
-                            .stroke(
-                                LinearGradient(
-                                    colors: [
-                                        RallyUIKit.Palette.champagne.opacity(0.14),
-                                        Color.white.opacity(0.02),
-                                        RallyUIKit.Palette.cyan.opacity(0.12)
-                                    ],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                ),
-                                lineWidth: 1
-                            )
-                            .padding(12)
-                            .allowsHitTesting(false)
-                    }
-            } else {
-                loadingState
-            }
+            ZStack {
+                RallyUIKit.screenBackground
 
-            if let result = viewModel.lastResult, let outcome = viewModel.lastOutcome {
-                GameOverView(
-                    result: result,
-                    outcome: outcome,
-                    onPlayAgain: { restart() },
-                    onExit: {
-                        viewModel.dismiss()
-                        onExit()
-                    },
-                    onLogReflection: {
-                        // Build the prefilled prompt lazily so the body
-                        // reflects whatever the latest run was, not the one
-                        // that opened the view.
-                        reflectionPrompt = JournalPromptLibrary
-                            .sessionReflectionPrompt(for: result, outcome: outcome)
-                    }
-                )
-                .transition(.opacity.combined(with: .scale(scale: 1.02)))
-                .zIndex(10)
+                if let scene = scene {
+                    SpriteView(scene: scene, options: [.ignoresSiblingOrder])
+                        .frame(width: size.width, height: size.height)
+                        .ignoresSafeArea()
+                        .id(sessionKey)
+                        .overlay(alignment: .top) {
+                            sessionChrome
+                        }
+                        .overlay(alignment: .bottom) {
+                            coachingChrome
+                        }
+                        .overlay {
+                            matchAtmosphere
+                        }
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 34)
+                                .stroke(
+                                    LinearGradient(
+                                        colors: [
+                                            RallyUIKit.Palette.champagne.opacity(0.14),
+                                            Color.white.opacity(0.02),
+                                            RallyUIKit.Palette.cyan.opacity(0.12)
+                                        ],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    ),
+                                    lineWidth: 1
+                                )
+                                .padding(12)
+                                .allowsHitTesting(false)
+                        }
+                } else {
+                    loadingState
+                }
+
+                if let result = viewModel.lastResult, let outcome = viewModel.lastOutcome {
+                    GameOverView(
+                        result: result,
+                        outcome: outcome,
+                        onPlayAgain: { restart() },
+                        onExit: {
+                            viewModel.dismiss()
+                            onExit()
+                        },
+                        onLogReflection: {
+                            reflectionPrompt = JournalPromptLibrary
+                                .sessionReflectionPrompt(for: result, outcome: outcome)
+                        }
+                    )
+                    .transition(.opacity.combined(with: .scale(scale: 1.02)))
+                    .zIndex(10)
+                }
             }
-        }
-        .onAppear {
-            if scene == nil { scene = makeScene() }
-            // Generate today's challenges if they don't exist yet
-            DailyChallengeMgr.generateDailyIfNeeded(modelContext: modelContext)
-            viewModel.bindIfNeeded { result in
-                handleSessionEnded(result: result)
+            .onAppear {
+                viewportSize = size
+                if scene == nil {
+                    scene = makeScene(for: size)
+                } else {
+                    syncSceneSize(to: size)
+                }
+                DailyChallengeMgr.generateDailyIfNeeded(modelContext: modelContext)
+                viewModel.bindIfNeeded { result in
+                    handleSessionEnded(result: result)
+                }
+            }
+            .onChange(of: size.width) { _, _ in
+                viewportSize = size
+                syncSceneSize(to: size)
+            }
+            .onChange(of: size.height) { _, _ in
+                viewportSize = size
+                syncSceneSize(to: size)
             }
         }
         .sheet(item: $reflectionPrompt) { prompt in
@@ -232,8 +247,9 @@ struct GameSessionView: View {
 
     // MARK: - Lifecycle helpers
 
-    private func makeScene() -> GameScene {
-        let s = GameScene(size: UIScreen.main.bounds.size)
+    private func makeScene(for size: CGSize) -> GameScene {
+        let initialSize = resolvedViewportSize(from: size)
+        let s = GameScene(size: initialSize)
         s.scaleMode = .resizeFill
         if let avatar = avatarConfigs.first {
             s.avatarSpec = AvatarVisualSpec.from(config: avatar, preview: nil)
@@ -245,10 +261,26 @@ struct GameSessionView: View {
         return s
     }
 
+    private func syncSceneSize(to size: CGSize) {
+        let resolved = resolvedViewportSize(from: size)
+        guard let scene else { return }
+        guard resolved.width > 0, resolved.height > 0 else { return }
+        guard scene.size != resolved else { return }
+        scene.size = resolved
+        scene.scaleMode = .resizeFill
+    }
+
+    private func resolvedViewportSize(from size: CGSize) -> CGSize {
+        guard size.width > 0, size.height > 0 else {
+            return UIScreen.main.bounds.size
+        }
+        return size
+    }
+
     private func restart() {
         viewModel.dismiss()
         sessionKey = UUID()
-        scene = makeScene()
+        scene = makeScene(for: viewportSize)
     }
 
     private func handleSessionEnded(result: GameResult) {

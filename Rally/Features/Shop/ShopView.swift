@@ -93,23 +93,26 @@ struct ShopView: View {
     private var shopOverview: some View {
         RallyUIKit.LuxePanel(tint: RallyUIKit.Palette.gold) {
             VStack(alignment: .leading, spacing: RallyUIKit.Spacing.md) {
-                HStack(alignment: .top, spacing: RallyUIKit.Spacing.md) {
-                    VStack(alignment: .leading, spacing: RallyUIKit.Spacing.xs) {
-                        RallyUIKit.EditorialEyebrow(text: "Pro Shop", tint: RallyUIKit.Palette.gold)
-                        Text("Premium tennis kit with a cleaner fitting flow.")
-                            .font(RallyUIKit.Typography.title(.title2, weight: .bold))
+                RallyUIKit.EditorialEyebrow(text: "Pro Shop", tint: RallyUIKit.Palette.gold)
+
+                FloatingKitHeroCard()
+
+                HStack(alignment: .center, spacing: RallyUIKit.Spacing.md) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Studio kit drop")
+                            .font(RallyUIKit.Typography.title(.title3, weight: .bold))
                             .foregroundStyle(RallyUIKit.Palette.frost)
-                        Text("Real brands, official destination links, and a stronger stage for previewing gear before you equip it.")
+                        Text("Clean whites first. Then racquets, shoes, and branded pieces.")
                             .font(RallyUIKit.Typography.body(.subheadline, weight: .medium))
-                            .foregroundStyle(RallyUIKit.Palette.cloud)
+                            .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.84))
                     }
 
                     Spacer(minLength: RallyUIKit.Spacing.sm)
 
                     RallyUIKit.IconBadge(
-                        systemName: "tennis.racket.circle.fill",
+                        systemName: "sparkles",
                         tint: RallyUIKit.Palette.gold,
-                        size: 46
+                        size: 40
                     )
                 }
 
@@ -414,5 +417,243 @@ struct ShopView: View {
         case .racket: return avatar.equippedRacketID == item.id
         case .bag, .accessory: return false
         }
+    }
+}
+
+private struct FloatingKitHeroCard: View {
+    var body: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: RallyUIKit.Radius.xl)
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            RallyUIKit.Palette.obsidian,
+                            RallyUIKit.Palette.ink,
+                            Color.black
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+
+            Circle()
+                .fill(RallyUIKit.Palette.champagne.opacity(0.12))
+                .frame(width: 220, height: 220)
+                .blur(radius: 26)
+                .offset(x: -92, y: -82)
+
+            Circle()
+                .fill(RallyUIKit.Palette.cyan.opacity(0.14))
+                .frame(width: 180, height: 180)
+                .blur(radius: 24)
+                .offset(x: 118, y: -38)
+
+            FloatingKitStageOverlay(accent: RallyUIKit.Palette.champagne)
+                .clipShape(RoundedRectangle(cornerRadius: RallyUIKit.Radius.xl))
+
+            FloatingKitFigure()
+                .padding(.top, 16)
+                .offset(y: -4)
+
+            VStack {
+                Spacer()
+                HStack {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Rally Whites")
+                            .font(RallyUIKit.Typography.label(.caption, weight: .bold))
+                            .tracking(2)
+                            .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.72))
+                        Text("Floating edit")
+                            .font(RallyUIKit.Typography.body(.subheadline, weight: .semibold))
+                            .foregroundStyle(RallyUIKit.Palette.frost)
+                    }
+                    Spacer()
+                }
+                .padding(.horizontal, RallyUIKit.Spacing.md)
+                .padding(.vertical, RallyUIKit.Spacing.sm)
+                .background(
+                    RoundedRectangle(cornerRadius: RallyUIKit.Radius.md)
+                        .fill(Color.black.opacity(0.22))
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: RallyUIKit.Radius.md)
+                        .stroke(RallyUIKit.Palette.line.opacity(0.75), lineWidth: 1)
+                )
+                .padding(RallyUIKit.Spacing.md)
+            }
+        }
+        .frame(height: 310)
+        .overlay(
+            RoundedRectangle(cornerRadius: RallyUIKit.Radius.xl)
+                .stroke(RallyUIKit.Palette.gold.opacity(0.18), lineWidth: 1)
+        )
+    }
+}
+
+private struct FloatingKitFigure: View {
+    var body: some View {
+        ZStack {
+            Ellipse()
+                .fill(Color.black.opacity(0.26))
+                .frame(width: 170, height: 30)
+                .blur(radius: 14)
+                .offset(y: 86)
+
+            VStack(spacing: 10) {
+                FloatingKitTop()
+                FloatingKitSkirt()
+            }
+            .shadow(color: Color.white.opacity(0.16), radius: 18, y: 6)
+        }
+    }
+}
+
+private struct FloatingKitStageOverlay: View {
+    let accent: Color
+
+    var body: some View {
+        ZStack {
+            LinearGradient(
+                colors: [
+                    Color.clear,
+                    accent.opacity(0.08),
+                    RallyUIKit.Palette.champagne.opacity(0.06)
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+
+            VStack(spacing: 0) {
+                Spacer()
+                Rectangle()
+                    .fill(Color.white.opacity(0.08))
+                    .frame(height: 1)
+                Rectangle()
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                Color.white.opacity(0.02),
+                                accent.opacity(0.07)
+                            ],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
+                    .frame(height: 110)
+            }
+
+            RoundedRectangle(cornerRadius: 26)
+                .stroke(accent.opacity(0.08), lineWidth: 1)
+                .padding(18)
+
+            Rectangle()
+                .fill(Color.white.opacity(0.05))
+                .frame(width: 1)
+                .padding(.vertical, 48)
+
+            Rectangle()
+                .fill(Color.white.opacity(0.04))
+                .frame(height: 1)
+                .padding(.horizontal, 58)
+                .offset(y: 54)
+        }
+    }
+}
+
+private struct FloatingKitTop: View {
+    var body: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 24)
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            Color.white,
+                            Color(red: 0.95, green: 0.96, blue: 0.98),
+                            Color(red: 0.88, green: 0.90, blue: 0.94)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .frame(width: 124, height: 112)
+
+            HStack(spacing: 0) {
+                RoundedRectangle(cornerRadius: 22)
+                    .fill(Color.white.opacity(0.96))
+                    .frame(width: 28, height: 76)
+                    .rotationEffect(.degrees(22))
+                    .offset(x: 3, y: -6)
+
+                Spacer()
+
+                RoundedRectangle(cornerRadius: 22)
+                    .fill(Color.white.opacity(0.96))
+                    .frame(width: 28, height: 76)
+                    .rotationEffect(.degrees(-22))
+                    .offset(x: -3, y: -6)
+            }
+            .frame(width: 170)
+
+            VStack(spacing: 0) {
+                Capsule()
+                    .fill(RallyUIKit.Palette.ink.opacity(0.94))
+                    .frame(width: 42, height: 18)
+                    .offset(y: -14)
+
+                Spacer()
+            }
+            .frame(height: 112)
+
+            RoundedRectangle(cornerRadius: 20)
+                .stroke(Color.white.opacity(0.78), lineWidth: 1.3)
+                .frame(width: 124, height: 112)
+
+            Capsule()
+                .fill(RallyUIKit.Palette.champagne.opacity(0.78))
+                .frame(width: 54, height: 3)
+                .offset(y: 18)
+        }
+    }
+}
+
+private struct FloatingKitSkirt: View {
+    var body: some View {
+        ZStack {
+            ForEach(0..<6, id: \.self) { index in
+                RoundedRectangle(cornerRadius: 14)
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                Color.white,
+                                Color(red: 0.92, green: 0.94, blue: 0.97)
+                            ],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
+                    .frame(width: 24, height: 88)
+                    .rotationEffect(.degrees(Double(index - 3) * 5.6))
+                    .offset(x: CGFloat(index - 2) * 16, y: 6)
+            }
+
+            RoundedRectangle(cornerRadius: 12)
+                .fill(RallyUIKit.Palette.ink.opacity(0.96))
+                .frame(width: 104, height: 16)
+                .offset(y: -34)
+
+            RoundedRectangle(cornerRadius: 18)
+                .stroke(Color.white.opacity(0.82), lineWidth: 1.2)
+                .frame(width: 132, height: 98)
+                .clipShape(
+                    UnevenRoundedRectangle(
+                        topLeadingRadius: 16,
+                        bottomLeadingRadius: 28,
+                        bottomTrailingRadius: 28,
+                        topTrailingRadius: 16
+                    )
+                )
+                .opacity(0.18)
+        }
+        .frame(width: 152, height: 104)
     }
 }
