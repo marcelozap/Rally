@@ -195,7 +195,6 @@ struct AvatarShopStageView: View {
                             ? AnyShapeStyle(RallyUIKit.accentGradient(currentAccent))
                             : AnyShapeStyle(Color.white.opacity(0.06))
                     )
-                )
             )
             .overlay(
                 Capsule()

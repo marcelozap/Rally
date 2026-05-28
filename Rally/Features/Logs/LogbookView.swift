@@ -24,7 +24,7 @@ struct LogbookView: View {
                 case .matches:
                     MatchLogView()
                 case .journal:
-                    JournalLogSection(showComposer: $showJournalComposer)
+                    JournalView()
                 }
             }
             .background(Color.black.ignoresSafeArea())
@@ -44,6 +44,11 @@ struct LogbookView: View {
                         SoundToggleButton()
                     }
                 }
+            }
+        }
+        .sheet(isPresented: $showJournalComposer) {
+            NavigationStack {
+                JournalEditorView(entry: nil)
             }
         }
     }

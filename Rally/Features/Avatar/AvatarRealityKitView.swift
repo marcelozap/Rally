@@ -108,19 +108,19 @@ struct AvatarRealityKitView: UIViewRepresentable {
         // MARK: Lighting
 
         func attachLighting(to anchor: AnchorEntity) {
-            var key = DirectionalLightComponent(color: UIColor.white, intensity: 6200)
+            let key = DirectionalLightComponent(color: UIColor.white, intensity: 6200)
             let keyEntity = Entity()
             keyEntity.components.set(key)
             keyEntity.look(at: SIMD3<Float>(0, -1.2, -2.8), from: SIMD3<Float>(2.5, 5, 6), relativeTo: nil)
             anchor.addChild(keyEntity)
 
-            var rim = DirectionalLightComponent(color: UIColor.white, intensity: 2400)
+            let rim = DirectionalLightComponent(color: UIColor.white, intensity: 2400)
             let rimEntity = Entity()
             rimEntity.components.set(rim)
             rimEntity.look(at: SIMD3<Float>(0, 0.6, 0), from: SIMD3<Float>(-5, 3.5, 4), relativeTo: nil)
             anchor.addChild(rimEntity)
 
-            var ambient = DirectionalLightComponent(color: UIColor.white, intensity: 900)
+            let ambient = DirectionalLightComponent(color: UIColor.white, intensity: 900)
             let fill = Entity()
             fill.components.set(ambient)
             fill.look(at: SIMD3<Float>(0, 0, 0), from: SIMD3<Float>(0, 8, 2), relativeTo: nil)
@@ -253,7 +253,12 @@ struct AvatarRealityKitView: UIViewRepresentable {
             guard let url = Bundle.main.url(forResource: "AvatarHero", withExtension: "usdz") else { return }
             Task { @MainActor in
                 do {
-                    let hero = try Entity.load(contentsOf: url)
+                    let hero: Entity
+                    if #available(iOS 18.0, *) {
+                        hero = try await Entity(contentsOf: url)
+                    } else {
+                        hero = try Entity.load(contentsOf: url)
+                    }
                     hero.position = SIMD3<Float>(0, -0.58, 0)
                     staging.addChild(hero)
                     self.heroUSDZ = hero

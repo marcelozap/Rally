@@ -3552,6 +3552,34 @@ final class BallNode: SKShapeNode {
     }
 }
 
+private extension UIColor {
+    func blended(withFraction fraction: CGFloat, of other: UIColor) -> UIColor? {
+        let clamped = min(max(fraction, 0), 1)
+
+        var lhsRed: CGFloat = 0
+        var lhsGreen: CGFloat = 0
+        var lhsBlue: CGFloat = 0
+        var lhsAlpha: CGFloat = 0
+        var rhsRed: CGFloat = 0
+        var rhsGreen: CGFloat = 0
+        var rhsBlue: CGFloat = 0
+        var rhsAlpha: CGFloat = 0
+
+        guard getRed(&lhsRed, green: &lhsGreen, blue: &lhsBlue, alpha: &lhsAlpha),
+              other.getRed(&rhsRed, green: &rhsGreen, blue: &rhsBlue, alpha: &rhsAlpha) else {
+            return nil
+        }
+
+        let inv = 1 - clamped
+        return UIColor(
+            red: lhsRed * inv + rhsRed * clamped,
+            green: lhsGreen * inv + rhsGreen * clamped,
+            blue: lhsBlue * inv + rhsBlue * clamped,
+            alpha: lhsAlpha * inv + rhsAlpha * clamped
+        )
+    }
+}
+
 private extension CGPoint {
     func distance(to other: CGPoint) -> CGFloat {
         hypot(x - other.x, y - other.y)

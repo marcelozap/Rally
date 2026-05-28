@@ -4,6 +4,7 @@ import UserNotifications
 
 /// Manages local and push notifications for engagement and achievements
 struct NotificationManager {
+    private static let scheduledBadgeCount = NSNumber(value: 1)
     
     /// Request user permission for notifications (call on app launch)
     static func requestPermission() {
@@ -35,7 +36,7 @@ struct NotificationManager {
         content.title = "Time to play! 🎾"
         content.body = "Complete today's challenges and keep your streak alive!"
         content.sound = .default
-        content.badge = NSNumber(value: UIApplication.shared.applicationIconBadgeNumber + 1)
+        content.badge = scheduledBadgeCount
         content.userInfo = ["type": "daily_reminder"]
 
         let request = UNNotificationRequest(identifier: identifier, content: content, trigger: trigger)
@@ -55,7 +56,7 @@ struct NotificationManager {
         content.title = "🏆 Achievement Unlocked!"
         content.body = achievement.title
         content.sound = .default
-        content.badge = NSNumber(value: UIApplication.shared.applicationIconBadgeNumber + 1)
+        content.badge = scheduledBadgeCount
         content.userInfo = ["type": "achievement", "badgeId": achievement.badgeId]
 
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
@@ -74,7 +75,7 @@ struct NotificationManager {
         content.title = "⭐ Challenge Complete!"
         content.body = "\(challenge.title) — +\(challenge.rewardCoins) coins"
         content.sound = .default
-        content.badge = NSNumber(value: UIApplication.shared.applicationIconBadgeNumber + 1)
+        content.badge = scheduledBadgeCount
         content.userInfo = ["type": "challenge", "challengeId": challenge.challengeId]
 
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 0.5, repeats: false)
@@ -95,7 +96,7 @@ struct NotificationManager {
         content.title = "🔥 \(streak)-Day Streak!"
         content.body = "You're crushing it! Keep it going tomorrow."
         content.sound = .default
-        content.badge = NSNumber(value: UIApplication.shared.applicationIconBadgeNumber + 1)
+        content.badge = scheduledBadgeCount
         content.userInfo = ["type": "streak_milestone", "streak": streak]
 
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 2, repeats: false)
@@ -120,7 +121,7 @@ struct NotificationManager {
         content.title = "Your streak expires soon! ⚠️"
         content.body = "Play one more game before midnight to keep your streak alive."
         content.sound = .default
-        content.badge = NSNumber(value: UIApplication.shared.applicationIconBadgeNumber + 1)
+        content.badge = scheduledBadgeCount
         content.userInfo = ["type": "streak_warning"]
 
         let request = UNNotificationRequest(identifier: "streak_warning", content: content, trigger: trigger)

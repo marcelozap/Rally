@@ -348,54 +348,64 @@ struct LockerHubView: View {
     }
 
     private func shopRow(_ item: ShopItem) -> some View {
-        NavigationLink {
-            ShopItemDetailView(item: item, avatar: avatar)
-        } label: {
-            HStack(spacing: 14) {
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(item.color)
-                    .frame(width: 64, height: 64)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 12)
-                            .stroke(item.accentColor ?? .clear, lineWidth: 2)
-                    )
-                    .overlay(
-                        Image(systemName: item.category.iconSystemName)
-                            .font(.title2)
-                            .foregroundStyle(.white.opacity(0.8))
-                            .shadow(radius: 2)
-                    )
-
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(item.name)
-                        .font(.system(.body, design: .rounded).weight(.semibold))
-                        .foregroundStyle(.white)
-                    Text(item.brand)
-                        .font(.caption)
-                        .foregroundStyle(.white.opacity(0.5))
-                    Text(item.priceUSD == 0 ? "Included" : item.priceDisplay)
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.cyan)
+        Group {
+            if let avatar {
+                NavigationLink {
+                    ShopItemDetailView(item: item, avatar: avatar)
+                } label: {
+                    shopRowLabel(item)
                 }
-                Spacer()
-                if isEquipped(item) {
-                    Text("EQUIPPED")
-                        .font(.caption2.weight(.bold))
-                        .padding(.vertical, 4)
-                        .padding(.horizontal, 8)
-                        .background(Capsule().fill(Color.cyan))
-                        .foregroundStyle(.black)
-                }
-                Image(systemName: "chevron.right")
-                    .foregroundStyle(.white.opacity(0.3))
+                .buttonStyle(.plain)
+            } else {
+                shopRowLabel(item)
             }
-            .padding(12)
-            .background(
-                RoundedRectangle(cornerRadius: 14)
-                    .fill(Color.white.opacity(0.04))
-            )
         }
-        .buttonStyle(.plain)
+    }
+
+    private func shopRowLabel(_ item: ShopItem) -> some View {
+        HStack(spacing: 14) {
+            RoundedRectangle(cornerRadius: 12)
+                .fill(item.color)
+                .frame(width: 64, height: 64)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(item.accentColor ?? .clear, lineWidth: 2)
+                )
+                .overlay(
+                    Image(systemName: item.category.iconSystemName)
+                        .font(.title2)
+                        .foregroundStyle(.white.opacity(0.8))
+                        .shadow(radius: 2)
+                )
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(item.name)
+                    .font(.system(.body, design: .rounded).weight(.semibold))
+                    .foregroundStyle(.white)
+                Text(item.brand)
+                    .font(.caption)
+                    .foregroundStyle(.white.opacity(0.5))
+                Text(item.priceUSD == 0 ? "Included" : item.priceDisplay)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.cyan)
+            }
+            Spacer()
+            if isEquipped(item) {
+                Text("EQUIPPED")
+                    .font(.caption2.weight(.bold))
+                    .padding(.vertical, 4)
+                    .padding(.horizontal, 8)
+                    .background(Capsule().fill(Color.cyan))
+                    .foregroundStyle(.black)
+            }
+            Image(systemName: "chevron.right")
+                .foregroundStyle(.white.opacity(0.3))
+        }
+        .padding(12)
+        .background(
+            RoundedRectangle(cornerRadius: 14)
+                .fill(Color.white.opacity(0.04))
+        )
     }
 
     private func isEquipped(_ item: ShopItem) -> Bool {

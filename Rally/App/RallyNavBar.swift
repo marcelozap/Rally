@@ -1,14 +1,14 @@
 import SwiftUI
 
 /// Minimal XIV-style bottom navigation — three destinations max.
-enum RallyTab: Hashable {
+enum RallyNavBarTab: Hashable {
     case locker
     case logbook
     case courts
 }
 
 struct RallyNavBar: View {
-    @Binding var selection: RallyTab
+    @Binding var selection: RallyNavBarTab
 
     var body: some View {
         HStack(spacing: 0) {
@@ -44,7 +44,7 @@ struct RallyNavBar: View {
         .contentShape(Rectangle())
     }
 
-    private func navItem(_ tab: RallyTab, icon: String, label: String) -> some View {
+    private func navItem(_ tab: RallyNavBarTab, icon: String, label: String) -> some View {
         let selected = selection == tab
         return Button {
             selection = tab

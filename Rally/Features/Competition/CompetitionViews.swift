@@ -217,65 +217,9 @@ struct RivalModeView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: RallyUIKit.Spacing.md) {
-                Text("Pick a rival and challenge them in a one-on-one run.")
-                    .font(RallyUIKit.Typography.body(.subheadline, weight: .medium))
-                    .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.8))
-                    .padding(.top, 10)
-                ForEach(RivalModeManager.sampleOpponents) { opponent in
-                    Button(action: {
-                        selectedOpponent = opponent
-                        showSession = true
-                    }) {
-                        HStack(spacing: 16) {
-                            VStack(alignment: .leading, spacing: 6) {
-                                Text(opponent.name)
-                                    .font(RallyUIKit.Typography.label(.headline, weight: .bold))
-                                    .foregroundStyle(RallyUIKit.Palette.frost)
-                                Text(opponent.style)
-                                    .font(RallyUIKit.Typography.body(.caption, weight: .medium))
-                                    .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.72))
-                                Text("Target: \(opponent.targetScore)")
-                                    .font(RallyUIKit.Typography.label(.caption2, weight: .semibold))
-                                    .foregroundStyle(RallyUIKit.Palette.cyan)
-                            }
-                            Spacer()
-                            VStack(alignment: .trailing) {
-                                Text("Lvl. \(opponent.level)")
-                                    .font(RallyUIKit.Typography.label(.subheadline, weight: .bold))
-                                Text("+\(opponent.rewardCoins) coins")
-                                    .font(RallyUIKit.Typography.body(.caption2, weight: .medium))
-                                    .foregroundStyle(RallyUIKit.Palette.gold)
-                            }
-                        }
-                        .padding(14)
-                        .background(RoundedRectangle(cornerRadius: RallyUIKit.Radius.md).fill(Color.white.opacity(0.04)))
-                    }
-                }
-                if !history.isEmpty {
-                    VStack(alignment: .leading, spacing: 10) {
-                        Text("Recent rival results")
-                            .font(RallyUIKit.Typography.label(.headline, weight: .semibold))
-                            .foregroundStyle(RallyUIKit.Palette.frost)
-                        ForEach(history, id: \.id) { result in
-                            HStack {
-                                VStack(alignment: .leading) {
-                                    Text(result.opponentName)
-                                        .font(RallyUIKit.Typography.label(.subheadline, weight: .semibold))
-                                        .foregroundStyle(RallyUIKit.Palette.frost)
-                                    Text("Score: \(result.playerScore) / target: \(result.targetScore)")
-                                        .font(RallyUIKit.Typography.body(.caption2, weight: .medium))
-                                        .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.8))
-                                }
-                                Spacer()
-                                Text(result.didWin ? "Win" : "Loss")
-                                    .font(RallyUIKit.Typography.label(.caption, weight: .bold))
-                                    .foregroundStyle(result.didWin ? RallyUIKit.Palette.lime : RallyUIKit.Palette.coral)
-                            }
-                            .padding(12)
-                            .background(RoundedRectangle(cornerRadius: RallyUIKit.Radius.md).fill(Color.white.opacity(0.03)))
-                        }
-                    }
-                }
+                introCopy
+                opponentList
+                historySection
             }
             .padding(RallyUIKit.Spacing.md)
         }
@@ -284,10 +228,100 @@ struct RivalModeView: View {
         .sheet(isPresented: $showSession) {
             if let opponent = selectedOpponent {
                 NavigationStack {
-                    GameSessionView(onExit: { showSession = false }, rivalOpponent: opponent)
+                    GameSessionView(rivalOpponent: opponent, onExit: { showSession = false })
                 }
             }
         }
+    }
+
+    private var introCopy: some View {
+        Text("Pick a rival and challenge them in a one-on-one run.")
+            .font(RallyUIKit.Typography.body(.subheadline, weight: .medium))
+            .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.8))
+            .padding(.top, 10)
+    }
+
+    private var opponentList: some View {
+        ForEach(RivalModeManager.sampleOpponents) { opponent in
+            Button {
+                selectedOpponent = opponent
+                showSession = true
+            } label: {
+                opponentCard(opponent)
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
+    @ViewBuilder
+    private var historySection: some View {
+        if !history.isEmpty {
+            VStack(alignment: .leading, spacing: 10) {
+                Text("Recent rival results")
+                    .font(RallyUIKit.Typography.label(.headline, weight: .semibold))
+                    .foregroundStyle(RallyUIKit.Palette.frost)
+
+                ForEach(history, id: \.id) { result in
+                    historyRow(result)
+                }
+            }
+        }
+    }
+
+    private func opponentCard(_ opponent: RivalOpponent) -> some View {
+        HStack(spacing: 16) {
+            VStack(alignment: .leading, spacing: 6) {
+                Text(opponent.name)
+                    .font(RallyUIKit.Typography.label(.headline, weight: .bold))
+                    .foregroundStyle(RallyUIKit.Palette.frost)
+                Text(opponent.style)
+                    .font(RallyUIKit.Typography.body(.caption, weight: .medium))
+                    .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.72))
+                Text("Target: \(opponent.targetScore)")
+                    .font(RallyUIKit.Typography.label(.caption2, weight: .semibold))
+                    .foregroundStyle(RallyUIKit.Palette.cyan)
+            }
+
+            Spacer()
+
+            VStack(alignment: .trailing, spacing: 4) {
+                Text("Lvl. \(opponent.level)")
+                    .font(RallyUIKit.Typography.label(.subheadline, weight: .bold))
+                    .foregroundStyle(RallyUIKit.Palette.frost)
+                Text("+\(opponent.rewardCoins) coins")
+                    .font(RallyUIKit.Typography.body(.caption2, weight: .medium))
+                    .foregroundStyle(RallyUIKit.Palette.gold)
+            }
+        }
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: RallyUIKit.Radius.md)
+                .fill(Color.white.opacity(0.04))
+        )
+    }
+
+    private func historyRow(_ result: RivalChallenge) -> some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(result.opponentName)
+                    .font(RallyUIKit.Typography.label(.subheadline, weight: .semibold))
+                    .foregroundStyle(RallyUIKit.Palette.frost)
+                Text("Score: \(result.playerScore) / target: \(result.targetScore)")
+                    .font(RallyUIKit.Typography.body(.caption2, weight: .medium))
+                    .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.8))
+            }
+
+            Spacer()
+
+            Text(result.didWin ? "Win" : "Loss")
+                .font(RallyUIKit.Typography.label(.caption, weight: .bold))
+                .foregroundStyle(result.didWin ? RallyUIKit.Palette.lime : RallyUIKit.Palette.coral)
+        }
+        .padding(12)
+        .background(
+            RoundedRectangle(cornerRadius: RallyUIKit.Radius.md)
+                .fill(Color.white.opacity(0.03))
+        )
     }
 }
 
