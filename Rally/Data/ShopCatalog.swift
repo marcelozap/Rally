@@ -191,6 +191,13 @@ enum ShopCatalog {
             referralSummary: "Nike Membership & the Nike app — official source for member promos and early access."
         ),
         .init(
+            id: "newbalance",
+            displayName: "New Balance Tennis",
+            websiteURL: URL(string: "https://www.newbalance.com/tennis/")!,
+            loyaltyProgramURL: nil,
+            referralSummary: "Official New Balance tennis footwear and apparel — seasonal pricing and account perks vary on newbalance.com."
+        ),
+        .init(
             id: "adidas",
             displayName: "adidas Tennis",
             websiteURL: URL(string: "https://www.adidas.com/us/tennis")!,
@@ -279,6 +286,9 @@ enum ShopCatalog {
               promoNote: "Rally-original — demo code for in-app cosmetics."),
 
         // Tops -----------------------------------------------------------
+        .init(id: "newbalance.tournament.tank.white", category: .top, name: "Tournament Tank", brand: "New Balance", vendorID: "newbalance",
+              productURL: URL(string: "https://www.newbalance.com/pd/tournament-tank/WT61K74K.html")!,
+              priceUSD: 60, colorHex: "#F6F5F1", accentHex: "#C7CCD1"),
         .init(id: "nike.dri-fit.tee.cobalt", category: .top, name: "Dri-FIT Slam Tee", brand: "Nike", vendorID: "nike",
               productURL: URL(string: "https://www.nike.com/w/tennis-tops-tshirts")!,
               priceUSD: 55, colorHex: "#0044AA", accentHex: "#FFFFFF",
@@ -294,6 +304,9 @@ enum ShopCatalog {
               priceUSD: 125, colorHex: "#0C5E2A", accentHex: "#FFFFFF"),
 
         // Bottoms --------------------------------------------------------
+        .init(id: "newbalance.tournament.skort.white", category: .bottom, name: "Tournament Skort", brand: "New Balance", vendorID: "newbalance",
+              productURL: URL(string: "https://www.newbalance.com/pd/tournament-skort/WK21434.html")!,
+              priceUSD: 55, colorHex: "#F7F6F2", accentHex: "#D7DADF"),
         .init(id: "nike.court.short.black",  category: .bottom, name: "NikeCourt 9″ Short", brand: "Nike", vendorID: "nike",
               productURL: URL(string: "https://www.nike.com/w/tennis-shorts")!,
               priceUSD: 60, colorHex: "#111111", accentHex: "#FFFFFF"),
@@ -305,6 +318,12 @@ enum ShopCatalog {
               priceUSD: 30, colorHex: "#646464", accentHex: nil),
 
         // Shoes ----------------------------------------------------------
+        .init(id: "newbalance.coco.cg2.sea.salt", category: .shoes, name: "Coco CG2", brand: "New Balance", vendorID: "newbalance",
+              productURL: URL(string: "https://www.newbalance.com/pd/coco-cg2/WCOC9AL-D-11.html")!,
+              priceUSD: 160, colorHex: "#F2EEE7", accentHex: "#7FA9D8"),
+        .init(id: "newbalance.fuelcell.996v6.white", category: .shoes, name: "FuelCell 996v6", brand: "New Balance", vendorID: "newbalance",
+              productURL: URL(string: "https://www.newbalance.com/pd/fuelcell-996v6/WCH996W6-B-09.html")!,
+              priceUSD: 135, colorHex: "#FFFFFF", accentHex: "#1E1E1E"),
         .init(id: "nike.vapor.pro.white",    category: .shoes, name: "Court Vapor Pro", brand: "Nike", vendorID: "nike",
               productURL: URL(string: "https://www.nike.com/w/tennis-shoes")!,
               priceUSD: 130, colorHex: "#FFFFFF", accentHex: "#FF1A55"),

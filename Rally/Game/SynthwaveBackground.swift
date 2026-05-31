@@ -20,14 +20,15 @@ import UIKit
 /// `zPosition` and never think about it again.
 final class SynthwaveBackground: SKNode {
 
-    private let size: CGSize
-    private let strikeY: CGFloat
+    private var size: CGSize
+    private var strikeY: CGFloat
 
     private var lowerGradient: SKShapeNode!
     private var upperGradient: SKShapeNode!
     private var horizonLine: SKShapeNode!
     private var leftAura: SKShapeNode!
     private var rightAura: SKShapeNode!
+    private var centerSheen: SKShapeNode!
     private var centerRunway: SKShapeNode!
     private var serviceLine: SKShapeNode!
     private var baselineLine: SKShapeNode!
@@ -85,13 +86,14 @@ final class SynthwaveBackground: SKNode {
         addChild(rightAuraNode)
         rightAura = rightAuraNode
 
-        let centerSheen = SKShapeNode(ellipseOf: CGSize(width: size.width * 0.5, height: strikeY * 0.72))
-        centerSheen.fillColor = UIColor(white: 1.0, alpha: 1.0)
-        centerSheen.strokeColor = .clear
-        centerSheen.alpha = 0.035
-        centerSheen.position = CGPoint(x: size.width * 0.5, y: strikeY * 0.18)
-        centerSheen.zPosition = -98
-        addChild(centerSheen)
+        let centerSheenNode = SKShapeNode(ellipseOf: CGSize(width: size.width * 0.5, height: strikeY * 0.72))
+        centerSheenNode.fillColor = UIColor(white: 1.0, alpha: 1.0)
+        centerSheenNode.strokeColor = .clear
+        centerSheenNode.alpha = 0.035
+        centerSheenNode.position = CGPoint(x: size.width * 0.5, y: strikeY * 0.18)
+        centerSheenNode.zPosition = -98
+        addChild(centerSheenNode)
+        centerSheen = centerSheenNode
 
         let runway = SKShapeNode(rectOf: CGSize(width: size.width * 0.18, height: strikeY * 0.9), cornerRadius: size.width * 0.05)
         runway.fillColor = UIColor(white: 1.0, alpha: 1.0)
@@ -215,6 +217,74 @@ final class SynthwaveBackground: SKNode {
             ])
         ])
         horizonLine?.run(burst)
+    }
+
+    func resize(to size: CGSize, strikeYRatio: CGFloat) {
+        guard size.width > 0, size.height > 0 else { return }
+        self.size = size
+        self.strikeY = size.height * strikeYRatio
+
+        lowerGradient.path = CGPath(rect: CGRect(x: 0, y: 0, width: size.width, height: strikeY), transform: nil)
+        upperGradient.path = CGPath(
+            rect: CGRect(x: 0, y: strikeY, width: size.width, height: size.height - strikeY),
+            transform: nil
+        )
+
+        let auraSize = CGSize(width: size.width * 0.42, height: strikeY * 1.32)
+        leftAura.path = CGPath(ellipseIn: CGRect(origin: CGPoint(x: -auraSize.width / 2, y: -auraSize.height / 2), size: auraSize), transform: nil)
+        leftAura.position = CGPoint(x: size.width * 0.2, y: strikeY * 0.42)
+        rightAura.path = CGPath(ellipseIn: CGRect(origin: CGPoint(x: -auraSize.width / 2, y: -auraSize.height / 2), size: auraSize), transform: nil)
+        rightAura.position = CGPoint(x: size.width * 0.8, y: strikeY * 0.46)
+
+        let centerSheenSize = CGSize(width: size.width * 0.5, height: strikeY * 0.72)
+        centerSheen.path = CGPath(
+            ellipseIn: CGRect(origin: CGPoint(x: -centerSheenSize.width / 2, y: -centerSheenSize.height / 2), size: centerSheenSize),
+            transform: nil
+        )
+        centerSheen.position = CGPoint(x: size.width * 0.5, y: strikeY * 0.18)
+
+        let runwaySize = CGSize(width: size.width * 0.18, height: strikeY * 0.9)
+        centerRunway.path = CGPath(
+            roundedRect: CGRect(origin: CGPoint(x: -runwaySize.width / 2, y: -runwaySize.height / 2), size: runwaySize),
+            cornerWidth: size.width * 0.05,
+            cornerHeight: size.width * 0.05,
+            transform: nil
+        )
+        centerRunway.position = CGPoint(x: size.width * 0.5, y: strikeY * 0.16)
+
+        horizonLine.path = CGPath(rect: CGRect(x: 0, y: -1, width: size.width, height: 2), transform: nil)
+        horizonLine.position = CGPoint(x: 0, y: strikeY)
+
+        serviceLine.path = CGPath(rect: CGRect(x: 0, y: -0.5, width: size.width * 0.56, height: 1), transform: nil)
+        serviceLine.position = CGPoint(x: size.width * 0.22, y: strikeY * 0.46)
+
+        baselineLine.path = CGPath(rect: CGRect(x: 0, y: -0.5, width: size.width * 0.8, height: 1), transform: nil)
+        baselineLine.position = CGPoint(x: size.width * 0.1, y: strikeY * 0.1)
+
+        let horizontalLines = gridNode.children.compactMap { $0 as? SKShapeNode }.filter { $0.userData?["baseAlpha"] != nil }
+        let rowCount = 14
+        let vanishX = size.width / 2
+        var horizontalIndex = 0
+        for line in horizontalLines {
+            if horizontalIndex < rowCount {
+                let frac = CGFloat(horizontalIndex) / CGFloat(rowCount - 1)
+                let y = strikeY - frac * frac * strikeY
+                line.path = CGPath(rect: CGRect(x: 0, y: -0.5, width: size.width, height: 1), transform: nil)
+                line.position = CGPoint(x: 0, y: y)
+                horizontalIndex += 1
+            } else {
+                let verticalIndex = horizontalIndex - rowCount
+                let columnCount = 11
+                let frac = CGFloat(verticalIndex) / CGFloat(columnCount - 1)
+                let bottomX = frac * size.width
+                let path = CGMutablePath()
+                path.move(to: CGPoint(x: vanishX, y: strikeY))
+                path.addLine(to: CGPoint(x: bottomX, y: 0))
+                line.path = path
+                line.position = .zero
+                horizontalIndex += 1
+            }
+        }
     }
 
     func setMomentum(tier: Int, phase: String, breaking: Bool) {

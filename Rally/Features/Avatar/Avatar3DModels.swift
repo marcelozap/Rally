@@ -41,9 +41,25 @@ extension UIColor {
 
 /// Shared between SceneKit / RealityKit backends — UIKit colors only.
 struct AvatarVisualSpec: Equatable {
+    enum BodyProfile: Equatable {
+        case slim
+        case athletic
+        case strong
+    }
+
+    enum HairProfile: Equatable {
+        case bald
+        case short
+        case medium
+        case long
+        case ponytail
+        case bun
+    }
+
     var skin: UIColor
     var hair: UIColor
     var showsHair: Bool
+    var hairProfile: HairProfile
     var top: UIColor
     var topAccent: UIColor
     var bottom: UIColor
@@ -53,6 +69,7 @@ struct AvatarVisualSpec: Equatable {
     var racket: UIColor
     var racketAccent: UIColor
     var bodyScale: CGFloat
+    var bodyProfile: BodyProfile
 
     static func from(config: AvatarConfig, preview: (slot: ShopItem.Category, item: ShopItem)?) -> AvatarVisualSpec {
         func ui(hex: String, fallback: UIColor = .lightGray) -> UIColor {
@@ -77,18 +94,38 @@ struct AvatarVisualSpec: Equatable {
         let shoIt = item(.shoes)
         let rakIt = item(.racket)
 
-        let scale: CGFloat = {
+        let bodyProfile: BodyProfile = {
             switch config.bodyType {
-            case .slim:     return 0.94
+            case .slim:     return .slim
+            case .athletic: return .athletic
+            case .strong:   return .strong
+            }
+        }()
+
+        let hairProfile: HairProfile = {
+            switch config.hairStyle {
+            case .bald: return .bald
+            case .short: return .short
+            case .medium: return .medium
+            case .long: return .long
+            case .ponytail: return .ponytail
+            case .bun: return .bun
+            }
+        }()
+
+        let scale: CGFloat = {
+            switch bodyProfile {
+            case .slim: return 0.94
             case .athletic: return 1.0
-            case .strong:   return 1.08
+            case .strong: return 1.08
             }
         }()
 
         return AvatarVisualSpec(
             skin: skin,
             hair: hair,
-            showsHair: config.hairStyle != .bald,
+            showsHair: hairProfile != .bald,
+            hairProfile: hairProfile,
             top: topIt.map { ui(hex: $0.colorHex) } ?? .white,
             topAccent: topIt?.accentHex.flatMap { ui(hex: $0) } ?? .clear,
             bottom: botIt.map { ui(hex: $0.colorHex) } ?? UIColor(white: 0.1, alpha: 1),
@@ -97,7 +134,8 @@ struct AvatarVisualSpec: Equatable {
             shoesAccent: shoIt?.accentHex.flatMap { ui(hex: $0) } ?? UIColor(red: 0, green: 0.9, blue: 1, alpha: 1),
             racket: rakIt.map { ui(hex: $0.colorHex) } ?? UIColor(white: 0.75, alpha: 1),
             racketAccent: rakIt?.accentHex.flatMap { ui(hex: $0) } ?? UIColor(red: 0, green: 0.9, blue: 1, alpha: 1),
-            bodyScale: scale
+            bodyScale: scale,
+            bodyProfile: bodyProfile
         )
     }
 }

@@ -43,6 +43,7 @@ final class JournalEntry {
     var date: Date = Date()
     var title: String = ""
     var body: String = ""
+    @Attribute(.externalStorage) var photoData: Data?
     var mood: Int = 3
     var tagsCSV: String = ""
     var focusRaw: String = JournalFocus.general.rawValue
@@ -52,6 +53,7 @@ final class JournalEntry {
         date: Date = Date(),
         title: String = "",
         body: String = "",
+        photoData: Data? = nil,
         mood: Int = 3,
         tags: [String] = [],
         focus: JournalFocus = .general,
@@ -61,6 +63,7 @@ final class JournalEntry {
         self.date = date
         self.title = title
         self.body = body
+        self.photoData = photoData
         self.mood = mood
         self.tagsCSV = tags.joined(separator: ",")
         self.focusRaw = focus.rawValue

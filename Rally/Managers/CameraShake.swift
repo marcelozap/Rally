@@ -33,9 +33,13 @@ enum CameraShake {
     static func nudge(_ target: SKNode, dx: CGFloat, dy: CGFloat, outMs: Double, backMs: Double) {
         guard outMs > 0, backMs > 0 else { return }
         target.removeAction(forKey: "nudge")
-        let push = SKAction.move(to: CGPoint(x: dx, y: dy), duration: outMs.seconds)
+        let home = target.position
+        let push = SKAction.move(
+            to: CGPoint(x: home.x + dx, y: home.y + dy),
+            duration: outMs.seconds
+        )
         push.timingMode = .easeOut
-        let settle = SKAction.move(to: .zero, duration: backMs.seconds)
+        let settle = SKAction.move(to: home, duration: backMs.seconds)
         settle.timingMode = .easeInEaseOut
         target.run(.sequence([push, settle]), withKey: "nudge")
     }
@@ -56,12 +60,19 @@ enum CameraShake {
         guard outMs > 0, driftMs > 0, backMs > 0 else { return }
         target.removeAction(forKey: "nudge")
         target.removeAction(forKey: "drift")
+        let home = target.position
 
-        let push = SKAction.move(to: CGPoint(x: dx, y: dy), duration: outMs.seconds)
+        let push = SKAction.move(
+            to: CGPoint(x: home.x + dx, y: home.y + dy),
+            duration: outMs.seconds
+        )
         push.timingMode = .easeOut
-        let drift = SKAction.move(to: CGPoint(x: settleDx, y: settleDy), duration: driftMs.seconds)
+        let drift = SKAction.move(
+            to: CGPoint(x: home.x + settleDx, y: home.y + settleDy),
+            duration: driftMs.seconds
+        )
         drift.timingMode = .easeInEaseOut
-        let settle = SKAction.move(to: .zero, duration: backMs.seconds)
+        let settle = SKAction.move(to: home, duration: backMs.seconds)
         settle.timingMode = .easeInEaseOut
         target.run(.sequence([push, drift, settle]), withKey: "drift")
     }

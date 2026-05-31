@@ -9,7 +9,7 @@ import Foundation
 /// Tunables live in `Tunables.MatchFlow`. Names read like a match commentator
 /// would describe the rally:
 ///
-/// - `.warmUp`   — first ~15% of the session. Slow, generous timing, no doubles.
+/// - `.warmUp`   — first ~20%+ of the session. Slow, generous timing, no doubles.
 /// - `.exchange` — the steady rally body. Medium BPM, normal windows.
 /// - `.pressure` — driven by sustained combo *or* late-session clock. Faster
 ///                 BPM, tighter windows, occasional doubles.
@@ -169,54 +169,54 @@ final class MatchFlowCoordinator {
         case .warmUp:
             return PhaseProfile(
                 bpm: bpm,
-                travelScalar: 1.15,
-                timingWindowScalar: 1.10,
+                travelScalar: 1.28,
+                timingWindowScalar: 1.18,
                 doubleNoteProbability: 0.0,
                 subdivisions: [1.0],
                 subdivisionWeights: [1.0],
-                density: 0.85
+                density: 0.64
             )
         case .exchange:
             return PhaseProfile(
                 bpm: bpm,
-                travelScalar: 1.0,
-                timingWindowScalar: 1.0,
+                travelScalar: 1.08,
+                timingWindowScalar: 1.06,
                 doubleNoteProbability: 0.0,
                 subdivisions: [1.0, 0.5],
-                subdivisionWeights: [0.6, 0.4],
-                density: 1.0
+                subdivisionWeights: [0.72, 0.28],
+                density: 0.92
             )
         case .pressure:
             return PhaseProfile(
                 bpm: bpm,
-                travelScalar: 0.92,
-                timingWindowScalar: 0.9,
-                doubleNoteProbability: 0.0,
+                travelScalar: 0.98,
+                timingWindowScalar: 0.97,
+                doubleNoteProbability: 0.05,
                 subdivisions: [0.5, 0.25],
-                subdivisionWeights: [0.75, 0.25],
-                density: 1.0
+                subdivisionWeights: [0.82, 0.18],
+                density: 0.96
             )
         case .breaker:
             return PhaseProfile(
                 bpm: bpm,
-                travelScalar: 0.85,
-                timingWindowScalar: 0.85,
-                doubleNoteProbability: 0.0,
+                travelScalar: 0.92,
+                timingWindowScalar: 0.92,
+                doubleNoteProbability: 0.09,
                 subdivisions: [0.5, 0.25],
-                subdivisionWeights: [0.5, 0.5],
-                density: 1.0
+                subdivisionWeights: [0.68, 0.32],
+                density: 0.98
             )
         case .recovery:
             // Recovery is intentionally sparse — the player has just been
             // killed; give them a moment.
             return PhaseProfile(
                 bpm: bpm,
-                travelScalar: 1.05,
-                timingWindowScalar: 1.05,
+                travelScalar: 1.14,
+                timingWindowScalar: 1.10,
                 doubleNoteProbability: 0.0,
                 subdivisions: [1.0],
                 subdivisionWeights: [1.0],
-                density: 0.55
+                density: 0.48
             )
         }
     }

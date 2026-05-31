@@ -21,6 +21,7 @@ final class MatchEntry {
     var date: Date = Date()
     var opponentName: String = ""
     var location: String = ""
+    @Attribute(.externalStorage) var photoData: Data?
     /// Stored as `CourtSurface.rawValue` for SwiftData friendliness.
     var surfaceRaw: String = CourtSurface.hard.rawValue
     var resultWon: Bool = false
@@ -32,6 +33,7 @@ final class MatchEntry {
         date: Date = Date(),
         opponentName: String = "",
         location: String = "",
+        photoData: Data? = nil,
         surface: CourtSurface = .hard,
         resultWon: Bool = false,
         sets: [SetScore] = [],
@@ -41,6 +43,7 @@ final class MatchEntry {
         self.date = date
         self.opponentName = opponentName
         self.location = location
+        self.photoData = photoData
         self.surfaceRaw = surface.rawValue
         self.resultWon = resultWon
         self.setsCSV = SetScore.encode(sets)

@@ -6,6 +6,10 @@ enum UserDefaultsKeys {
     static let guestMode = "rally.guestMode"
     /// Master mute for music + SFX. Defaults to `false` (muted) on first launch.
     static let soundEnabled = "rally.soundEnabled"
+    static let gameDominantHand = "rally.gameDominantHand"
+    static let gameShowCoachingCues = "rally.gameShowCoachingCues"
+    static let gameHapticsEnabled = "rally.gameHapticsEnabled"
+    static let gameMatchPace = "rally.gameMatchPace"
 }
 
 enum RallyAPIConfig {

@@ -28,6 +28,23 @@ struct ShopView: View {
         return [avatar.equippedTopID, avatar.equippedBottomID, avatar.equippedShoesID, avatar.equippedRacketID].count
     }
 
+    private var featuredFashionItems: [ShopItem] {
+        [
+            "newbalance.tournament.tank.white",
+            "newbalance.tournament.skort.white",
+            "newbalance.coco.cg2.sea.salt",
+            "nike.dri-fit.tee.cobalt",
+            "nike.court.short.black",
+            "nike.vapor.pro.white"
+        ].compactMap(ShopCatalog.item)
+    }
+
+    private var featuredTravelDestinations: [IconicTennisCourt] {
+        let ids = ["wimbledon.cc", "indianwells", "rna.mallorca"]
+        let lookup = Dictionary(uniqueKeysWithValues: IconicCourtsCatalog.allCourts.map { ($0.id, $0) })
+        return ids.compactMap { lookup[$0] }
+    }
+
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -39,6 +56,8 @@ struct ShopView: View {
                             .padding(.horizontal, RallyUIKit.Spacing.md)
                     }
 
+                    featuredFashionSection
+                    worldTravelSection
                     categoryFilter
 
                     if groupByVendor {
@@ -176,6 +195,150 @@ struct ShopView: View {
                 }
             }
         }
+    }
+
+    private var featuredFashionSection: some View {
+        VStack(alignment: .leading, spacing: RallyUIKit.Spacing.md) {
+            HStack(spacing: RallyUIKit.Spacing.sm) {
+                RallyUIKit.IconBadge(systemName: "sparkles", tint: RallyUIKit.Palette.champagne, size: 30)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Fashion floor")
+                        .font(RallyUIKit.Typography.title(.headline, weight: .bold))
+                        .foregroundStyle(RallyUIKit.Palette.frost)
+                    Text("New Balance whites first, then Nike match-day energy.")
+                        .font(RallyUIKit.Typography.body(.caption, weight: .medium))
+                        .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.72))
+                }
+                Spacer()
+            }
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: RallyUIKit.Spacing.md) {
+                    featuredEditCard(
+                        title: "New Balance Court Whites",
+                        subtitle: "Tank, skort, Coco CG2",
+                        body: "A crisp all-white look that feels expensive the second it loads.",
+                        tint: RallyUIKit.Palette.champagne,
+                        items: featuredFashionItems.filter { $0.vendorID == "newbalance" }
+                    )
+
+                    featuredEditCard(
+                        title: "Nike Match Day",
+                        subtitle: "Slam tee, short, Vapor Pro",
+                        body: "Sharper contrast, cleaner pace, and a stronger match-night silhouette.",
+                        tint: RallyUIKit.Palette.cyan,
+                        items: featuredFashionItems.filter { $0.vendorID == "nike" }
+                    )
+                }
+                .padding(.horizontal, 2)
+            }
+            .scrollClipDisabled()
+        }
+    }
+
+    private var worldTravelSection: some View {
+        NavigationLink {
+            CourtsMapView()
+        } label: {
+            RallyUIKit.LuxePanel(tint: RallyUIKit.Palette.lime) {
+                VStack(alignment: .leading, spacing: RallyUIKit.Spacing.md) {
+                    HStack(alignment: .top, spacing: RallyUIKit.Spacing.md) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            RallyUIKit.EditorialEyebrow(text: "Courts & camps", tint: RallyUIKit.Palette.lime)
+                            Text("Book the tennis world next")
+                                .font(RallyUIKit.Typography.title(.title3, weight: .bold))
+                                .foregroundStyle(RallyUIKit.Palette.frost)
+                            Text("After the fashion floor, move straight into iconic venues and global training camps with official booking and enrollment links.")
+                                .font(RallyUIKit.Typography.body(.caption, weight: .medium))
+                                .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.82))
+                        }
+
+                        Spacer(minLength: 8)
+
+                        RallyUIKit.IconBadge(
+                            systemName: "globe.europe.africa.fill",
+                            tint: RallyUIKit.Palette.lime,
+                            size: 38
+                        )
+                    }
+
+                    HStack(spacing: RallyUIKit.Spacing.sm) {
+                        travelFact("Venues", tint: RallyUIKit.Palette.cyan)
+                        travelFact("Camps", tint: RallyUIKit.Palette.gold)
+                        travelFact("Official links", tint: RallyUIKit.Palette.rose)
+                    }
+
+                    if !featuredTravelDestinations.isEmpty {
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 12) {
+                                ForEach(featuredTravelDestinations) { court in
+                                    travelPreviewCard(court)
+                                }
+                            }
+                            .padding(.horizontal, 2)
+                        }
+                        .scrollClipDisabled()
+                    }
+
+                    HStack(spacing: 8) {
+                        Text("Open atlas")
+                            .font(RallyUIKit.Typography.label(.subheadline, weight: .bold))
+                        Spacer()
+                        Image(systemName: "arrow.right.circle.fill")
+                            .font(.system(size: 16, weight: .bold))
+                    }
+                    .foregroundStyle(RallyUIKit.Palette.lime)
+                }
+            }
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func travelPreviewCard(_ court: IconicTennisCourt) -> some View {
+        let tint = court.kind == .venue ? RallyUIKit.Palette.cyan : RallyUIKit.Palette.gold
+
+        return VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .top, spacing: 8) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(court.name)
+                        .font(RallyUIKit.Typography.body(.caption, weight: .bold))
+                        .foregroundStyle(RallyUIKit.Palette.frost)
+                        .lineLimit(2)
+                    Text(court.subtitle)
+                        .font(RallyUIKit.Typography.label(.caption2, weight: .semibold))
+                        .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.68))
+                        .lineLimit(1)
+                }
+
+                Spacer(minLength: 0)
+
+                RallyUIKit.IconBadge(
+                    systemName: court.kind == .venue ? "sportscourt.fill" : "figure.tennis",
+                    tint: tint,
+                    size: 26
+                )
+            }
+
+            HStack(spacing: 8) {
+                travelMiniChip(court.kind == .venue ? "Venue" : "Camp", tint: tint)
+                travelMiniChip("Official", tint: RallyUIKit.Palette.rose)
+            }
+
+            Text(court.vibe)
+                .font(RallyUIKit.Typography.body(.caption, weight: .medium))
+                .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.84))
+                .lineLimit(2)
+        }
+        .padding(12)
+        .frame(width: 198, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 18)
+                .fill(Color.white.opacity(0.05))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 18)
+                .stroke(tint.opacity(0.16), lineWidth: 1)
+        )
     }
 
     private func categoryHeader(_ category: ShopItem.Category, count: Int) -> some View {
@@ -417,6 +580,137 @@ struct ShopView: View {
         case .racket: return avatar.equippedRacketID == item.id
         case .bag, .accessory: return false
         }
+    }
+
+    private func featuredEditCard(
+        title: String,
+        subtitle: String,
+        body: String,
+        tint: Color,
+        items: [ShopItem]
+    ) -> some View {
+        RallyUIKit.SectionCard(stroke: tint.opacity(0.26)) {
+            VStack(alignment: .leading, spacing: RallyUIKit.Spacing.md) {
+                apparelMoodBoard(items: items, tint: tint)
+
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(title)
+                        .font(RallyUIKit.Typography.title(.headline, weight: .bold))
+                        .foregroundStyle(RallyUIKit.Palette.frost)
+                    Text(subtitle.uppercased())
+                        .font(RallyUIKit.Typography.label(.caption2, weight: .bold))
+                        .tracking(1.4)
+                        .foregroundStyle(tint.opacity(0.92))
+                    Text(body)
+                        .font(RallyUIKit.Typography.body(.caption, weight: .medium))
+                        .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.72))
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                VStack(spacing: 10) {
+                    ForEach(items.prefix(3)) { item in
+                        shopRow(item)
+                    }
+                }
+            }
+        }
+        .frame(width: 328)
+    }
+
+    private func apparelMoodBoard(items: [ShopItem], tint: Color) -> some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: RallyUIKit.Radius.lg)
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            RallyUIKit.Palette.obsidian,
+                            Color.white.opacity(0.03),
+                            tint.opacity(0.12)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+
+            Circle()
+                .fill(tint.opacity(0.14))
+                .frame(width: 160, height: 160)
+                .blur(radius: 28)
+                .offset(x: 94, y: -26)
+
+            HStack(alignment: .bottom, spacing: 14) {
+                if let top = items.first(where: { $0.category == .top }) {
+                    apparelSwatch(top, width: 88, height: 102)
+                        .offset(y: -10)
+                }
+                if let bottom = items.first(where: { $0.category == .bottom }) {
+                    apparelSwatch(bottom, width: 84, height: 78)
+                }
+                if let shoes = items.first(where: { $0.category == .shoes }) {
+                    apparelSwatch(shoes, width: 92, height: 68)
+                        .offset(y: 6)
+                }
+            }
+            .padding(.horizontal, 18)
+            .padding(.bottom, 14)
+        }
+        .frame(height: 188)
+        .clipShape(RoundedRectangle(cornerRadius: RallyUIKit.Radius.lg))
+        .overlay(
+            RoundedRectangle(cornerRadius: RallyUIKit.Radius.lg)
+                .stroke(Color.white.opacity(0.08), lineWidth: 1)
+        )
+    }
+
+    private func apparelSwatch(_ item: ShopItem, width: CGFloat, height: CGFloat) -> some View {
+        let accent = item.accentColor ?? categoryTint(item.category)
+        return ZStack {
+            RoundedRectangle(cornerRadius: 24)
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            item.color.opacity(0.96),
+                            accent.opacity(0.5),
+                            RallyUIKit.Palette.obsidian.opacity(0.9)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+            RoundedRectangle(cornerRadius: 24)
+                .stroke(Color.white.opacity(0.14), lineWidth: 1)
+
+            Image(systemName: item.category.iconSystemName)
+                .font(.system(size: min(width, height) * 0.28, weight: .bold))
+                .foregroundStyle(.white)
+                .shadow(color: Color.black.opacity(0.25), radius: 8, y: 5)
+        }
+        .frame(width: width, height: height)
+        .shadow(color: accent.opacity(0.14), radius: 16, x: 0, y: 10)
+    }
+
+    private func travelFact(_ label: String, tint: Color) -> some View {
+        Text(label)
+            .font(RallyUIKit.Typography.body(.caption2, weight: .semibold))
+            .foregroundStyle(tint)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .background(Capsule().fill(tint.opacity(0.12)))
+            .overlay(
+                Capsule().stroke(tint.opacity(0.18), lineWidth: 1)
+            )
+    }
+
+    private func travelMiniChip(_ label: String, tint: Color) -> some View {
+        Text(label)
+            .font(RallyUIKit.Typography.label(.caption2, weight: .bold))
+            .foregroundStyle(RallyUIKit.Palette.frost.opacity(0.86))
+            .padding(.horizontal, 8)
+            .padding(.vertical, 6)
+            .background(Capsule().fill(tint.opacity(0.12)))
+            .overlay(
+                Capsule().stroke(tint.opacity(0.18), lineWidth: 1)
+            )
     }
 }
 

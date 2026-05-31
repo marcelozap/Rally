@@ -25,43 +25,35 @@ struct AuthView: View {
                 VStack(spacing: 22) {
                     header
 
-                    Picker("", selection: $mode) {
-                        ForEach(Mode.allCases) { m in
-                            Text(m.rawValue).tag(m)
+                    modeRail
+
+                    RallyUIKit.LuxePanel(tint: RallyUIKit.Palette.cyan) {
+                        VStack(alignment: .leading, spacing: 10) {
+                            fieldLabel("Email")
+                            TextField("you@example.com", text: $email)
+                                .textContentType(.emailAddress)
+                                .keyboardType(.emailAddress)
+                                .autocapitalization(.none)
+                                .rallyTextFieldStyle()
+
+                            fieldLabel("Password")
+                            SecureField(mode == .register ? "At least 8 characters" : "Password", text: $password)
+                                .textContentType(mode == .register ? .newPassword : .password)
+                                .rallyTextFieldStyle()
                         }
+                        .foregroundStyle(.white)
                     }
-                    .pickerStyle(.segmented)
-                    .padding(.horizontal, 4)
-
-                    VStack(alignment: .leading, spacing: 10) {
-                        fieldLabel("Email")
-                        TextField("you@example.com", text: $email)
-                            .textContentType(.emailAddress)
-                            .keyboardType(.emailAddress)
-                            .autocapitalization(.none)
-                            .rallyTextFieldStyle()
-
-                        fieldLabel("Password")
-                        SecureField(mode == .register ? "At least 8 characters" : "Password", text: $password)
-                            .textContentType(mode == .register ? .newPassword : .password)
-                            .rallyTextFieldStyle()
-                    }
-                    .foregroundStyle(.white)
-                    .padding(18)
-                    .background(
-                        RoundedRectangle(cornerRadius: 22)
-                            .fill(Color.white.opacity(0.04))
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 22)
-                            .stroke(Color.white.opacity(0.1), lineWidth: 1)
-                    )
 
                     if let err = auth.lastErrorMessage {
-                        Text(err)
-                            .font(.caption)
-                            .foregroundStyle(RallyUIKit.Palette.coral)
-                            .frame(maxWidth: .infinity, alignment: .leading)
+                        RallyUIKit.SectionCard(stroke: RallyUIKit.Palette.coral.opacity(0.32)) {
+                            HStack(alignment: .top, spacing: 12) {
+                                RallyUIKit.IconBadge(systemName: "exclamationmark.triangle.fill", tint: RallyUIKit.Palette.coral, size: 28)
+                                Text(err)
+                                    .font(RallyUIKit.Typography.body(.caption))
+                                    .foregroundStyle(RallyUIKit.Palette.cloud)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                            }
+                        }
                     }
 
                     Button {
@@ -88,32 +80,55 @@ struct AuthView: View {
                     .buttonStyle(GhostButtonStyle())
                     .disabled(busy)
 
-                    DisclosureGroup(isExpanded: $devOpen) {
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("API base URL (simulator default: http://127.0.0.1:8787)")
-                                .font(.caption)
-                                .foregroundStyle(.white.opacity(0.45))
-                            TextField("http://…", text: $apiBaseURL)
-                                .autocapitalization(.none)
-                                .rallyTextFieldStyle()
-                            Button("Use simulator default") {
-                                RallyAPIConfig.setBaseURL(nil)
-                                apiBaseURL = RallyAPIConfig.baseURL.absoluteString
+                    #if DEBUG
+                    RallyUIKit.SectionCard(stroke: RallyUIKit.Palette.line.opacity(0.7)) {
+                        VStack(alignment: .leading, spacing: RallyUIKit.Spacing.sm) {
+                            Button {
+                                withAnimation(.easeInOut(duration: 0.18)) {
+                                    devOpen.toggle()
+                                }
+                            } label: {
+                                HStack {
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text("Developer")
+                                            .font(RallyUIKit.Typography.label(.caption, weight: .bold))
+                                            .foregroundStyle(RallyUIKit.Palette.cloud)
+                                        Text("Local API routing for simulator and device testing.")
+                                            .font(RallyUIKit.Typography.body(.caption))
+                                            .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.68))
+                                    }
+                                    Spacer()
+                                    Image(systemName: devOpen ? "chevron.up" : "chevron.down")
+                                        .font(.system(size: 12, weight: .semibold))
+                                        .foregroundStyle(RallyUIKit.Palette.cyan)
+                                }
                             }
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(RallyUIKit.Palette.cyan)
+                            .buttonStyle(.plain)
+
+                            if devOpen {
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Text("API base URL (simulator default: http://127.0.0.1:8787)")
+                                        .font(RallyUIKit.Typography.body(.caption))
+                                        .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.58))
+                                    TextField("http://…", text: $apiBaseURL)
+                                        .autocapitalization(.none)
+                                        .rallyTextFieldStyle()
+                                    Button("Use simulator default") {
+                                        RallyAPIConfig.setBaseURL(nil)
+                                        apiBaseURL = RallyAPIConfig.baseURL.absoluteString
+                                    }
+                                    .font(RallyUIKit.Typography.label(.caption, weight: .bold))
+                                    .foregroundStyle(RallyUIKit.Palette.cyan)
+                                }
+                                .transition(.move(edge: .top).combined(with: .opacity))
+                            }
                         }
-                        .padding(.top, 8)
-                    } label: {
-                        Text("Developer")
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(.white.opacity(0.55))
                     }
-                    .tint(.cyan)
+                    #endif
 
                     Text(
                         "Signed-in accounts back up avatar, progression, training, matches, and journal to the Rally API. "
-                            + "Cloud saves use last-writer-wins snapshots — sign in on one device at a time when testing. "
+                            + "Your latest saved session becomes the one Rally keeps in sync. "
                             + "Offline mode keeps everything on this phone only until you create an account."
                     )
                         .font(.caption)
@@ -128,8 +143,45 @@ struct AuthView: View {
             .navigationBarTitleDisplayMode(.inline)
         }
         .onAppear {
+            #if DEBUG
             if apiBaseURL.isEmpty {
                 apiBaseURL = RallyAPIConfig.baseURL.absoluteString
+            }
+            #endif
+        }
+    }
+
+    private var modeRail: some View {
+        RallyUIKit.SectionCard(stroke: RallyUIKit.Palette.line.opacity(0.7)) {
+            HStack(spacing: RallyUIKit.Spacing.xs) {
+                ForEach(Mode.allCases) { option in
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.18)) {
+                            mode = option
+                        }
+                    } label: {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(option.rawValue)
+                                .font(RallyUIKit.Typography.label(.subheadline, weight: .bold))
+                                .foregroundStyle(mode == option ? RallyUIKit.Palette.obsidian : RallyUIKit.Palette.frost)
+                            Text(option == .login ? "Return to your player" : "Start syncing your game")
+                                .font(RallyUIKit.Typography.body(.caption))
+                                .foregroundStyle(mode == option ? RallyUIKit.Palette.obsidian.opacity(0.72) : RallyUIKit.Palette.cloud.opacity(0.62))
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, RallyUIKit.Spacing.md)
+                        .padding(.vertical, RallyUIKit.Spacing.sm)
+                        .background(
+                            RoundedRectangle(cornerRadius: RallyUIKit.Radius.md, style: .continuous)
+                                .fill(mode == option ? AnyShapeStyle(RallyUIKit.accentGradient(RallyUIKit.Palette.cyan)) : AnyShapeStyle(Color.white.opacity(0.04)))
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: RallyUIKit.Radius.md, style: .continuous)
+                                .stroke(mode == option ? Color.white.opacity(0.18) : RallyUIKit.Palette.line.opacity(0.7), lineWidth: 1)
+                        )
+                    }
+                    .buttonStyle(.plain)
+                }
             }
         }
     }
@@ -169,7 +221,9 @@ struct AuthView: View {
         defer { busy = false }
 
         let trimmedEmail = email.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        #if DEBUG
         RallyAPIConfig.setBaseURL(apiBaseURL)
+        #endif
 
         do {
             switch mode {

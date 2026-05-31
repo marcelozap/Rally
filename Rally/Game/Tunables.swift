@@ -308,20 +308,20 @@ enum Tunables {
         /// 0…1 fractions of session duration at which the clock-driven phase
         /// floor escalates. A player at 0 combo who never misses still moves
         /// `warm-up → exchange → pressure → breaker` at these marks.
-        static let warmUpProgress:   Double = 0.15
-        static let pressureProgress: Double = 0.60
-        static let breakerProgress:  Double = 0.85
+        static let warmUpProgress:   Double = 0.28
+        static let pressureProgress: Double = 0.68
+        static let breakerProgress:  Double = 0.91
 
         /// BPM per phase. The procedural beatmap regenerates chart chunks at
         /// these tempos so the spawn density visibly shifts.
-        static let bpmWarmUp:    Double = 84
-        static let bpmExchange:  Double = 110
-        static let bpmPressure:  Double = 140
-        static let bpmBreaker:   Double = 168
+        static let bpmWarmUp:    Double = 76
+        static let bpmExchange:  Double = 102
+        static let bpmPressure:  Double = 126
+        static let bpmBreaker:   Double = 148
 
         /// How long the spawner stays in `.recovery` after a combo break.
         /// Short — just enough to clear the death-freeze + a beat or two.
-        static let recoverySeconds: TimeInterval = 3.0
+        static let recoverySeconds: TimeInterval = 3.8
     }
 }
 

@@ -15,7 +15,7 @@ struct HomeView: View {
     @Query(sort: \RivalChallenge.completedDate, order: .reverse) private var rivalHistory: [RivalChallenge]
 
     @Binding var selectedTab: RallyTab
-    @Binding var logsSection: LogsSection
+    @Binding var logbookSection: LogbookSection
 
     @State private var showingTrainingEditor = false
     @State private var showingMatchEditor = false
@@ -31,6 +31,12 @@ struct HomeView: View {
     private var recentAchievements: [Achievement] {
         Array(achievements.prefix(4))
     }
+    private var featuredHomeShopItem: ShopItem? {
+        ShopCatalog.item(id: "newbalance.tournament.tank.white")
+    }
+    private var featuredHomeDestination: IconicTennisCourt? {
+        IconicCourtsCatalog.allCourts.first { $0.id == "wimbledon.cc" }
+    }
 
     var body: some View {
         NavigationStack {
@@ -42,13 +48,14 @@ struct HomeView: View {
                     avatarCard
                     playerBadge
                     quickActions
+                    featuredNowSection
                     competitionSummarySection
                     seasonalEventSection
                     dailyChallengesSection
                     recentAchievementsSection
                     courtAtlasSection
                     weeklyStats
-                    recentJournal
+                    recentLogbook
                 }
                 .padding(.horizontal, RallyUIKit.Spacing.md)
                 .padding(.vertical, RallyUIKit.Spacing.sm)
@@ -97,12 +104,58 @@ struct HomeView: View {
         }
     }
 
+    @ViewBuilder
+    private var featuredNowSection: some View {
+        if featuredHomeShopItem != nil || featuredHomeDestination != nil {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack {
+                    Text("Now in Rally")
+                        .font(RallyUIKit.Typography.label(.headline, weight: .semibold))
+                        .foregroundStyle(RallyUIKit.Palette.frost)
+                    Spacer()
+                }
+
+                HStack(spacing: 12) {
+                    if let item = featuredHomeShopItem {
+                        Button {
+                            selectedTab = .shop
+                        } label: {
+                            homeFeatureCard(
+                                eyebrow: "Style edit",
+                                title: item.name,
+                                subtitle: "New Balance whites and official buy paths in the shop.",
+                                tint: item.accentColor ?? RallyUIKit.Palette.champagne,
+                                icon: item.category.iconSystemName
+                            )
+                        }
+                        .buttonStyle(.plain)
+                    }
+
+                    if let court = featuredHomeDestination {
+                        NavigationLink {
+                            CourtsMapView()
+                        } label: {
+                            homeFeatureCard(
+                                eyebrow: court.kind == .venue ? "Travel next" : "Camp next",
+                                title: court.name,
+                                subtitle: "Open the world atlas for official venue, camp, and booking links.",
+                                tint: court.kind == .venue ? RallyUIKit.Palette.cyan : RallyUIKit.Palette.gold,
+                                icon: court.kind == .venue ? "globe.europe.africa.fill" : "figure.tennis"
+                            )
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
+        }
+    }
+
     private var guestOfflineBanner: some View {
         HStack(alignment: .top, spacing: 12) {
             Image(systemName: "icloud.slash")
                 .font(.title3)
                 .foregroundStyle(RallyUIKit.Palette.gold)
-            Text("You're offline — data stays on this device. Tap Account (top left) → Leave offline mode… when you want to sign in and sync.")
+            Text("You're playing offline for now. Your progress stays on this device until you sign in and turn sync on.")
                 .font(RallyUIKit.Typography.body(.caption, weight: .medium))
                 .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.88))
                 .fixedSize(horizontal: false, vertical: true)
@@ -236,19 +289,39 @@ struct HomeView: View {
 
     private var quickActions: some View {
         VStack(spacing: RallyUIKit.Spacing.xs + 2) {
+            HStack {
+                Text("Play, style, travel")
+                    .font(RallyUIKit.Typography.label(.headline, weight: .semibold))
+                    .foregroundStyle(RallyUIKit.Palette.frost)
+                Spacer()
+            }
             actionButton(icon: "tennis.racket", label: "Practice", tint: RallyUIKit.Palette.cyan, big: true) {
                 selectedTab = .play
             }
             HStack(spacing: RallyUIKit.Spacing.xs + 2) {
-                actionButton(icon: "figure.tennis", label: "Log training", tint: RallyUIKit.Palette.lime) {
-                    showingTrainingEditor = true
+                actionButton(icon: "figure.tennis", label: "Training log", tint: RallyUIKit.Palette.lime) {
+                    logbookSection = .training
+                    selectedTab = .logs
                 }
-                actionButton(icon: "trophy", label: "Log match", tint: RallyUIKit.Palette.gold) {
-                    showingMatchEditor = true
+                actionButton(icon: "trophy", label: "Match log", tint: RallyUIKit.Palette.gold) {
+                    logbookSection = .matches
+                    selectedTab = .logs
                 }
-                actionButton(icon: "book.closed", label: "Quick note", tint: RallyUIKit.Palette.rose) {
-                    showingJournalEditor = true
+                actionButton(icon: "book.closed", label: "Journal", tint: RallyUIKit.Palette.rose) {
+                    logbookSection = .journal
+                    selectedTab = .logs
                 }
+            }
+            HStack(spacing: RallyUIKit.Spacing.xs + 2) {
+                actionButton(icon: "bag.fill", label: "Shop edits", tint: RallyUIKit.Palette.champagne) {
+                    selectedTab = .shop
+                }
+                NavigationLink {
+                    CourtsMapView()
+                } label: {
+                    actionButtonLabel(icon: "globe.americas.fill", label: "World atlas", tint: RallyUIKit.Palette.cyan)
+                }
+                .buttonStyle(.plain)
             }
         }
     }
@@ -327,12 +400,51 @@ struct HomeView: View {
         NavigationLink {
             CourtsMapView()
         } label: {
-            featureRow(
-                icon: "globe.americas.fill",
-                iconTint: RallyUIKit.Palette.lime,
-                title: "World tennis atlas",
-                subtitle: "Iconic venues, global camps, and official booking or enrollment links"
-            )
+            RallyUIKit.LuxePanel(tint: RallyUIKit.Palette.lime) {
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack(alignment: .top, spacing: 12) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            RallyUIKit.EditorialEyebrow(text: "World tennis atlas", tint: RallyUIKit.Palette.lime)
+                            Text(featuredHomeDestination?.name ?? "Iconic venues and global camps")
+                                .font(RallyUIKit.Typography.title(.headline, weight: .bold))
+                                .foregroundStyle(RallyUIKit.Palette.frost)
+                            Text("Browse the tennis world through official venue, academy, booking, and enrollment links.")
+                                .font(RallyUIKit.Typography.body(.caption, weight: .medium))
+                                .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.76))
+                        }
+
+                        Spacer(minLength: 8)
+
+                        RallyUIKit.IconBadge(
+                            systemName: "globe.europe.africa.fill",
+                            tint: RallyUIKit.Palette.lime,
+                            size: 38
+                        )
+                    }
+
+                    HStack(spacing: 8) {
+                        atlasHomeChip("Venues", tint: RallyUIKit.Palette.cyan)
+                        atlasHomeChip("Camps", tint: RallyUIKit.Palette.gold)
+                        atlasHomeChip("Official links", tint: RallyUIKit.Palette.rose)
+                    }
+
+                    if let featuredHomeDestination {
+                        HStack(spacing: 8) {
+                            atlasHomeChip(featuredHomeDestination.region, tint: RallyUIKit.Palette.cloud)
+                            atlasHomeChip(featuredHomeDestination.kind.rawValue, tint: featuredHomeDestination.kind == .venue ? RallyUIKit.Palette.cyan : RallyUIKit.Palette.gold)
+                        }
+                    }
+
+                    HStack(spacing: 8) {
+                        Text("Open atlas")
+                            .font(RallyUIKit.Typography.label(.subheadline, weight: .bold))
+                        Spacer()
+                        Image(systemName: "arrow.right.circle.fill")
+                            .font(.system(size: 16, weight: .bold))
+                    }
+                    .foregroundStyle(RallyUIKit.Palette.lime)
+                }
+            }
         }
         .buttonStyle(.plain)
     }
@@ -345,47 +457,112 @@ struct HomeView: View {
         action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
-            Group {
-                if big {
-                    HStack(spacing: 10) {
-                        Image(systemName: icon)
-                            .font(.title2)
-                        Text(label)
-                            .font(RallyUIKit.Typography.label(.headline, weight: .bold))
-                            .tracking(0.3)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, RallyUIKit.Spacing.lg)
-                } else {
-                    VStack(spacing: 6) {
-                        Image(systemName: icon)
-                            .font(.title3)
-                        Text(label)
-                            .font(RallyUIKit.Typography.label(.caption, weight: .semibold))
-                            .multilineTextAlignment(.center)
-                            .lineLimit(2)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 14)
-                }
-            }
-            .background(
-                RoundedRectangle(cornerRadius: RallyUIKit.Radius.md)
-                    .fill(
-                        LinearGradient(
-                            colors: [Color.white.opacity(0.08), tint.opacity(0.18)],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: RallyUIKit.Radius.md)
-                    .stroke(tint.opacity(0.78), lineWidth: 1)
-            )
-            .foregroundStyle(tint)
+            actionButtonLabel(icon: icon, label: label, tint: tint, big: big)
         }
         .buttonStyle(.plain)
+    }
+
+    @ViewBuilder
+    private func actionButtonLabel(
+        icon: String,
+        label: String,
+        tint: Color,
+        big: Bool = false
+    ) -> some View {
+        Group {
+            if big {
+                HStack(spacing: 10) {
+                    Image(systemName: icon)
+                        .font(.title2)
+                    Text(label)
+                        .font(RallyUIKit.Typography.label(.headline, weight: .bold))
+                        .tracking(0.3)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, RallyUIKit.Spacing.lg)
+            } else {
+                VStack(spacing: 6) {
+                    Image(systemName: icon)
+                        .font(.title3)
+                    Text(label)
+                        .font(RallyUIKit.Typography.label(.caption, weight: .semibold))
+                        .multilineTextAlignment(.center)
+                        .lineLimit(2)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 14)
+            }
+        }
+        .background(
+            RoundedRectangle(cornerRadius: RallyUIKit.Radius.md)
+                .fill(
+                    LinearGradient(
+                        colors: [Color.white.opacity(0.08), tint.opacity(0.18)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: RallyUIKit.Radius.md)
+                .stroke(tint.opacity(0.78), lineWidth: 1)
+        )
+        .foregroundStyle(tint)
+    }
+
+    private func homeFeatureCard(
+        eyebrow: String,
+        title: String,
+        subtitle: String,
+        tint: Color,
+        icon: String
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .top, spacing: 8) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(eyebrow.uppercased())
+                        .font(RallyUIKit.Typography.label(.caption2, weight: .bold))
+                        .tracking(1.2)
+                        .foregroundStyle(tint.opacity(0.95))
+                    Text(title)
+                        .font(RallyUIKit.Typography.body(.subheadline, weight: .bold))
+                        .foregroundStyle(RallyUIKit.Palette.frost)
+                        .lineLimit(2)
+                }
+                Spacer(minLength: 0)
+                RallyUIKit.IconBadge(systemName: icon, tint: tint, size: 30)
+            }
+
+            Text(subtitle)
+                .font(RallyUIKit.Typography.body(.caption, weight: .medium))
+                .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.8))
+                .lineLimit(3)
+
+            HStack(spacing: 6) {
+                Text("Open")
+                    .font(RallyUIKit.Typography.label(.caption, weight: .bold))
+                Spacer(minLength: 0)
+                Image(systemName: "arrow.right.circle.fill")
+                    .font(.system(size: 14, weight: .bold))
+            }
+            .foregroundStyle(tint)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: RallyUIKit.Radius.md)
+                .fill(
+                    LinearGradient(
+                        colors: [Color.white.opacity(0.06), tint.opacity(0.12)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: RallyUIKit.Radius.md)
+                .stroke(tint.opacity(0.2), lineWidth: 1)
+        )
     }
 
     // MARK: - Stats
@@ -399,14 +576,30 @@ struct HomeView: View {
         let wins = recentMatches.filter(\.resultWon).count
         let losses = recentMatches.count - wins
 
-        return VStack(alignment: .leading, spacing: 12) {
-            Text("This week")
-                .font(RallyUIKit.Typography.label(.headline, weight: .semibold))
-                .foregroundStyle(RallyUIKit.Palette.frost)
-            HStack(spacing: 12) {
-                statTile(value: "\(recentTrain.count)", label: "sessions", tint: RallyUIKit.Palette.cyan)
-                statTile(value: "\(totalMins)m", label: "trained", tint: RallyUIKit.Palette.cyan)
-                statTile(value: "\(wins)-\(losses)", label: "record", tint: RallyUIKit.Palette.gold)
+        return RallyUIKit.LuxePanel(tint: RallyUIKit.Palette.cyan) {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack {
+                    VStack(alignment: .leading, spacing: 4) {
+                        RallyUIKit.EditorialEyebrow(text: "This week", tint: RallyUIKit.Palette.cyan)
+                        Text("Your tennis rhythm")
+                            .font(RallyUIKit.Typography.title(.headline, weight: .bold))
+                            .foregroundStyle(RallyUIKit.Palette.frost)
+                    }
+                    Spacer()
+                    Text("\(recentTrain.count + recentMatches.count)")
+                        .font(RallyUIKit.Typography.title(.title3, weight: .bold))
+                        .foregroundStyle(RallyUIKit.Palette.cyan)
+                }
+
+                HStack(spacing: 12) {
+                    statTile(value: "\(recentTrain.count)", label: "sessions", tint: RallyUIKit.Palette.cyan)
+                    statTile(value: "\(totalMins)m", label: "trained", tint: RallyUIKit.Palette.cyan)
+                    statTile(value: "\(wins)-\(losses)", label: "record", tint: RallyUIKit.Palette.gold)
+                }
+
+                Text("A quick read on how much you trained, how often you played, and what your week looked like on court.")
+                    .font(RallyUIKit.Typography.body(.caption, weight: .medium))
+                    .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.62))
             }
         }
     }
@@ -428,51 +621,172 @@ struct HomeView: View {
         )
     }
 
-    // MARK: - Journal preview
+    // MARK: - Logbook preview
 
     @ViewBuilder
-    private var recentJournal: some View {
-        if let entry = journal.first {
+    private var recentLogbook: some View {
+        if !homeLogbookMoments.isEmpty {
             VStack(alignment: .leading, spacing: 12) {
-                sectionHeaderAction(title: "From the journal", actionTitle: "See all") {
-                    selectedTab = .journal
+                sectionHeaderAction(title: "From the logbook", actionTitle: "See all") {
+                    selectedTab = .logs
                 }
-                VStack(alignment: .leading, spacing: 8) {
-                    Text(entry.title.isEmpty ? "Untitled entry" : entry.title)
-                        .font(RallyUIKit.Typography.body(.body, weight: .semibold))
-                        .foregroundStyle(RallyUIKit.Palette.frost)
-                    Text(entry.body.isEmpty ? "No body yet." : entry.body)
-                        .font(RallyUIKit.Typography.body(.subheadline, weight: .medium))
-                        .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.82))
-                        .lineLimit(3)
-                    Text(entry.date, format: .dateTime.month().day().year())
-                        .font(RallyUIKit.Typography.body(.caption, weight: .medium))
-                        .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.5))
+                VStack(spacing: 10) {
+                    ForEach(homeLogbookMoments) { moment in
+                        Button {
+                            logbookSection = moment.section
+                            selectedTab = .logs
+                        } label: {
+                            homeLogbookMomentRow(moment)
+                        }
+                        .buttonStyle(.plain)
+                    }
                 }
-                .padding(14)
-                .background(
-                    RoundedRectangle(cornerRadius: RallyUIKit.Radius.md)
-                        .fill(Color.white.opacity(0.04))
-                )
             }
         }
+    }
+
+    private var homeLogbookMoments: [HomeLogbookMoment] {
+        let trainingMoments = trainings.prefix(1).map(HomeLogbookMoment.init(training:))
+        let matchMoments = matches.prefix(1).map(HomeLogbookMoment.init(match:))
+        let journalMoments = journal.prefix(1).map(HomeLogbookMoment.init(journal:))
+
+        return (trainingMoments + matchMoments + journalMoments)
+            .sorted { $0.date > $1.date }
+    }
+
+    private func homeLogbookMomentRow(_ moment: HomeLogbookMoment) -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            RallyUIKit.IconBadge(
+                systemName: moment.iconName,
+                tint: moment.tint,
+                size: 30
+            )
+
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(alignment: .top, spacing: 8) {
+                    Text(moment.badge)
+                        .font(RallyUIKit.Typography.body(.caption2, weight: .semibold))
+                        .padding(.horizontal, 9)
+                        .padding(.vertical, 5)
+                        .background(
+                            Capsule().fill(moment.tint.opacity(0.12))
+                        )
+                        .overlay(
+                            Capsule().stroke(moment.tint.opacity(0.2), lineWidth: 1)
+                        )
+                        .foregroundStyle(moment.tint.opacity(0.92))
+
+                    Spacer(minLength: 0)
+
+                    Text(moment.date, format: .dateTime.month().day().year())
+                        .font(RallyUIKit.Typography.body(.caption2, weight: .semibold))
+                        .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.46))
+                }
+
+                Text(moment.title)
+                    .font(RallyUIKit.Typography.body(.body, weight: .semibold))
+                    .foregroundStyle(RallyUIKit.Palette.frost)
+                    .lineLimit(1)
+
+                Text(moment.subtitle)
+                    .font(RallyUIKit.Typography.body(.subheadline, weight: .medium))
+                    .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.82))
+                    .lineLimit(2)
+
+                if let image = moment.image {
+                    ZStack(alignment: .bottomLeading) {
+                        Image(uiImage: image)
+                            .resizable()
+                            .scaledToFill()
+                            .frame(height: 110)
+                            .frame(maxWidth: .infinity)
+                            .clipShape(RoundedRectangle(cornerRadius: 14))
+                            .overlay(
+                                LinearGradient(
+                                    colors: [Color.clear, Color.black.opacity(0.38)],
+                                    startPoint: .top,
+                                    endPoint: .bottom
+                                )
+                                .clipShape(RoundedRectangle(cornerRadius: 14))
+                            )
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 14)
+                                    .stroke(Color.white.opacity(0.08), lineWidth: 1)
+                            )
+
+                        HStack(spacing: 6) {
+                            Image(systemName: "photo.fill")
+                                .font(.caption2.weight(.bold))
+                            Text("Saved memory")
+                                .font(RallyUIKit.Typography.label(.caption2, weight: .bold))
+                        }
+                        .foregroundStyle(.white.opacity(0.92))
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 7)
+                        .background(
+                            Capsule().fill(Color.black.opacity(0.34))
+                        )
+                        .padding(10)
+                    }
+                }
+            }
+
+            Image(systemName: "chevron.right")
+                .font(RallyUIKit.Typography.label(.caption, weight: .bold))
+                .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.4))
+                .padding(.top, 6)
+        }
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: RallyUIKit.Radius.md)
+                .fill(Color.white.opacity(0.04))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: RallyUIKit.Radius.md)
+                .stroke(Color.white.opacity(0.08), lineWidth: 1)
+        )
+    }
+
+    private func journalFocusTint(_ focus: JournalFocus) -> Color {
+        switch focus {
+        case .general: return RallyUIKit.Palette.lime
+        case .practice: return RallyUIKit.Palette.cyan
+        case .match: return RallyUIKit.Palette.gold
+        case .rallyGame: return RallyUIKit.Palette.rose
+        }
+    }
+
+    private func homeJournalPreviewImage(_ entry: JournalEntry) -> UIImage? {
+        guard let data = entry.photoData else { return nil }
+        return UIImage(data: data)
     }
 
     // MARK: - Daily Challenges
 
     private var dailyChallengesSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Today's challenges")
-                .font(RallyUIKit.Typography.label(.headline, weight: .semibold))
-                .foregroundStyle(RallyUIKit.Palette.frost)
-            if todaysChallenges.isEmpty {
-                Text("No challenges today yet. Tap Play to get started!")
-                    .font(RallyUIKit.Typography.body(.caption, weight: .medium))
-                    .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.62))
-            } else {
-                VStack(spacing: 10) {
-                    ForEach(todaysChallenges, id: \.id) { challenge in
-                        challengeRow(challenge)
+        RallyUIKit.LuxePanel(tint: RallyUIKit.Palette.cyan) {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack {
+                    VStack(alignment: .leading, spacing: 4) {
+                        RallyUIKit.EditorialEyebrow(text: "Daily rhythm", tint: RallyUIKit.Palette.cyan)
+                        Text("Today's challenges")
+                            .font(RallyUIKit.Typography.title(.headline, weight: .bold))
+                            .foregroundStyle(RallyUIKit.Palette.frost)
+                    }
+                    Spacer()
+                    Text("\(todaysChallenges.count)")
+                        .font(RallyUIKit.Typography.title(.title3, weight: .bold))
+                        .foregroundStyle(RallyUIKit.Palette.cyan)
+                }
+                if todaysChallenges.isEmpty {
+                    Text("No challenges today yet. Tap Play to get started!")
+                        .font(RallyUIKit.Typography.body(.caption, weight: .medium))
+                        .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.62))
+                } else {
+                    VStack(spacing: 10) {
+                        ForEach(todaysChallenges, id: \.id) { challenge in
+                            challengeRow(challenge)
+                        }
                     }
                 }
             }
@@ -482,18 +796,29 @@ struct HomeView: View {
     // MARK: - Recent Achievements
 
     private var recentAchievementsSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Recent achievements")
-                .font(RallyUIKit.Typography.label(.headline, weight: .semibold))
-                .foregroundStyle(RallyUIKit.Palette.frost)
-            if recentAchievements.isEmpty {
-                Text("Unlock achievements by hitting milestones!")
-                    .font(RallyUIKit.Typography.body(.caption, weight: .medium))
-                    .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.62))
-            } else {
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 80))], spacing: 10) {
-                    ForEach(recentAchievements, id: \.id) { achievement in
-                        achievementTile(achievement)
+        RallyUIKit.LuxePanel(tint: RallyUIKit.Palette.gold) {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack {
+                    VStack(alignment: .leading, spacing: 4) {
+                        RallyUIKit.EditorialEyebrow(text: "Milestones", tint: RallyUIKit.Palette.gold)
+                        Text("Recent achievements")
+                            .font(RallyUIKit.Typography.title(.headline, weight: .bold))
+                            .foregroundStyle(RallyUIKit.Palette.frost)
+                    }
+                    Spacer()
+                    Text("\(recentAchievements.count)")
+                        .font(RallyUIKit.Typography.title(.title3, weight: .bold))
+                        .foregroundStyle(RallyUIKit.Palette.gold)
+                }
+                if recentAchievements.isEmpty {
+                    Text("Unlock achievements by hitting milestones!")
+                        .font(RallyUIKit.Typography.body(.caption, weight: .medium))
+                        .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.62))
+                } else {
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 80))], spacing: 10) {
+                        ForEach(recentAchievements, id: \.id) { achievement in
+                            achievementTile(achievement)
+                        }
                     }
                 }
             }
@@ -600,6 +925,20 @@ struct HomeView: View {
         .modifier(HomeSectionCardModifier(stroke: iconTint.opacity(0.28)))
     }
 
+    private func atlasHomeChip(_ label: String, tint: Color) -> some View {
+        Text(label)
+            .font(RallyUIKit.Typography.body(.caption2, weight: .semibold))
+            .foregroundStyle(tint == RallyUIKit.Palette.cloud ? RallyUIKit.Palette.cloud.opacity(0.86) : tint)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .background(
+                Capsule().fill((tint == RallyUIKit.Palette.cloud ? RallyUIKit.Palette.cloud : tint).opacity(0.12))
+            )
+            .overlay(
+                Capsule().stroke((tint == RallyUIKit.Palette.cloud ? RallyUIKit.Palette.cloud : tint).opacity(0.18), lineWidth: 1)
+            )
+    }
+
     private func seasonStatusPill(isActive: Bool) -> some View {
         Text(isActive ? "Live now" : "Upcoming")
             .font(.caption.weight(.semibold))
@@ -654,6 +993,61 @@ struct HomeView: View {
             }
             .buttonStyle(.plain)
         }
+    }
+}
+
+private struct HomeLogbookMoment: Identifiable {
+    let id: String
+    let section: LogbookSection
+    let badge: String
+    let title: String
+    let subtitle: String
+    let date: Date
+    let tint: Color
+    let iconName: String
+    let image: UIImage?
+
+    init(training: TrainingSession) {
+        id = "training-\(training.id.uuidString)"
+        section = .training
+        badge = "Practice"
+        title = training.drillType.isEmpty ? "Training session" : training.drillType
+        subtitle = "\(training.durationMinutes) minutes · Intensity \(training.intensity)"
+        date = training.date
+        tint = RallyUIKit.Palette.cyan
+        iconName = "figure.tennis"
+        image = nil
+    }
+
+    init(match: MatchEntry) {
+        id = "match-\(match.id.uuidString)"
+        section = .matches
+        badge = match.resultWon ? "Match win" : "Match day"
+        title = match.opponentName.isEmpty ? "Competitive session" : "vs \(match.opponentName)"
+        subtitle = match.scoreDisplay.isEmpty ? match.surface.displayName : "\(match.scoreDisplay) · \(match.surface.displayName)"
+        date = match.date
+        tint = RallyUIKit.Palette.gold
+        iconName = match.resultWon ? "sparkles" : "trophy.fill"
+        image = match.photoData.flatMap(UIImage.init(data:))
+    }
+
+    init(journal: JournalEntry) {
+        id = "journal-\(journal.id.uuidString)"
+        section = .journal
+        badge = journal.focus.displayName
+        title = journal.title.isEmpty ? "Journal entry" : journal.title
+        subtitle = journal.body.isEmpty ? "A saved note from your tennis life." : journal.body
+        date = journal.date
+        tint = {
+            switch journal.focus {
+            case .general: return RallyUIKit.Palette.lime
+            case .practice: return RallyUIKit.Palette.cyan
+            case .match: return RallyUIKit.Palette.gold
+            case .rallyGame: return RallyUIKit.Palette.rose
+            }
+        }()
+        iconName = journal.focus.symbolName
+        image = journal.photoData.flatMap(UIImage.init(data:))
     }
 }
 

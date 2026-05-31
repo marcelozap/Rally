@@ -14,7 +14,7 @@ struct ContentView: View {
     @Query private var avatarConfigs: [AvatarConfig]
 
     @State private var selectedTab: RallyTab = .home
-    @State private var logsSection: LogsSection = .training
+    @State private var logbookSection: LogbookSection = .training
     @State private var hasAppeared = false
 
     var body: some View {
@@ -56,7 +56,7 @@ struct ContentView: View {
 
     private var mainTabs: some View {
         TabView(selection: $selectedTab) {
-            HomeView(selectedTab: $selectedTab, logsSection: $logsSection)
+            HomeView(selectedTab: $selectedTab, logbookSection: $logbookSection)
                 .tabItem { Label("Home", systemImage: "house.fill") }
                 .tag(RallyTab.home)
                 .transition(.asymmetric(insertion: .opacity.combined(with: .scale(scale: 0.95)), removal: .opacity))
@@ -66,8 +66,8 @@ struct ContentView: View {
                 .tag(RallyTab.play)
                 .transition(.asymmetric(insertion: .opacity.combined(with: .scale(scale: 0.95)), removal: .opacity))
 
-            LogsView(section: $logsSection)
-                .tabItem { Label("Logs", systemImage: "list.clipboard.fill") }
+            LogbookView(section: $logbookSection)
+                .tabItem { Label("Logbook", systemImage: "book.pages.fill") }
                 .tag(RallyTab.logs)
                 .transition(.asymmetric(insertion: .opacity.combined(with: .scale(scale: 0.95)), removal: .opacity))
 

@@ -61,6 +61,7 @@ struct AvatarRealityKitView: UIViewRepresentable {
             skin: .lightGray,
             hair: .darkGray,
             showsHair: true,
+            hairProfile: .short,
             top: .white,
             topAccent: .clear,
             bottom: .black,
@@ -69,7 +70,8 @@ struct AvatarRealityKitView: UIViewRepresentable {
             shoesAccent: .cyan,
             racket: .lightGray,
             racketAccent: .cyan,
-            bodyScale: 1
+            bodyScale: 1,
+            bodyProfile: .athletic
         )
 
         private var staging = Entity()
@@ -81,15 +83,22 @@ struct AvatarRealityKitView: UIViewRepresentable {
         private var heroUSDZ: Entity?
         private var stagePlate: ModelEntity?
         private var stageShadow: ModelEntity?
+        private var stageAura: ModelEntity?
 
         private var torso: ModelEntity?
         private var shorts: ModelEntity?
         private var head: ModelEntity?
         private var hair: ModelEntity?
+        private var hairBack: ModelEntity?
+        private var ponytail: ModelEntity?
+        private var hairBun: ModelEntity?
+        private var neck: ModelEntity?
         private var leftArm: ModelEntity?
         private var rightArm: ModelEntity?
         private var leftLeg: ModelEntity?
         private var rightLeg: ModelEntity?
+        private var leftShoe: ModelEntity?
+        private var rightShoe: ModelEntity?
         private var racketHead: ModelEntity?
         private var racketHandle: ModelEntity?
         private var racketStrings: [ModelEntity] = []
@@ -148,9 +157,17 @@ struct AvatarRealityKitView: UIViewRepresentable {
                 roughness: 0.42,
                 metallic: 0.18
             )
-            if let stageShadow, let stagePlate {
+            stageAura = Self.boxEntity(
+                size: SIMD3<Float>(0.92, 0.008, 0.42),
+                cornerRadius: 0.06,
+                position: SIMD3<Float>(0, -0.56, 0.03),
+                roughness: 0.22,
+                metallic: 0
+            )
+            if let stageShadow, let stagePlate, let stageAura {
                 staging.addChild(stageShadow)
                 staging.addChild(stagePlate)
+                staging.addChild(stageAura)
             }
 
             avatarRoot.name = "avatarRoot"
@@ -164,25 +181,54 @@ struct AvatarRealityKitView: UIViewRepresentable {
             hip.addChild(proceduralRoot)
 
             torso = Self.boxEntity(
-                size: SIMD3<Float>(0.48, 0.46, 0.2),
-                cornerRadius: 0.06,
-                position: SIMD3<Float>(0, 0.06, 0)
+                size: SIMD3<Float>(0.46, 0.5, 0.21),
+                cornerRadius: 0.07,
+                position: SIMD3<Float>(0, 0.07, 0)
             )
             proceduralRoot.addChild(torso!)
 
+            neck = Self.boxEntity(
+                size: SIMD3<Float>(0.09, 0.08, 0.09),
+                cornerRadius: 0.03,
+                position: SIMD3<Float>(0, 0.31, 0)
+            )
+            proceduralRoot.addChild(neck!)
+
             shorts = Self.boxEntity(
-                size: SIMD3<Float>(0.5, 0.18, 0.2),
-                cornerRadius: 0.05,
-                position: SIMD3<Float>(0, -0.22, 0)
+                size: SIMD3<Float>(0.52, 0.19, 0.21),
+                cornerRadius: 0.06,
+                position: SIMD3<Float>(0, -0.23, 0)
             )
             proceduralRoot.addChild(shorts!)
 
-            head = Self.sphereEntity(radius: 0.13, position: SIMD3<Float>(0, 0.42, 0))
+            head = Self.sphereEntity(radius: 0.132, position: SIMD3<Float>(0, 0.44, 0))
+            head?.scale = SIMD3<Float>(1.0, 1.05, 0.98)
             proceduralRoot.addChild(head!)
 
-            hair = Self.sphereEntity(radius: 0.138, position: SIMD3<Float>(0, 0.46, -0.02))
-            hair!.scale = SIMD3<Float>(1.05, 0.55, 1.05)
+            hair = Self.sphereEntity(radius: 0.145, position: SIMD3<Float>(0, 0.47, -0.02))
+            hair!.scale = SIMD3<Float>(1.08, 0.62, 1.08)
             proceduralRoot.addChild(hair!)
+
+            hairBack = Self.boxEntity(
+                size: SIMD3<Float>(0.20, 0.18, 0.09),
+                cornerRadius: 0.04,
+                position: SIMD3<Float>(0, 0.39, -0.08),
+                roughness: 0.7,
+                metallic: 0
+            )
+            proceduralRoot.addChild(hairBack!)
+
+            ponytail = Self.boxEntity(
+                size: SIMD3<Float>(0.06, 0.22, 0.06),
+                cornerRadius: 0.03,
+                position: SIMD3<Float>(-0.12, 0.37, -0.07),
+                roughness: 0.72,
+                metallic: 0
+            )
+            proceduralRoot.addChild(ponytail!)
+
+            hairBun = Self.sphereEntity(radius: 0.06, position: SIMD3<Float>(0, 0.57, -0.05))
+            proceduralRoot.addChild(hairBun!)
 
             leftArm = Self.cylinderEntity(height: 0.34, radius: 0.045, position: SIMD3<Float>(-0.34, 0.08, 0))
             leftArm!.orientation = QE.mul(QE.euler(0, 0, 0.35), QE.euler(0, 0, Float.pi / 2))
@@ -200,6 +246,23 @@ struct AvatarRealityKitView: UIViewRepresentable {
 
             rightLeg = Self.cylinderEntity(height: 0.42, radius: 0.055, position: SIMD3<Float>(0.13, -0.38, 0))
             proceduralRoot.addChild(rightLeg!)
+
+            leftShoe = Self.boxEntity(
+                size: SIMD3<Float>(0.14, 0.06, 0.24),
+                cornerRadius: 0.03,
+                position: SIMD3<Float>(-0.13, -0.64, 0.03),
+                roughness: 0.3,
+                metallic: 0.08
+            )
+            rightShoe = Self.boxEntity(
+                size: SIMD3<Float>(0.14, 0.06, 0.24),
+                cornerRadius: 0.03,
+                position: SIMD3<Float>(0.13, -0.64, 0.03),
+                roughness: 0.3,
+                metallic: 0.08
+            )
+            proceduralRoot.addChild(leftShoe!)
+            proceduralRoot.addChild(rightShoe!)
 
             racketParent.name = "racket"
             racketParent.position = SIMD3<Float>(0.52, 0.02, 0.1)
@@ -286,20 +349,29 @@ struct AvatarRealityKitView: UIViewRepresentable {
             let bottomFinal = spec.bottomAccent == .clear ? spec.bottom : spec.bottom.multiplied(by: spec.bottomAccent)
             let shoeFinal = spec.shoesAccent == .clear ? spec.shoes : spec.shoes.multiplied(by: spec.shoesAccent)
 
-            torso?.model?.materials = [Self.mat(topFinal)]
-            shorts?.model?.materials = [Self.mat(bottomFinal)]
+            torso?.model?.materials = [Self.mat(topFinal, roughness: 0.48)]
+            neck?.model?.materials = [Self.mat(spec.skin, roughness: 0.56)]
+            shorts?.model?.materials = [Self.mat(bottomFinal, roughness: 0.52)]
             head?.model?.materials = [Self.mat(spec.skin, roughness: 0.56)]
-            hair?.model?.materials = [Self.mat(spec.hair, roughness: 0.74)]
+            hair?.model?.materials = [Self.mat(spec.hair, roughness: 0.68)]
+            hairBack?.model?.materials = [Self.mat(spec.hair, roughness: 0.72)]
+            ponytail?.model?.materials = [Self.mat(spec.hair, roughness: 0.74)]
+            hairBun?.model?.materials = [Self.mat(spec.hair, roughness: 0.72)]
             hair?.isEnabled = spec.showsHair
+            hairBack?.isEnabled = spec.showsHair
+            ponytail?.isEnabled = spec.showsHair
+            hairBun?.isEnabled = spec.showsHair
 
             leftArm?.model?.materials = [Self.mat(spec.skin)]
             rightArm?.model?.materials = [Self.mat(spec.skin)]
-            leftLeg?.model?.materials = [Self.mat(shoeFinal, roughness: 0.46, metallic: 0.14)]
-            rightLeg?.model?.materials = [Self.mat(shoeFinal, roughness: 0.46, metallic: 0.14)]
+            leftLeg?.model?.materials = [Self.mat(spec.skin, roughness: 0.56)]
+            rightLeg?.model?.materials = [Self.mat(spec.skin, roughness: 0.56)]
+            leftShoe?.model?.materials = [Self.mat(shoeFinal, roughness: 0.3, metallic: 0.12)]
+            rightShoe?.model?.materials = [Self.mat(shoeFinal, roughness: 0.3, metallic: 0.12)]
 
             let rkHead = spec.racketAccent == .clear ? spec.racket : spec.racket.multiplied(by: spec.racketAccent)
             racketHead?.model?.materials = [Self.mat(rkHead, roughness: 0.32, metallic: 0.58)]
-            racketHandle?.model?.materials = [Self.mat(spec.racketAccent, roughness: 0.4, metallic: 0.62)]
+            racketHandle?.model?.materials = [Self.mat(spec.racketAccent, roughness: 0.32, metallic: 0.64)]
             racketStrings.forEach { $0.model?.materials = [Self.mat(UIColor.white.withAlphaComponent(0.85), roughness: 0.22, metallic: 0.18)] }
 
             let plateTint = spec.racketAccent == .clear
@@ -307,9 +379,92 @@ struct AvatarRealityKitView: UIViewRepresentable {
                 : spec.racketAccent.multiplied(by: UIColor(red: 0.52, green: 0.52, blue: 0.52, alpha: 1))
             stagePlate?.model?.materials = [Self.mat(plateTint.withAlphaComponent(0.98), roughness: 0.38, metallic: 0.12)]
             stageShadow?.model?.materials = [Self.mat(UIColor.black.withAlphaComponent(0.34), roughness: 1.0, metallic: 0)]
+            stageAura?.model?.materials = [Self.mat(spec.racketAccent.withAlphaComponent(0.28), roughness: 0.18, metallic: 0)]
 
             let s = Float(spec.bodyScale)
             hip.scale = SIMD3<Float>(repeating: s)
+
+            switch spec.bodyProfile {
+            case .slim:
+                torso?.scale = SIMD3<Float>(0.9, 0.98, 0.88)
+                shorts?.scale = SIMD3<Float>(0.92, 0.94, 0.88)
+                leftArm?.scale = SIMD3<Float>(0.9, 1.03, 0.9)
+                rightArm?.scale = SIMD3<Float>(0.9, 1.03, 0.9)
+                leftLeg?.scale = SIMD3<Float>(0.92, 1.04, 0.92)
+                rightLeg?.scale = SIMD3<Float>(0.92, 1.04, 0.92)
+                head?.scale = SIMD3<Float>(0.98, 1.05, 0.98)
+                neck?.scale = SIMD3<Float>(0.92, 1.0, 0.92)
+            case .athletic:
+                torso?.scale = SIMD3<Float>(1.0, 1.0, 1.0)
+                shorts?.scale = SIMD3<Float>(1.0, 1.0, 1.0)
+                leftArm?.scale = SIMD3<Float>(1.0, 1.0, 1.0)
+                rightArm?.scale = SIMD3<Float>(1.0, 1.0, 1.0)
+                leftLeg?.scale = SIMD3<Float>(1.0, 1.0, 1.0)
+                rightLeg?.scale = SIMD3<Float>(1.0, 1.0, 1.0)
+                head?.scale = SIMD3<Float>(1.0, 1.05, 0.98)
+                neck?.scale = SIMD3<Float>(1.0, 1.0, 1.0)
+            case .strong:
+                torso?.scale = SIMD3<Float>(1.1, 1.03, 1.08)
+                shorts?.scale = SIMD3<Float>(1.08, 1.0, 1.05)
+                leftArm?.scale = SIMD3<Float>(1.1, 1.0, 1.1)
+                rightArm?.scale = SIMD3<Float>(1.1, 1.0, 1.1)
+                leftLeg?.scale = SIMD3<Float>(1.08, 0.99, 1.08)
+                rightLeg?.scale = SIMD3<Float>(1.08, 0.99, 1.08)
+                head?.scale = SIMD3<Float>(1.02, 1.05, 1.0)
+                neck?.scale = SIMD3<Float>(1.08, 1.02, 1.08)
+            }
+
+            switch spec.hairProfile {
+            case .bald:
+                hair?.isEnabled = false
+                hairBack?.isEnabled = false
+                ponytail?.isEnabled = false
+                hairBun?.isEnabled = false
+            case .short:
+                hair?.isEnabled = true
+                hair?.scale = SIMD3<Float>(1.02, 0.46, 1.0)
+                hair?.position = SIMD3<Float>(0, 0.49, -0.01)
+                hairBack?.isEnabled = false
+                ponytail?.isEnabled = false
+                hairBun?.isEnabled = false
+            case .medium:
+                hair?.isEnabled = true
+                hair?.scale = SIMD3<Float>(1.08, 0.62, 1.08)
+                hair?.position = SIMD3<Float>(0, 0.47, -0.02)
+                hairBack?.isEnabled = true
+                hairBack?.scale = SIMD3<Float>(1.0, 1.0, 1.0)
+                hairBack?.position = SIMD3<Float>(0, 0.39, -0.08)
+                ponytail?.isEnabled = false
+                hairBun?.isEnabled = false
+            case .long:
+                hair?.isEnabled = true
+                hair?.scale = SIMD3<Float>(1.1, 0.66, 1.08)
+                hair?.position = SIMD3<Float>(0, 0.47, -0.02)
+                hairBack?.isEnabled = true
+                hairBack?.scale = SIMD3<Float>(1.0, 1.42, 1.0)
+                hairBack?.position = SIMD3<Float>(0, 0.34, -0.085)
+                ponytail?.isEnabled = false
+                hairBun?.isEnabled = false
+            case .ponytail:
+                hair?.isEnabled = true
+                hair?.scale = SIMD3<Float>(1.04, 0.5, 1.0)
+                hair?.position = SIMD3<Float>(0, 0.49, -0.01)
+                hairBack?.isEnabled = false
+                ponytail?.isEnabled = true
+                ponytail?.scale = SIMD3<Float>(1.0, 1.0, 1.0)
+                ponytail?.position = SIMD3<Float>(-0.12, 0.37, -0.07)
+                ponytail?.orientation = QE.euler(0.18, 0.08, -0.12)
+                hairBun?.isEnabled = false
+            case .bun:
+                hair?.isEnabled = true
+                hair?.scale = SIMD3<Float>(1.0, 0.46, 1.0)
+                hair?.position = SIMD3<Float>(0, 0.49, -0.01)
+                hairBack?.isEnabled = false
+                ponytail?.isEnabled = false
+                hairBun?.isEnabled = true
+                hairBun?.scale = SIMD3<Float>(1.0, 1.0, 1.0)
+                hairBun?.position = SIMD3<Float>(0, 0.58, -0.05)
+            }
         }
 
         private static func mat(

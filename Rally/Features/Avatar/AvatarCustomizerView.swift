@@ -36,14 +36,16 @@ struct AvatarCustomizerView: View {
 
     var body: some View {
         ScrollView {
-            VStack(spacing: 24) {
+            VStack(spacing: RallyUIKit.Spacing.xl) {
                 if isFirstLaunch {
                     welcomeHero
                 }
 
-                AvatarView(config: config)
-                    .frame(height: isFirstLaunch ? 280 : 320)
-                    .padding(.horizontal)
+                RallyUIKit.SectionCard(stroke: RallyUIKit.Palette.cyan.opacity(0.24)) {
+                    AvatarView(config: config, subtlePerspective: true)
+                        .frame(height: isFirstLaunch ? 280 : 320)
+                }
+                .padding(.horizontal, 20)
 
                 VStack(alignment: .leading, spacing: 18) {
                     namingSection
@@ -63,7 +65,7 @@ struct AvatarCustomizerView: View {
         .navigationTitle(isFirstLaunch ? "" : "Your avatar")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(isFirstLaunch ? .hidden : .visible, for: .navigationBar)
-        .background(Color.black.ignoresSafeArea())
+        .background(RallyUIKit.screenBackground.ignoresSafeArea())
         .onAppear {
             if isFirstLaunch {
                 // Tiny delay so the keyboard avoidance settles after layout.
@@ -77,50 +79,40 @@ struct AvatarCustomizerView: View {
     // MARK: - First-launch hero
 
     private var welcomeHero: some View {
-        VStack(spacing: 8) {
-            Text("WELCOME TO RALLY")
-                .font(.system(.caption, design: .rounded).weight(.bold))
-                .kerning(4)
-                .foregroundStyle(.cyan)
+        RallyUIKit.LuxePanel(tint: RallyUIKit.Palette.cyan) {
+            VStack(spacing: 10) {
+                RallyUIKit.EditorialEyebrow(text: "Welcome to Rally", tint: RallyUIKit.Palette.cyan)
 
-            Text("Build your avatar")
-                .font(.system(.largeTitle, design: .rounded).weight(.heavy))
-                .foregroundStyle(.white)
-                .multilineTextAlignment(.center)
+                Text("Build your avatar")
+                    .font(RallyUIKit.Typography.display(34, weight: .bold))
+                    .foregroundStyle(RallyUIKit.Palette.frost)
+                    .multilineTextAlignment(.center)
 
-            Text("This is the player you'll see everywhere in Rally — on Home, in the shop try-on, and over your match history. Change any of it later from the avatar icon on Home.")
-                .font(.subheadline)
-                .foregroundStyle(.white.opacity(0.55))
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 16)
-                .padding(.top, 2)
+                Text("This is the player you’ll see on Home, in the shop try-on, and across your match history. You can change all of it later from the avatar icon on Home.")
+                    .font(RallyUIKit.Typography.body(.subheadline, weight: .medium))
+                    .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.74))
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 6)
+            }
+            .frame(maxWidth: .infinity)
         }
         .padding(.top, 24)
-        .padding(.horizontal, 16)
+        .padding(.horizontal, 20)
     }
 
     // MARK: - Sections
 
     private var namingSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            sectionTitle("Name")
+        sectionCard(title: "Name") {
             TextField("Your name", text: $config.playerName)
                 .focused($nameFieldFocused)
-                .textFieldStyle(.plain)
                 .submitLabel(.done)
-                .padding(.vertical, 10)
-                .padding(.horizontal, 12)
-                .background(
-                    RoundedRectangle(cornerRadius: 10)
-                        .stroke(nameFieldFocused ? Color.cyan : Color.white.opacity(0.15), lineWidth: 1)
-                )
-                .foregroundStyle(.white)
+                .rallyTextFieldStyle()
         }
     }
 
     private var skinSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            sectionTitle("Skin tone")
+        sectionCard(title: "Skin tone") {
             HStack(spacing: 12) {
                 ForEach(AvatarSkinTone.allCases) { tone in
                     Circle()
@@ -137,8 +129,7 @@ struct AvatarCustomizerView: View {
     }
 
     private var hairStyleSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            sectionTitle("Hair style")
+        sectionCard(title: "Hair style") {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 10) {
                     ForEach(AvatarHairStyle.allCases) { style in
@@ -155,8 +146,7 @@ struct AvatarCustomizerView: View {
     }
 
     private var hairColorSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            sectionTitle("Hair color")
+        sectionCard(title: "Hair color") {
             HStack(spacing: 12) {
                 ForEach(Self.hairColorPalette, id: \.hex) { entry in
                     Circle()
@@ -173,8 +163,7 @@ struct AvatarCustomizerView: View {
     }
 
     private var bodySection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            sectionTitle("Build")
+        sectionCard(title: "Build") {
             HStack(spacing: 10) {
                 ForEach(AvatarBodyType.allCases) { type in
                     Chip(
@@ -198,15 +187,9 @@ struct AvatarCustomizerView: View {
                     Image(systemName: "arrow.right")
                 }
             }
-            .font(.system(.headline, design: .rounded).weight(.bold))
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 18)
-            .background(
-                RoundedRectangle(cornerRadius: 14)
-                    .fill(canSave ? Color.cyan : Color.cyan.opacity(0.35))
-            )
-            .foregroundStyle(.black)
         }
+        .buttonStyle(PrimaryButtonStyle(tint: RallyUIKit.Palette.cyan))
         .disabled(!canSave)
     }
 
@@ -221,9 +204,18 @@ struct AvatarCustomizerView: View {
 
     private func sectionTitle(_ text: String) -> some View {
         Text(text)
-            .font(.system(.caption, design: .rounded).weight(.semibold))
-            .foregroundStyle(.white.opacity(0.5))
+            .font(RallyUIKit.Typography.label(.caption, weight: .semibold))
+            .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.5))
             .textCase(.uppercase)
+    }
+
+    private func sectionCard<Content: View>(title: String, @ViewBuilder content: () -> Content) -> some View {
+        RallyUIKit.SectionCard(stroke: RallyUIKit.Palette.line) {
+            VStack(alignment: .leading, spacing: 10) {
+                sectionTitle(title)
+                content()
+            }
+        }
     }
 
     private func save() {

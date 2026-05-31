@@ -17,10 +17,12 @@ struct GameSessionView: View {
     @Query private var avatarConfigs: [AvatarConfig]
 
     @StateObject private var viewModel = GameSessionViewModel()
+    @StateObject private var gamePreferences = GamePreferences.shared
     @State private var scene: GameScene? = nil
     @State private var sessionKey = UUID()
     @State private var reflectionPrompt: JournalPrompt? = nil
     @State private var viewportSize: CGSize = .zero
+    @State private var showsSettings = false
 
     /// Optional rival opponent when launching a rival challenge session.
     var rivalOpponent: RivalOpponent? = nil
@@ -45,7 +47,9 @@ struct GameSessionView: View {
                             sessionChrome
                         }
                         .overlay(alignment: .bottom) {
-                            coachingChrome
+                            if gamePreferences.showCoachingCues {
+                                coachingChrome
+                            }
                         }
                         .overlay {
                             matchAtmosphere
@@ -91,11 +95,12 @@ struct GameSessionView: View {
             }
             .onAppear {
                 viewportSize = size
-                if scene == nil {
+                if scene == nil, isUsableViewport(size) {
                     scene = makeScene(for: size)
                 } else {
                     syncSceneSize(to: size)
                 }
+                applyPreferences()
                 DailyChallengeMgr.generateDailyIfNeeded(modelContext: modelContext)
                 viewModel.bindIfNeeded { result in
                     handleSessionEnded(result: result)
@@ -103,17 +108,41 @@ struct GameSessionView: View {
             }
             .onChange(of: size.width) { _, _ in
                 viewportSize = size
+                if scene == nil, isUsableViewport(size) {
+                    scene = makeScene(for: size)
+                }
                 syncSceneSize(to: size)
             }
             .onChange(of: size.height) { _, _ in
                 viewportSize = size
+                if scene == nil, isUsableViewport(size) {
+                    scene = makeScene(for: size)
+                }
                 syncSceneSize(to: size)
             }
+        }
+        .onChange(of: gamePreferences.dominantHand) { _, _ in
+            applyPreferences()
+        }
+        .onChange(of: gamePreferences.showCoachingCues) { _, _ in
+            applyPreferences()
+        }
+        .onChange(of: gamePreferences.matchPace) { _, _ in
+            applyPreferences()
         }
         .sheet(item: $reflectionPrompt) { prompt in
             NavigationStack {
                 JournalEditorView(entry: nil, seedPrompt: prompt)
             }
+        }
+        .sheet(isPresented: $showsSettings) {
+            GameSettingsSheet(
+                preferences: gamePreferences,
+                onRestartMatch: {
+                    restart()
+                    showsSettings = false
+                }
+            )
         }
         .animation(.easeOut(duration: 0.35), value: viewModel.lastResult != nil)
     }
@@ -134,8 +163,14 @@ struct GameSessionView: View {
                 Spacer(minLength: 0)
 
                 VStack(alignment: .trailing, spacing: 8) {
-                    statusPill(icon: "dot.radiowaves.left.and.right", text: "Live")
-                    statusPill(icon: "tennisball.fill", text: "Hard Court")
+                    HStack(spacing: 10) {
+                        SoundToggleButton()
+                        settingsButton
+                    }
+                    HStack(spacing: 8) {
+                        statusPill(icon: "dot.radiowaves.left.and.right", text: "Live")
+                        statusPill(icon: "tennisball.fill", text: gamePreferences.matchPace.title)
+                    }
                 }
             }
             .padding(.horizontal, 16)
@@ -207,6 +242,27 @@ struct GameSessionView: View {
         .padding(28)
     }
 
+    private var settingsButton: some View {
+        Button {
+            showsSettings = true
+        } label: {
+            Image(systemName: "slider.horizontal.3")
+                .font(.body.weight(.semibold))
+                .foregroundStyle(RallyUIKit.Palette.frost)
+                .frame(width: 36, height: 36)
+                .background(
+                    Circle()
+                        .fill(Color.white.opacity(0.06))
+                )
+                .overlay(
+                    Circle()
+                        .stroke(RallyUIKit.Palette.line, lineWidth: 1)
+                )
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Game settings")
+    }
+
     private func statusPill(icon: String, text: String) -> some View {
         HStack(spacing: 8) {
             Image(systemName: icon)
@@ -248,8 +304,7 @@ struct GameSessionView: View {
     // MARK: - Lifecycle helpers
 
     private func makeScene(for size: CGSize) -> GameScene {
-        let initialSize = resolvedViewportSize(from: size)
-        let s = GameScene(size: initialSize)
+        let s = GameScene(size: size)
         s.scaleMode = .resizeFill
         if let avatar = avatarConfigs.first {
             s.avatarSpec = AvatarVisualSpec.from(config: avatar, preview: nil)
@@ -258,29 +313,37 @@ struct GameSessionView: View {
            let profile = ShopCatalog.racketProfile(id: equippedRacketID) {
             s.racketTuning = profile.gameplayTuning
         }
+        applyPreferences(to: s)
         return s
     }
 
     private func syncSceneSize(to size: CGSize) {
-        let resolved = resolvedViewportSize(from: size)
         guard let scene else { return }
-        guard resolved.width > 0, resolved.height > 0 else { return }
-        guard scene.size != resolved else { return }
-        scene.size = resolved
+        guard isUsableViewport(size) else { return }
+        guard scene.size != size else { return }
+        scene.size = size
         scene.scaleMode = .resizeFill
     }
 
-    private func resolvedViewportSize(from size: CGSize) -> CGSize {
-        guard size.width > 0, size.height > 0 else {
-            return UIScreen.main.bounds.size
-        }
-        return size
+    private func isUsableViewport(_ size: CGSize) -> Bool {
+        size.width > 0 && size.height > 0
     }
 
     private func restart() {
         viewModel.dismiss()
         sessionKey = UUID()
         scene = makeScene(for: viewportSize)
+    }
+
+    private func applyPreferences() {
+        guard let scene else { return }
+        applyPreferences(to: scene)
+    }
+
+    private func applyPreferences(to scene: GameScene) {
+        scene.dominantHand = gamePreferences.dominantHand
+        scene.showCoachingCues = gamePreferences.showCoachingCues
+        scene.matchPace = gamePreferences.matchPace
     }
 
     private func handleSessionEnded(result: GameResult) {
@@ -343,6 +406,218 @@ struct GameSessionView: View {
         modelContext.insert(p)
         try? modelContext.save()
         return p
+    }
+}
+
+private struct GameSettingsSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    @ObservedObject var preferences: GamePreferences
+
+    let onRestartMatch: () -> Void
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(spacing: 18) {
+                    RallyUIKit.LuxePanel(tint: RallyUIKit.Palette.champagne) {
+                        VStack(alignment: .leading, spacing: 12) {
+                            RallyUIKit.EditorialEyebrow(text: "Match Settings", tint: RallyUIKit.Palette.champagne)
+                            Text("Shape the live court around how you actually want Rally to play.")
+                                .font(RallyUIKit.Typography.body(.subheadline, weight: .medium))
+                                .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.84))
+
+                            HStack(spacing: 10) {
+                                metaChip(icon: "hand.raised.fill", text: preferences.dominantHand.title)
+                                metaChip(icon: "speedometer", text: preferences.matchPace.title)
+                                metaChip(icon: preferences.isHapticsEnabled ? "waveform.path" : "waveform.path.badge.minus", text: preferences.isHapticsEnabled ? "Haptics On" : "Haptics Off")
+                            }
+                        }
+                    }
+
+                    RallyUIKit.SectionCard(stroke: RallyUIKit.Palette.line) {
+                        VStack(alignment: .leading, spacing: 16) {
+                            sectionHeader(icon: "slider.horizontal.3", title: "Controls", copy: "Fix the way the rally reads in your hands.")
+                            labeledPicker("Dominant hand", selection: $preferences.dominantHand)
+                            supportingCopy(preferences.dominantHand.coachingCopy)
+                            labeledPicker("Match pace", selection: $preferences.matchPace)
+                            supportingCopy(preferences.matchPace.subtitle)
+                        }
+                    }
+
+                    RallyUIKit.SectionCard(stroke: RallyUIKit.Palette.cyan.opacity(0.45)) {
+                        VStack(alignment: .leading, spacing: 16) {
+                            sectionHeader(icon: "sparkles", title: "Feedback", copy: "Keep the live guidance you want and cut the noise you do not.")
+
+                            Toggle(isOn: $preferences.showCoachingCues) {
+                                toggleLabel(
+                                    title: "Coaching cues",
+                                    copy: "Show bottom court-read cards and in-rally guidance prompts."
+                                )
+                            }
+                            .tint(RallyUIKit.Palette.cyan)
+
+                            Toggle(isOn: $preferences.isHapticsEnabled) {
+                                toggleLabel(
+                                    title: "Vibration",
+                                    copy: "Fire contact and pressure haptics during live play."
+                                )
+                            }
+                            .tint(RallyUIKit.Palette.champagne)
+                        }
+                    }
+
+                    VStack(spacing: 10) {
+                        Button(action: onRestartMatch) {
+                            Label("Restart Match", systemImage: "arrow.clockwise")
+                        }
+                        .buttonStyle(SecondaryButtonStyle(tint: RallyUIKit.Palette.cyan))
+
+                        Button("Done") {
+                            dismiss()
+                        }
+                        .buttonStyle(GhostButtonStyle())
+                    }
+                }
+                .padding(.horizontal, 18)
+                .padding(.vertical, 22)
+            }
+            .background(RallyUIKit.screenBackground.ignoresSafeArea())
+            .navigationTitle("Game Settings")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Close") {
+                        dismiss()
+                    }
+                }
+            }
+        }
+        .presentationDetents([.medium, .large])
+        .presentationDragIndicator(.visible)
+    }
+
+    private func sectionHeader(icon: String, title: String, copy: String) -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            RallyUIKit.IconBadge(systemName: icon, tint: RallyUIKit.Palette.cyan, size: 40)
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(RallyUIKit.Typography.label(.headline, weight: .bold))
+                    .foregroundStyle(RallyUIKit.Palette.frost)
+                Text(copy)
+                    .font(RallyUIKit.Typography.body(.caption, weight: .medium))
+                    .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.72))
+            }
+            Spacer(minLength: 0)
+        }
+    }
+
+    private func labeledPicker<T: Hashable & CaseIterable & Identifiable>(_ title: String, selection: Binding<T>) -> some View where T.AllCases == Array<T>, T: RawRepresentable, T.RawValue == String {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title)
+                .font(RallyUIKit.Typography.label(.subheadline, weight: .bold))
+                .foregroundStyle(RallyUIKit.Palette.frost)
+            HStack(spacing: RallyUIKit.Spacing.xs) {
+                ForEach(Array(T.allCases)) { option in
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.18)) {
+                            selection.wrappedValue = option
+                        }
+                    } label: {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(option.rawValue.capitalized)
+                                .font(RallyUIKit.Typography.label(.subheadline, weight: .bold))
+                                .foregroundStyle(
+                                    selection.wrappedValue == option
+                                    ? RallyUIKit.Palette.obsidian
+                                    : RallyUIKit.Palette.frost
+                                )
+                            optionSubtitle(option)
+                                .font(RallyUIKit.Typography.body(.caption, weight: .medium))
+                                .foregroundStyle(
+                                    selection.wrappedValue == option
+                                    ? RallyUIKit.Palette.obsidian.opacity(0.7)
+                                    : RallyUIKit.Palette.cloud.opacity(0.62)
+                                )
+                                .lineLimit(1)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, RallyUIKit.Spacing.sm)
+                        .padding(.vertical, RallyUIKit.Spacing.sm)
+                        .background(
+                            RoundedRectangle(cornerRadius: RallyUIKit.Radius.md, style: .continuous)
+                                .fill(
+                                    selection.wrappedValue == option
+                                    ? AnyShapeStyle(RallyUIKit.accentGradient(RallyUIKit.Palette.cyan))
+                                    : AnyShapeStyle(Color.white.opacity(0.04))
+                                )
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: RallyUIKit.Radius.md, style: .continuous)
+                                .stroke(
+                                    selection.wrappedValue == option
+                                    ? Color.white.opacity(0.16)
+                                    : RallyUIKit.Palette.line.opacity(0.7),
+                                    lineWidth: 1
+                                )
+                        )
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
+    }
+
+    private func optionSubtitle<T: RawRepresentable>(_ option: T) -> Text where T.RawValue == String {
+        switch option.rawValue.lowercased() {
+        case "right":
+            return Text("Classic read")
+        case "left":
+            return Text("Flip forehand side")
+        case "calm":
+            return Text("Longer reads")
+        case "standard":
+            return Text("Balanced tempo")
+        case "quick":
+            return Text("Sharper pressure")
+        default:
+            return Text("Live setting")
+        }
+    }
+
+    private func supportingCopy(_ text: String) -> some View {
+        Text(text)
+            .font(RallyUIKit.Typography.body(.caption, weight: .medium))
+            .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.7))
+    }
+
+    private func toggleLabel(title: String, copy: String) -> some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Text(title)
+                .font(RallyUIKit.Typography.label(.subheadline, weight: .bold))
+                .foregroundStyle(RallyUIKit.Palette.frost)
+            Text(copy)
+                .font(RallyUIKit.Typography.body(.caption, weight: .medium))
+                .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.72))
+        }
+    }
+
+    private func metaChip(icon: String, text: String) -> some View {
+        HStack(spacing: 7) {
+            Image(systemName: icon)
+            Text(text)
+        }
+        .font(RallyUIKit.Typography.label(.caption, weight: .bold))
+        .foregroundStyle(RallyUIKit.Palette.frost)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 7)
+        .background(
+            Capsule()
+                .fill(Color.white.opacity(0.08))
+        )
+        .overlay(
+            Capsule()
+                .stroke(RallyUIKit.Palette.line, lineWidth: 1)
+        )
     }
 }
 

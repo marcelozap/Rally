@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import PhotosUI
 
 /// Composer patterned after **Day One** / **Journey**: calm dark surfaces, focus
 /// buckets, guided prompts, mood & tags — persisted with `JournalFocus` + optional `promptId`.
@@ -10,11 +11,13 @@ struct JournalEditorView: View {
     @State private var date: Date
     @State private var title: String
     @State private var body_: String
+    @State private var photoData: Data?
     @State private var mood: Int
     @State private var tags: [String]
     @State private var tagInput: String = ""
     @State private var focus: JournalFocus
     @State private var promptId: String
+    @State private var selectedPhotoItem: PhotosPickerItem?
 
     private let existing: JournalEntry?
 
@@ -24,6 +27,7 @@ struct JournalEditorView: View {
             _date = State(initialValue: entry.date)
             _title = State(initialValue: entry.title)
             _body_ = State(initialValue: entry.body)
+            _photoData = State(initialValue: entry.photoData)
             _mood = State(initialValue: entry.mood)
             _tags = State(initialValue: entry.tags)
             _focus = State(initialValue: entry.focus)
@@ -32,6 +36,7 @@ struct JournalEditorView: View {
             _date = State(initialValue: Date())
             _title = State(initialValue: seed.title)
             _body_ = State(initialValue: seed.bodyStarter)
+            _photoData = State(initialValue: nil)
             _mood = State(initialValue: 3)
             _tags = State(initialValue: [])
             _focus = State(initialValue: seed.focus)
@@ -40,6 +45,7 @@ struct JournalEditorView: View {
             _date = State(initialValue: Date())
             _title = State(initialValue: "")
             _body_ = State(initialValue: "")
+            _photoData = State(initialValue: nil)
             _mood = State(initialValue: 3)
             _tags = State(initialValue: [])
             _focus = State(initialValue: .general)
@@ -57,32 +63,103 @@ struct JournalEditorView: View {
                 focusSection
                 promptsSection
                 cardSection(title: "When") {
-                    DatePicker("Date & time", selection: $date, displayedComponents: [.date, .hourAndMinute])
-                        .foregroundStyle(.white)
-                        .tint(.cyan)
+                    VStack(alignment: .leading, spacing: 12) {
+                        HStack(spacing: 10) {
+                            RallyUIKit.IconBadge(systemName: "calendar", tint: RallyUIKit.Palette.cyan, size: 30)
+                            VStack(alignment: .leading, spacing: 3) {
+                                Text("Memory moment")
+                                    .font(RallyUIKit.Typography.body(.subheadline, weight: .bold))
+                                    .foregroundStyle(RallyUIKit.Palette.frost)
+                                Text("Choose when this entry belongs in your Rally timeline.")
+                                    .font(RallyUIKit.Typography.body(.caption, weight: .medium))
+                                    .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.58))
+                            }
+                        }
+
+                        DatePicker("Date & time", selection: $date, displayedComponents: [.date, .hourAndMinute])
+                            .foregroundStyle(RallyUIKit.Palette.frost)
+                            .tint(RallyUIKit.Palette.cyan)
+                            .padding(12)
+                            .background(
+                                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                    .fill(Color.white.opacity(0.05))
+                            )
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                    .stroke(RallyUIKit.Palette.line, lineWidth: 1)
+                            )
+                    }
                 }
 
                 cardSection(title: "Entry") {
                     TextField("Title", text: $title)
-                        .foregroundStyle(.white)
-                        .padding(12)
-                        .background(RoundedRectangle(cornerRadius: 10).fill(Color.white.opacity(0.06)))
+                        .rallyTextFieldStyle()
 
                     ZStack(alignment: .topLeading) {
                         if body_.isEmpty {
                             Text("Write freely…")
-                                .foregroundStyle(.white.opacity(0.28))
+                                .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.28))
                                 .padding(.horizontal, 16)
                                 .padding(.vertical, 14)
                         }
                         TextEditor(text: $body_)
                             .scrollContentBackground(.hidden)
-                            .foregroundStyle(.white.opacity(0.92))
+                            .foregroundStyle(RallyUIKit.Palette.frost.opacity(0.92))
                             .frame(minHeight: 200)
                             .padding(.horizontal, 8)
                             .padding(.vertical, 6)
                     }
-                    .background(RoundedRectangle(cornerRadius: 10).fill(Color.white.opacity(0.05)))
+                    .background(
+                        RoundedRectangle(cornerRadius: 14)
+                            .fill(
+                                LinearGradient(
+                                    colors: [Color.white.opacity(0.07), Color.white.opacity(0.035)],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 14)
+                            .stroke(RallyUIKit.Palette.line, lineWidth: 1)
+                    )
+                }
+
+                cardSection(title: "Photo") {
+                    if let preview = previewImage {
+                        ZStack(alignment: .topTrailing) {
+                            Image(uiImage: preview)
+                                .resizable()
+                                .scaledToFill()
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 210)
+                                .clipShape(RoundedRectangle(cornerRadius: 16))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 16)
+                                        .stroke(RallyUIKit.Palette.line, lineWidth: 1)
+                                )
+
+                            Button {
+                                photoData = nil
+                                selectedPhotoItem = nil
+                            } label: {
+                                Image(systemName: "xmark.circle.fill")
+                                    .font(.title3.weight(.bold))
+                                    .foregroundStyle(.white, Color.black.opacity(0.45))
+                            }
+                            .padding(10)
+                        }
+                    }
+
+                    PhotosPicker(selection: $selectedPhotoItem, matching: .images) {
+                        Label(photoData == nil ? "Add memory photo" : "Swap photo", systemImage: "photo.fill.on.rectangle.fill")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(SecondaryButtonStyle(tint: RallyUIKit.Palette.cyan))
+
+                    Text("Use this for match moments, practice snapshots, or a doubles photo you want attached to the entry.")
+                        .font(RallyUIKit.Typography.body(.caption, weight: .medium))
+                        .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.52))
                 }
 
                 cardSection(title: "Mood") {
@@ -149,6 +226,13 @@ struct JournalEditorView: View {
                 promptId = ""
             }
         }
+        .task(id: selectedPhotoItem) {
+            guard let selectedPhotoItem else { return }
+            if let data = try? await selectedPhotoItem.loadTransferable(type: Data.self),
+               let normalized = normalizedImageData(from: data) {
+                photoData = normalized
+            }
+        }
     }
 
     // MARK: - Sections
@@ -170,17 +254,17 @@ struct JournalEditorView: View {
                                 .lineLimit(1)
                                 .minimumScaleFactor(0.85)
                         }
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 12)
-                        .background(
-                            RoundedRectangle(cornerRadius: 12)
-                                .fill(focus == f ? Color.cyan.opacity(0.28) : Color.white.opacity(0.06))
-                        )
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 12)
-                                .stroke(focus == f ? Color.cyan : Color.white.opacity(0.08), lineWidth: 1)
-                        )
-                        .foregroundStyle(focus == f ? Color.black : Color.white.opacity(0.88))
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 12)
+                            .background(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .fill(focus == f ? RallyUIKit.Palette.cyan.opacity(0.28) : Color.white.opacity(0.06))
+                            )
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .stroke(focus == f ? RallyUIKit.Palette.cyan : Color.white.opacity(0.08), lineWidth: 1)
+                            )
+                            .foregroundStyle(focus == f ? RallyUIKit.Palette.obsidian : RallyUIKit.Palette.frost.opacity(0.88))
                     }
                     .buttonStyle(.plain)
                 }
@@ -237,8 +321,8 @@ struct JournalEditorView: View {
                         .foregroundStyle(.white.opacity(0.85))
                         .padding(12)
                         .frame(width: 100, height: 76)
-                        .background(RoundedRectangle(cornerRadius: 12).fill(Color.purple.opacity(0.22)))
-                        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.purple.opacity(0.45), lineWidth: 1))
+                        .background(RoundedRectangle(cornerRadius: 12).fill(RallyUIKit.Palette.rose.opacity(0.22)))
+                        .overlay(RoundedRectangle(cornerRadius: 12).stroke(RallyUIKit.Palette.rose.opacity(0.45), lineWidth: 1))
                     }
                     .buttonStyle(.plain)
                 }
@@ -255,22 +339,15 @@ struct JournalEditorView: View {
     }
 
     private func cardSection(title: String, @ViewBuilder content: () -> some View) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text(title.uppercased())
-                .font(.caption.weight(.bold))
-                .tracking(1.1)
-                .foregroundStyle(.white.opacity(0.38))
-            content()
+        RallyUIKit.SectionCard(stroke: RallyUIKit.Palette.line) {
+            VStack(alignment: .leading, spacing: 12) {
+                Text(title.uppercased())
+                    .font(RallyUIKit.Typography.label(.caption, weight: .bold))
+                    .tracking(1.1)
+                    .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.42))
+                content()
+            }
         }
-        .padding(14)
-        .background(
-            RoundedRectangle(cornerRadius: 16)
-                .fill(Color.white.opacity(0.04))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 16)
-                .stroke(Color.white.opacity(0.07), lineWidth: 1)
-        )
     }
 
     private func apply(_ prompt: JournalPrompt) {
@@ -302,6 +379,7 @@ struct JournalEditorView: View {
             existing.date = date
             existing.title = title
             existing.body = body_
+            existing.photoData = photoData
             existing.mood = mood
             existing.tags = tags
             existing.focus = focus
@@ -311,6 +389,7 @@ struct JournalEditorView: View {
                 date: date,
                 title: title,
                 body: body_,
+                photoData: photoData,
                 mood: mood,
                 tags: tags,
                 focus: focus,
@@ -320,6 +399,16 @@ struct JournalEditorView: View {
         }
         try? modelContext.save()
         RallySyncTriggers.pushAfterLocalSave(modelContext: modelContext)
+    }
+
+    private var previewImage: UIImage? {
+        guard let photoData else { return nil }
+        return UIImage(data: photoData)
+    }
+
+    private func normalizedImageData(from data: Data) -> Data? {
+        guard let image = UIImage(data: data) else { return nil }
+        return image.jpegData(compressionQuality: 0.82)
     }
 }
 
@@ -344,8 +433,8 @@ private struct FlowTagWrap: View {
                     .font(.caption.weight(.medium))
                     .padding(.vertical, 6)
                     .padding(.horizontal, 10)
-                    .background(Capsule().fill(Color.cyan.opacity(0.16)))
-                    .foregroundStyle(.cyan)
+                    .background(Capsule().fill(RallyUIKit.Palette.cyan.opacity(0.16)))
+                    .foregroundStyle(RallyUIKit.Palette.cyan)
                 }
             }
         }

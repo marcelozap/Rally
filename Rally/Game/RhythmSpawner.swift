@@ -202,6 +202,7 @@ final class RhythmSpawner {
     private var patternRemainingNotes: Int = 0
     private var serveSeedLane: Lane = .right
     private var pendingInfluence: RallyInfluence?
+    private var emittedNoteCount: Int = 0
 
     /// Designated init for legacy precomputed-beatmap mode.
     init(beatmap: Beatmap, travelSeconds: Double, sink: @escaping (BeatmapNote) -> Void) {
@@ -262,6 +263,7 @@ final class RhythmSpawner {
                 let lane = chooseLane(for: phase)
                 let role = roleForCurrentPattern()
                 sink(BeatmapNote(arrivalTime: arrival, lane: lane, kind: .normal, role: role))
+                emittedNoteCount += 1
 
                 if shouldEmitDouble(
                     profile: profile,
@@ -292,6 +294,7 @@ final class RhythmSpawner {
         patternRemainingNotes = 0
         serveSeedLane = .right
         pendingInfluence = nil
+        emittedNoteCount = 0
     }
 
     func applyInfluence(_ influence: RallyInfluence) {
@@ -299,6 +302,12 @@ final class RhythmSpawner {
     }
 
     private func chooseLane(for phase: MatchFlowPhase) -> Lane {
+        if phase == .warmUp, emittedNoteCount < 6 {
+            let lane: Lane = emittedNoteCount.isMultiple(of: 2) ? .right : .left
+            updateLaneRunTracking(with: lane)
+            return lane
+        }
+
         refreshPatternIfNeeded(for: phase)
 
         if let influencedLane = consumeInfluencedLane(for: phase) {
@@ -359,6 +368,13 @@ final class RhythmSpawner {
 
     private func refreshPatternIfNeeded(for phase: MatchFlowPhase) {
         guard patternRemainingNotes == 0 else { return }
+
+        if phase == .warmUp, emittedNoteCount < 6 {
+            currentPattern = .servePlusOne
+            patternRemainingNotes = 2
+            serveSeedLane = emittedNoteCount < 2 ? .right : .left
+            return
+        }
 
         currentPattern = pickPattern(for: phase)
         patternRemainingNotes = patternLength(for: currentPattern, phase: phase)
@@ -443,6 +459,13 @@ final class RhythmSpawner {
     }
 
     private func roleForCurrentPattern() -> BeatmapNote.Role {
+        if emittedNoteCount < 2 {
+            return .serve
+        }
+        if emittedNoteCount < 4 {
+            return .returnBall
+        }
+
         switch currentPattern {
         case .neutralCrosscourt:
             return .rally
@@ -481,6 +504,12 @@ final class RhythmSpawner {
     }
 
     private func chooseSubdivision(for profile: PhaseProfile, phase: MatchFlowPhase) -> Double {
+        if phase == .warmUp, emittedNoteCount < 8 {
+            lastSubdivision = 1.0
+            consecutiveSixteenthCount = 0
+            return 1.0
+        }
+
         var subdivision = profile.subdivisions[
             rng.weightedIndex(weights: profile.subdivisionWeights)
         ]

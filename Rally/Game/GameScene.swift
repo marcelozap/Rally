@@ -76,6 +76,13 @@ final class GameScene: SKScene {
     var sessionDurationSeconds: Double = 180
     var racketTuning: RacketGameplayTuning = .balanced
     var avatarSpec: AvatarVisualSpec?
+    var dominantHand: GamePreferences.DominantHand = .right {
+        didSet { refreshHandednessIfNeeded() }
+    }
+    var showCoachingCues = true
+    var matchPace: GamePreferences.MatchPace = .standard {
+        didSet { applyMatchPaceIfNeeded() }
+    }
 
     // MARK: - Runtime state
 
@@ -159,6 +166,7 @@ final class GameScene: SKScene {
     private var currentTravelSeconds: Double = Tunables.ballTravelSeconds
     private var lastBeatTime: TimeInterval = 0
     private var sessionStartWallTime: TimeInterval = 0
+    private var spawnedBallCount: Int = 0
 
     // First-third / middle-third / last-third hit counters, so the end-of-run
     // summary can tell a story ("slow start — strong finish"). We bucket on
@@ -192,6 +200,10 @@ final class GameScene: SKScene {
     private var recoveryLane: Lane?
     private var recoverySeverity: CGFloat = 0
 
+    private var cameraHomePosition: CGPoint {
+        CGPoint(x: size.width / 2, y: size.height / 2)
+    }
+
     // MARK: - Lifecycle
 
     override func didMove(to view: SKView) {
@@ -205,6 +217,7 @@ final class GameScene: SKScene {
         setupStrikeLine()
         setupCourtAvatar()
         setupHUD()
+        didChangeSize(size)
         setupSwipeRecognizers(in: view)
 
         ParticleManager.shared.attach(scene: self, shakeTarget: cameraNode)
@@ -228,7 +241,7 @@ final class GameScene: SKScene {
         flow = coordinator
         let initialProfile = coordinator.currentProfile()
         currentBPM = initialProfile.bpm
-        currentTravelSeconds = Tunables.ballTravelSeconds * initialProfile.travelScalar
+        currentTravelSeconds = Tunables.ballTravelSeconds * initialProfile.travelScalar * matchPace.travelScalar
 
         spawner = RhythmSpawner(
             flow: coordinator,
@@ -344,32 +357,45 @@ final class GameScene: SKScene {
 
     private func setupCamera() {
         let cam = SKCameraNode()
-        cam.position = CGPoint(x: 0, y: 0)
+        cam.position = cameraHomePosition
         addChild(cam)
         camera = cam
         cameraNode = cam
         // Keep the camera at scene-center so position offsets from
         // CameraShake read as "screen shake" rather than "scroll".
-        cam.position = CGPoint(x: 0, y: 0)
+        cam.position = cameraHomePosition
     }
 
     override func didChangeSize(_ oldSize: CGSize) {
         // SKCameraNode's position is in scene coordinates. With anchorPoint
         // (0,0), camera at (size.width/2, size.height/2) shows centered.
         anchorPoint = CGPoint(x: 0, y: 0)
-        cameraNode?.position = CGPoint(x: size.width / 2, y: size.height / 2)
+        cameraNode?.removeAction(forKey: "shake")
+        cameraNode?.removeAction(forKey: "nudge")
+        cameraNode?.removeAction(forKey: "drift")
+        cameraNode?.position = cameraHomePosition
+        background?.resize(to: size, strikeYRatio: Tunables.strikeLineYRatio)
+
+        let strikeY = size.height * Tunables.strikeLineYRatio
+        let glowWidth = size.width * 0.18
+        let glowHeight = size.height * (Tunables.spawnLineYRatio - Tunables.strikeLineYRatio) + 60
+        let glowRect = CGRect(x: -glowWidth / 2, y: 0, width: glowWidth, height: glowHeight)
+        leftLaneGlow?.path = CGPath(roundedRect: glowRect, cornerWidth: glowWidth / 2, cornerHeight: glowWidth / 2, transform: nil)
+        leftLaneGlow?.position = CGPoint(x: size.width * 0.3, y: strikeY)
+        rightLaneGlow?.path = CGPath(roundedRect: glowRect, cornerWidth: glowWidth / 2, cornerHeight: glowWidth / 2, transform: nil)
+        rightLaneGlow?.position = CGPoint(x: size.width * 0.7, y: strikeY)
 
         // Re-layout strike line if it exists.
         if let line = strikeLine {
-            line.position = CGPoint(x: size.width / 2, y: size.height * Tunables.strikeLineYRatio)
+            line.position = CGPoint(x: size.width / 2, y: strikeY)
             line.path = CGPath(
                 rect: CGRect(x: -size.width / 2, y: -1, width: size.width, height: 2),
                 transform: nil
             )
         }
-        strikeHalo?.position = CGPoint(x: size.width / 2, y: size.height * Tunables.strikeLineYRatio)
-        leftStrikeGate?.position = CGPoint(x: size.width * 0.28, y: size.height * Tunables.strikeLineYRatio)
-        rightStrikeGate?.position = CGPoint(x: size.width * 0.72, y: size.height * Tunables.strikeLineYRatio)
+        strikeHalo?.position = CGPoint(x: size.width / 2, y: strikeY)
+        leftStrikeGate?.position = CGPoint(x: size.width * 0.28, y: strikeY)
+        rightStrikeGate?.position = CGPoint(x: size.width * 0.72, y: strikeY)
         leftContactPocket?.position = racketContactPoint(for: .left)
         rightContactPocket?.position = racketContactPoint(for: .right)
         if let label = scoreLabel {
@@ -802,6 +828,7 @@ final class GameScene: SKScene {
             return
         }
         speed = 1
+        recenterCameraIfIdle()
 
         let trackTime = currentTime - startTime
         currentTimeSnapshot = currentTime
@@ -816,6 +843,7 @@ final class GameScene: SKScene {
                 currentTravelSeconds = Tunables.ballTravelSeconds
                     * profile.travelScalar
                     * racketTuning.travelScalar
+                    * matchPace.travelScalar
                 spawner?.travelSeconds = currentTravelSeconds
                 currentBPM = profile.bpm
             }
@@ -831,6 +859,18 @@ final class GameScene: SKScene {
 
         if !sessionEnded, currentTrackTime >= sessionDurationSeconds, activeBalls.isEmpty {
             completeSession()
+        }
+    }
+
+    private func recenterCameraIfIdle() {
+        guard let cameraNode else { return }
+        let isAnimatingCamera =
+            cameraNode.action(forKey: "shake") != nil ||
+            cameraNode.action(forKey: "nudge") != nil ||
+            cameraNode.action(forKey: "drift") != nil
+        guard !isAnimatingCamera else { return }
+        if cameraNode.position != cameraHomePosition {
+            cameraNode.position = cameraHomePosition
         }
     }
 
@@ -1015,11 +1055,12 @@ final class GameScene: SKScene {
             if swingVisualIntent == .slice {
                 return .defensiveBlock
             }
+            let strokeSide = strokeSide(for: swingVisualLane)
             let stretched = recoverySeverity > 0.52 || swingVisualReach > 150
             if stretched {
-                return swingVisualLane == .right ? .stretchForehand : .stretchBackhand
+                return strokeSide == .forehand ? .stretchForehand : .stretchBackhand
             }
-            return swingVisualLane == .right ? .forehandClean : .backhandClean
+            return strokeSide == .forehand ? .forehandClean : .backhandClean
         }
         if recoveryProgress > 0.08 {
             return .recovery
@@ -1431,6 +1472,7 @@ final class GameScene: SKScene {
     // MARK: - Spawning (called by RhythmSpawner)
 
     func spawnBall(_ note: BeatmapNote) {
+        spawnedBallCount += 1
         let travelSeconds = currentTravelSeconds
         let spawnTime = note.arrivalTime - travelSeconds
         let spawnY = size.height * Tunables.spawnLineYRatio
@@ -1462,6 +1504,38 @@ final class GameScene: SKScene {
     }
 
     private func stagePointCueIfNeeded(for note: BeatmapNote) {
+        if showOpeningTutorialCue(for: note) {
+            return
+        }
+
+        if note.kind == .double {
+            betweenPointLiftUntil = max(betweenPointLiftUntil, currentTimeSnapshot + 0.32)
+            CameraShake.drift(
+                cameraNode,
+                dx: 0,
+                dy: -5,
+                settleDx: 0,
+                settleDy: -1,
+                outMs: 58,
+                driftMs: 120,
+                backMs: 220
+            )
+            showMomentBanner(
+                text: "TWO BALLS",
+                color: UIColor(red: 0.98, green: 0.84, blue: 0.44, alpha: 1),
+                hold: 0.36,
+                startScale: 0.92,
+                peakScale: 1.03
+            )
+            stageStrikeTransition(
+                color: UIColor(red: 0.98, green: 0.84, blue: 0.44, alpha: 1),
+                intensity: 0.88,
+                duration: 0.34
+            )
+            showInstruction("Two-ball pressure. Stay centered and answer both lanes clean.", hold: 0.7)
+            return
+        }
+
         switch note.role {
         case .serve:
             if activeBalls.count <= 1 {
@@ -1489,6 +1563,33 @@ final class GameScene: SKScene {
             }
         case .rally:
             break
+        }
+    }
+
+    private func showOpeningTutorialCue(for note: BeatmapNote) -> Bool {
+        guard spawnedBallCount <= 6 else { return false }
+
+        switch spawnedBallCount {
+        case 1:
+            showInstruction("First ball. Swipe through the glowing lane, not across the whole court.", hold: 1.0)
+            return true
+        case 2:
+            showInstruction("Now the other side. Meet it early and keep the release clean.", hold: 0.96)
+            return true
+        case 3:
+            showInstruction("Good. Let the ball come to the strike line before you fire.", hold: 0.92)
+            return true
+        case 4:
+            showInstruction("Read the bounce, then answer with one balanced swing.", hold: 0.9)
+            return true
+        case 5:
+            showInstruction("Rally mode now. Recover back under yourself after contact.", hold: 0.88)
+            return true
+        case 6:
+            showInstruction("Tempo will rise next. Stay smooth before you try to be fast.", hold: 0.86)
+            return true
+        default:
+            return false
         }
     }
 
@@ -2244,14 +2345,57 @@ final class GameScene: SKScene {
     }
 
     private func racketContactPoint(for lane: Lane) -> CGPoint {
-        guard let playerRoot, let playerRacketHead else {
+        guard let playerRoot else {
             return CGPoint(
                 x: lane == .left ? size.width * 0.34 : size.width * 0.66,
                 y: size.height * Tunables.strikeLineYRatio
             )
         }
-        let local = CGPoint(x: playerRacketHead.position.x, y: playerRacketHead.position.y)
-        return playerRoot.convert(local, to: self)
+        let authored = CGPoint(
+            x: playerRoot.position.x + contactPocketOffsetX(for: lane),
+            y: size.height * Tunables.strikeLineYRatio + contactPocketLift(for: lane)
+        )
+        guard let playerRacketHead, lane == swingVisualLane else {
+            return authored
+        }
+
+        let live = playerRoot.convert(
+            CGPoint(x: playerRacketHead.position.x, y: playerRacketHead.position.y),
+            to: self
+        )
+        let swingProgress = max(0, min(1, (swingVisualImpactUntil - currentTimeSnapshot) / 0.26))
+        let touchProgress: CGFloat = swingCurrentScene == nil ? 0 : 0.28
+        let blend = min(1, swingProgress + touchProgress)
+        return CGPoint(
+            x: authored.x + (live.x - authored.x) * blend,
+            y: authored.y + (live.y - authored.y) * blend
+        )
+    }
+
+    private func contactPocketOffsetX(for lane: Lane) -> CGFloat {
+        let forehand = strokeSide(for: lane) == .forehand
+        let base = size.width * (forehand ? 0.165 : 0.125)
+        return lane == .left ? -base : base
+    }
+
+    private func contactPocketLift(for lane: Lane) -> CGFloat {
+        strokeSide(for: lane) == .forehand ? 4 : -2
+    }
+
+    private func refreshHandednessIfNeeded() {
+        guard playerRoot != nil else { return }
+        leftContactPocket?.position = racketContactPoint(for: .left)
+        rightContactPocket?.position = racketContactPoint(for: .right)
+    }
+
+    private func applyMatchPaceIfNeeded() {
+        guard let flow else { return }
+        let profile = flow.currentProfile()
+        currentTravelSeconds = Tunables.ballTravelSeconds
+            * profile.travelScalar
+            * racketTuning.travelScalar
+            * matchPace.travelScalar
+        spawner?.travelSeconds = currentTravelSeconds
     }
 
     private func spatialContactDistance(to ball: BallNode, lane: Lane) -> CGFloat {
@@ -2561,6 +2705,7 @@ final class GameScene: SKScene {
     }
 
     private func showInstruction(_ text: String, hold: TimeInterval) {
+        guard showCoachingCues else { return }
         guard let instructionLabel, let instructionPlate else { return }
         instructionLabel.removeAllActions()
         instructionPlate.removeAllActions()
@@ -2647,9 +2792,12 @@ final class GameScene: SKScene {
     }
 
     private func strokeSide(for lane: Lane) -> StrokeSide {
-        // Current gameplay assumes a right-handed baseline orientation:
-        // left lane reads as backhand, right lane as forehand.
-        lane == .left ? .backhand : .forehand
+        switch dominantHand {
+        case .right:
+            return lane == .left ? .backhand : .forehand
+        case .left:
+            return lane == .left ? .forehand : .backhand
+        }
     }
 
     private func timingWindowScalar(

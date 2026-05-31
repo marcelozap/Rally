@@ -9,29 +9,32 @@ struct LogsView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            HStack(spacing: 12) {
-                RallyUIKit.IconBadge(
-                    systemName: section == .training ? "figure.tennis" : "trophy.fill",
-                    tint: section == .training ? RallyUIKit.Palette.cyan : RallyUIKit.Palette.gold,
-                    size: 36
-                )
+            RallyUIKit.SectionCard(stroke: activeTint.opacity(0.24)) {
+                VStack(alignment: .leading, spacing: 14) {
+                    HStack(spacing: 12) {
+                        RallyUIKit.IconBadge(
+                            systemName: section == .training ? "figure.tennis" : "trophy.fill",
+                            tint: activeTint,
+                            size: 36
+                        )
 
-                Picker("Section", selection: $section) {
-                    ForEach(LogsSection.allCases) { s in
-                        Text(s.displayName).tag(s)
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text("Player logbook")
+                                .font(RallyUIKit.Typography.body(.headline, weight: .bold))
+                                .foregroundStyle(RallyUIKit.Palette.frost)
+                            Text("Move between your training blocks and match record.")
+                                .font(RallyUIKit.Typography.body(.caption, weight: .medium))
+                                .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.58))
+                        }
+                    }
+
+                    HStack(spacing: 10) {
+                        ForEach(LogsSection.allCases) { value in
+                            logSectionButton(value)
+                        }
                     }
                 }
-                .pickerStyle(.segmented)
             }
-            .padding(14)
-            .background(
-                RoundedRectangle(cornerRadius: 18)
-                    .fill(Color.white.opacity(0.05))
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 18)
-                    .stroke(Color.white.opacity(0.08), lineWidth: 1)
-            )
             .padding(.horizontal, 16)
             .padding(.top, 8)
             .padding(.bottom, 8)
@@ -42,6 +45,42 @@ struct LogsView: View {
             }
         }
         .background(RallyUIKit.screenBackground)
+    }
+
+    private var activeTint: Color {
+        section == .training ? RallyUIKit.Palette.cyan : RallyUIKit.Palette.gold
+    }
+
+    private func logSectionButton(_ value: LogsSection) -> some View {
+        let selected = value == section
+        return Button {
+            withAnimation(.spring(response: 0.28, dampingFraction: 0.84)) {
+                section = value
+            }
+        } label: {
+            HStack(spacing: 8) {
+                Image(systemName: value == .training ? "figure.tennis" : "trophy.fill")
+                    .font(.system(size: 12, weight: .bold))
+                Text(value.displayName)
+                    .font(RallyUIKit.Typography.label(.subheadline, weight: .semibold))
+                    .lineLimit(1)
+            }
+            .foregroundStyle(selected ? Color.black : RallyUIKit.Palette.frost.opacity(0.9))
+            .frame(maxWidth: .infinity)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 11)
+            .background(
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(selected ? AnyShapeStyle(RallyUIKit.accentGradient(value == .training ? RallyUIKit.Palette.cyan : RallyUIKit.Palette.gold)) : AnyShapeStyle(Color.white.opacity(0.05)))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(selected ? Color.white.opacity(0.26) : Color.white.opacity(0.08), lineWidth: 1)
+            )
+            .shadow(color: selected ? activeTint.opacity(0.18) : .clear, radius: 12, x: 0, y: 6)
+            .contentShape(RoundedRectangle(cornerRadius: 16))
+        }
+        .buttonStyle(.plain)
     }
 }
 
