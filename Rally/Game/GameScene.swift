@@ -225,10 +225,6 @@ final class GameScene: SKScene {
         setupStrikeLine()
         setupCourtAvatar()
         setupHUD()
-        if sessionMode == .wallRally {
-            hudCaptionLabel?.text = "ONE-BALL WALL RALLY"
-            hudPhaseLabel?.text = "MODE"
-        }
         didChangeSize(size)
         setupSwipeRecognizers(in: view)
 
@@ -285,6 +281,10 @@ final class GameScene: SKScene {
         runCountdown()
     }
 
+    private var usesMinimalWallHUD: Bool {
+        sessionMode == .wallRally
+    }
+
     // MARK: - Countdown
 
     /// Shows a 3-2-1-GO sequence above the strike line. While it's running
@@ -302,7 +302,7 @@ final class GameScene: SKScene {
         addChild(label)
 
         let subtitle = SKLabelNode(fontNamed: "AvenirNext-DemiBold")
-        subtitle.text = sessionMode == .wallRally ? "WALL START" : "MATCH START"
+        subtitle.text = sessionMode == .wallRally ? "READY" : "MATCH START"
         subtitle.fontSize = 18
         subtitle.fontColor = UIColor(white: 1.0, alpha: 0.68)
         subtitle.position = CGPoint(x: size.width / 2, y: size.height * 0.61)
@@ -426,14 +426,25 @@ final class GameScene: SKScene {
         if let label = scoreLabel {
             label.position = CGPoint(x: size.width / 2, y: size.height * 0.875)
         }
-        hudTopPlate?.position = CGPoint(x: size.width / 2, y: size.height * 0.885)
+        hudTopPlate?.path = CGPath(
+            roundedRect: CGRect(
+                x: -(usesMinimalWallHUD ? 206.0 / 2 : 288.0 / 2),
+                y: -(usesMinimalWallHUD ? 82.0 / 2 : 104.0 / 2),
+                width: usesMinimalWallHUD ? 206 : 288,
+                height: usesMinimalWallHUD ? 82 : 104
+            ),
+            cornerWidth: usesMinimalWallHUD ? 26 : 30,
+            cornerHeight: usesMinimalWallHUD ? 26 : 30,
+            transform: nil
+        )
+        hudTopPlate?.position = CGPoint(x: size.width / 2, y: usesMinimalWallHUD ? size.height * 0.892 : size.height * 0.885)
         hudCaptionLabel?.position = CGPoint(x: size.width / 2, y: size.height * 0.934)
         hudPhaseLabel?.position = CGPoint(x: size.width * 0.27, y: size.height * 0.915)
         hudPhaseValueLabel?.position = CGPoint(x: size.width * 0.27, y: size.height * 0.889)
-        hudMaxLabel?.position = CGPoint(x: size.width * 0.73, y: size.height * 0.915)
-        hudMaxValueLabel?.position = CGPoint(x: size.width * 0.73, y: size.height * 0.889)
+        hudMaxLabel?.position = CGPoint(x: usesMinimalWallHUD ? size.width * 0.72 : size.width * 0.73, y: usesMinimalWallHUD ? size.height * 0.907 : size.height * 0.915)
+        hudMaxValueLabel?.position = CGPoint(x: usesMinimalWallHUD ? size.width * 0.72 : size.width * 0.73, y: usesMinimalWallHUD ? size.height * 0.882 : size.height * 0.889)
         if let combo = comboLabel {
-            combo.position = CGPoint(x: size.width / 2, y: size.height * 0.838)
+            combo.position = CGPoint(x: size.width / 2, y: usesMinimalWallHUD ? size.height * 0.81 : size.height * 0.838)
         }
         if let time = timeLabel {
             time.position = CGPoint(x: size.width / 2, y: size.height * 0.918)
@@ -700,9 +711,12 @@ final class GameScene: SKScene {
     }
 
     private func setupHUD() {
+        let topPlateSize = usesMinimalWallHUD
+            ? CGSize(width: 206, height: 82)
+            : CGSize(width: 288, height: 104)
         let topPlate = SKShapeNode(
-            rectOf: CGSize(width: 306, height: 118),
-            cornerRadius: 30
+            rectOf: topPlateSize,
+            cornerRadius: usesMinimalWallHUD ? 26 : 30
         )
         topPlate.fillColor = UIColor(red: 0.03, green: 0.05, blue: 0.09, alpha: 0.42)
         topPlate.strokeColor = UIColor(white: 1.0, alpha: 0.16)
@@ -714,7 +728,7 @@ final class GameScene: SKScene {
         hudTopPlate = topPlate
 
         let caption = SKLabelNode(fontNamed: "AvenirNext-DemiBold")
-        caption.text = "MATCH SCORE"
+        caption.text = usesMinimalWallHUD ? "" : "MATCH SCORE"
         caption.fontSize = 10
         caption.fontColor = UIColor(white: 1.0, alpha: 0.42)
         caption.position = CGPoint(x: size.width / 2, y: size.height * 0.934)
@@ -724,7 +738,7 @@ final class GameScene: SKScene {
         hudCaptionLabel = caption
 
         let phaseLabel = SKLabelNode(fontNamed: "AvenirNext-DemiBold")
-        phaseLabel.text = "PHASE"
+        phaseLabel.text = usesMinimalWallHUD ? "" : "PHASE"
         phaseLabel.fontSize = 9
         phaseLabel.fontColor = UIColor(white: 1.0, alpha: 0.28)
         phaseLabel.position = CGPoint(x: size.width * 0.27, y: size.height * 0.915)
@@ -734,7 +748,7 @@ final class GameScene: SKScene {
         hudPhaseLabel = phaseLabel
 
         let phaseValue = SKLabelNode(fontNamed: "AvenirNext-DemiBold")
-        phaseValue.text = "WARM-UP"
+        phaseValue.text = usesMinimalWallHUD ? "" : "WARM-UP"
         phaseValue.fontSize = 14
         phaseValue.fontColor = UIColor(white: 1.0, alpha: 0.84)
         phaseValue.position = CGPoint(x: size.width * 0.27, y: size.height * 0.889)
@@ -765,7 +779,7 @@ final class GameScene: SKScene {
 
         let score = SKLabelNode(fontNamed: "AvenirNext-Bold")
         score.text = "0"
-        score.fontSize = 46
+        score.fontSize = usesMinimalWallHUD ? 52 : 46
         score.fontColor = .white
         score.position = CGPoint(x: size.width / 2, y: size.height * 0.875)
         score.zPosition = 50
@@ -773,23 +787,32 @@ final class GameScene: SKScene {
         addChild(score)
         scoreLabel = score
 
+        if usesMinimalWallHUD {
+            caption.alpha = 0
+            phaseLabel.alpha = 0
+            phaseValue.alpha = 0
+        }
+
         let combo = SKLabelNode(fontNamed: "AvenirNext-DemiBold")
         combo.text = ""
         combo.fontSize = 17
         combo.fontColor = UIColor(white: 1, alpha: 0.68)
-        combo.position = CGPoint(x: size.width / 2, y: size.height * 0.838)
+        combo.position = CGPoint(x: size.width / 2, y: usesMinimalWallHUD ? size.height * 0.81 : size.height * 0.838)
         combo.zPosition = 50
         combo.horizontalAlignmentMode = .center
         addChild(combo)
         comboLabel = combo
 
         let time = SKLabelNode(fontNamed: "AvenirNext-Medium")
-        time.text = "3:00"
+        time.text = usesMinimalWallHUD ? "" : "3:00"
         time.fontSize = 13
         time.fontColor = UIColor(white: 1, alpha: 0.56)
         time.position = CGPoint(x: size.width / 2, y: size.height * 0.918)
         time.zPosition = 50
         time.horizontalAlignmentMode = .center
+        if usesMinimalWallHUD {
+            time.alpha = 0
+        }
         addChild(time)
         timeLabel = time
 
@@ -818,7 +841,7 @@ final class GameScene: SKScene {
         instructionPlate = bottomPlate
 
         let instruction = SKLabelNode(fontNamed: "AvenirNext-DemiBold")
-        instruction.text = "Swipe toward the lane as the ball meets the line"
+        instruction.text = usesMinimalWallHUD ? "Read the side. Time the swing." : "Swipe toward the lane as the ball meets the line"
         instruction.fontSize = 15
         instruction.fontColor = UIColor(white: 1, alpha: 0.82)
         instruction.position = CGPoint(x: size.width / 2, y: size.height * 0.14)
@@ -2373,10 +2396,19 @@ final class GameScene: SKScene {
 
     private func updateHUD() {
         scoreLabel?.text = "\(score)"
-        if sessionMode == .wallRally {
-            hudPhaseValueLabel?.text = "WALL"
-            hudPhaseValueLabel?.fontColor = UIColor(red: 0.99, green: 0.82, blue: 0.36, alpha: 0.92)
+        if usesMinimalWallHUD {
+            hudCaptionLabel?.alpha = 0
+            hudPhaseLabel?.alpha = 0
+            hudPhaseValueLabel?.text = ""
+            hudPhaseValueLabel?.alpha = 0
+            timeLabel?.alpha = 0
+            hudMaxLabel?.alpha = 1
+            hudMaxLabel?.text = "BEST"
         } else {
+            hudCaptionLabel?.alpha = 1
+            hudPhaseLabel?.alpha = 1
+            hudPhaseValueLabel?.alpha = 1
+            timeLabel?.alpha = 1
             hudPhaseValueLabel?.text = flow?.currentPhase.rawValue ?? "EXCHANGE"
             hudPhaseValueLabel?.fontColor = bannerColor(for: flow?.currentPhase ?? .exchange).withAlphaComponent(0.88)
         }

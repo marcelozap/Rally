@@ -37,9 +37,15 @@ struct LockerHubView: View {
                         }
 
                         if let avatar = avatar {
-                            AvatarShopStageView(config: avatar, preview: nil, emote: $shopEmote)
-                                .padding(.horizontal, 16)
-                                .padding(.top, 4)
+                            if usesReferenceAvatarArt(avatar) {
+                                referenceAvatarPanel
+                                    .padding(.horizontal, 16)
+                                    .padding(.top, 4)
+                            } else {
+                                AvatarShopStageView(config: avatar, preview: nil, emote: $shopEmote)
+                                    .padding(.horizontal, 16)
+                                    .padding(.top, 4)
+                            }
 
                             playerStrip
                                 .padding(.horizontal, 16)
@@ -129,6 +135,48 @@ struct LockerHubView: View {
     private var lockerTitle: String {
         let raw = avatar?.playerName.trimmingCharacters(in: .whitespaces) ?? ""
         return raw.isEmpty ? "Marcy" : raw
+    }
+
+    private func usesReferenceAvatarArt(_ avatar: AvatarConfig) -> Bool {
+        let raw = avatar.playerName.trimmingCharacters(in: .whitespacesAndNewlines)
+        return raw.isEmpty || raw.caseInsensitiveCompare("Marcy") == .orderedSame
+    }
+
+    private var referenceAvatarPanel: some View {
+        RallyUIKit.SectionCard(stroke: RallyUIKit.Palette.cyan.opacity(0.18)) {
+            ZStack(alignment: .bottomLeading) {
+                LinearGradient(
+                    colors: [
+                        RallyUIKit.Palette.ink,
+                        RallyUIKit.Palette.slate,
+                        Color.black
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+
+                Image("MarcyAvatarReference")
+                    .resizable()
+                    .interpolation(.high)
+                    .scaledToFit()
+                    .padding(.horizontal, 22)
+                    .padding(.top, 12)
+                    .padding(.bottom, 8)
+
+                VStack(alignment: .leading, spacing: 4) {
+                    RallyUIKit.EditorialEyebrow(text: "Profile look", tint: RallyUIKit.Palette.cyan)
+                    Text("Marcy")
+                        .font(RallyUIKit.Typography.title(.title3, weight: .bold))
+                        .foregroundStyle(RallyUIKit.Palette.frost)
+                    Text("Using your reference look while the live avatar model catches up.")
+                        .font(RallyUIKit.Typography.body(.caption, weight: .medium))
+                        .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.72))
+                }
+                .padding(18)
+            }
+            .frame(height: 360)
+            .clipShape(RoundedRectangle(cornerRadius: RallyUIKit.Radius.xl))
+        }
     }
 
     // MARK: - Play CTA

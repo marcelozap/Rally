@@ -116,22 +116,22 @@ struct AvatarView: View {
         let racketAccent = equippedItem(.racket)?.accentColor ?? .cyan
         let torsoWidth: CGFloat = {
             switch config.bodyType {
-            case .slim: return size * 0.44
-            case .athletic: return size * 0.50
+            case .slim: return size * 0.42
+            case .athletic: return size * 0.47
             case .strong: return size * 0.56
             }
         }()
         let topHeight: CGFloat = {
             switch config.bodyType {
-            case .slim: return size * 0.31
-            case .athletic: return size * 0.34
+            case .slim: return size * 0.32
+            case .athletic: return size * 0.335
             case .strong: return size * 0.35
             }
         }()
         let bottomWidth: CGFloat = {
             switch config.bodyType {
-            case .slim: return size * 0.34
-            case .athletic: return size * 0.39
+            case .slim: return size * 0.31
+            case .athletic: return size * 0.35
             case .strong: return size * 0.44
             }
         }()
@@ -145,30 +145,36 @@ struct AvatarView: View {
         let neckWidth: CGFloat = config.bodyType == .strong ? size * 0.08 : size * 0.066
         let legSpacing: CGFloat = {
             switch config.bodyType {
-            case .slim: return size * 0.04
-            case .athletic: return size * 0.035
+            case .slim: return size * 0.033
+            case .athletic: return size * 0.028
             case .strong: return size * 0.03
             }
         }()
         let legWidth: CGFloat = {
             switch config.bodyType {
-            case .slim: return size * 0.26
-            case .athletic: return size * 0.30
+            case .slim: return size * 0.22
+            case .athletic: return size * 0.25
             case .strong: return size * 0.34
             }
         }()
-        let armWidth: CGFloat = config.bodyType == .strong ? size * 0.078 : size * 0.068
+        let armWidth: CGFloat = {
+            switch config.bodyType {
+            case .slim: return size * 0.055
+            case .athletic: return size * 0.060
+            case .strong: return size * 0.078
+            }
+        }()
         let shoulderWidth: CGFloat = {
             switch config.bodyType {
-            case .slim: return torsoWidth * 1.16
-            case .athletic: return torsoWidth * 1.26
+            case .slim: return torsoWidth * 1.14
+            case .athletic: return torsoWidth * 1.18
             case .strong: return torsoWidth * 1.20
             }
         }()
         let headSize: CGFloat = {
             switch config.bodyType {
-            case .slim: return size * 0.186
-            case .athletic: return size * 0.176
+            case .slim: return size * 0.168
+            case .athletic: return size * 0.164
             case .strong: return size * 0.188
             }
         }()
@@ -368,12 +374,25 @@ struct AvatarView: View {
                 ZStack {
                     Ellipse()
                         .fill(color)
-                        .frame(width: size * 0.225, height: size * 0.11)
-                        .offset(y: -size * 0.062)
+                        .frame(width: size * 0.23, height: size * 0.095)
+                        .offset(x: size * 0.006, y: -size * 0.066)
+                    RoundedRectangle(cornerRadius: size * 0.026)
+                        .fill(color)
+                        .frame(width: size * 0.15, height: size * 0.095)
+                        .offset(x: -size * 0.028, y: -size * 0.018)
                     Capsule()
                         .fill(color)
-                        .frame(width: size * 0.18, height: size * 0.09)
-                        .offset(y: -size * 0.025)
+                        .frame(width: size * 0.09, height: size * 0.036)
+                        .rotationEffect(.degrees(-28))
+                        .offset(x: -size * 0.030, y: -size * 0.004)
+                    Capsule()
+                        .fill(color.opacity(0.94))
+                        .frame(width: size * 0.052, height: size * 0.11)
+                        .offset(x: -size * 0.092, y: -size * 0.002)
+                    Capsule()
+                        .fill(color.opacity(0.94))
+                        .frame(width: size * 0.046, height: size * 0.072)
+                        .offset(x: size * 0.086, y: -size * 0.010)
                 }
             case .medium:
                 ZStack {
@@ -422,27 +441,32 @@ struct AvatarView: View {
         VStack(spacing: size * 0.015) {
             HStack(spacing: size * 0.04) {
                 Capsule()
-                    .fill(Color.black.opacity(0.18))
-                    .frame(width: size * 0.028, height: size * 0.005)
+                    .fill(Color.black.opacity(0.24))
+                    .frame(width: size * 0.024, height: size * 0.004)
                 Capsule()
-                    .fill(Color.black.opacity(0.18))
-                    .frame(width: size * 0.028, height: size * 0.005)
+                    .fill(Color.black.opacity(0.24))
+                    .frame(width: size * 0.024, height: size * 0.004)
             }
             HStack(spacing: size * 0.04) {
                 eyeDetail(size: size)
                 eyeDetail(size: size)
             }
+            .overlay {
+                if usesMarcySignatureLook {
+                    glasses(size: size)
+                }
+            }
             RoundedRectangle(cornerRadius: size * 0.007)
-                .fill(skinColor.opacity(0.96))
-                .frame(width: size * 0.012, height: size * 0.019)
+                .fill(skinColor.opacity(0.94))
+                .frame(width: size * 0.010, height: size * 0.017)
             Capsule()
-                .fill(Color(red: 0.56, green: 0.33, blue: 0.35).opacity(0.78))
-                .frame(width: size * 0.022, height: size * 0.004)
+                .fill(Color(red: 0.70, green: 0.49, blue: 0.42).opacity(0.35))
+                .frame(width: size * 0.018, height: size * 0.003)
             ArcSmile()
-                .stroke(Color(red: 0.52, green: 0.28, blue: 0.3).opacity(0.72), style: StrokeStyle(lineWidth: size * 0.0065, lineCap: .round))
-                .frame(width: size * 0.058, height: size * 0.022)
+                .stroke(Color(red: 0.56, green: 0.34, blue: 0.30).opacity(0.54), style: StrokeStyle(lineWidth: size * 0.0055, lineCap: .round))
+                .frame(width: size * 0.048, height: size * 0.018)
         }
-        .offset(y: size * 0.012)
+        .offset(y: size * 0.010)
     }
 
     @ViewBuilder
@@ -451,26 +475,63 @@ struct AvatarView: View {
             ZStack {
                 Capsule()
                     .fill(Color.white.opacity(0.98))
-                    .frame(width: size * 0.028, height: size * 0.016)
+                    .frame(width: size * 0.026, height: size * 0.015)
                 Circle()
                     .fill(Color(red: 0.18, green: 0.12, blue: 0.1))
-                    .frame(width: size * 0.008, height: size * 0.008)
+                    .frame(width: size * 0.007, height: size * 0.007)
                 Circle()
                     .fill(Color.white.opacity(0.9))
-                    .frame(width: size * 0.003, height: size * 0.003)
+                    .frame(width: size * 0.0025, height: size * 0.0025)
                     .offset(x: size * 0.002, y: -size * 0.002)
             }
         }
+    }
+
+    @ViewBuilder
+    private func glasses(size: CGFloat) -> some View {
+        ZStack {
+            HStack(spacing: size * 0.028) {
+                Circle()
+                    .stroke(Color.black.opacity(0.72), lineWidth: size * 0.0048)
+                    .frame(width: size * 0.040, height: size * 0.040)
+                Circle()
+                    .stroke(Color.black.opacity(0.72), lineWidth: size * 0.0048)
+                    .frame(width: size * 0.040, height: size * 0.040)
+            }
+
+            Capsule()
+                .fill(Color.black.opacity(0.72))
+                .frame(width: size * 0.022, height: size * 0.003)
+                .offset(y: -size * 0.002)
+
+            Capsule()
+                .fill(Color.black.opacity(0.54))
+                .frame(width: size * 0.020, height: size * 0.0028)
+                .rotationEffect(.degrees(18))
+                .offset(x: -size * 0.048, y: -size * 0.002)
+
+            Capsule()
+                .fill(Color.black.opacity(0.54))
+                .frame(width: size * 0.020, height: size * 0.0028)
+                .rotationEffect(.degrees(-18))
+                .offset(x: size * 0.048, y: -size * 0.002)
+        }
+        .offset(y: size * 0.002)
     }
 
     private var skinColor: Color {
         Color(hex: config.skinTone.hex) ?? .pink
     }
 
+    private var usesMarcySignatureLook: Bool {
+        let trimmed = config.playerName.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        return trimmed == "marcy" || (!config.hasCompletedSetup && config.isUsingStarterLoadout)
+    }
+
     private var bodyScale: CGFloat {
         switch config.bodyType {
-        case .slim: return 0.94
-        case .athletic: return 1.0
+        case .slim: return 0.92
+        case .athletic: return 0.96
         case .strong: return 1.08
         }
     }
@@ -504,9 +565,9 @@ private struct ArcSmile: Shape {
 private struct HeadShape: Shape {
     func path(in rect: CGRect) -> Path {
         var path = Path()
-        let foreheadInset = rect.width * 0.16
-        let jawInset = rect.width * 0.09
-        let chinHeight = rect.height * 0.16
+        let foreheadInset = rect.width * 0.14
+        let jawInset = rect.width * 0.13
+        let chinHeight = rect.height * 0.14
 
         path.move(to: CGPoint(x: rect.midX, y: rect.minY))
         path.addQuadCurve(
@@ -515,19 +576,19 @@ private struct HeadShape: Shape {
         )
         path.addQuadCurve(
             to: CGPoint(x: rect.maxX - jawInset, y: rect.maxY - chinHeight),
-            control: CGPoint(x: rect.maxX, y: rect.midY)
+            control: CGPoint(x: rect.maxX - rect.width * 0.02, y: rect.midY)
         )
         path.addQuadCurve(
             to: CGPoint(x: rect.midX, y: rect.maxY),
-            control: CGPoint(x: rect.maxX - rect.width * 0.18, y: rect.maxY)
+            control: CGPoint(x: rect.maxX - rect.width * 0.20, y: rect.maxY - rect.height * 0.015)
         )
         path.addQuadCurve(
             to: CGPoint(x: rect.minX + jawInset, y: rect.maxY - chinHeight),
-            control: CGPoint(x: rect.minX + rect.width * 0.18, y: rect.maxY)
+            control: CGPoint(x: rect.minX + rect.width * 0.20, y: rect.maxY - rect.height * 0.015)
         )
         path.addQuadCurve(
             to: CGPoint(x: rect.minX + foreheadInset, y: rect.minY + rect.height * 0.16),
-            control: CGPoint(x: rect.minX, y: rect.midY)
+            control: CGPoint(x: rect.minX + rect.width * 0.02, y: rect.midY)
         )
         path.addQuadCurve(
             to: CGPoint(x: rect.midX, y: rect.minY),

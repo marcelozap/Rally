@@ -140,19 +140,9 @@ struct GameSessionView: View {
                 aiButton
                 exitButton
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 10)
-            .background(
-                Capsule()
-                    .fill(Color.black.opacity(0.14))
-            )
-            .overlay(
-                Capsule()
-                    .stroke(RallyUIKit.Palette.line.opacity(0.7), lineWidth: 1)
-            )
         }
         .padding(.horizontal, 16)
-        .padding(.top, 14)
+        .padding(.top, 18)
     }
 
     private var matchAtmosphere: some View {
@@ -188,10 +178,10 @@ struct GameSessionView: View {
     private var loadingState: some View {
         VStack(spacing: 18) {
             RallyUIKit.IconBadge(systemName: "tennisball.fill", tint: RallyUIKit.Palette.gold, size: 60)
-            Text("Preparing wall rally")
+            Text("Stepping onto court")
                 .font(RallyUIKit.Typography.display(30, weight: .bold))
                 .foregroundStyle(RallyUIKit.Palette.frost)
-            Text("Loading the one-ball timing loop, player rig, and live court.")
+            Text("Loading Marcy, your court, and one live rally.")
                 .font(RallyUIKit.Typography.body(.subheadline, weight: .medium))
                 .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.72))
             ProgressView()

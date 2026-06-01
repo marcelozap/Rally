@@ -50,13 +50,14 @@ final class AvatarConfig {
         }
 
         if hairColorHex == "#3A2A1A" {
-            hairColorHex = "#241A14"
+            hairColorHex = "#2C221D"
         }
 
         guard !hasCompletedSetup || isUsingStarterLoadout else { return }
 
+        skinTone = .light
         bodyType = .athletic
-        hairStyle = .ponytail
+        hairStyle = .short
     }
 }
 

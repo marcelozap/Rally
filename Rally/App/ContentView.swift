@@ -62,7 +62,7 @@ struct ContentView: View {
                 .tag(RallyTab.journal)
                 .transition(.asymmetric(insertion: .opacity.combined(with: .scale(scale: 0.95)), removal: .opacity))
 
-            HomeView(selectedTab: $selectedTab, logbookSection: $logbookSection, isPlaying: $isPlaying)
+            HomeView(selectedTab: $selectedTab, isPlaying: $isPlaying)
                 .tabItem { Label("Home", systemImage: "house.fill") }
                 .tag(RallyTab.home)
                 .transition(.asymmetric(insertion: .opacity.combined(with: .scale(scale: 0.95)), removal: .opacity))
