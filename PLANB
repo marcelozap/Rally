@@ -1,0 +1,107 @@
+Rally Tennis Game: Plan B
+
+You are building a rally tennis game. Take ownership of the creative and product direction. Do not make tiny cautious tweaks and ask for validation after every change. Work in larger visible batches and only hand back the project after a meaningful improvement pass.
+
+Core Direction
+
+The game should feel like a polished, stylized, arcade tennis rally experience. The goal is not a full tennis simulator. The goal is one satisfying loop:
+
+One ball.
+One player.
+One wall or opponent-side return target.
+Read left or right.
+Auto-footwork moves the character into position.
+The player performs a forehand or backhand animation cue.
+The ball rebounds cleanly.
+The rally counter climbs.
+The player tries to keep the rally alive.
+
+Gameplay Loop
+
+Build the game around one honest rally loop.
+
+Required elements:
+- One active ball.
+- Clear left/right ball reading.
+- Automatic footwork so the player moves into position without awkward manual wandering.
+- Forehand and backhand animation cues.
+- Simple rebound logic.
+- Rally counter.
+- Minimal HUD.
+- No extra buttons, panels, menus, or chrome inside active play.
+
+The game should be instantly understandable. The player should look at the ball, react, and feel the rhythm of a rally.
+
+Avatar Direction
+
+Remove or avoid any uncanny avatar system on important screens. If the current procedural face or character system looks strange, do not use it as the main presentation.
+
+Use a stronger temporary fallback if needed:
+- clean stylized silhouette
+- sporty Memoji-like character
+- Wii Sports-inspired avatar
+- Snapchat Bitmoji-style athletic figure
+- simple polished 3D/2D character with clear tennis poses
+
+The long-term avatar style target should be:
+
+Snapchat / Wii / Memoji athletic stylization.
+
+The avatar should feel charming, readable, sporty, and expressive. It should not feel realistic, creepy, melted, over-detailed, or unfinished.
+
+Home Screen Direction
+
+Turn Home into one clean pregame hub.
+
+It should include only:
+- Loadout
+- Avatar
+- Level
+- Court
+- Play
+
+Nothing else should fight for attention. The screen should feel like the player is preparing for a match, not browsing a cluttered app.
+
+Visual Mood
+
+The game should feel:
+- clean
+- athletic
+- playful
+- polished
+- confident
+- readable
+- arcade-like
+- lightly premium
+
+Avoid:
+- cluttered UI
+- uncanny faces
+- overcomplicated menus
+- too many game modes
+- excessive HUD elements
+- generic mobile-game chaos
+- half-finished placeholder presentation on key screens
+
+Process Instruction
+
+Do not keep asking for micro-validation. Do not ship one tiny safe diff and stop.
+
+Work in this order:
+
+1. Big avatar and home screen batch
+2. Big game loop batch
+3. Big polish and integration batch
+4. Then ask for testing
+
+Make bigger judgment calls. If something obviously misses the quality bar, fix it before handing it back. The next handoff should feel like a real visible improvement, not another small "try again" tweak.
+
+Success Standard
+
+The game is successful when:
+- Home feels like a clean pregame hub.
+- The avatar no longer feels uncanny.
+- The tennis loop is simple and satisfying.
+- The player immediately understands what to do.
+- The rally counter gives a clear reason to keep playing.
+- The game feels like a cohesive arcade tennis prototype, not disconnected experiments.
