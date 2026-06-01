@@ -4,7 +4,7 @@ import SwiftData
 // MARK: - Tab identity
 
 enum RallyTab: Hashable {
-    case home, play, logs, journal, shop
+    case home, journal, shop
 }
 
 // MARK: - Root
@@ -15,6 +15,7 @@ struct ContentView: View {
 
     @State private var selectedTab: RallyTab = .home
     @State private var logbookSection: LogbookSection = .training
+    @State private var isPlaying = false
     @State private var hasAppeared = false
 
     var body: some View {
@@ -56,24 +57,14 @@ struct ContentView: View {
 
     private var mainTabs: some View {
         TabView(selection: $selectedTab) {
-            HomeView(selectedTab: $selectedTab, logbookSection: $logbookSection)
-                .tabItem { Label("Home", systemImage: "house.fill") }
-                .tag(RallyTab.home)
-                .transition(.asymmetric(insertion: .opacity.combined(with: .scale(scale: 0.95)), removal: .opacity))
-
-            GameSessionView(onExit: { selectedTab = .home })
-                .tabItem { Label("Play", systemImage: "tennis.racket") }
-                .tag(RallyTab.play)
-                .transition(.asymmetric(insertion: .opacity.combined(with: .scale(scale: 0.95)), removal: .opacity))
-
-            LogbookView(section: $logbookSection)
-                .tabItem { Label("Logbook", systemImage: "book.pages.fill") }
-                .tag(RallyTab.logs)
-                .transition(.asymmetric(insertion: .opacity.combined(with: .scale(scale: 0.95)), removal: .opacity))
-
-            JournalView()
+            LogbookView(section: $logbookSection, title: "Journal")
                 .tabItem { Label("Journal", systemImage: "book.fill") }
                 .tag(RallyTab.journal)
+                .transition(.asymmetric(insertion: .opacity.combined(with: .scale(scale: 0.95)), removal: .opacity))
+
+            HomeView(selectedTab: $selectedTab, logbookSection: $logbookSection, isPlaying: $isPlaying)
+                .tabItem { Label("Home", systemImage: "house.fill") }
+                .tag(RallyTab.home)
                 .transition(.asymmetric(insertion: .opacity.combined(with: .scale(scale: 0.95)), removal: .opacity))
 
             ShopView()
@@ -96,6 +87,13 @@ struct ContentView: View {
         .toolbarBackground(.visible, for: .tabBar)
         .toolbarColorScheme(.dark, for: .tabBar)
         .animation(.easeInOut(duration: 0.25), value: selectedTab)
+        .fullScreenCover(isPresented: $isPlaying) {
+            GameSessionView(onExit: {
+                isPlaying = false
+                selectedTab = .home
+            })
+            .preferredColorScheme(.dark)
+        }
     }
 
     private var setupFallback: some View {

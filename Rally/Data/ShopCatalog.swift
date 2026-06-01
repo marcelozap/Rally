@@ -30,6 +30,21 @@ struct Vendor: Identifiable, Hashable, Codable {
     }
 }
 
+// MARK: - Editorial shop stories
+
+struct ShopEditorialEdit: Identifiable, Hashable, Codable {
+    let id: String
+    let vendorID: String
+    let title: String
+    let eyebrow: String
+    let subtitle: String
+    let body: String
+    let tintHex: String
+    let itemIDs: [String]
+
+    var tintColor: Color { Color(hex: tintHex) ?? .white }
+}
+
 // MARK: - Shop item
 
 /// A piece of equipment / apparel the player can equip on their avatar.
@@ -262,6 +277,49 @@ enum ShopCatalog {
         )
     ]
 
+    static let editorialEdits: [ShopEditorialEdit] = [
+        .init(
+            id: "nb-club-whites",
+            vendorID: "newbalance",
+            title: "New Balance Club Whites",
+            eyebrow: "Featured fit",
+            subtitle: "Quiet luxury for first ball",
+            body: "Tournament whites with Coco CG2 finish the look fast.",
+            tintHex: "#E8D9B8",
+            itemIDs: [
+                "newbalance.tournament.tank.white",
+                "newbalance.tournament.skort.white",
+                "newbalance.coco.cg2.sea.salt"
+            ]
+        ),
+        .init(
+            id: "nike-night-session",
+            vendorID: "nike",
+            title: "Nike Night Session",
+            eyebrow: "Match edit",
+            subtitle: "Sharper contrast, faster silhouette",
+            body: "Cobalt up top, black below, clean white Vapor Pro finish.",
+            tintHex: "#00E5FF",
+            itemIDs: [
+                "nike.dri-fit.tee.cobalt",
+                "nike.court.short.black",
+                "nike.vapor.pro.white"
+            ]
+        ),
+        .init(
+            id: "wilson-center-court",
+            vendorID: "wilson",
+            title: "Wilson Center Court",
+            eyebrow: "Hero frame",
+            subtitle: "Big-match racket energy",
+            body: "Clash 100 V3 leads the floor with premium match-point presence.",
+            tintHex: "#F2C14E",
+            itemIDs: [
+                "wilson.pro.staff.97"
+            ]
+        )
+    ]
+
     static let allItems: [ShopItem] = [
         // Default kit (free) ---------------------------------------------
         .init(id: defaultTopID,    category: .top,    name: "Rally Tee",      brand: "Rally", vendorID: "rally-co",
@@ -414,9 +472,13 @@ enum ShopCatalog {
         racketProfiles[id]
     }
 
+    static func editorialItems(for edit: ShopEditorialEdit) -> [ShopItem] {
+        edit.itemIDs.compactMap(item)
+    }
+
     static func itemsGroupedByVendor() -> [(Vendor, [ShopItem])] {
         let byVendor = Dictionary(grouping: allItems, by: { $0.vendorID })
-        return vendors.compactMap { v in
+        return vendors.sorted { vendorPriority($0.id) < vendorPriority($1.id) }.compactMap { v in
             guard let items = byVendor[v.id], !items.isEmpty else { return nil }
             return (v, items)
         }
@@ -599,4 +661,13 @@ enum ShopCatalog {
             )
         )
     ]
+
+    private static func vendorPriority(_ id: String) -> Int {
+        switch id {
+        case "newbalance": return 0
+        case "nike": return 1
+        case "wilson": return 2
+        default: return 10
+        }
+    }
 }

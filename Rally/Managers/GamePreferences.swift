@@ -112,7 +112,7 @@ final class GamePreferences: ObservableObject {
            let pace = MatchPace(rawValue: stored) {
             matchPace = pace
         } else {
-            matchPace = .standard
+            matchPace = .calm
         }
 
         HapticManager.shared.isEnabled = isHapticsEnabled

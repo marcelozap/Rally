@@ -30,6 +30,9 @@ final class SynthwaveBackground: SKNode {
     private var rightAura: SKShapeNode!
     private var centerSheen: SKShapeNode!
     private var centerRunway: SKShapeNode!
+    private var sunHalo: SKShapeNode!
+    private var sunDisc: SKShapeNode!
+    private var netTape: SKShapeNode!
     private var serviceLine: SKShapeNode!
     private var baselineLine: SKShapeNode!
     private let gridNode = SKNode()
@@ -50,7 +53,7 @@ final class SynthwaveBackground: SKNode {
     private func buildGradient() {
         // Subtle blue-magenta vignette at the bottom 25% of the screen.
         let gradient = SKShapeNode(rect: CGRect(x: 0, y: 0, width: size.width, height: strikeY))
-        gradient.fillColor = UIColor(red: 0.08, green: 0.0, blue: 0.16, alpha: 1)
+        gradient.fillColor = UIColor(red: 0.06, green: 0.08, blue: 0.16, alpha: 1)
         gradient.strokeColor = .clear
         gradient.alpha = 0.85
         gradient.zPosition = -100
@@ -60,7 +63,7 @@ final class SynthwaveBackground: SKNode {
         // A second pass above the horizon line: very subtle navy tone so
         // the upper portion of the screen isn't a void.
         let upper = SKShapeNode(rect: CGRect(x: 0, y: strikeY, width: size.width, height: size.height - strikeY))
-        upper.fillColor = UIColor(red: 0.0, green: 0.02, blue: 0.06, alpha: 1)
+        upper.fillColor = UIColor(red: 0.02, green: 0.03, blue: 0.1, alpha: 1)
         upper.strokeColor = .clear
         upper.alpha = 0.7
         upper.zPosition = -100
@@ -95,10 +98,30 @@ final class SynthwaveBackground: SKNode {
         addChild(centerSheenNode)
         centerSheen = centerSheenNode
 
+        let halo = SKShapeNode(ellipseOf: CGSize(width: size.width * 0.36, height: strikeY * 0.46))
+        halo.fillColor = UIColor(red: 0.99, green: 0.7, blue: 0.4, alpha: 1)
+        halo.strokeColor = .clear
+        halo.alpha = 0.08
+        halo.position = CGPoint(x: size.width * 0.5, y: strikeY * 1.12)
+        halo.zPosition = -99
+        addChild(halo)
+        sunHalo = halo
+
+        let sun = SKShapeNode(circleOfRadius: min(size.width * 0.09, 52))
+        sun.fillColor = UIColor(red: 1.0, green: 0.78, blue: 0.42, alpha: 1)
+        sun.strokeColor = UIColor.white.withAlphaComponent(0.22)
+        sun.lineWidth = 1
+        sun.glowWidth = 12
+        sun.alpha = 0.74
+        sun.position = CGPoint(x: size.width * 0.5, y: strikeY * 1.1)
+        sun.zPosition = -98
+        addChild(sun)
+        sunDisc = sun
+
         let runway = SKShapeNode(rectOf: CGSize(width: size.width * 0.18, height: strikeY * 0.9), cornerRadius: size.width * 0.05)
         runway.fillColor = UIColor(white: 1.0, alpha: 1.0)
         runway.strokeColor = .clear
-        runway.alpha = 0.04
+        runway.alpha = 0.06
         runway.position = CGPoint(x: size.width * 0.5, y: strikeY * 0.16)
         runway.zPosition = -97
         addChild(runway)
@@ -115,6 +138,15 @@ final class SynthwaveBackground: SKNode {
         horizon.zPosition = -90
         addChild(horizon)
         horizonLine = horizon
+
+        let tape = SKShapeNode(rect: CGRect(x: 0, y: -0.5, width: size.width, height: 1))
+        tape.position = CGPoint(x: 0, y: strikeY * 0.985)
+        tape.fillColor = UIColor(white: 1.0, alpha: 0.16)
+        tape.strokeColor = .clear
+        tape.glowWidth = 2
+        tape.zPosition = -89
+        addChild(tape)
+        netTape = tape
     }
 
     private func buildGrid() {
@@ -146,7 +178,7 @@ final class SynthwaveBackground: SKNode {
 
         let service = SKShapeNode(rect: CGRect(x: 0, y: -0.5, width: size.width * 0.56, height: 1))
         service.position = CGPoint(x: size.width * 0.22, y: strikeY * 0.46)
-        service.fillColor = UIColor(white: 1.0, alpha: 0.12)
+        service.fillColor = UIColor(white: 1.0, alpha: 0.16)
         service.strokeColor = .clear
         service.glowWidth = 2
         service.zPosition = -93
@@ -155,7 +187,7 @@ final class SynthwaveBackground: SKNode {
 
         let baseline = SKShapeNode(rect: CGRect(x: 0, y: -0.5, width: size.width * 0.8, height: 1))
         baseline.position = CGPoint(x: size.width * 0.1, y: strikeY * 0.1)
-        baseline.fillColor = UIColor(white: 1.0, alpha: 0.08)
+        baseline.fillColor = UIColor(white: 1.0, alpha: 0.11)
         baseline.strokeColor = .clear
         baseline.glowWidth = 1
         baseline.zPosition = -93
@@ -243,6 +275,20 @@ final class SynthwaveBackground: SKNode {
         )
         centerSheen.position = CGPoint(x: size.width * 0.5, y: strikeY * 0.18)
 
+        let haloSize = CGSize(width: size.width * 0.36, height: strikeY * 0.46)
+        sunHalo.path = CGPath(
+            ellipseIn: CGRect(origin: CGPoint(x: -haloSize.width / 2, y: -haloSize.height / 2), size: haloSize),
+            transform: nil
+        )
+        sunHalo.position = CGPoint(x: size.width * 0.5, y: strikeY * 1.12)
+
+        let sunRadius = min(size.width * 0.09, 52)
+        sunDisc.path = CGPath(
+            ellipseIn: CGRect(x: -sunRadius, y: -sunRadius, width: sunRadius * 2, height: sunRadius * 2),
+            transform: nil
+        )
+        sunDisc.position = CGPoint(x: size.width * 0.5, y: strikeY * 1.1)
+
         let runwaySize = CGSize(width: size.width * 0.18, height: strikeY * 0.9)
         centerRunway.path = CGPath(
             roundedRect: CGRect(origin: CGPoint(x: -runwaySize.width / 2, y: -runwaySize.height / 2), size: runwaySize),
@@ -254,6 +300,8 @@ final class SynthwaveBackground: SKNode {
 
         horizonLine.path = CGPath(rect: CGRect(x: 0, y: -1, width: size.width, height: 2), transform: nil)
         horizonLine.position = CGPoint(x: 0, y: strikeY)
+        netTape.path = CGPath(rect: CGRect(x: 0, y: -0.5, width: size.width, height: 1), transform: nil)
+        netTape.position = CGPoint(x: 0, y: strikeY * 0.985)
 
         serviceLine.path = CGPath(rect: CGRect(x: 0, y: -0.5, width: size.width * 0.56, height: 1), transform: nil)
         serviceLine.position = CGPoint(x: size.width * 0.22, y: strikeY * 0.46)
@@ -297,6 +345,8 @@ final class SynthwaveBackground: SKNode {
         let auraRightAlpha: CGFloat
         let runwayAlpha: CGFloat
         let lineAlpha: CGFloat
+        let sunAlpha: CGFloat
+        let haloAlpha: CGFloat
 
         if breaking {
             targetHorizonAlpha = 0.28
@@ -308,6 +358,8 @@ final class SynthwaveBackground: SKNode {
             auraRightAlpha = 0.02
             runwayAlpha = 0.02
             lineAlpha = 0.05
+            sunAlpha = 0.42
+            haloAlpha = 0.03
         } else {
             switch tier {
             case 4:
@@ -320,6 +372,8 @@ final class SynthwaveBackground: SKNode {
                 auraRightAlpha = 0.1
                 runwayAlpha = 0.08
                 lineAlpha = 0.14
+                sunAlpha = 0.88
+                haloAlpha = 0.11
             case 3:
                 targetHorizonAlpha = 0.76
                 targetGlow = 18
@@ -330,6 +384,8 @@ final class SynthwaveBackground: SKNode {
                 auraRightAlpha = 0.09
                 runwayAlpha = 0.07
                 lineAlpha = 0.12
+                sunAlpha = 0.84
+                haloAlpha = 0.1
             case 2:
                 targetHorizonAlpha = 0.68
                 targetGlow = 16
@@ -340,6 +396,8 @@ final class SynthwaveBackground: SKNode {
                 auraRightAlpha = 0.08
                 runwayAlpha = 0.06
                 lineAlpha = 0.11
+                sunAlpha = 0.8
+                haloAlpha = 0.09
             case 1:
                 targetHorizonAlpha = 0.61
                 targetGlow = 15
@@ -350,6 +408,8 @@ final class SynthwaveBackground: SKNode {
                 auraRightAlpha = 0.07
                 runwayAlpha = 0.055
                 lineAlpha = 0.1
+                sunAlpha = 0.77
+                haloAlpha = 0.08
             default:
                 targetHorizonAlpha = phase == "breaker" ? 0.62 : 0.55
                 targetGlow = phase == "pressure" || phase == "breaker" ? 16 : 14
@@ -360,6 +420,8 @@ final class SynthwaveBackground: SKNode {
                 auraRightAlpha = phase == "pressure" || phase == "breaker" ? 0.08 : 0.05
                 runwayAlpha = phase == "pressure" || phase == "breaker" ? 0.065 : 0.05
                 lineAlpha = phase == "pressure" || phase == "breaker" ? 0.11 : 0.09
+                sunAlpha = phase == "pressure" || phase == "breaker" ? 0.82 : 0.74
+                haloAlpha = phase == "pressure" || phase == "breaker" ? 0.09 : 0.07
             }
         }
 
@@ -373,6 +435,9 @@ final class SynthwaveBackground: SKNode {
         fadeNode(leftAura, auraLeftAlpha)
         fadeNode(rightAura, auraRightAlpha)
         fadeNode(centerRunway, runwayAlpha)
+        fadeNode(sunDisc, sunAlpha)
+        fadeNode(sunHalo, haloAlpha)
+        fadeNode(netTape, lineAlpha * 1.25)
         fadeNode(serviceLine, lineAlpha)
         fadeNode(baselineLine, lineAlpha * 0.84)
         horizonLine?.run(.customAction(withDuration: duration) { [weak self] _, elapsed in

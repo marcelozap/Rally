@@ -3,7 +3,7 @@ import SwiftUI
 /// Minimal XIV-style bottom navigation — three destinations max.
 enum RallyNavBarTab: Hashable {
     case locker
-    case logbook
+    case journal
     case courts
 }
 
@@ -13,7 +13,7 @@ struct RallyNavBar: View {
     var body: some View {
         HStack(spacing: 0) {
             navItem(.locker, icon: "figure.tennis", label: "Locker")
-            navItem(.logbook, icon: "book.pages.fill", label: "Logbook")
+            navItem(.journal, icon: "book.fill", label: "Journal")
             navItem(.courts, icon: "globe.americas.fill", label: "Courts")
         }
         .padding(.horizontal, 20)

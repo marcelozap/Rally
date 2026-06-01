@@ -21,6 +21,13 @@ final class AvatarConfig {
         self.id = UUID()
     }
 
+    var isUsingStarterLoadout: Bool {
+        equippedTopID == ShopCatalog.defaultTopID &&
+        equippedBottomID == ShopCatalog.defaultBottomID &&
+        equippedShoesID == ShopCatalog.defaultShoesID &&
+        equippedRacketID == ShopCatalog.defaultRacketID
+    }
+
     var skinTone: AvatarSkinTone {
         get { AvatarSkinTone(rawValue: skinToneRaw) ?? .medium }
         set { skinToneRaw = newValue.rawValue }
@@ -34,6 +41,22 @@ final class AvatarConfig {
     var bodyType: AvatarBodyType {
         get { AvatarBodyType(rawValue: bodyTypeRaw) ?? .athletic }
         set { bodyTypeRaw = newValue.rawValue }
+    }
+
+    func refreshForCurrentVisualSystem() {
+        let trimmedName = playerName.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmedName.isEmpty || ["player", "sam"].contains(trimmedName.lowercased()) {
+            playerName = "Marcy"
+        }
+
+        if hairColorHex == "#3A2A1A" {
+            hairColorHex = "#241A14"
+        }
+
+        guard !hasCompletedSetup || isUsingStarterLoadout else { return }
+
+        bodyType = .athletic
+        hairStyle = .ponytail
     }
 }
 

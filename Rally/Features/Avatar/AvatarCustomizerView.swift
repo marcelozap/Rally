@@ -42,8 +42,20 @@ struct AvatarCustomizerView: View {
                 }
 
                 RallyUIKit.SectionCard(stroke: RallyUIKit.Palette.cyan.opacity(0.24)) {
-                    AvatarView(config: config, subtlePerspective: true)
-                        .frame(height: isFirstLaunch ? 280 : 320)
+                    ZStack(alignment: .bottom) {
+                        heroBackdrop
+
+                        AvatarRealityKitView(
+                            spec: AvatarVisualSpec.from(config: config, preview: nil),
+                            emote: .shopLook
+                        )
+                        .frame(height: isFirstLaunch ? 300 : 336)
+                        .clipShape(RoundedRectangle(cornerRadius: 26, style: .continuous))
+
+                        customizationReadout
+                            .padding(.horizontal, 14)
+                            .padding(.bottom, 14)
+                    }
                 }
                 .padding(.horizontal, 20)
 
@@ -98,6 +110,46 @@ struct AvatarCustomizerView: View {
         }
         .padding(.top, 24)
         .padding(.horizontal, 20)
+    }
+
+    private var heroBackdrop: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 26, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            RallyUIKit.Palette.slate,
+                            RallyUIKit.Palette.ink,
+                            Color.black
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+
+            Circle()
+                .fill(RallyUIKit.Palette.cyan.opacity(0.24))
+                .frame(width: 220, height: 220)
+                .blur(radius: 48)
+                .offset(x: -90, y: -70)
+
+            Circle()
+                .fill(RallyUIKit.Palette.champagne.opacity(0.18))
+                .frame(width: 200, height: 200)
+                .blur(radius: 42)
+                .offset(x: 96, y: -48)
+
+            RoundedRectangle(cornerRadius: 26, style: .continuous)
+                .stroke(Color.white.opacity(0.09), lineWidth: 1)
+        }
+    }
+
+    private var customizationReadout: some View {
+        HStack(spacing: 8) {
+            StatPill(label: config.bodyType.displayName, tint: RallyUIKit.Palette.cyan)
+            StatPill(label: config.hairStyle.displayName, tint: RallyUIKit.Palette.rose)
+            StatPill(label: config.skinTone.displayName, tint: RallyUIKit.Palette.champagne)
+        }
     }
 
     // MARK: - Sections
@@ -220,7 +272,7 @@ struct AvatarCustomizerView: View {
 
     private func save() {
         config.playerName = config.playerName.trimmingCharacters(in: .whitespaces)
-        if config.playerName.isEmpty { config.playerName = "Player" }
+        if config.playerName.isEmpty { config.playerName = "Marcy" }
         config.hasCompletedSetup = true
         try? modelContext.save()
         if auth.isAuthenticated {
@@ -236,6 +288,27 @@ struct AvatarCustomizerView: View {
 }
 
 // MARK: - Chip
+
+private struct StatPill: View {
+    let label: String
+    let tint: Color
+
+    var body: some View {
+        Text(label)
+            .font(RallyUIKit.Typography.label(.caption, weight: .semibold))
+            .foregroundStyle(.white.opacity(0.94))
+            .padding(.vertical, 8)
+            .padding(.horizontal, 12)
+            .background(
+                Capsule()
+                    .fill(Color.black.opacity(0.36))
+            )
+            .overlay(
+                Capsule()
+                    .stroke(tint.opacity(0.45), lineWidth: 1)
+            )
+    }
+}
 
 struct Chip: View {
     let label: String

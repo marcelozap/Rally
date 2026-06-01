@@ -22,7 +22,7 @@ struct GameSessionView: View {
     @State private var sessionKey = UUID()
     @State private var reflectionPrompt: JournalPrompt? = nil
     @State private var viewportSize: CGSize = .zero
-    @State private var showsSettings = false
+    @State private var autoPlayEnabled = false
 
     /// Optional rival opponent when launching a rival challenge session.
     var rivalOpponent: RivalOpponent? = nil
@@ -45,11 +45,6 @@ struct GameSessionView: View {
                         .id(sessionKey)
                         .overlay(alignment: .top) {
                             sessionChrome
-                        }
-                        .overlay(alignment: .bottom) {
-                            if gamePreferences.showCoachingCues {
-                                coachingChrome
-                            }
                         }
                         .overlay {
                             matchAtmosphere
@@ -135,66 +130,29 @@ struct GameSessionView: View {
                 JournalEditorView(entry: nil, seedPrompt: prompt)
             }
         }
-        .sheet(isPresented: $showsSettings) {
-            GameSettingsSheet(
-                preferences: gamePreferences,
-                onRestartMatch: {
-                    restart()
-                    showsSettings = false
-                }
-            )
-        }
         .animation(.easeOut(duration: 0.35), value: viewModel.lastResult != nil)
     }
 
     private var sessionChrome: some View {
         VStack(spacing: 0) {
-            HStack(alignment: .center, spacing: 12) {
-                VStack(alignment: .leading, spacing: 6) {
-                    RallyUIKit.EditorialEyebrow(
-                        text: rivalOpponent == nil ? "Center Court Session" : "Rival Session",
-                        tint: RallyUIKit.Palette.champagne
-                    )
-                    Text(rivalOpponent?.name ?? "Rally Performance Match")
-                        .font(RallyUIKit.Typography.label(.headline, weight: .bold))
-                        .foregroundStyle(RallyUIKit.Palette.frost)
-                }
-
+            HStack(alignment: .center, spacing: 10) {
                 Spacer(minLength: 0)
-
-                VStack(alignment: .trailing, spacing: 8) {
-                    HStack(spacing: 10) {
-                        SoundToggleButton()
-                        settingsButton
-                    }
-                    HStack(spacing: 8) {
-                        statusPill(icon: "dot.radiowaves.left.and.right", text: "Live")
-                        statusPill(icon: "tennisball.fill", text: gamePreferences.matchPace.title)
-                    }
-                }
+                aiButton
+                exitButton
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 14)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 10)
             .background(
-                RoundedRectangle(cornerRadius: 22)
-                    .fill(Color.black.opacity(0.22))
+                Capsule()
+                    .fill(Color.black.opacity(0.14))
             )
             .overlay(
-                RoundedRectangle(cornerRadius: 22)
-                    .stroke(RallyUIKit.Palette.line.opacity(0.92), lineWidth: 1)
+                Capsule()
+                    .stroke(RallyUIKit.Palette.line.opacity(0.7), lineWidth: 1)
             )
         }
-        .padding(.horizontal, 20)
-        .padding(.top, 18)
-    }
-
-    private var coachingChrome: some View {
-        HStack(spacing: 10) {
-            bottomHint(icon: "figure.tennis", title: "Court Read", copy: "Longer balanced swipes shape cleaner replies.")
-            bottomHint(icon: "arrow.left.and.right", title: "Recovery", copy: "Recentering fast protects the next ball.")
-        }
-        .padding(.horizontal, 20)
-        .padding(.bottom, 18)
+        .padding(.horizontal, 16)
+        .padding(.top, 14)
     }
 
     private var matchAtmosphere: some View {
@@ -230,10 +188,10 @@ struct GameSessionView: View {
     private var loadingState: some View {
         VStack(spacing: 18) {
             RallyUIKit.IconBadge(systemName: "tennisball.fill", tint: RallyUIKit.Palette.gold, size: 60)
-            Text("Preparing center court")
+            Text("Preparing wall rally")
                 .font(RallyUIKit.Typography.display(30, weight: .bold))
                 .foregroundStyle(RallyUIKit.Palette.frost)
-            Text("Loading live court, player rig, and match session.")
+            Text("Loading the one-ball timing loop, player rig, and live court.")
                 .font(RallyUIKit.Typography.body(.subheadline, weight: .medium))
                 .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.72))
             ProgressView()
@@ -242,63 +200,46 @@ struct GameSessionView: View {
         .padding(28)
     }
 
-    private var settingsButton: some View {
-        Button {
-            showsSettings = true
-        } label: {
-            Image(systemName: "slider.horizontal.3")
-                .font(.body.weight(.semibold))
+    private var exitButton: some View {
+        Button(action: onExit) {
+            Image(systemName: "xmark")
+                .font(.body.weight(.bold))
                 .foregroundStyle(RallyUIKit.Palette.frost)
                 .frame(width: 36, height: 36)
                 .background(
                     Circle()
-                        .fill(Color.white.opacity(0.06))
+                        .fill(RallyUIKit.Palette.rose.opacity(0.16))
                 )
                 .overlay(
                     Circle()
-                        .stroke(RallyUIKit.Palette.line, lineWidth: 1)
+                        .stroke(RallyUIKit.Palette.rose.opacity(0.78), lineWidth: 1)
                 )
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("Game settings")
+        .accessibilityLabel("Exit match")
     }
 
-    private func statusPill(icon: String, text: String) -> some View {
-        HStack(spacing: 8) {
-            Image(systemName: icon)
-            Text(text)
+    private var aiButton: some View {
+        Button {
+            autoPlayEnabled.toggle()
+            scene?.autoPlayEnabled = autoPlayEnabled
+        } label: {
+            Text(autoPlayEnabled ? "AI On" : "AI")
+                .font(RallyUIKit.Typography.label(.caption, weight: .bold))
+                .foregroundStyle(autoPlayEnabled ? RallyUIKit.Palette.obsidian : RallyUIKit.Palette.cyan)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 7)
+                .background(
+                    Capsule()
+                        .fill(autoPlayEnabled ? RallyUIKit.Palette.cyan : RallyUIKit.Palette.cyan.opacity(0.14))
+                )
+                .overlay(
+                    Capsule()
+                        .stroke(RallyUIKit.Palette.cyan.opacity(autoPlayEnabled ? 0 : 0.34), lineWidth: 1)
+                )
         }
-        .font(RallyUIKit.Typography.label(.caption, weight: .bold))
-        .foregroundStyle(RallyUIKit.Palette.frost)
-        .padding(.horizontal, 11)
-        .padding(.vertical, 7)
-        .background(
-            Capsule()
-                .fill(Color.white.opacity(0.06))
-        )
-        .overlay(
-            Capsule()
-                .stroke(RallyUIKit.Palette.line, lineWidth: 1)
-        )
-    }
-
-    private func bottomHint(icon: String, title: String, copy: String) -> some View {
-        RallyUIKit.SurfaceTile(tint: RallyUIKit.Palette.cyan) {
-            HStack(alignment: .center, spacing: 10) {
-                RallyUIKit.IconBadge(systemName: icon, tint: RallyUIKit.Palette.cyan, size: 34)
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(title)
-                        .font(RallyUIKit.Typography.label(.caption, weight: .bold))
-                        .tracking(1.8)
-                        .foregroundStyle(RallyUIKit.Palette.champagne)
-                    Text(copy)
-                        .font(RallyUIKit.Typography.body(.caption2, weight: .medium))
-                        .foregroundStyle(RallyUIKit.Palette.frost)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                Spacer(minLength: 0)
-            }
-        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Toggle autoplay")
     }
 
     // MARK: - Lifecycle helpers
@@ -314,6 +255,7 @@ struct GameSessionView: View {
             s.racketTuning = profile.gameplayTuning
         }
         applyPreferences(to: s)
+        s.autoPlayEnabled = autoPlayEnabled
         return s
     }
 

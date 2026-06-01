@@ -37,6 +37,7 @@ struct AvatarView: View {
             .fill(
                 LinearGradient(
                     colors: [
+                        RallyUIKit.Palette.cyan.opacity(0.18),
                         RallyUIKit.Palette.slate,
                         RallyUIKit.Palette.ink,
                         Color.black
@@ -57,6 +58,14 @@ struct AvatarView: View {
                     .blur(radius: 34)
                     .frame(width: 120, height: 120)
                     .offset(x: 12, y: 16)
+            }
+            .overlay(alignment: .topTrailing) {
+                Capsule()
+                    .fill(Color.white.opacity(0.12))
+                    .frame(width: 110, height: 18)
+                    .blur(radius: 10)
+                    .rotationEffect(.degrees(28))
+                    .offset(x: 18, y: -6)
             }
             .overlay(alignment: .bottom) {
                 Ellipse()
@@ -107,72 +116,95 @@ struct AvatarView: View {
         let racketAccent = equippedItem(.racket)?.accentColor ?? .cyan
         let torsoWidth: CGFloat = {
             switch config.bodyType {
-            case .slim: return size * 0.48
-            case .athletic: return size * 0.55
-            case .strong: return size * 0.60
+            case .slim: return size * 0.44
+            case .athletic: return size * 0.50
+            case .strong: return size * 0.56
             }
         }()
         let topHeight: CGFloat = {
             switch config.bodyType {
-            case .slim: return size * 0.30
-            case .athletic: return size * 0.32
-            case .strong: return size * 0.33
+            case .slim: return size * 0.31
+            case .athletic: return size * 0.34
+            case .strong: return size * 0.35
             }
         }()
         let bottomWidth: CGFloat = {
             switch config.bodyType {
-            case .slim: return size * 0.36
-            case .athletic: return size * 0.42
-            case .strong: return size * 0.46
+            case .slim: return size * 0.34
+            case .athletic: return size * 0.39
+            case .strong: return size * 0.44
             }
         }()
         let shoulderGlowWidth: CGFloat = {
             switch config.bodyType {
-            case .slim: return size * 0.28
-            case .athletic: return size * 0.32
-            case .strong: return size * 0.37
+            case .slim: return size * 0.30
+            case .athletic: return size * 0.38
+            case .strong: return size * 0.40
             }
         }()
-        let neckWidth: CGFloat = config.bodyType == .strong ? size * 0.085 : size * 0.07
+        let neckWidth: CGFloat = config.bodyType == .strong ? size * 0.08 : size * 0.066
         let legSpacing: CGFloat = {
             switch config.bodyType {
-            case .slim: return size * 0.05
-            case .athletic: return size * 0.04
+            case .slim: return size * 0.04
+            case .athletic: return size * 0.035
             case .strong: return size * 0.03
             }
         }()
         let legWidth: CGFloat = {
             switch config.bodyType {
-            case .slim: return size * 0.28
-            case .athletic: return size * 0.32
-            case .strong: return size * 0.35
+            case .slim: return size * 0.26
+            case .athletic: return size * 0.30
+            case .strong: return size * 0.34
             }
         }()
+        let armWidth: CGFloat = config.bodyType == .strong ? size * 0.078 : size * 0.068
+        let shoulderWidth: CGFloat = {
+            switch config.bodyType {
+            case .slim: return torsoWidth * 1.16
+            case .athletic: return torsoWidth * 1.26
+            case .strong: return torsoWidth * 1.20
+            }
+        }()
+        let headSize: CGFloat = {
+            switch config.bodyType {
+            case .slim: return size * 0.186
+            case .athletic: return size * 0.176
+            case .strong: return size * 0.188
+            }
+        }()
+        let auraTint = topAccent == .clear ? RallyUIKit.Palette.cyan : topAccent
+        let racketHalo = racketAccent.opacity(0.42)
 
         return ZStack {
             Ellipse()
                 .fill(RallyUIKit.Palette.champagne.opacity(0.08))
                 .frame(width: size * 0.42, height: size * 0.68)
                 .blur(radius: 18)
-                .offset(y: size * 0.02)
+                .offset(y: size * 0.01)
 
             Capsule()
                 .fill(
                     LinearGradient(
-                        colors: [RallyUIKit.Palette.cyan.opacity(0.18), .clear],
+                        colors: [auraTint.opacity(0.22), .clear],
                         startPoint: .top,
                         endPoint: .bottom
                     )
                 )
-                .frame(width: size * 0.28, height: size * 0.54)
-                .blur(radius: 12)
-                .offset(y: -size * 0.02)
+                .frame(width: size * 0.32, height: size * 0.62)
+                .blur(radius: 16)
+                .offset(y: -size * 0.04)
 
             Capsule()
                 .fill(RallyUIKit.Palette.frost.opacity(0.06))
                 .frame(width: shoulderGlowWidth, height: size * 0.13)
                 .blur(radius: 10)
                 .offset(y: -size * 0.145)
+
+            Ellipse()
+                .fill(racketHalo)
+                .frame(width: size * 0.18, height: size * 0.30)
+                .blur(radius: 22)
+                .offset(x: size * 0.30, y: -size * 0.07)
 
             // Racket — behind the body, off to the side.
             ZStack {
@@ -189,16 +221,23 @@ struct AvatarView: View {
                     .padding(.bottom, size * 0.23)
             }
             .frame(width: size * 0.24, height: size * 0.68)
-            .offset(x: size * 0.29, y: -size * 0.02)
-            .shadow(color: racketAccent.opacity(0.5), radius: 10, y: 4)
+            .rotationEffect(.degrees(10))
+            .offset(x: size * 0.30, y: -size * 0.04)
+            .shadow(color: racketAccent.opacity(0.5), radius: 12, y: 5)
 
             // Legs (skin + shoes)
             HStack(spacing: legSpacing) {
                 LegShape(skin: skinColor, shoe: shoesColor, accent: shoesAccent)
                 LegShape(skin: skinColor, shoe: shoesColor, accent: shoesAccent)
             }
-            .frame(width: legWidth, height: size * 0.42)
-            .offset(y: size * 0.22)
+            .frame(width: legWidth, height: size * 0.45)
+            .offset(y: size * 0.245)
+
+            Capsule()
+                .fill(Color.black.opacity(0.16))
+                .frame(width: size * 0.26, height: size * 0.05)
+                .offset(y: size * 0.04)
+                .blur(radius: 6)
 
             // Bottoms (shorts/skirt)
             RoundedRectangle(cornerRadius: 6)
@@ -218,22 +257,32 @@ struct AvatarView: View {
                     RoundedRectangle(cornerRadius: 6)
                         .stroke(bottomAccent, lineWidth: 1.5)
                 )
-                .offset(y: size * 0.06)
+                .frame(width: bottomWidth * bodyScale, height: size * 0.18)
+                .offset(y: size * 0.07)
 
             Capsule()
                 .fill(skinColor.opacity(0.92))
-                .frame(width: neckWidth, height: size * 0.10)
-                .offset(y: -size * 0.17)
+                .frame(width: neckWidth, height: size * 0.11)
+                .offset(y: -size * 0.18)
 
             // Back arm for fuller silhouette.
             Capsule()
-                .fill(skinColor.opacity(0.92))
-                .frame(
-                    width: config.bodyType == .strong ? size * 0.074 : size * 0.065,
-                    height: size * 0.22
+                .fill(
+                    LinearGradient(
+                        colors: [skinColor.opacity(0.88), skinColor],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
                 )
-                .rotationEffect(.degrees(18))
-                .offset(x: -size * 0.18, y: -size * 0.07)
+                .frame(width: armWidth, height: size * 0.24)
+                .rotationEffect(.degrees(21))
+                .offset(x: -size * 0.205, y: -size * 0.085)
+
+            Capsule()
+                .fill(auraTint.opacity(0.16))
+                .frame(width: shoulderWidth, height: size * 0.11)
+                .blur(radius: 12)
+                .offset(y: -size * 0.155)
 
             // Top (shirt)
             TopShape()
@@ -252,34 +301,37 @@ struct AvatarView: View {
                     TopShape().stroke(topAccent, lineWidth: 2)
                 )
                 .frame(width: torsoWidth * bodyScale, height: topHeight)
-                .offset(y: -size * 0.10)
-                .shadow(color: .black.opacity(0.12), radius: 8, y: 4)
+                .overlay(alignment: .top) {
+                    Capsule()
+                        .fill(Color.white.opacity(0.16))
+                        .frame(width: torsoWidth * 0.46, height: size * 0.02)
+                        .offset(y: size * 0.02)
+                }
+                .offset(y: -size * 0.11)
+                .shadow(color: auraTint.opacity(0.18), radius: 10, y: 4)
 
             RoundedRectangle(cornerRadius: 5)
                 .fill(topAccent.opacity(0.88))
-                .frame(width: torsoWidth * 0.34, height: 3)
+                .frame(width: torsoWidth * 0.38, height: 4)
                 .offset(y: -size * 0.18)
-
-            Capsule()
-                .fill(Color.black.opacity(0.14))
-                .frame(width: size * 0.20, height: size * 0.04)
-                .offset(y: size * 0.02)
-                .blur(radius: 4)
 
             // Lead arm with clearer extension toward the racquet.
             Capsule()
-                .fill(skinColor)
-                .frame(
-                    width: config.bodyType == .strong ? size * 0.076 : size * 0.07,
-                    height: size * 0.26
+                .fill(
+                    LinearGradient(
+                        colors: [skinColor, skinColor.opacity(0.88)],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
                 )
-                .rotationEffect(.degrees(-16))
-                .offset(x: size * 0.17, y: -size * 0.07)
+                .frame(width: armWidth, height: size * 0.29)
+                .rotationEffect(.degrees(-18))
+                .offset(x: size * 0.195, y: -size * 0.082)
 
             // Head
-            Circle()
+            HeadShape()
                 .fill(skinColor)
-                .frame(width: size * 0.22, height: size * 0.22)
+                .frame(width: headSize * 1.02, height: headSize * 1.12)
                 .overlay(hair(size: size))
                 .overlay(alignment: .center) {
                     faceDetails(size: size)
@@ -298,8 +350,8 @@ struct AvatarView: View {
                         .frame(width: size * 0.08, height: size * 0.025)
                         .offset(y: size * 0.028)
                 }
-                .offset(y: -size * 0.30)
-                .shadow(color: .black.opacity(0.35), radius: 6, y: 3)
+                .offset(y: -size * 0.315)
+                .shadow(color: .black.opacity(0.35), radius: 8, y: 4)
         }
     }
 
@@ -313,61 +365,102 @@ struct AvatarView: View {
             case .bald:
                 EmptyView()
             case .short:
-                Ellipse()
-                    .fill(color)
-                    .frame(width: size * 0.24, height: size * 0.13)
-                    .offset(y: -size * 0.055)
+                ZStack {
+                    Ellipse()
+                        .fill(color)
+                        .frame(width: size * 0.225, height: size * 0.11)
+                        .offset(y: -size * 0.062)
+                    Capsule()
+                        .fill(color)
+                        .frame(width: size * 0.18, height: size * 0.09)
+                        .offset(y: -size * 0.025)
+                }
             case .medium:
-                Ellipse()
-                    .fill(color)
-                    .frame(width: size * 0.26, height: size * 0.15)
-                    .offset(y: -size * 0.045)
+                ZStack {
+                    Ellipse()
+                        .fill(color)
+                        .frame(width: size * 0.245, height: size * 0.13)
+                        .offset(y: -size * 0.05)
+                    Capsule()
+                        .fill(color)
+                        .frame(width: size * 0.18, height: size * 0.14)
+                        .offset(y: size * 0.005)
+                }
             case .long:
                 Capsule()
                     .fill(color)
-                    .frame(width: size * 0.23, height: size * 0.31)
-                    .offset(y: size * 0.045)
+                    .frame(width: size * 0.22, height: size * 0.30)
+                    .offset(y: size * 0.05)
             case .ponytail:
-                Ellipse()
-                    .fill(color)
-                    .frame(width: size * 0.24, height: size * 0.10)
-                    .offset(y: -size * 0.05)
-                Capsule()
-                    .fill(color)
-                    .frame(width: size * 0.05, height: size * 0.18)
-                    .offset(x: -size * 0.11, y: size * 0.03)
+                ZStack {
+                    Ellipse()
+                        .fill(color)
+                        .frame(width: size * 0.22, height: size * 0.095)
+                        .offset(y: -size * 0.055)
+                    Capsule()
+                        .fill(color)
+                        .frame(width: size * 0.05, height: size * 0.17)
+                        .offset(x: -size * 0.10, y: size * 0.035)
+                }
             case .bun:
-                Ellipse()
-                    .fill(color)
-                    .frame(width: size * 0.20, height: size * 0.08)
-                    .offset(y: -size * 0.04)
-                Circle()
-                    .fill(color)
-                    .frame(width: size * 0.09, height: size * 0.09)
-                    .offset(y: -size * 0.10)
+                ZStack {
+                    Ellipse()
+                        .fill(color)
+                        .frame(width: size * 0.19, height: size * 0.078)
+                        .offset(y: -size * 0.04)
+                    Circle()
+                        .fill(color)
+                        .frame(width: size * 0.08, height: size * 0.08)
+                        .offset(y: -size * 0.095)
+                }
             }
         }
     }
 
     @ViewBuilder
     private func faceDetails(size: CGFloat) -> some View {
-        VStack(spacing: size * 0.018) {
-            HStack(spacing: size * 0.045) {
-                Circle()
-                    .fill(Color.black.opacity(0.34))
-                    .frame(width: size * 0.012, height: size * 0.012)
-                Circle()
-                    .fill(Color.black.opacity(0.34))
-                    .frame(width: size * 0.012, height: size * 0.012)
+        VStack(spacing: size * 0.015) {
+            HStack(spacing: size * 0.04) {
+                Capsule()
+                    .fill(Color.black.opacity(0.18))
+                    .frame(width: size * 0.028, height: size * 0.005)
+                Capsule()
+                    .fill(Color.black.opacity(0.18))
+                    .frame(width: size * 0.028, height: size * 0.005)
             }
+            HStack(spacing: size * 0.04) {
+                eyeDetail(size: size)
+                eyeDetail(size: size)
+            }
+            RoundedRectangle(cornerRadius: size * 0.007)
+                .fill(skinColor.opacity(0.96))
+                .frame(width: size * 0.012, height: size * 0.019)
             Capsule()
-                .fill(Color.white.opacity(0.14))
-                .frame(width: size * 0.05, height: size * 0.008)
-            Capsule()
-                .fill(Color.black.opacity(0.10))
-                .frame(width: size * 0.065, height: size * 0.012)
+                .fill(Color(red: 0.56, green: 0.33, blue: 0.35).opacity(0.78))
+                .frame(width: size * 0.022, height: size * 0.004)
+            ArcSmile()
+                .stroke(Color(red: 0.52, green: 0.28, blue: 0.3).opacity(0.72), style: StrokeStyle(lineWidth: size * 0.0065, lineCap: .round))
+                .frame(width: size * 0.058, height: size * 0.022)
         }
-        .offset(y: size * 0.006)
+        .offset(y: size * 0.012)
+    }
+
+    @ViewBuilder
+    private func eyeDetail(size: CGFloat) -> some View {
+        VStack(spacing: size * 0.005) {
+            ZStack {
+                Capsule()
+                    .fill(Color.white.opacity(0.98))
+                    .frame(width: size * 0.028, height: size * 0.016)
+                Circle()
+                    .fill(Color(red: 0.18, green: 0.12, blue: 0.1))
+                    .frame(width: size * 0.008, height: size * 0.008)
+                Circle()
+                    .fill(Color.white.opacity(0.9))
+                    .frame(width: size * 0.003, height: size * 0.003)
+                    .offset(x: size * 0.002, y: -size * 0.002)
+            }
+        }
     }
 
     private var skinColor: Color {
@@ -376,9 +469,9 @@ struct AvatarView: View {
 
     private var bodyScale: CGFloat {
         switch config.bodyType {
-        case .slim:     return 0.92
+        case .slim: return 0.94
         case .athletic: return 1.0
-        case .strong:   return 1.10
+        case .strong: return 1.08
         }
     }
 
@@ -393,6 +486,54 @@ struct AvatarView: View {
         case .racket: return ShopCatalog.item(id: config.equippedRacketID)
         case .bag, .accessory: return nil  // not visualized on the avatar (yet)
         }
+    }
+}
+
+private struct ArcSmile: Shape {
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        path.move(to: CGPoint(x: rect.minX + rect.width * 0.12, y: rect.midY - rect.height * 0.06))
+        path.addQuadCurve(
+            to: CGPoint(x: rect.maxX - rect.width * 0.12, y: rect.midY - rect.height * 0.06),
+            control: CGPoint(x: rect.midX, y: rect.maxY)
+        )
+        return path
+    }
+}
+
+private struct HeadShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        let foreheadInset = rect.width * 0.16
+        let jawInset = rect.width * 0.09
+        let chinHeight = rect.height * 0.16
+
+        path.move(to: CGPoint(x: rect.midX, y: rect.minY))
+        path.addQuadCurve(
+            to: CGPoint(x: rect.maxX - foreheadInset, y: rect.minY + rect.height * 0.16),
+            control: CGPoint(x: rect.maxX - rect.width * 0.1, y: rect.minY)
+        )
+        path.addQuadCurve(
+            to: CGPoint(x: rect.maxX - jawInset, y: rect.maxY - chinHeight),
+            control: CGPoint(x: rect.maxX, y: rect.midY)
+        )
+        path.addQuadCurve(
+            to: CGPoint(x: rect.midX, y: rect.maxY),
+            control: CGPoint(x: rect.maxX - rect.width * 0.18, y: rect.maxY)
+        )
+        path.addQuadCurve(
+            to: CGPoint(x: rect.minX + jawInset, y: rect.maxY - chinHeight),
+            control: CGPoint(x: rect.minX + rect.width * 0.18, y: rect.maxY)
+        )
+        path.addQuadCurve(
+            to: CGPoint(x: rect.minX + foreheadInset, y: rect.minY + rect.height * 0.16),
+            control: CGPoint(x: rect.minX, y: rect.midY)
+        )
+        path.addQuadCurve(
+            to: CGPoint(x: rect.midX, y: rect.minY),
+            control: CGPoint(x: rect.minX + rect.width * 0.1, y: rect.minY)
+        )
+        return path
     }
 }
 
@@ -439,7 +580,13 @@ private struct LegShape: View {
     var body: some View {
         VStack(spacing: 0) {
             Capsule()
-                .fill(skin)
+                .fill(
+                    LinearGradient(
+                        colors: [skin.opacity(0.94), skin],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
                 .frame(maxWidth: .infinity)
             RoundedRectangle(cornerRadius: 4)
                 .fill(shoe)
@@ -447,7 +594,14 @@ private struct LegShape: View {
                     RoundedRectangle(cornerRadius: 4)
                         .stroke(accent ?? .clear, lineWidth: 1.5)
                 )
-                .frame(height: 14)
+                .overlay(alignment: .top) {
+                    Capsule()
+                        .fill(Color.white.opacity(0.15))
+                        .frame(height: 3)
+                        .padding(.horizontal, 3)
+                        .offset(y: 2)
+                }
+                .frame(height: 16)
         }
     }
 }

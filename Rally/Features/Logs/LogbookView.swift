@@ -1,13 +1,15 @@
 import SwiftUI
 import SwiftData
 
-/// Combined training, match, and journal history — one **Logbook** destination.
+/// Combined training, match, and journal history — one unified tennis-life destination.
 struct LogbookView: View {
     @Binding var section: LogbookSection
+    var title: String = "Journal"
     @State private var showJournalComposer = false
     @Query(sort: \TrainingSession.date, order: .reverse) private var trainingSessions: [TrainingSession]
     @Query(sort: \MatchEntry.date, order: .reverse) private var matches: [MatchEntry]
     @Query(sort: \JournalEntry.date, order: .reverse) private var journalEntries: [JournalEntry]
+    private let sectionOrder: [LogbookSection] = [.journal, .training, .matches]
 
     var body: some View {
         NavigationStack {
@@ -22,7 +24,7 @@ struct LogbookView: View {
                             )
 
                             VStack(alignment: .leading, spacing: 3) {
-                                Text("Player memory")
+                                Text("Tennis life")
                                     .font(RallyUIKit.Typography.body(.headline, weight: .bold))
                                     .foregroundStyle(RallyUIKit.Palette.frost)
                                 Text(sectionDescription)
@@ -32,7 +34,7 @@ struct LogbookView: View {
                         }
 
                         HStack(spacing: 10) {
-                            ForEach(LogbookSection.allCases) { value in
+                            ForEach(sectionOrder) { value in
                                 sectionButton(value)
                             }
                         }
@@ -41,6 +43,12 @@ struct LogbookView: View {
                 .padding(.horizontal, 16)
                 .padding(.top, 8)
                 .padding(.bottom, 12)
+
+                if let summary = practiceSummary {
+                    practiceSummaryCard(summary)
+                        .padding(.horizontal, 16)
+                        .padding(.bottom, 12)
+                }
 
                 if !recentMoments.isEmpty {
                     mixedMomentsCard
@@ -58,8 +66,13 @@ struct LogbookView: View {
                 }
             }
             .background(Color.black.ignoresSafeArea())
-            .navigationTitle("Logbook")
+            .navigationTitle(title)
             .navigationBarTitleDisplayMode(.inline)
+            .onAppear {
+                if section == .journal {
+                    section = .training
+                }
+            }
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     HStack(spacing: 10) {
@@ -85,8 +98,8 @@ struct LogbookView: View {
 
     private var activeTint: Color {
         switch section {
-        case .training: return RallyUIKit.Palette.cyan
-        case .matches: return RallyUIKit.Palette.gold
+        case .training: return RallyUIKit.Palette.gold
+        case .matches: return RallyUIKit.Palette.cyan
         case .journal: return RallyUIKit.Palette.rose
         }
     }
@@ -94,9 +107,9 @@ struct LogbookView: View {
     private var sectionDescription: String {
         switch section {
         case .training:
-            return "Training blocks, drills, and court time in one premium ledger."
+            return "Training leads this journal so practice, volume, and focus stay front and center."
         case .matches:
-            return "Scores, memories, and the nights you want to keep."
+            return "Scores, memory, and match pressure once the court time turns competitive."
         case .journal:
             return "Reflections, guided notes, and the inner side of your tennis life."
         }
@@ -104,14 +117,56 @@ struct LogbookView: View {
 
     private var recentMoments: [LogbookMoment] {
         let moments =
-            trainingSessions.prefix(2).map { LogbookMoment(training: $0) } +
-            matches.prefix(2).map { LogbookMoment(match: $0) } +
-            journalEntries.prefix(2).map { LogbookMoment(journal: $0) }
+            trainingSessions.prefix(1).map { LogbookMoment(training: $0) } +
+            matches.prefix(1).map { LogbookMoment(match: $0) } +
+            journalEntries.prefix(1).map { LogbookMoment(journal: $0) }
 
         return moments
             .sorted { $0.date > $1.date }
-            .prefix(4)
+            .prefix(3)
             .map { $0 }
+    }
+
+    private var practiceSummary: PracticeSummary? {
+        guard let latestMatch = matches.first else { return nil }
+        let weekBeforeMatch = Calendar.current.date(byAdding: .day, value: -7, to: latestMatch.date) ?? latestMatch.date
+        let leadupSessions = trainingSessions.filter { $0.date >= weekBeforeMatch && $0.date < latestMatch.date }
+        guard !leadupSessions.isEmpty else { return nil }
+        let minutes = leadupSessions.reduce(0) { $0 + $1.durationMinutes }
+        return PracticeSummary(
+            matchDate: latestMatch.date,
+            minutes: minutes,
+            sessions: leadupSessions.count
+        )
+    }
+
+    private func practiceSummaryCard(_ summary: PracticeSummary) -> some View {
+        RallyUIKit.LuxePanel(tint: RallyUIKit.Palette.gold) {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack(alignment: .top, spacing: 12) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        RallyUIKit.EditorialEyebrow(text: "Practice lead-in", tint: RallyUIKit.Palette.gold)
+                        Text("\(summary.minutes) minutes before your latest match")
+                            .font(RallyUIKit.Typography.body(.headline, weight: .bold))
+                            .foregroundStyle(RallyUIKit.Palette.frost)
+                        Text("\(summary.sessions) training session\(summary.sessions == 1 ? "" : "s") in the seven days before match day")
+                            .font(RallyUIKit.Typography.body(.caption, weight: .medium))
+                            .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.6))
+                    }
+
+                    Spacer(minLength: 8)
+
+                    VStack(alignment: .trailing, spacing: 4) {
+                        Text(summary.matchDate, format: .dateTime.month(.abbreviated).day())
+                            .font(RallyUIKit.Typography.label(.caption, weight: .bold))
+                            .foregroundStyle(RallyUIKit.Palette.gold)
+                        Text("match")
+                            .font(RallyUIKit.Typography.label(.caption2, weight: .semibold))
+                            .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.38))
+                    }
+                }
+            }
+        }
     }
 
     private var mixedMomentsCard: some View {
@@ -180,8 +235,8 @@ struct LogbookView: View {
 
     private func tint(for value: LogbookSection) -> Color {
         switch value {
-        case .training: return RallyUIKit.Palette.cyan
-        case .matches: return RallyUIKit.Palette.gold
+        case .training: return RallyUIKit.Palette.gold
+        case .matches: return RallyUIKit.Palette.cyan
         case .journal: return RallyUIKit.Palette.rose
         }
     }
@@ -234,6 +289,12 @@ struct LogbookView: View {
         }
         .buttonStyle(.plain)
     }
+}
+
+private struct PracticeSummary {
+    let matchDate: Date
+    let minutes: Int
+    let sessions: Int
 }
 
 enum LogbookSection: String, CaseIterable, Identifiable, Hashable {

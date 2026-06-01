@@ -18,6 +18,11 @@ import UIKit
 /// generously on death.
 final class GameScene: SKScene {
 
+    private enum SessionMode {
+        case wallRally
+        case phasedMatch
+    }
+
     enum ShotShape: String {
         case drive
         case topspin
@@ -80,9 +85,11 @@ final class GameScene: SKScene {
         didSet { refreshHandednessIfNeeded() }
     }
     var showCoachingCues = true
-    var matchPace: GamePreferences.MatchPace = .standard {
+    var matchPace: GamePreferences.MatchPace = .calm {
         didSet { applyMatchPaceIfNeeded() }
     }
+    var autoPlayEnabled = false
+    private let sessionMode: SessionMode = .wallRally
 
     // MARK: - Runtime state
 
@@ -101,7 +108,6 @@ final class GameScene: SKScene {
     private var changeupWinners: Int = 0
     private var pressureHolds: Int = 0
     private var pressureExchangeStreak: Int = 0
-
     private var activeBalls: [BallNode] = []
     private var startTime: TimeInterval = 0
     private var currentTimeSnapshot: TimeInterval = 0
@@ -113,6 +119,7 @@ final class GameScene: SKScene {
     private var recentContactQuality: HitQuality?
     private var recentContactUntil: TimeInterval = 0
     private var recentHUDImpactUntil: TimeInterval = 0
+    private var lastAutoPlaySpawnTime: Double = -1
 
     /// Set to `true` for the first `countdownSeconds` after the scene
     /// appears. Spawner is paused and input is ignored during this window
@@ -167,6 +174,7 @@ final class GameScene: SKScene {
     private var lastBeatTime: TimeInterval = 0
     private var sessionStartWallTime: TimeInterval = 0
     private var spawnedBallCount: Int = 0
+    private var wallNextLane: Lane = .right
 
     // First-third / middle-third / last-third hit counters, so the end-of-run
     // summary can tell a story ("slow start — strong finish"). We bucket on
@@ -217,37 +225,48 @@ final class GameScene: SKScene {
         setupStrikeLine()
         setupCourtAvatar()
         setupHUD()
+        if sessionMode == .wallRally {
+            hudCaptionLabel?.text = "ONE-BALL WALL RALLY"
+            hudPhaseLabel?.text = "MODE"
+        }
         didChangeSize(size)
         setupSwipeRecognizers(in: view)
 
         ParticleManager.shared.attach(scene: self, shakeTarget: cameraNode)
 
-        // Phase coordinator drives BPM, density, timing windows, double-ball
-        // probability. The spawner asks it for a profile every time it needs
-        // to author the next note. BPM resolution goes through
-        // `RemoteTunables` so a live-ops manifest can shift the tempo curve
-        // without shipping a build; falls back to bundled `Tunables`.
-        let coordinator = MatchFlowCoordinator(
-            sessionDurationSeconds: sessionDurationSeconds,
-            bpmResolver: { phase in
-                MainActor.assumeIsolated {
-                    RemoteTunables.shared.bpm(for: phase)
+        if sessionMode == .phasedMatch {
+            // Phase coordinator drives BPM, density, timing windows, double-ball
+            // probability. The spawner asks it for a profile every time it needs
+            // to author the next note. BPM resolution goes through
+            // `RemoteTunables` so a live-ops manifest can shift the tempo curve
+            // without shipping a build; falls back to bundled `Tunables`.
+            let coordinator = MatchFlowCoordinator(
+                sessionDurationSeconds: sessionDurationSeconds,
+                bpmResolver: { phase in
+                    MainActor.assumeIsolated {
+                        RemoteTunables.shared.bpm(for: phase)
+                    }
                 }
+            )
+            coordinator.onPhaseChange = { [weak self] from, to in
+                self?.handlePhaseChange(from: from, to: to)
             }
-        )
-        coordinator.onPhaseChange = { [weak self] from, to in
-            self?.handlePhaseChange(from: from, to: to)
-        }
-        flow = coordinator
-        let initialProfile = coordinator.currentProfile()
-        currentBPM = initialProfile.bpm
-        currentTravelSeconds = Tunables.ballTravelSeconds * initialProfile.travelScalar * matchPace.travelScalar
+            flow = coordinator
+            let initialProfile = coordinator.currentProfile()
+            currentBPM = initialProfile.bpm
+            currentTravelSeconds = Tunables.ballTravelSeconds * initialProfile.travelScalar * matchPace.travelScalar
 
-        spawner = RhythmSpawner(
-            flow: coordinator,
-            travelSeconds: currentTravelSeconds
-        ) { [weak self] note in
-            self?.spawnBall(note)
+            spawner = RhythmSpawner(
+                flow: coordinator,
+                travelSeconds: currentTravelSeconds
+            ) { [weak self] note in
+                self?.spawnBall(note)
+            }
+        } else {
+            flow = nil
+            spawner = nil
+            currentBPM = wallTempoBPM(for: matchPace)
+            currentTravelSeconds = Tunables.ballTravelSeconds * 1.18 * matchPace.travelScalar
         }
 
         #if DEBUG
@@ -261,6 +280,7 @@ final class GameScene: SKScene {
         startTime = CACurrentMediaTime()
         sessionStartWallTime = startTime
         lastBeatTime = startTime
+        wallNextLane = dominantHand == .right ? .right : .left
         GameEventBus.shared.publish(.sessionStart)
         runCountdown()
     }
@@ -282,7 +302,7 @@ final class GameScene: SKScene {
         addChild(label)
 
         let subtitle = SKLabelNode(fontNamed: "AvenirNext-DemiBold")
-        subtitle.text = "MATCH START"
+        subtitle.text = sessionMode == .wallRally ? "WALL START" : "MATCH START"
         subtitle.fontSize = 18
         subtitle.fontColor = UIColor(white: 1.0, alpha: 0.68)
         subtitle.position = CGPoint(x: size.width / 2, y: size.height * 0.61)
@@ -348,9 +368,14 @@ final class GameScene: SKScene {
                 breaking: false
             )
             self.showInstruction(
-                "Meet the ball and release through contact.",
+                self.sessionMode == .wallRally
+                    ? "One ball. Let it come in, then release through contact."
+                    : "Meet the ball and release through contact.",
                 hold: Tunables.openingHintSeconds * 0.45
             )
+            if self.sessionMode == .wallRally {
+                self.scheduleWallBall(after: 1.05)
+            }
         })
         label.run(.sequence(seq))
     }
@@ -478,17 +503,17 @@ final class GameScene: SKScene {
 
     private func setupStrikeLine() {
         let y = size.height * Tunables.strikeLineYRatio
-        let line = SKShapeNode(rect: CGRect(x: -size.width / 2, y: -1.5, width: size.width, height: 3))
+        let line = SKShapeNode(rect: CGRect(x: -size.width / 2, y: -0.5, width: size.width, height: 1))
         line.position = CGPoint(x: size.width / 2, y: y)
         line.strokeColor = .clear
-        line.fillColor = UIColor(red: 0, green: 1, blue: 1, alpha: 0.85)
-        line.glowWidth = 15
+        line.fillColor = UIColor(red: 0.88, green: 0.96, blue: 1, alpha: 0.08)
+        line.glowWidth = 1.5
         line.zPosition = 10
         addChild(line)
         strikeLine = line
 
         let strikeHalo = SKShapeNode(rectOf: CGSize(width: size.width * 0.54, height: 12), cornerRadius: 6)
-        strikeHalo.fillColor = UIColor(white: 1.0, alpha: 0.08)
+        strikeHalo.fillColor = UIColor(white: 1.0, alpha: 0.015)
         strikeHalo.strokeColor = .clear
         strikeHalo.position = CGPoint(x: size.width / 2, y: y)
         strikeHalo.zPosition = 9
@@ -676,13 +701,13 @@ final class GameScene: SKScene {
 
     private func setupHUD() {
         let topPlate = SKShapeNode(
-            rectOf: CGSize(width: 294, height: 112),
-            cornerRadius: 28
+            rectOf: CGSize(width: 306, height: 118),
+            cornerRadius: 30
         )
-        topPlate.fillColor = UIColor(white: 0.02, alpha: 0.28)
-        topPlate.strokeColor = UIColor(white: 1.0, alpha: 0.12)
-        topPlate.lineWidth = 1
-        topPlate.glowWidth = 4
+        topPlate.fillColor = UIColor(red: 0.03, green: 0.05, blue: 0.09, alpha: 0.42)
+        topPlate.strokeColor = UIColor(white: 1.0, alpha: 0.16)
+        topPlate.lineWidth = 1.2
+        topPlate.glowWidth = 6
         topPlate.position = CGPoint(x: size.width / 2, y: size.height * 0.885)
         topPlate.zPosition = 46
         addChild(topPlate)
@@ -691,7 +716,7 @@ final class GameScene: SKScene {
         let caption = SKLabelNode(fontNamed: "AvenirNext-DemiBold")
         caption.text = "MATCH SCORE"
         caption.fontSize = 10
-        caption.fontColor = UIColor(white: 1.0, alpha: 0.34)
+        caption.fontColor = UIColor(white: 1.0, alpha: 0.42)
         caption.position = CGPoint(x: size.width / 2, y: size.height * 0.934)
         caption.zPosition = 50
         caption.horizontalAlignmentMode = .center
@@ -710,7 +735,7 @@ final class GameScene: SKScene {
 
         let phaseValue = SKLabelNode(fontNamed: "AvenirNext-DemiBold")
         phaseValue.text = "WARM-UP"
-        phaseValue.fontSize = 13
+        phaseValue.fontSize = 14
         phaseValue.fontColor = UIColor(white: 1.0, alpha: 0.84)
         phaseValue.position = CGPoint(x: size.width * 0.27, y: size.height * 0.889)
         phaseValue.zPosition = 50
@@ -730,7 +755,7 @@ final class GameScene: SKScene {
 
         let maxValue = SKLabelNode(fontNamed: "AvenirNext-DemiBold")
         maxValue.text = "x0"
-        maxValue.fontSize = 13
+        maxValue.fontSize = 14
         maxValue.fontColor = UIColor(white: 1.0, alpha: 0.78)
         maxValue.position = CGPoint(x: size.width * 0.73, y: size.height * 0.889)
         maxValue.zPosition = 50
@@ -740,7 +765,7 @@ final class GameScene: SKScene {
 
         let score = SKLabelNode(fontNamed: "AvenirNext-Bold")
         score.text = "0"
-        score.fontSize = 42
+        score.fontSize = 46
         score.fontColor = .white
         score.position = CGPoint(x: size.width / 2, y: size.height * 0.875)
         score.zPosition = 50
@@ -750,8 +775,8 @@ final class GameScene: SKScene {
 
         let combo = SKLabelNode(fontNamed: "AvenirNext-DemiBold")
         combo.text = ""
-        combo.fontSize = 16
-        combo.fontColor = UIColor(white: 1, alpha: 0.6)
+        combo.fontSize = 17
+        combo.fontColor = UIColor(white: 1, alpha: 0.68)
         combo.position = CGPoint(x: size.width / 2, y: size.height * 0.838)
         combo.zPosition = 50
         combo.horizontalAlignmentMode = .center
@@ -782,9 +807,10 @@ final class GameScene: SKScene {
             rectOf: CGSize(width: min(size.width * 0.74, 328), height: 40),
             cornerRadius: 20
         )
-        bottomPlate.fillColor = UIColor(white: 0.02, alpha: 0.24)
-        bottomPlate.strokeColor = UIColor(white: 1.0, alpha: 0.1)
+        bottomPlate.fillColor = UIColor(red: 0.03, green: 0.04, blue: 0.08, alpha: 0.34)
+        bottomPlate.strokeColor = UIColor(white: 1.0, alpha: 0.12)
         bottomPlate.lineWidth = 1
+        bottomPlate.glowWidth = 4
         bottomPlate.position = CGPoint(x: size.width / 2, y: size.height * 0.14)
         bottomPlate.zPosition = 54
         bottomPlate.alpha = 0
@@ -834,7 +860,7 @@ final class GameScene: SKScene {
         currentTimeSnapshot = currentTime
         currentTrackTime = max(0, trackTime)
 
-        if !sessionEnded, !isCountingDown {
+        if !sessionEnded, !isCountingDown, sessionMode == .phasedMatch {
             flow?.update(trackTime: currentTrackTime, combo: combo)
             if let profile = flow?.currentProfile() {
                 // Travel time scales per phase — warm-up balls drift in,
@@ -848,16 +874,23 @@ final class GameScene: SKScene {
                 currentBPM = profile.bpm
             }
             spawner?.tick(trackTime: currentTrackTime)
+        } else if !sessionEnded, !isCountingDown, sessionMode == .wallRally {
+            currentBPM = wallTempoBPM(for: matchPace)
+            currentTravelSeconds = wallTravelSeconds()
         }
         moveBalls(trackTime: currentTrackTime)
         updateTrackingAssist()
         updateCourtAvatar(trackTime: currentTrackTime)
+        autoPlayWallBallIfNeeded()
         cullMissedBalls()
         updateTimeLabel(trackTime: currentTrackTime)
         updateInstructionLabel(trackTime: currentTrackTime)
         pulseOnBeatIfDue(currentTime: currentTime)
 
-        if !sessionEnded, currentTrackTime >= sessionDurationSeconds, activeBalls.isEmpty {
+        if sessionMode == .phasedMatch,
+           !sessionEnded,
+           currentTrackTime >= sessionDurationSeconds,
+           activeBalls.isEmpty {
             completeSession()
         }
     }
@@ -872,6 +905,25 @@ final class GameScene: SKScene {
         if cameraNode.position != cameraHomePosition {
             cameraNode.position = cameraHomePosition
         }
+    }
+
+    private func autoPlayWallBallIfNeeded() {
+        guard autoPlayEnabled, sessionMode == .wallRally, !sessionEnded, !isCountingDown else { return }
+        guard let ball = primaryWallBall() else { return }
+        guard ball.spawnTime != lastAutoPlaySpawnTime else { return }
+        let triggerTime = ball.arrivalTime - 0.02
+        guard currentTrackTime >= triggerTime else { return }
+        lastAutoPlaySpawnTime = ball.spawnTime
+        swingVisualLane = ball.lane
+        swingVisualIntent = .drive
+        swingVisualReach = 150
+        swingVisualImpactUntil = currentTimeSnapshot + 0.28
+        resolveSwing(
+            lane: ball.lane,
+            swingSpeed: Tunables.swingFastVelocity * 1.2,
+            swingIntent: .drive,
+            strokeSide: strokeSide(for: ball.lane)
+        )
     }
 
     /// Throbs the strike line on every quarter-note tick of the current
@@ -917,21 +969,28 @@ final class GameScene: SKScene {
 
         let activeTouch = swingCurrentScene ?? swingOriginScene
         let idleBreath = sin(trackTime * 2.6) * 4
+        let recoveryProgressValue = recoveryProgress(at: trackTime)
+        let impactProgress = max(0, min(1, (swingVisualImpactUntil - currentTimeSnapshot) / 0.26))
+        let focusLane = sessionMode == .wallRally ? wallFocusLane() : swingVisualLane
         let desiredX: CGFloat
-        if let activeTouch {
+        if sessionMode == .wallRally {
+            desiredX = wallStanceTargetX(for: focusLane)
+        } else if let activeTouch {
             let clamped = min(size.width * 0.78, max(size.width * 0.22, activeTouch.x))
             desiredX = clamped
         } else {
             desiredX = size.width / 2 + recoveryOffsetX(at: trackTime) + sin(trackTime * 0.8) * 10
         }
         let anticipation = max(0, min(1, (betweenPointLiftUntil - currentTimeSnapshot) / 0.6))
-        playerRoot.position.x += (desiredX - playerRoot.position.x) * 0.22
+        let movementBlend: CGFloat = sessionMode == .wallRally ? 0.42 : 0.22
+        playerRoot.position.x += (desiredX - playerRoot.position.x) * movementBlend
         playerRoot.position.y = size.height * 0.08 + idleBreath - anticipation * 5.5
 
+        if sessionMode == .wallRally, impactProgress < 0.08 {
+            swingVisualLane = focusLane
+        }
         let leaningRight = swingVisualLane == .right
         let leanDirection: CGFloat = leaningRight ? 1 : -1
-        let recoveryProgressValue = recoveryProgress(at: trackTime)
-        let impactProgress = max(0, min(1, (swingVisualImpactUntil - currentTimeSnapshot) / 0.26))
         let reach = swingVisualReach * (0.22 + (1 - impactProgress) * 0.78)
         let contactFlash = max(0, (contactFlashUntil - currentTimeSnapshot) / 0.16)
         let qualityFlash = max(0, (recentContactUntil - currentTimeSnapshot) / 0.22)
@@ -1316,6 +1375,10 @@ final class GameScene: SKScene {
 
     private func updateTimeLabel(trackTime: Double) {
         guard let timeLabel = timeLabel else { return }
+        if sessionMode == .wallRally {
+            timeLabel.text = "ENDLESS"
+            return
+        }
         // Freeze the timer at the full session length during the countdown
         // so the player doesn't see it tick down before they can even play.
         let effectiveTrackTime = isCountingDown ? 0 : trackTime
@@ -1343,7 +1406,9 @@ final class GameScene: SKScene {
 
     private func updateTrackingAssist() {
         let focusLane: Lane
-        if let activeTouch = swingCurrentScene ?? swingOriginScene {
+        if sessionMode == .wallRally {
+            focusLane = wallFocusLane()
+        } else if let activeTouch = swingCurrentScene ?? swingOriginScene {
             focusLane = activeTouch.x < size.width / 2 ? .left : .right
         } else {
             focusLane = swingVisualLane
@@ -1359,7 +1424,7 @@ final class GameScene: SKScene {
             } else if ball === partner {
                 emphasis = 0.7
             } else if ball.lane == focusLane {
-                emphasis = 0.16
+                emphasis = sessionMode == .wallRally ? 0.24 + wallOpeningForgivenessBoost() * 0.08 : 0.16
             } else {
                 emphasis = 0
             }
@@ -1408,13 +1473,14 @@ final class GameScene: SKScene {
         guard let gate else { return }
         let palette = swingTrailPalette(intent: swingVisualIntent, lane: lane)
         let live = min(1, max(intensity, approach))
-        gate.alpha = 0.14 + intensity * 0.42 + approach * 0.26
-        gate.fillColor = palette.glow.withAlphaComponent(0.05 + intensity * 0.1 + approach * 0.14)
-        gate.strokeColor = palette.core.withAlphaComponent(0.18 + intensity * 0.32 + approach * 0.28)
-        gate.glowWidth = 4 + intensity * 8 + approach * 10
-        gate.lineWidth = 1.2 + intensity * 0.8 + approach * 1.0
-        gate.xScale = 1.0 + intensity * 0.08 + approach * 0.18
-        gate.yScale = 1.0 + intensity * 0.12 + approach * 0.28
+        let wallBoost: CGFloat = sessionMode == .wallRally ? 1.22 : 1.0
+        gate.alpha = min(1, 0.14 + intensity * 0.42 * wallBoost + approach * 0.26 * wallBoost)
+        gate.fillColor = palette.glow.withAlphaComponent(0.05 + intensity * 0.1 * wallBoost + approach * 0.14 * wallBoost)
+        gate.strokeColor = palette.core.withAlphaComponent(0.18 + intensity * 0.32 * wallBoost + approach * 0.28 * wallBoost)
+        gate.glowWidth = 4 + intensity * 8 * wallBoost + approach * 10 * wallBoost
+        gate.lineWidth = 1.2 + intensity * 0.8 * wallBoost + approach * 1.0 * wallBoost
+        gate.xScale = 1.0 + intensity * 0.08 * wallBoost + approach * 0.18 * wallBoost
+        gate.yScale = 1.0 + intensity * 0.12 * wallBoost + approach * 0.28 * wallBoost
         gate.zRotation = (lane == .right ? 1 : -1) * approach * 0.04
         if live > 0.85 {
             gate.fillColor = palette.tip.withAlphaComponent(0.12 + approach * 0.12)
@@ -1425,14 +1491,15 @@ final class GameScene: SKScene {
         guard let pocket else { return }
         let palette = swingTrailPalette(intent: swingVisualIntent, lane: lane)
         let contactBias = recentContactLane == lane ? recentContactPocketBias() : 0
+        let wallBoost: CGFloat = sessionMode == .wallRally ? 1.26 : 1.0
         pocket.position = racketContactPoint(for: lane)
-        pocket.alpha = 0.12 + intensity * 0.22 + approach * 0.48 + contactBias * 0.18
-        pocket.strokeColor = palette.core.withAlphaComponent(0.14 + intensity * 0.18 + approach * 0.48 + contactBias * 0.22)
-        pocket.fillColor = palette.glow.withAlphaComponent(0.02 + approach * 0.12 + contactBias * 0.1)
-        pocket.glowWidth = 4 + intensity * 4 + approach * 10 + contactBias * 8
-        pocket.lineWidth = 1.2 + intensity * 0.6 + approach * 1.6 + contactBias * 0.8
-        pocket.xScale = 1.0 + approach * 0.28 + contactBias * 0.18
-        pocket.yScale = 1.0 + approach * 0.28 + contactBias * 0.18
+        pocket.alpha = min(1, 0.12 + intensity * 0.22 * wallBoost + approach * 0.48 * wallBoost + contactBias * 0.18)
+        pocket.strokeColor = palette.core.withAlphaComponent(0.14 + intensity * 0.18 * wallBoost + approach * 0.48 * wallBoost + contactBias * 0.22)
+        pocket.fillColor = palette.glow.withAlphaComponent(0.02 + approach * 0.12 * wallBoost + contactBias * 0.1)
+        pocket.glowWidth = 4 + intensity * 4 * wallBoost + approach * 10 * wallBoost + contactBias * 8
+        pocket.lineWidth = 1.2 + intensity * 0.6 * wallBoost + approach * 1.6 * wallBoost + contactBias * 0.8
+        pocket.xScale = 1.0 + approach * 0.28 * wallBoost + contactBias * 0.18
+        pocket.yScale = 1.0 + approach * 0.28 * wallBoost + contactBias * 0.18
     }
 
     private func recentContactPocketBias() -> CGFloat {
@@ -1483,10 +1550,12 @@ final class GameScene: SKScene {
         let spawnX = horizonCenterX + (note.lane == .left ? -horizonSpread : horizonSpread)
         let strikeX = note.lane == .left ? strikeInset : size.width - strikeInset
         let shotShape = selectShotShape(for: note)
+        let ballRole: BeatmapNote.Role = sessionMode == .wallRally ? .returnBall : note.role
         let ball = BallNode(
             lane: note.lane,
             kind: note.kind,
-            role: note.role,
+            role: ballRole,
+            wallStyleMode: sessionMode == .wallRally,
             shotShape: shotShape,
             arrivalTime: note.arrivalTime,
             spawnTime: spawnTime,
@@ -1496,11 +1565,31 @@ final class GameScene: SKScene {
             spawnScale: Tunables.ballSpawnScale * racketTuning.spawnScaleScalar,
             strikeScale: Tunables.ballStrikeScale * racketTuning.strikeScaleScalar,
             overrunScale: Tunables.ballOverrunScale * racketTuning.overrunScaleScalar,
-            curveAmount: Tunables.laneCurveAmount * racketTuning.curveScalar
+            curveAmount: wallCurveAmount() * racketTuning.curveScalar,
+            overrideFillColor: sessionMode == .wallRally
+                ? UIColor(red: 0.93, green: 0.97, blue: 0.36, alpha: 1)
+                : nil
         )
         addChild(ball)
         activeBalls.append(ball)
+        if sessionMode == .wallRally {
+            stageWallFeedCue(for: ball)
+        }
         stagePointCueIfNeeded(for: note)
+    }
+
+    private func scheduleWallBall(after delay: Double) {
+        guard sessionMode == .wallRally, !sessionEnded else { return }
+        guard activeBalls.isEmpty else { return }
+        let lane = nextWallSpawnLane()
+        let arrivalTime = currentTrackTime + delay
+        let note = BeatmapNote(
+            arrivalTime: arrivalTime,
+            lane: lane,
+            kind: .normal,
+            role: .rally
+        )
+        spawnBall(note)
     }
 
     private func stagePointCueIfNeeded(for note: BeatmapNote) {
@@ -1571,29 +1660,134 @@ final class GameScene: SKScene {
 
         switch spawnedBallCount {
         case 1:
-            showInstruction("First ball. Swipe through the glowing lane, not across the whole court.", hold: 1.0)
+            showInstruction("First ball. Let your feet set, then time it clean.", hold: 1.02)
             return true
         case 2:
-            showInstruction("Now the other side. Meet it early and keep the release clean.", hold: 0.96)
+            showInstruction("Same ball back again. Read the side and swing there.", hold: 0.98)
             return true
         case 3:
-            showInstruction("Good. Let the ball come to the strike line before you fire.", hold: 0.92)
+            showInstruction("Good. The stance is set for you, so just focus on timing.", hold: 0.94)
             return true
         case 4:
-            showInstruction("Read the bounce, then answer with one balanced swing.", hold: 0.9)
+            showInstruction("Now settle into rhythm. Same wall, same answer.", hold: 0.9)
             return true
         case 5:
-            showInstruction("Rally mode now. Recover back under yourself after contact.", hold: 0.88)
+            showInstruction("Stay smooth. One streak, one ball, one wall.", hold: 0.88)
             return true
         case 6:
-            showInstruction("Tempo will rise next. Stay smooth before you try to be fast.", hold: 0.86)
+            showInstruction("Tempo rises slowly. Timing first, speed second.", hold: 0.86)
             return true
         default:
             return false
         }
     }
 
+    private func stageWallFeedCue(for ball: BallNode) {
+        guard sessionMode == .wallRally else { return }
+        let openingStrength = max(0, 1 - wallOpeningProgress())
+        guard openingStrength > 0 else { return }
+
+        let feedColor = UIColor(red: 0.93, green: 0.97, blue: 0.36, alpha: 1)
+        let pocketPoint = racketContactPoint(for: ball.lane)
+        let spawnHalo = SKShapeNode(circleOfRadius: Tunables.ballRadiusPoints * (1.8 + openingStrength * 0.55))
+        spawnHalo.position = ball.position
+        spawnHalo.zPosition = 22
+        spawnHalo.strokeColor = feedColor.withAlphaComponent(0.72)
+        spawnHalo.fillColor = feedColor.withAlphaComponent(0.12 + openingStrength * 0.06)
+        spawnHalo.lineWidth = 1.4 + openingStrength * 0.6
+        spawnHalo.glowWidth = 8 + openingStrength * 6
+        addChild(spawnHalo)
+
+        let pocket = SKShapeNode(circleOfRadius: 18 + openingStrength * 4)
+        pocket.position = pocketPoint
+        pocket.zPosition = 21
+        pocket.strokeColor = feedColor.withAlphaComponent(0.44 + openingStrength * 0.12)
+        pocket.fillColor = UIColor.white.withAlphaComponent(0.03 + openingStrength * 0.03)
+        pocket.lineWidth = 1.2
+        pocket.glowWidth = 5 + openingStrength * 4
+        addChild(pocket)
+
+        let guidePath = CGMutablePath()
+        guidePath.move(to: ball.position)
+        guidePath.addQuadCurve(
+            to: pocketPoint,
+            control: CGPoint(
+                x: (ball.position.x + pocketPoint.x) * 0.5,
+                y: ball.position.y - size.height * (0.06 + openingStrength * 0.015)
+            )
+        )
+        let guide = SKShapeNode(path: guidePath)
+        guide.zPosition = 20
+        guide.strokeColor = feedColor.withAlphaComponent(0.18 + openingStrength * 0.08)
+        guide.lineWidth = 1.2 + openingStrength * 0.4
+        guide.glowWidth = 4 + openingStrength * 3
+        guide.lineCap = .round
+        addChild(guide)
+
+        let handoff = SKShapeNode(circleOfRadius: Tunables.ballRadiusPoints * (0.92 + openingStrength * 0.1))
+        handoff.position = ball.position
+        handoff.zPosition = 23
+        handoff.fillColor = feedColor.withAlphaComponent(0.32 + openingStrength * 0.12)
+        handoff.strokeColor = UIColor.white.withAlphaComponent(0.34)
+        handoff.lineWidth = 0.8
+        handoff.glowWidth = 10
+        addChild(handoff)
+
+        spawnHalo.run(.sequence([
+            .group([
+                .scale(to: 0.62, duration: 0.15),
+                .fadeOut(withDuration: 0.16 + openingStrength * 0.03)
+            ]),
+            .removeFromParent()
+        ]))
+        pocket.run(.sequence([
+            .group([
+                .scale(to: 1.26, duration: 0.13),
+                .fadeAlpha(to: 0.2, duration: 0.13)
+            ]),
+            .group([
+                .scale(to: 1.08, duration: 0.1),
+                .fadeAlpha(to: 0.08, duration: 0.1)
+            ]),
+            .group([
+                .scale(to: 1.14, duration: 0.1),
+                .fadeOut(withDuration: 0.15 + openingStrength * 0.04)
+            ]),
+            .removeFromParent()
+        ]))
+        guide.run(.sequence([
+            .group([
+                .fadeAlpha(to: 0.06, duration: 0.11),
+                .scaleX(to: 0.985, duration: 0.11)
+            ]),
+            .group([
+                .fadeOut(withDuration: 0.1 + openingStrength * 0.04),
+                .scaleX(to: 1.0, duration: 0.1)
+            ]),
+            .removeFromParent()
+        ]))
+        let handoffMove = SKAction.customAction(withDuration: 0.14 + openingStrength * 0.03) { [weak handoff] _, elapsed in
+            guard let handoff else { return }
+            let duration = 0.14 + openingStrength * 0.03
+            let t = max(0, min(1, elapsed / duration))
+            let inverse = 1 - t
+            let control = CGPoint(
+                x: (ball.position.x + pocketPoint.x) * 0.5,
+                y: ball.position.y - self.size.height * (0.055 + openingStrength * 0.012)
+            )
+            let x = inverse * inverse * ball.position.x + 2 * inverse * t * control.x + t * t * pocketPoint.x
+            let y = inverse * inverse * ball.position.y + 2 * inverse * t * control.y + t * t * pocketPoint.y
+            handoff.position = CGPoint(x: x, y: y)
+            handoff.alpha = 0.95 * inverse
+            handoff.setScale(1 - CGFloat(t) * 0.22)
+        }
+        handoff.run(.sequence([handoffMove, .removeFromParent()]))
+    }
+
     private func selectShotShape(for note: BeatmapNote) -> ShotShape {
+        if sessionMode == .wallRally {
+            return .drive
+        }
         let phase = flow?.currentPhase ?? .exchange
 
         if note.kind == .double {
@@ -1671,12 +1865,20 @@ final class GameScene: SKScene {
 
             // Ignore taps and accidental contact — only deliberate motion
             // commits a swing.
-            guard distance >= Tunables.swingMinDistance else { return }
+            let minimumDistance = sessionMode == .wallRally
+                ? Tunables.swingMinDistance * 0.34
+                : Tunables.swingMinDistance
+            let minimumSpeed = sessionMode == .wallRally
+                ? Tunables.swingFastVelocity * 0.30
+                : 0
+            guard distance >= minimumDistance || speed >= minimumSpeed else { return }
 
             // Lane is decided by the dominant horizontal sign. Verticality
             // is currently informational only (reserved for future "lob" or
             // "drop shot" variants).
-            let lane: Lane = dx < 0 ? .left : .right
+            let lane: Lane = sessionMode == .wallRally
+                ? (scenePoint.x < size.width / 2 ? .left : .right)
+                : (dx < 0 ? .left : .right)
             swingVisualLane = lane
             swingVisualImpactUntil = currentTimeSnapshot + 0.26
             swingVisualReach = distance
@@ -1753,8 +1955,12 @@ final class GameScene: SKScene {
         // committing.
         let distance = hypot(current.x - origin.x, current.y - origin.y)
         let intensity = min(1, distance / 220)
-        let intent = classifySwingIntent(dx: current.x - origin.x, dy: current.y - origin.y)
-        let lane: Lane = current.x < origin.x ? .left : .right
+        let intent = sessionMode == .wallRally
+            ? .drive
+            : classifySwingIntent(dx: current.x - origin.x, dy: current.y - origin.y)
+        let lane: Lane = sessionMode == .wallRally
+            ? wallFocusLane()
+            : (current.x < origin.x ? .left : .right)
         let palette = swingTrailPalette(intent: intent, lane: lane)
 
         trail.strokeColor = palette.core.withAlphaComponent(0.52 + 0.34 * intensity)
@@ -1843,7 +2049,7 @@ final class GameScene: SKScene {
     ) {
         guard !isDying, !isCountingDown, !sessionEnded else { return }
 
-        guard let target = nearestBall(in: lane, around: currentTrackTime) else {
+        guard let target = preferredSwingTarget(in: lane) else {
             // No ball to hit — count as a miss so the player feels the cost
             // of mashing.
             registerMiss(lane: lane)
@@ -1852,10 +2058,11 @@ final class GameScene: SKScene {
         let signedDelta = currentTrackTime - target.arrivalTime
         let delta = abs(signedDelta)
         let contactDistance = spatialContactDistance(to: target, lane: lane)
-        if contactDistance > effectiveRacketMissRadius(for: lane) {
+        if contactDistance > wallAssistMissRadius(for: lane) {
             registerMiss(lane: lane)
             return
         }
+        let gradingDistance = adjustedWallGradingDistance(contactDistance, lane: lane)
 
         // Phase tightens / loosens the timing windows. Warm-up gives the
         // player a 10% wider perfect window; breaker shaves 15% off.
@@ -1894,7 +2101,15 @@ final class GameScene: SKScene {
             quality = .perfect
         }
 
-        quality = adjustedQualityForContactDistance(quality, distance: contactDistance)
+        quality = adjustedQualityForContactDistance(quality, distance: gradingDistance)
+        quality = softenedWallTimingQuality(
+            quality,
+            lane: target.lane,
+            delta: delta,
+            windowScalar: windowScalar,
+            swingSpeed: swingSpeed,
+            gradingDistance: gradingDistance
+        )
 
         if quality == .miss {
             registerMiss(lane: lane)
@@ -1928,10 +2143,14 @@ final class GameScene: SKScene {
 
     private func nearestBall(in lane: Lane, around trackTime: Double) -> BallNode? {
         let windowScalar = (flow?.currentProfile().timingWindowScalar ?? 1.0) * racketTuning.timingAssistScalar
-        let targetSlack = HitQuality.good.windowSeconds * windowScalar
-            + Tunables.swingTargetSlackSeconds
+        let targetSlack = sessionMode == .wallRally
+            ? ((HitQuality.good.windowSeconds * 2.1 + Tunables.swingTargetSlackSeconds * 2.1)
+                * (1 + Double(wallOpeningForgivenessBoost()) * 0.18))
+            : (HitQuality.good.windowSeconds * windowScalar + Tunables.swingTargetSlackSeconds)
         let contactPoint = racketContactPoint(for: lane)
-        let maxDistance = effectiveRacketMissRadius(for: lane)
+        let maxDistance = sessionMode == .wallRally
+            ? wallAssistMissRadius(for: lane) * 1.18
+            : effectiveRacketMissRadius(for: lane)
         return activeBalls
             .filter { $0.lane == lane }
             .filter { abs($0.arrivalTime - trackTime) <= targetSlack }
@@ -1963,15 +2182,20 @@ final class GameScene: SKScene {
         flashLaneGlow(lane: ball.lane, quality: quality)
         swingVisualLane = ball.lane
         recentContactLane = ball.lane
-        swingVisualImpactUntil = currentTimeSnapshot + 0.16
+        swingVisualImpactUntil = currentTimeSnapshot + wallContactImpactDuration(for: quality)
         swingVisualReach = max(swingVisualReach, 52)
-        contactFlashUntil = currentTimeSnapshot + 0.15
+        contactFlashUntil = currentTimeSnapshot + wallContactFlashDuration(for: quality)
         recentContactQuality = quality
-        recentContactUntil = currentTimeSnapshot + 0.22
+        recentContactUntil = currentTimeSnapshot + wallContactAfterglowDuration(for: quality)
         stageContactImprint(
             at: racketContactPoint(for: ball.lane),
             lane: ball.lane,
             intent: swingIntent,
+            quality: quality
+        )
+        stageWallStrikeBurst(
+            at: racketContactPoint(for: ball.lane),
+            lane: ball.lane,
             quality: quality
         )
         stageContactCameraResponse(for: ball, quality: quality)
@@ -1989,34 +2213,45 @@ final class GameScene: SKScene {
         case .miss:    break
         }
         let livePhase = flow?.currentPhase ?? .exchange
-        score += roleScoreBonus(for: ball.role, quality: quality, phase: livePhase)
-        applyRallyInfluence(
-            from: ball,
-            quality: quality,
-            strokeSide: strokeSide,
-            swingIntent: swingIntent,
-            contactDistance: contactDistance,
-            phase: livePhase
-        )
-        applyRoleFeedback(
-            for: ball,
-            quality: quality,
-            phase: livePhase,
-            strokeSide: strokeSide,
-            swingIntent: swingIntent
-        )
-        applyRallyResetPacing(after: ball, quality: quality, phase: livePhase)
+        if sessionMode == .phasedMatch {
+            score += roleScoreBonus(for: ball.role, quality: quality, phase: livePhase)
+            applyRallyInfluence(
+                from: ball,
+                quality: quality,
+                strokeSide: strokeSide,
+                swingIntent: swingIntent,
+                contactDistance: contactDistance,
+                phase: livePhase
+            )
+            applyRoleFeedback(
+                for: ball,
+                quality: quality,
+                phase: livePhase,
+                strokeSide: strokeSide,
+                swingIntent: swingIntent
+            )
+            applyRallyResetPacing(after: ball, quality: quality, phase: livePhase)
+        } else {
+            stageWallReturn(from: racketContactPoint(for: ball.lane), lane: ball.lane, quality: quality)
+            wallHitCelebration(quality: quality, lane: ball.lane)
+            scheduleWallBall(
+                after: wallCadenceSeconds(for: quality)
+                    * wallReturnSnapScalar(for: quality)
+                    * wallEarlyRallySnapBonus(for: quality)
+            )
+        }
         recordInCurrentSegment(quality: quality)
-        recentHUDImpactUntil = currentTimeSnapshot + 0.22
+        recentHUDImpactUntil = currentTimeSnapshot + wallHUDImpactDuration(for: quality)
         updateHUD()
 
-        let freezeMs: Double
+        var freezeMs: Double
         switch quality {
         case .perfect: freezeMs = Tunables.frameStopPerfectMs
         case .great:   freezeMs = Tunables.frameStopGreatMs
         case .good:    freezeMs = Tunables.frameStopGoodMs
         case .miss:    freezeMs = Tunables.frameStopMissMs
         }
+        freezeMs *= wallStrikeFreezeScalar(for: quality)
         if freezeMs > 0 {
             frameStopUntil = currentTimeSnapshot + freezeMs.seconds
         }
@@ -2035,8 +2270,34 @@ final class GameScene: SKScene {
     private func registerMiss(lane: Lane) {
         totalMisses += 1
         pressureExchangeStreak = 0
+        activeBalls.forEach { $0.removeFromParent() }
+        activeBalls.removeAll()
         applyMissRecovery(for: lane)
         recordInCurrentSegment(quality: .miss)
+        if sessionMode == .wallRally {
+            let previous = combo
+            combo = 0
+            lastComboTier = 0
+            updateHUD()
+            stageResetBeat(duration: previous > 0 ? 0.4 : 0.34)
+            GameEventBus.shared.publish(.miss(lane: lane))
+            if previous > 0 {
+                showInstruction("Reset. Same ball again. Rebuild fast.", hold: 0.7)
+            } else {
+                showInstruction("Let the next one come in and answer clean.", hold: 0.68)
+            }
+            if previous >= 5 {
+                showMomentBanner(
+                    text: "RESET",
+                    color: UIColor(red: 0.98, green: 0.56, blue: 0.48, alpha: 1),
+                    hold: 0.2,
+                    startScale: 0.94,
+                    peakScale: 1.0
+                )
+            }
+            scheduleWallBall(after: wallMissRestartSeconds(previousCombo: previous))
+            return
+        }
         let previous = combo
         if combo > 0 {
             // The Flappy moment.
@@ -2112,10 +2373,15 @@ final class GameScene: SKScene {
 
     private func updateHUD() {
         scoreLabel?.text = "\(score)"
-        hudPhaseValueLabel?.text = flow?.currentPhase.rawValue ?? "EXCHANGE"
-        hudPhaseValueLabel?.fontColor = bannerColor(for: flow?.currentPhase ?? .exchange).withAlphaComponent(0.88)
+        if sessionMode == .wallRally {
+            hudPhaseValueLabel?.text = "WALL"
+            hudPhaseValueLabel?.fontColor = UIColor(red: 0.99, green: 0.82, blue: 0.36, alpha: 0.92)
+        } else {
+            hudPhaseValueLabel?.text = flow?.currentPhase.rawValue ?? "EXCHANGE"
+            hudPhaseValueLabel?.fontColor = bannerColor(for: flow?.currentPhase ?? .exchange).withAlphaComponent(0.88)
+        }
         hudMaxValueLabel?.text = "x\(maxCombo)"
-        if combo > 1, let comboLabel {
+        if (sessionMode == .wallRally ? combo > 0 : combo > 1), let comboLabel {
             comboLabel.text = comboDescriptor(for: combo)
             comboLabel.fontColor = comboAccentColor(for: combo)
         } else {
@@ -2123,10 +2389,10 @@ final class GameScene: SKScene {
         }
         hudTopPlate?.strokeColor = combo > 1
             ? comboAccentColor(for: combo).withAlphaComponent(0.28)
-            : UIColor(white: 1.0, alpha: 0.12)
+            : UIColor(white: 1.0, alpha: 0.16)
         hudTopPlate?.fillColor = combo > 1
             ? comboAccentColor(for: combo).withAlphaComponent(0.08)
-            : UIColor(white: 0.02, alpha: 0.28)
+            : UIColor(red: 0.03, green: 0.05, blue: 0.09, alpha: 0.42)
         hudCaptionLabel?.fontColor = combo > 1
             ? comboAccentColor(for: combo).withAlphaComponent(0.46)
             : UIColor(white: 1.0, alpha: 0.34)
@@ -2135,10 +2401,11 @@ final class GameScene: SKScene {
             : UIColor(white: 1.0, alpha: 0.78)
         background?.setMomentum(
             tier: comboTier(for: combo),
-            phase: flow?.currentPhase.rawValue.lowercased() ?? "exchange",
+            phase: sessionMode == .wallRally ? "wall" : (flow?.currentPhase.rawValue.lowercased() ?? "exchange"),
             breaking: isDying
         )
-        let hudImpact = max(0, min(1, (recentHUDImpactUntil - currentTimeSnapshot) / 0.22))
+        let hudImpactWindow = max(0.16, wallHUDImpactDuration(for: recentContactQuality ?? .good))
+        let hudImpact = max(0, min(1, (recentHUDImpactUntil - currentTimeSnapshot) / hudImpactWindow))
         hudTopPlate?.glowWidth = 4 + hudImpact * hudImpactGlowBoost()
         if hudImpact > 0.01 {
             hudCaptionLabel?.fontColor = (hudCaptionLabel?.fontColor ?? UIColor(white: 1.0, alpha: 0.34))
@@ -2181,7 +2448,7 @@ final class GameScene: SKScene {
             punch.timingMode = .easeOut
             s.run(punch, withKey: "punch")
         }
-        if combo > 1, let c = comboLabel {
+        if (sessionMode == .wallRally ? combo > 0 : combo > 1), let c = comboLabel {
             c.removeAction(forKey: "punch")
             let comboScale: CGFloat
             let comboOut: TimeInterval
@@ -2223,6 +2490,16 @@ final class GameScene: SKScene {
     }
 
     private func comboDescriptor(for combo: Int) -> String {
+        if sessionMode == .wallRally {
+            if combo >= 12 {
+                return "ON FIRE x\(combo)"
+            } else if combo >= 8 {
+                return "LOCKED x\(combo)"
+            } else if combo >= 4 {
+                return "RHYTHM x\(combo)"
+            }
+            return "STREAK x\(combo)"
+        }
         switch comboTier(for: combo) {
         case 1:
             return "RALLY x\(combo)"
@@ -2238,6 +2515,15 @@ final class GameScene: SKScene {
     }
 
     private func comboAccentColor(for combo: Int) -> UIColor {
+        if sessionMode == .wallRally {
+            if combo >= 12 {
+                return UIColor(red: 1.0, green: 0.86, blue: 0.42, alpha: 1)
+            } else if combo >= 8 {
+                return UIColor(red: 0.72, green: 0.93, blue: 1.0, alpha: 1)
+            } else if combo >= 4 {
+                return UIColor(red: 0.86, green: 0.78, blue: 0.48, alpha: 1)
+            }
+        }
         switch comboTier(for: combo) {
         case 1:
             return UIColor(red: 0.33, green: 0.88, blue: 0.95, alpha: 1)
@@ -2305,22 +2591,23 @@ final class GameScene: SKScene {
     private func flashLaneGlow(lane: Lane, quality: HitQuality) {
         let glow = lane == .left ? leftLaneGlow : rightLaneGlow
         guard let glow else { return }
+        let openingBoost = wallOpeningCelebrationBoost()
         let peak: CGFloat
         let durationUp: TimeInterval
         let durationDown: TimeInterval
         switch quality {
         case .perfect:
-            peak = 0.35
+            peak = 0.35 + openingBoost * 0.06
             durationUp = 0.04
-            durationDown = 0.32
+            durationDown = 0.34 + openingBoost * 0.02
         case .great:
-            peak = 0.20
+            peak = 0.2 + openingBoost * 0.04
             durationUp = 0.05
-            durationDown = 0.25
+            durationDown = 0.27 + openingBoost * 0.02
         case .good:
-            peak = 0.12
+            peak = 0.12 + openingBoost * 0.03
             durationUp = 0.06
-            durationDown = 0.20
+            durationDown = 0.22 + openingBoost * 0.02
         case .miss:
             return
         }
@@ -2338,9 +2625,251 @@ final class GameScene: SKScene {
         }
     }
 
+    private func stageWallStrikeBurst(at point: CGPoint, lane: Lane, quality: HitQuality) {
+        guard sessionMode == .wallRally else { return }
+
+        let openingBoost = wallOpeningCelebrationBoost()
+        let color: UIColor
+        let ringScale: CGFloat
+        let ringDuration: TimeInterval
+        switch quality {
+        case .perfect:
+            color = UIColor(red: 1.0, green: 0.88, blue: 0.42, alpha: 1)
+            ringScale = 2.35 + openingBoost * 0.2
+            ringDuration = 0.2
+        case .great:
+            color = UIColor(red: 0.68, green: 0.93, blue: 1.0, alpha: 1)
+            ringScale = 2.1 + openingBoost * 0.16
+            ringDuration = 0.22
+        case .good:
+            color = UIColor(red: 0.8, green: 0.95, blue: 0.86, alpha: 1)
+            ringScale = 1.9 + openingBoost * 0.14
+            ringDuration = 0.24
+        case .miss:
+            return
+        }
+
+        let ring = SKShapeNode(circleOfRadius: Tunables.ballRadiusPoints * 0.68)
+        ring.position = point
+        ring.strokeColor = color.withAlphaComponent(0.94)
+        ring.fillColor = .clear
+        ring.lineWidth = 2.4
+        ring.glowWidth = 10
+        ring.zPosition = 64
+        addChild(ring)
+
+        let flash = SKShapeNode(circleOfRadius: Tunables.ballRadiusPoints * 0.52)
+        flash.position = point
+        flash.fillColor = color.withAlphaComponent(0.46)
+        flash.strokeColor = .white.withAlphaComponent(0.32)
+        flash.lineWidth = 0.8
+        flash.glowWidth = 14
+        flash.zPosition = 63
+        addChild(flash)
+
+        let driftX: CGFloat = lane == .right ? 8 : -8
+        ring.run(.sequence([
+            .group([
+                .scale(to: ringScale, duration: ringDuration),
+                .fadeOut(withDuration: ringDuration),
+                .moveBy(x: driftX, y: -10, duration: ringDuration)
+            ]),
+            .removeFromParent()
+        ]))
+        flash.run(.sequence([
+            .group([
+                .scale(to: 1.7 + openingBoost * 0.12, duration: ringDuration * 0.72),
+                .fadeOut(withDuration: ringDuration * 0.72)
+            ]),
+            .removeFromParent()
+        ]))
+    }
+
+    private func wallHitCelebration(quality: HitQuality, lane: Lane) {
+        guard sessionMode == .wallRally else { return }
+        let laneDirection: CGFloat = lane == .right ? 1 : -1
+        let openingBoost = wallOpeningCelebrationBoost()
+        switch quality {
+        case .perfect:
+            CameraShake.drift(
+                cameraNode,
+                dx: laneDirection * (6 + openingBoost * 1.6),
+                dy: -(6 + openingBoost * 1.4),
+                settleDx: laneDirection * 1.2,
+                settleDy: -1.2,
+                outMs: 44,
+                driftMs: 96,
+                backMs: 180
+            )
+            showMomentBanner(
+                text: wallPerfectMomentText(for: combo),
+                color: UIColor(red: 1.0, green: 0.84, blue: 0.38, alpha: 1),
+                hold: 0.18,
+                startScale: 0.92,
+                peakScale: 1.02
+            )
+        case .great:
+            CameraShake.drift(
+                cameraNode,
+                dx: laneDirection * (4 + openingBoost * 1.1),
+                dy: -(4 + openingBoost),
+                settleDx: laneDirection * 0.8,
+                settleDy: -0.8,
+                outMs: 40,
+                driftMs: 84,
+                backMs: 160
+            )
+            if let moment = wallGreatMomentText(for: combo) {
+                showMomentBanner(
+                    text: moment,
+                    color: UIColor(red: 0.62, green: 0.92, blue: 1.0, alpha: 1),
+                    hold: 0.16,
+                    startScale: 0.94,
+                    peakScale: 1.01
+                )
+            }
+        case .good:
+            if combo == 1 {
+                showMomentBanner(
+                    text: "RALLY ON",
+                    color: UIColor(red: 0.76, green: 0.94, blue: 0.86, alpha: 1),
+                    hold: 0.14,
+                    startScale: 0.95,
+                    peakScale: 1.0
+                )
+            } else if combo == 2 {
+                showMomentBanner(
+                    text: "FEEL IT",
+                    color: UIColor(red: 0.72, green: 0.9, blue: 1.0, alpha: 1),
+                    hold: 0.13,
+                    startScale: 0.95,
+                    peakScale: 1.0
+                )
+            } else if combo == 4 {
+                showMomentBanner(
+                    text: "RHYTHM",
+                    color: UIColor(red: 0.88, green: 0.8, blue: 0.48, alpha: 1),
+                    hold: 0.14,
+                    startScale: 0.95,
+                    peakScale: 1.0
+                )
+            }
+        case .miss:
+            break
+        }
+    }
+
+    private func wallPerfectMomentText(for combo: Int) -> String {
+        if combo >= 12 {
+            return combo % 3 == 0 ? "HEATER" : "ON FIRE"
+        } else if combo >= 8 {
+            return combo % 2 == 0 ? "UNTOUCHABLE" : "LOCKED"
+        } else if combo >= 5 && combo % 5 == 0 {
+            return "ON FIRE"
+        } else if combo <= 2 {
+            return "SWEET"
+        }
+        return "CRUSHED"
+    }
+
+    private func wallGreatMomentText(for combo: Int) -> String? {
+        if combo >= 10 && combo % 5 == 0 {
+            return "CAN'T MISS"
+        } else if combo >= 8 && combo % 4 == 0 {
+            return "HEATER"
+        } else if combo >= 4 && combo % 4 == 0 {
+            return "LOCKED"
+        }
+        return nil
+    }
+
+    private func stageWallReturn(from point: CGPoint, lane: Lane, quality: HitQuality) {
+        guard sessionMode == .wallRally else { return }
+        let endX = lane == .left
+            ? size.width * Tunables.horizonLaneInsetRatio
+            : size.width * (1 - Tunables.horizonLaneInsetRatio)
+        let endPoint = CGPoint(x: endX, y: size.height * Tunables.spawnLineYRatio)
+        let color: UIColor
+        let duration: TimeInterval
+        let width: CGFloat
+        let openingSnap = max(0, 1 - wallOpeningProgress())
+        let comboDrive = min(1.0, Double(max(0, combo - 1)) / 10.0)
+        switch quality {
+        case .perfect:
+            color = UIColor(red: 1.0, green: 0.88, blue: 0.42, alpha: 1)
+            duration = 0.182 - openingSnap * 0.016 - comboDrive * 0.01
+            width = 6.2
+        case .great:
+            color = UIColor(red: 0.64, green: 0.92, blue: 1.0, alpha: 1)
+            duration = 0.212 - openingSnap * 0.013 - comboDrive * 0.009
+            width = 5.0
+        case .good:
+            color = UIColor(red: 0.78, green: 0.94, blue: 0.84, alpha: 1)
+            duration = 0.248 - openingSnap * 0.011 - comboDrive * 0.007
+            width = 4.1
+        case .miss:
+            return
+        }
+
+        let trail = SKShapeNode()
+        trail.zPosition = 63
+        trail.lineCap = .round
+        trail.strokeColor = color.withAlphaComponent(0.88)
+        trail.lineWidth = width
+        trail.glowWidth = width * 1.8
+
+        let laneDirection: CGFloat = lane == .right ? 1 : -1
+        let control = CGPoint(
+            x: (point.x + endPoint.x) * 0.5 + laneDirection * size.width * 0.009,
+            y: point.y - size.height * 0.014 + openingSnap * size.height * 0.006 - CGFloat(comboDrive) * size.height * 0.004
+        )
+        let path = CGMutablePath()
+        path.move(to: point)
+        path.addQuadCurve(to: endPoint, control: control)
+        trail.path = path
+        addChild(trail)
+
+        let ghost = SKShapeNode(circleOfRadius: quality == .perfect ? 8 : 7)
+        ghost.fillColor = UIColor(red: 0.93, green: 0.97, blue: 0.36, alpha: 1)
+        ghost.strokeColor = color.withAlphaComponent(0.72)
+        ghost.lineWidth = 1.2
+        ghost.glowWidth = 8
+        ghost.position = point
+        ghost.zPosition = 64
+        addChild(ghost)
+
+        let move = SKAction.customAction(withDuration: duration) { [weak ghost] _, elapsed in
+            guard let ghost else { return }
+            let t = max(0, min(1, elapsed / duration))
+            let inverse = 1 - t
+            let x = inverse * inverse * point.x + 2 * inverse * t * control.x + t * t * endPoint.x
+            let y = inverse * inverse * point.y + 2 * inverse * t * control.y + t * t * endPoint.y
+            ghost.position = CGPoint(x: x, y: y)
+            ghost.setScale(0.98 + (1 - CGFloat(t)) * 0.06 - CGFloat(t) * 0.14)
+            ghost.alpha = inverse * 0.98
+        }
+        ghost.run(.sequence([
+            move,
+            .removeFromParent()
+        ]))
+
+        trail.run(.sequence([
+            .group([
+                .fadeOut(withDuration: duration * 0.92),
+                .scaleY(to: 0.8, duration: duration * 0.92)
+            ]),
+            .removeFromParent()
+        ]))
+    }
+
     private func contactCandidateScore(for ball: BallNode, around trackTime: Double, contactPoint: CGPoint) -> CGFloat {
         let timeScore = CGFloat(abs(ball.arrivalTime - trackTime) * 1000)
         let distanceScore = ball.position.distance(to: contactPoint)
+        if sessionMode == .wallRally {
+            let approach = ball.approachToStrike(at: trackTime)
+            let approachBonus = (1 - approach) * 22
+            return timeScore * 0.92 + distanceScore * 0.76 + approachBonus
+        }
         return timeScore + distanceScore * 0.9
     }
 
@@ -2389,6 +2918,11 @@ final class GameScene: SKScene {
     }
 
     private func applyMatchPaceIfNeeded() {
+        if sessionMode == .wallRally {
+            currentBPM = wallTempoBPM(for: matchPace)
+            currentTravelSeconds = wallTravelSeconds()
+            return
+        }
         guard let flow else { return }
         let profile = flow.currentProfile()
         currentTravelSeconds = Tunables.ballTravelSeconds
@@ -2400,6 +2934,249 @@ final class GameScene: SKScene {
 
     private func spatialContactDistance(to ball: BallNode, lane: Lane) -> CGFloat {
         ball.position.distance(to: racketContactPoint(for: lane))
+    }
+
+    private func wallTempoBPM(for pace: GamePreferences.MatchPace) -> Double {
+        switch pace {
+        case .calm:
+            return 72
+        case .standard:
+            return 78
+        case .quick:
+            return 88
+        }
+    }
+
+    private func wallTravelSeconds() -> Double {
+        let openingScalar: Double
+        switch spawnedBallCount {
+        case ..<2:
+            openingScalar = 0.97
+        case 2:
+            openingScalar = 0.94
+        case 3:
+            openingScalar = 0.92
+        default:
+            openingScalar = combo >= 6 ? 0.88 : (combo >= 3 ? 0.91 : 0.94)
+        }
+        return Tunables.ballTravelSeconds * 1.0 * matchPace.travelScalar * openingScalar
+    }
+
+    private func wallCurveAmount() -> CGFloat {
+        guard sessionMode == .wallRally else { return Tunables.laneCurveAmount }
+        let openingBonus = wallOpeningCelebrationBoost()
+        return Tunables.laneCurveAmount * max(0.16, 0.26 - openingBonus * 0.04)
+    }
+
+    private func wallCadenceSeconds(for quality: HitQuality) -> Double {
+        let base: Double
+        switch (matchPace, quality) {
+        case (.calm, .perfect):
+            base = 0.7
+        case (.calm, .great):
+            base = 0.76
+        case (.calm, .good):
+            base = 0.84
+        case (.calm, .miss):
+            base = 1.08
+        case (.standard, .perfect):
+            base = 0.62
+        case (.standard, .great):
+            base = 0.68
+        case (.standard, .good):
+            base = 0.76
+        case (.standard, .miss):
+            base = 1.0
+        case (.quick, .perfect):
+            base = 0.54
+        case (.quick, .great):
+            base = 0.6
+        case (.quick, .good):
+            base = 0.68
+        case (.quick, .miss):
+            base = 0.92
+        }
+        let comboScalar = combo >= 8 ? 0.8 : (combo >= 4 ? 0.88 : 0.94)
+        return base * wallOpeningCadenceScalar() * comboScalar
+    }
+
+    private func wallMissRestartSeconds(previousCombo: Int) -> Double {
+        let base = wallCadenceSeconds(for: .miss)
+        if previousCombo >= 6 {
+            return base * 0.62
+        }
+        if previousCombo >= 2 {
+            return base * 0.68
+        }
+        return base * 0.72
+    }
+
+    private func wallReturnSnapScalar(for quality: HitQuality) -> Double {
+        guard sessionMode == .wallRally else { return 1.0 }
+        let openingBonus = max(0, 1.0 - wallOpeningProgress())
+        switch quality {
+        case .perfect:
+            return 0.84 - openingBonus * 0.04
+        case .great:
+            return 0.88 - openingBonus * 0.03
+        case .good:
+            return 0.92 - openingBonus * 0.02
+        case .miss:
+            return 1.0
+        }
+    }
+
+    private func wallEarlyRallySnapBonus(for quality: HitQuality) -> Double {
+        guard sessionMode == .wallRally else { return 1.0 }
+        let openingBonus = max(0, 1.0 - wallOpeningProgress())
+        switch quality {
+        case .perfect:
+            return 0.92 - openingBonus * 0.03
+        case .great:
+            return 0.95 - openingBonus * 0.025
+        case .good:
+            return combo <= 2 ? 0.97 - openingBonus * 0.02 : 0.99
+        case .miss:
+            return 1.0
+        }
+    }
+
+    private func wallFocusLane() -> Lane {
+        primaryWallBall()?.lane ?? wallNextLane
+    }
+
+    private func nextWallSpawnLane() -> Lane {
+        let lane = wallNextLane
+        wallNextLane = lane.opposite
+        return lane
+    }
+
+    private func primaryWallBall() -> BallNode? {
+        guard sessionMode == .wallRally, !activeBalls.isEmpty else { return nil }
+        return activeBalls.min {
+            contactCandidateScore(for: $0, around: currentTrackTime, contactPoint: racketContactPoint(for: $0.lane))
+            < contactCandidateScore(for: $1, around: currentTrackTime, contactPoint: racketContactPoint(for: $1.lane))
+        }
+    }
+
+    private func wallStanceTargetX(for lane: Lane) -> CGFloat {
+        lane == .left ? size.width * 0.34 : size.width * 0.66
+    }
+
+    private func wallStrikeFreezeScalar(for quality: HitQuality) -> Double {
+        guard sessionMode == .wallRally else { return 1.0 }
+        let openingBoost = Double(wallOpeningCelebrationBoost())
+        switch quality {
+        case .perfect:
+            return 1.12 + openingBoost * 0.08
+        case .great:
+            return 1.08 + openingBoost * 0.06
+        case .good:
+            return 1.04 + openingBoost * 0.04
+        case .miss:
+            return 1.0
+        }
+    }
+
+    private func wallOpeningCadenceScalar() -> Double {
+        switch spawnedBallCount {
+        case ..<2:
+            return 1.24
+        case 2:
+            return 1.17
+        case 3:
+            return 1.1
+        case 4:
+            return 1.05
+        default:
+            return 1.0
+        }
+    }
+
+    private func wallOpeningProgress() -> Double {
+        min(1, Double(max(0, spawnedBallCount - 1)) / 5)
+    }
+
+    private func wallOpeningForgivenessBoost() -> CGFloat {
+        CGFloat(max(0, 1 - wallOpeningProgress()))
+    }
+
+    private func wallOpeningCelebrationBoost() -> CGFloat {
+        wallOpeningForgivenessBoost()
+    }
+
+    private func wallContactImpactDuration(for quality: HitQuality) -> TimeInterval {
+        guard sessionMode == .wallRally else { return 0.16 }
+        let openingBoost = 1 - wallOpeningProgress()
+        switch quality {
+        case .perfect: return 0.2 + openingBoost * 0.03
+        case .great: return 0.185 + openingBoost * 0.025
+        case .good: return 0.17 + openingBoost * 0.02
+        case .miss: return 0.16
+        }
+    }
+
+    private func wallContactFlashDuration(for quality: HitQuality) -> TimeInterval {
+        guard sessionMode == .wallRally else { return 0.15 }
+        switch quality {
+        case .perfect: return 0.21
+        case .great: return 0.19
+        case .good: return 0.17
+        case .miss: return 0.15
+        }
+    }
+
+    private func wallContactAfterglowDuration(for quality: HitQuality) -> TimeInterval {
+        guard sessionMode == .wallRally else { return 0.22 }
+        switch quality {
+        case .perfect: return 0.3
+        case .great: return 0.27
+        case .good: return 0.24
+        case .miss: return 0.22
+        }
+    }
+
+    private func wallHUDImpactDuration(for quality: HitQuality) -> TimeInterval {
+        guard sessionMode == .wallRally else { return 0.22 }
+        let openingBoost = 1 - wallOpeningProgress()
+        switch quality {
+        case .perfect: return 0.3 + openingBoost * 0.03
+        case .great: return 0.27 + openingBoost * 0.025
+        case .good: return 0.24 + openingBoost * 0.02
+        case .miss: return 0.22
+        }
+    }
+
+    private func preferredSwingTarget(in lane: Lane) -> BallNode? {
+        if let laneMatch = nearestBall(in: lane, around: currentTrackTime) {
+            return laneMatch
+        }
+        guard sessionMode == .wallRally, let focusBall = primaryWallBall() else {
+            return fallbackWallTarget()
+        }
+        let generousDistance = wallAssistMissRadius(for: focusBall.lane) * 1.55
+        return focusBall.position.distance(to: racketContactPoint(for: focusBall.lane)) <= generousDistance
+            ? focusBall
+            : fallbackWallTarget()
+    }
+
+    private func fallbackWallTarget() -> BallNode? {
+        guard sessionMode == .wallRally else { return nil }
+        return primaryWallBall()
+    }
+
+    private func wallAssistMissRadius(for lane: Lane) -> CGFloat {
+        sessionMode == .wallRally
+            ? effectiveRacketMissRadius(for: lane) * (1.74 + wallOpeningForgivenessBoost() * 0.24)
+            : effectiveRacketMissRadius(for: lane)
+    }
+
+    private func adjustedWallGradingDistance(_ distance: CGFloat, lane: Lane) -> CGFloat {
+        guard sessionMode == .wallRally else { return distance }
+        let offCenter = effectiveRacketOffCenterRadius(for: lane) * 1.12
+        let assistRadius = wallAssistMissRadius(for: lane)
+        guard distance > offCenter, distance < assistRadius else { return distance }
+        return offCenter + (distance - offCenter) * 0.28
     }
 
     private func effectiveRacketReach(for lane: Lane) -> CGFloat {
@@ -2428,6 +3205,17 @@ final class GameScene: SKScene {
     }
 
     private func adjustedQualityForContactDistance(_ quality: HitQuality, distance: CGFloat) -> HitQuality {
+        if sessionMode == .wallRally {
+            let sweetSpot = effectiveRacketSweetSpot(for: swingVisualLane) * 1.22
+            let offCenter = effectiveRacketOffCenterRadius(for: swingVisualLane) * 1.24
+            let missRadius = effectiveRacketMissRadius(for: swingVisualLane) * 1.16
+            if distance <= sweetSpot { return quality }
+            if distance >= missRadius { return .miss }
+            if distance > offCenter {
+                return downgrade(quality)
+            }
+            return quality == .perfect ? .great : quality
+        }
         let sweetSpot = effectiveRacketSweetSpot(for: swingVisualLane)
         let offCenter = effectiveRacketOffCenterRadius(for: swingVisualLane)
         if distance <= sweetSpot { return quality }
@@ -2436,6 +3224,44 @@ final class GameScene: SKScene {
             return downgrade(downgrade(quality))
         }
         return downgrade(quality)
+    }
+
+    private func softenedWallTimingQuality(
+        _ quality: HitQuality,
+        lane: Lane,
+        delta: Double,
+        windowScalar: Double,
+        swingSpeed: CGFloat,
+        gradingDistance: CGFloat
+    ) -> HitQuality {
+        guard sessionMode == .wallRally else { return quality }
+
+        let openingBoost = wallOpeningForgivenessBoost()
+        let sweetSpot = effectiveRacketSweetSpot(for: lane) * (1.34 + openingBoost * 0.08)
+        let offCenter = effectiveRacketOffCenterRadius(for: lane) * (1.28 + openingBoost * 0.08)
+        let fastEnough = swingSpeed >= Tunables.swingFastVelocity * 0.24
+
+        if quality == .good,
+           fastEnough,
+           gradingDistance <= offCenter,
+           delta <= HitQuality.great.windowSeconds * windowScalar * (1.24 + Double(openingBoost) * 0.08) {
+            return .great
+        }
+
+        if quality == .great,
+           gradingDistance <= sweetSpot,
+           delta <= HitQuality.perfect.windowSeconds * windowScalar * (1.34 + Double(openingBoost) * 0.08) {
+            return .perfect
+        }
+
+        if quality == .miss,
+           fastEnough,
+           gradingDistance <= offCenter * 0.98,
+           delta <= HitQuality.good.windowSeconds * windowScalar * (1.16 + Double(openingBoost) * 0.1) {
+            return .good
+        }
+
+        return quality
     }
 
     private func downgrade(_ quality: HitQuality) -> HitQuality {
@@ -2782,6 +3608,9 @@ final class GameScene: SKScene {
     }
 
     private func classifySwingIntent(dx: CGFloat, dy: CGFloat) -> SwingIntent {
+        if sessionMode == .wallRally {
+            return .drive
+        }
         if dy >= Tunables.swingTopspinRisePoints {
             return .topspin
         }
@@ -2806,6 +3635,9 @@ final class GameScene: SKScene {
         swingIntent: SwingIntent,
         strokeSide: StrokeSide
     ) -> Double {
+        if sessionMode == .wallRally {
+            return 1.5 + Double(wallOpeningForgivenessBoost()) * 0.08
+        }
         let base = (flow?.currentProfile().timingWindowScalar ?? 1.0) * racketTuning.timingAssistScalar
         let shotScalar = shotTimingScalar(for: target.shotShape, signedDelta: signedDelta)
         let contactScalar = contactPhaseScalar(for: target)
@@ -2827,12 +3659,20 @@ final class GameScene: SKScene {
         case .good: qualityScalar = 1.08
         case .miss: qualityScalar = 1.2
         }
-        let severity = min(1, max(0.12, rawSeverity * qualityScalar))
+        let wallScalar: CGFloat = sessionMode == .wallRally ? 0.58 : 1.0
+        let minimumSeverity: CGFloat = sessionMode == .wallRally ? 0.06 : 0.12
+        let severity = min(1, max(minimumSeverity, rawSeverity * qualityScalar * wallScalar))
         recoverySeverity = severity
         recoveryLane = ball.lane
+        let baseSeconds = sessionMode == .wallRally
+            ? Tunables.recoveryBaseSeconds * 0.54
+            : Tunables.recoveryBaseSeconds
+        let stretchSeconds = sessionMode == .wallRally
+            ? Tunables.recoveryStretchSeconds * 0.48
+            : Tunables.recoveryStretchSeconds
         recoveryTrackUntil = max(
             recoveryTrackUntil,
-            currentTrackTime + Tunables.recoveryBaseSeconds + Double(severity) * Tunables.recoveryStretchSeconds
+            currentTrackTime + baseSeconds + Double(severity) * stretchSeconds
         )
     }
 
@@ -2864,11 +3704,17 @@ final class GameScene: SKScene {
     }
 
     private func recoveryReachScalar(for lane: Lane) -> CGFloat {
-        max(0.68, 1 - recoveryPenalty(for: lane) * Tunables.recoveryReachPenalty)
+        if sessionMode == .wallRally {
+            return 1.12
+        }
+        return max(0.68, 1 - recoveryPenalty(for: lane) * Tunables.recoveryReachPenalty)
     }
 
     private func recoveryTimingScalar(for lane: Lane) -> Double {
-        max(0.72, 1 - Double(recoveryPenalty(for: lane)) * Tunables.recoveryTimingPenalty)
+        if sessionMode == .wallRally {
+            return 1.18
+        }
+        return max(0.72, 1 - Double(recoveryPenalty(for: lane)) * Tunables.recoveryTimingPenalty)
     }
 
     private func recoveryOffsetX(at trackTime: Double) -> CGFloat {
@@ -2884,6 +3730,18 @@ final class GameScene: SKScene {
     }
 
     private func contactPhaseScalar(for target: BallNode) -> Double {
+        if sessionMode == .wallRally {
+            switch target.contactWindowPhase(at: currentTrackTime) {
+            case .approach:
+                return 0.96
+            case .rise:
+                return 1.08
+            case .peak:
+                return 1.12
+            case .fall:
+                return 1.02
+            }
+        }
         switch (target.shotShape, target.contactWindowPhase(at: currentTrackTime)) {
         case (_, .approach):
             return 0.82
@@ -3123,6 +3981,7 @@ final class BallNode: SKShapeNode {
     let lane: Lane
     let kind: BeatmapNote.Kind
     let role: BeatmapNote.Role
+    let wallStyleMode: Bool
     let shotShape: GameScene.ShotShape
     let arrivalTime: Double
     let spawnTime: Double
@@ -3145,6 +4004,7 @@ final class BallNode: SKShapeNode {
         lane: Lane,
         kind: BeatmapNote.Kind,
         role: BeatmapNote.Role,
+        wallStyleMode: Bool,
         shotShape: GameScene.ShotShape,
         arrivalTime: Double,
         spawnTime: Double,
@@ -3154,11 +4014,13 @@ final class BallNode: SKShapeNode {
         spawnScale: CGFloat,
         strikeScale: CGFloat,
         overrunScale: CGFloat,
-        curveAmount: CGFloat
+        curveAmount: CGFloat,
+        overrideFillColor: UIColor? = nil
     ) {
         self.lane = lane
         self.kind = kind
         self.role = role
+        self.wallStyleMode = wallStyleMode
         self.shotShape = shotShape
         self.arrivalTime = arrivalTime
         self.spawnTime = spawnTime
@@ -3172,9 +4034,9 @@ final class BallNode: SKShapeNode {
         super.init()
         let r = Tunables.ballRadiusPoints
         path = CGPath(ellipseIn: CGRect(x: -r, y: -r, width: 2 * r, height: 2 * r), transform: nil)
-        fillColor = lane == .left
+        fillColor = overrideFillColor ?? (lane == .left
             ? UIColor(red: 0, green: 1, blue: 1, alpha: 1)
-            : UIColor(red: 1, green: 0.2, blue: 0.7, alpha: 1)
+            : UIColor(red: 1, green: 0.2, blue: 0.7, alpha: 1))
         strokeColor = .white
         lineWidth = 1
         glowWidth = 10
@@ -3257,6 +4119,12 @@ final class BallNode: SKShapeNode {
             coreNode.path = CGPath(ellipseIn: CGRect(x: -r * 0.42, y: -r * 0.42, width: r * 0.84, height: r * 0.84), transform: nil)
             coreNode.fillColor = UIColor.white.withAlphaComponent(0.88)
         }
+        if wallStyleMode {
+            glowWidth = max(glowWidth, 12)
+            auraNode.fillColor = fillColor.withAlphaComponent(0.18)
+            warningRingNode.lineWidth += 0.4
+            coreNode.fillColor = UIColor.white.withAlphaComponent(0.32)
+        }
         updatePresentation(progress: 0)
     }
 
@@ -3293,7 +4161,14 @@ final class BallNode: SKShapeNode {
         )
 
         let scale: CGFloat
-        if progress <= 1 {
+        if wallStyleMode, progress <= 1 {
+            let contactEmphasis = wallContactEmphasis(for: eased)
+            scale = lerp(
+                from: spawnScale * 0.46,
+                to: strikeScaleForShape() * 1.34,
+                progress: eased
+            ) + contactEmphasis * 0.14
+        } else if progress <= 1 {
             scale = lerp(from: spawnScale, to: strikeScaleForShape(), progress: eased)
         } else {
             scale = lerp(
@@ -3308,18 +4183,20 @@ final class BallNode: SKShapeNode {
         zRotation = curveDirection * rotationForShape(progress: eased)
         alpha = progress <= 1 ? 1.0 : max(0.55, 1 - overrun * 1.8)
         let trackingLift = trackingEmphasisForProgress(progress: eased, bounceProgress: bounceProgress)
-        warningRingNode.alpha = progress <= 1 ? min(1, (1 - eased * 0.92) + trackingLift * 0.52) : 0
-        auraNode.alpha = min(1, auraAlpha(for: progress) + trackingLift * 0.18)
-        coreNode.alpha = min(1, coreAlpha(for: progress) + trackingLift * 0.18)
-        coreNode.setScale(coreScale(for: progress) + trackingLift * 0.08)
+        let wallApproachLift: CGFloat = wallStyleMode ? max(0, 1 - abs(eased - 0.78) / 0.32) : 0
+        let wallLockLift: CGFloat = wallStyleMode ? max(0, 1 - abs(eased - 0.86) / 0.14) : 0
+        warningRingNode.alpha = progress <= 1 ? min(1, (1 - eased * 0.92) + trackingLift * 0.52 + wallApproachLift * 0.18) : 0
+        auraNode.alpha = min(1, auraAlpha(for: progress) + trackingLift * 0.18 + wallApproachLift * 0.12 + wallLockLift * 0.08)
+        coreNode.alpha = min(1, coreAlpha(for: progress) + trackingLift * 0.18 + wallApproachLift * 0.08 + wallLockLift * 0.14)
+        coreNode.setScale(coreScale(for: progress) + trackingLift * 0.08 + wallApproachLift * 0.05 + wallLockLift * 0.08)
         warningRingNode.lineWidth = ringWidth(for: progress) + trackingLift * 1.2
         warningRingNode.glowWidth = baseRingGlowWidth() + trackingLift * 10
         warningRingNode.strokeColor = trackingStrokeColor(intensity: trackingLift)
-        focusRingNode.alpha = focusRingAlpha(progress: eased, trackingLift: trackingLift)
-        focusRingNode.lineWidth = 1.4 + trackingLift * 1.6
-        focusRingNode.glowWidth = trackingLift * (kind == .double ? 14 : 10)
-        focusRingNode.setScale(1.0 + trackingLift * 0.18)
-        focusRingNode.strokeColor = focusRingColor(intensity: trackingLift)
+        focusRingNode.alpha = focusRingAlpha(progress: eased, trackingLift: trackingLift) + wallLockLift * 0.36
+        focusRingNode.lineWidth = 1.4 + trackingLift * 1.6 + wallLockLift * 1.2
+        focusRingNode.glowWidth = trackingLift * (kind == .double ? 14 : 10) + wallLockLift * 8
+        focusRingNode.setScale(1.0 + trackingLift * 0.18 - wallLockLift * 0.08)
+        focusRingNode.strokeColor = focusRingColor(intensity: min(1, trackingLift + wallLockLift * 0.55))
         updateTail(progress: progress, eased: eased, bounceProgress: bounceProgress, overrun: overrun)
         updateShadow(progress: eased, bounceProgress: bounceProgress, overrun: overrun)
     }
@@ -3342,6 +4219,9 @@ final class BallNode: SKShapeNode {
     }
 
     private func remappedProgress(for progress: CGFloat) -> CGFloat {
+        if wallStyleMode {
+            return 1 - pow(1 - min(1, progress), 1.7)
+        }
         switch shotShape {
         case .drive:
             return progress * progress * (3 - 2 * progress)
@@ -3358,6 +4238,20 @@ final class BallNode: SKShapeNode {
     }
 
     private func progressThroughBounce(for progress: CGFloat, bounceProgress: CGFloat) -> CGFloat {
+        if wallStyleMode {
+            let wallContactPoint: CGFloat = 0.86
+            if progress < wallContactPoint {
+                let local = progress / wallContactPoint
+                let accelerated = 1 - pow(1 - local, 1.55)
+                return accelerated * 0.965
+            } else {
+                let local = (progress - wallContactPoint) / max(0.001, 1 - wallContactPoint)
+                let easedOut = 1 - pow(1 - local, 2.8)
+                let held = 0.965 + easedOut * 0.035
+                let contactBrake = wallContactEmphasis(for: progress) * 0.085
+                return max(0, min(1, held - contactBrake))
+            }
+        }
         if progress <= bounceProgress {
             let local = progress / max(0.001, bounceProgress)
             return bounceProgress * local * local * (3 - 2 * local)
@@ -3368,23 +4262,37 @@ final class BallNode: SKShapeNode {
     }
 
     private func flightLift(for progress: CGFloat, bounceProgress: CGFloat) -> CGFloat {
+        if wallStyleMode {
+            let laneDistance = abs(strikePoint.x - spawnPoint.x)
+            let forwardLift = sin(progress * .pi) * laneDistance * 0.016
+            return forwardLift
+        }
         if progress <= bounceProgress {
             let local = progress / max(0.001, bounceProgress)
-            return sin(local * .pi) * arcHeightForShape()
+            let height = wallStyleMode ? arcHeightForShape() * 0.78 : arcHeightForShape()
+            return sin(local * .pi) * height
         }
         let local = (progress - bounceProgress) / max(0.001, 1 - bounceProgress)
-        let reboundHeight = bounceKickHeightForShape()
-        return sin(local * .pi * 0.82) * reboundHeight * 0.45
+        let reboundHeight = wallStyleMode ? bounceKickHeightForShape() * 0.82 : bounceKickHeightForShape()
+        let reboundScalar: CGFloat = wallStyleMode ? 0.3 : 0.45
+        return sin(local * .pi * 0.82) * reboundHeight * reboundScalar
     }
 
     private func bounceKickLift(for progress: CGFloat, bounceProgress: CGFloat) -> CGFloat {
+        if wallStyleMode {
+            return 0
+        }
         guard progress >= bounceProgress else { return 0 }
         let local = (progress - bounceProgress) / max(0.001, 1 - bounceProgress)
-        let kick = sin(min(.pi, local * .pi)) * bounceKickHeightForShape()
+        let kickScale: CGFloat = wallStyleMode ? 0.82 : 1.0
+        let kick = sin(min(.pi, local * .pi)) * bounceKickHeightForShape() * kickScale
         return -kick
     }
 
     private func bounceCompression(for progress: CGFloat, bounceProgress: CGFloat) -> CGFloat {
+        if wallStyleMode {
+            return wallContactEmphasis(for: progress) * 0.46
+        }
         let distance = abs(progress - bounceProgress)
         let width = max(0.035, bounceCompressionForShape())
         guard distance < width else { return 0 }
@@ -3432,6 +4340,10 @@ final class BallNode: SKShapeNode {
     private func shadowOffsetY(for progress: CGFloat, bounceProgress: CGFloat, overrun: CGFloat) -> CGFloat {
         let offset = progress < bounceProgress ? 18 - progress * 8 : 10 + overrun * 18
         return -offset
+    }
+
+    private func wallContactEmphasis(for progress: CGFloat) -> CGFloat {
+        max(0, 1 - abs(progress - 0.89) / 0.11)
     }
 
     private func arcHeightForShape() -> CGFloat {

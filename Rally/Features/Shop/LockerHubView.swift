@@ -22,15 +22,8 @@ struct LockerHubView: View {
         return Set([a.equippedTopID, a.equippedBottomID, a.equippedShoesID, a.equippedRacketID])
     }
 
-    private var featuredFashionItems: [ShopItem] {
-        [
-            "newbalance.tournament.tank.white",
-            "newbalance.tournament.skort.white",
-            "newbalance.coco.cg2.sea.salt",
-            "nike.dri-fit.tee.cobalt",
-            "nike.court.short.black",
-            "nike.vapor.pro.white"
-        ].compactMap(ShopCatalog.item)
+    private var editorialEdits: [ShopEditorialEdit] {
+        ShopCatalog.editorialEdits.filter { !filtered(ShopCatalog.editorialItems(for: $0)).isEmpty }
     }
 
     var body: some View {
@@ -135,7 +128,7 @@ struct LockerHubView: View {
 
     private var lockerTitle: String {
         let raw = avatar?.playerName.trimmingCharacters(in: .whitespaces) ?? ""
-        return raw.isEmpty ? "Locker" : raw
+        return raw.isEmpty ? "Marcy" : raw
     }
 
     // MARK: - Play CTA
@@ -147,7 +140,7 @@ struct LockerHubView: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Play now")
                         .font(RallyUIKit.Typography.title(.title3, weight: .bold))
-                    Text("Rhythm rally · pick court in-game")
+                    Text("Wall rally · loadout ready")
                         .font(RallyUIKit.Typography.body(.caption, weight: .medium))
                         .opacity(0.85)
                 }
@@ -274,7 +267,7 @@ struct LockerHubView: View {
                         Text("Style edits")
                             .font(RallyUIKit.Typography.body(.headline, weight: .bold))
                             .foregroundStyle(RallyUIKit.Palette.frost)
-                        Text("New Balance whites and Nike match-day looks, surfaced as intentional outfit directions.")
+                        Text("Lead with New Balance, Nike, and Wilson instead of a flat catalog.")
                             .font(RallyUIKit.Typography.body(.caption, weight: .medium))
                             .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.62))
                     }
@@ -282,18 +275,9 @@ struct LockerHubView: View {
 
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 12) {
-                        lockerStyleCard(
-                            title: "New Balance Whites",
-                            subtitle: "Tank · Skort · Coco CG2",
-                            items: featuredFashionItems.filter { $0.vendorID == "newbalance" },
-                            tint: RallyUIKit.Palette.champagne
-                        )
-                        lockerStyleCard(
-                            title: "Nike Match Day",
-                            subtitle: "Slam tee · Short · Vapor Pro",
-                            items: featuredFashionItems.filter { $0.vendorID == "nike" },
-                            tint: RallyUIKit.Palette.cyan
-                        )
+                        ForEach(editorialEdits) { edit in
+                            lockerStyleCard(edit: edit, items: filtered(ShopCatalog.editorialItems(for: edit)))
+                        }
                     }
                     .padding(.horizontal, 2)
                 }
@@ -347,8 +331,8 @@ struct LockerHubView: View {
             unlockedCourtIDs: unlocks.unlockedCourtIDs,
             equippedIDs: equippedIDs
         )
-        guard let cat = selectedCategory else { return visible }
-        return visible.filter { $0.category == cat }
+        let scoped = selectedCategory == nil ? visible : visible.filter { $0.category == selectedCategory }
+        return scoped.sorted { desirabilityScore(for: $0) > desirabilityScore(for: $1) }
     }
 
     private var categoryFilter: some View {
@@ -356,10 +340,10 @@ struct LockerHubView: View {
             VStack(alignment: .leading, spacing: RallyUIKit.Spacing.md) {
                 HStack(alignment: .center, spacing: RallyUIKit.Spacing.md) {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("Filter the floor")
+                        Text("Edit the floor")
                             .font(RallyUIKit.Typography.title(.headline, weight: .bold))
                             .foregroundStyle(RallyUIKit.Palette.frost)
-                        Text(groupByVendor ? "Grouped by brand partner" : "Grouped by gear category")
+                        Text(groupByVendor ? "Grouped by brand partner" : "Grouped by wardrobe layer")
                             .font(RallyUIKit.Typography.body(.caption, weight: .semibold))
                             .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.82))
                     }
@@ -401,7 +385,7 @@ struct LockerHubView: View {
                 Text(category.displayName)
                     .font(RallyUIKit.Typography.title(.title3, weight: .bold))
                     .foregroundStyle(RallyUIKit.Palette.frost)
-                Text("\(filtered(ShopCatalog.items(in: category)).count) curated pieces")
+                Text("\(filtered(ShopCatalog.items(in: category)).count) style-led picks")
                     .font(RallyUIKit.Typography.body(.caption, weight: .semibold))
                     .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.72))
             }
@@ -418,7 +402,7 @@ struct LockerHubView: View {
                     Text(vendor.displayName)
                         .font(RallyUIKit.Typography.title(.title3, weight: .bold))
                         .foregroundStyle(RallyUIKit.Palette.frost)
-                    Text("\(filtered(ShopCatalog.itemsGroupedByVendor().first(where: { $0.0.id == vendor.id })?.1 ?? []).count) pieces live now")
+                    Text(vendorSubhead(vendor, count: filtered(ShopCatalog.itemsGroupedByVendor().first(where: { $0.0.id == vendor.id })?.1 ?? []).count))
                         .font(RallyUIKit.Typography.body(.caption, weight: .semibold))
                         .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.72))
                 }
@@ -514,6 +498,11 @@ struct LockerHubView: View {
                     .font(RallyUIKit.Typography.body(.caption, weight: .semibold))
                     .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.78))
                     .lineLimit(2)
+                Text(editorialLine(for: item))
+                    .font(RallyUIKit.Typography.label(.caption2, weight: .bold))
+                    .tracking(0.8)
+                    .foregroundStyle(accent.opacity(0.95))
+                    .lineLimit(1)
             }
             Spacer()
             if isEquipped(item) {
@@ -568,10 +557,12 @@ struct LockerHubView: View {
         .buttonStyle(.plain)
     }
 
-    private func lockerStyleCard(title: String, subtitle: String, items: [ShopItem], tint: Color) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
+    private func lockerStyleCard(edit: ShopEditorialEdit, items: [ShopItem]) -> some View {
+        let tint = edit.tintColor
+
+        return VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .bottom, spacing: 10) {
-                ForEach(items.prefix(3)) { item in
+                ForEach(items.prefix(edit.vendorID == "wilson" ? 1 : 3)) { item in
                     ZStack {
                         RoundedRectangle(cornerRadius: 18)
                             .fill(
@@ -591,22 +582,25 @@ struct LockerHubView: View {
                             .font(.system(size: 18, weight: .bold))
                             .foregroundStyle(.white)
                     }
-                    .frame(width: 68, height: item.category == .shoes ? 54 : 82)
+                    .frame(
+                        width: edit.vendorID == "wilson" ? 210 : 68,
+                        height: edit.vendorID == "wilson" ? 96 : (item.category == .shoes ? 54 : 82)
+                    )
                 }
             }
 
             VStack(alignment: .leading, spacing: 4) {
-                Text(title)
+                Text(edit.title)
                     .font(RallyUIKit.Typography.body(.subheadline, weight: .bold))
                     .foregroundStyle(RallyUIKit.Palette.frost)
-                Text(subtitle)
+                Text(edit.subtitle.uppercased())
                     .font(RallyUIKit.Typography.label(.caption2, weight: .bold))
                     .tracking(1.1)
                     .foregroundStyle(tint)
             }
         }
         .padding(12)
-        .frame(width: 244, alignment: .leading)
+        .frame(width: edit.vendorID == "wilson" ? 266 : 244, alignment: .leading)
         .background(
             RoundedRectangle(cornerRadius: 20)
                 .fill(Color.white.opacity(0.05))
@@ -633,10 +627,20 @@ struct LockerHubView: View {
         if let racketProfile = ShopCatalog.racketProfile(id: item.id) {
             return "\(racketProfile.performanceFocus) • \(racketProfile.headSizeSqIn) sq in • \(racketProfile.weightGrams) g"
         }
-        if let vendor = ShopCatalog.vendor(id: item.vendorID)?.displayName {
-            return "\(item.category.displayName) • \(vendor)"
+
+        switch item.vendorID {
+        case "newbalance":
+            return "Clean tournament layer"
+        case "nike":
+            return "Match-ready contrast"
+        case "wilson":
+            return "Hero frame for big points"
+        default:
+            if let vendor = ShopCatalog.vendor(id: item.vendorID)?.displayName {
+                return "\(item.category.displayName) • \(vendor)"
+            }
+            return item.category.displayName
         }
-        return item.category.displayName
     }
 
     private func categoryTint(_ category: ShopItem.Category) -> Color {
@@ -658,6 +662,62 @@ struct LockerHubView: View {
         case .shoes:  return avatar.equippedShoesID  == item.id
         case .racket: return avatar.equippedRacketID == item.id
         case .bag, .accessory: return false
+        }
+    }
+
+    private func desirabilityScore(for item: ShopItem) -> Int {
+        let vendorWeight: Int
+        switch item.vendorID {
+        case "newbalance": vendorWeight = 400
+        case "nike": vendorWeight = 320
+        case "wilson": vendorWeight = 280
+        default: vendorWeight = 100
+        }
+
+        let categoryWeight: Int
+        switch item.category {
+        case .top: categoryWeight = 60
+        case .bottom: categoryWeight = 50
+        case .shoes: categoryWeight = 40
+        case .racket: categoryWeight = 55
+        case .bag: categoryWeight = 20
+        case .accessory: categoryWeight = 10
+        }
+
+        return vendorWeight + categoryWeight + Int(item.priceUSD)
+    }
+
+    private func editorialLine(for item: ShopItem) -> String {
+        switch item.id {
+        case "newbalance.tournament.tank.white":
+            return "FOUNDATION PIECE"
+        case "newbalance.tournament.skort.white":
+            return "CLEAN FINISH"
+        case "newbalance.coco.cg2.sea.salt":
+            return "COCO CG2 HERO"
+        case "nike.dri-fit.tee.cobalt":
+            return "NIGHT-SESSION TOP"
+        case "nike.court.short.black":
+            return "MATCH-DAY BASE"
+        case "nike.vapor.pro.white":
+            return "FAST FINISH"
+        case "wilson.pro.staff.97":
+            return "CENTER-COURT FRAME"
+        default:
+            return "CURATED PICK"
+        }
+    }
+
+    private func vendorSubhead(_ vendor: Vendor, count: Int) -> String {
+        switch vendor.id {
+        case "newbalance":
+            return "\(count) crisp whites and elevated court pieces"
+        case "nike":
+            return "\(count) sharper match-day layers"
+        case "wilson":
+            return "\(count) premium frames and hero gear"
+        default:
+            return "\(count) pieces live now"
         }
     }
 }

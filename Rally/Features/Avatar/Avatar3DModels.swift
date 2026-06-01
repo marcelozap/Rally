@@ -35,6 +35,28 @@ extension UIColor {
             alpha: CGFloat(a1 * a2)
         )
     }
+
+    func mixed(with other: UIColor, ratio: CGFloat) -> UIColor {
+        let clamped = min(max(ratio, 0), 1)
+        let (r1, g1, b1, a1) = rkComponents
+        let (r2, g2, b2, a2) = other.rkComponents
+        let inv = Float(1 - clamped)
+        let mix = Float(clamped)
+        return UIColor(
+            red: CGFloat((r1 * inv) + (r2 * mix)),
+            green: CGFloat((g1 * inv) + (g2 * mix)),
+            blue: CGFloat((b1 * inv) + (b2 * mix)),
+            alpha: CGFloat((a1 * inv) + (a2 * mix))
+        )
+    }
+
+    func brightened(_ amount: CGFloat) -> UIColor {
+        mixed(with: .white, ratio: amount)
+    }
+
+    func darkened(_ amount: CGFloat) -> UIColor {
+        mixed(with: .black, ratio: amount)
+    }
 }
 
 // MARK: - Visual spec

@@ -18,6 +18,10 @@ struct ShopItemDetailView: View {
             $0.vendorID == item.vendorID &&
             $0.category != item.category
         }
+        .sorted { companionScore(for: $0) > companionScore(for: $1) }
+    }
+    private var editorialEdit: ShopEditorialEdit? {
+        ShopCatalog.editorialEdits.first { $0.itemIDs.contains(item.id) }
     }
     private var travelEditDestinations: [IconicTennisCourt] {
         let ids: [String]
@@ -102,12 +106,15 @@ struct ShopItemDetailView: View {
                 HStack(alignment: .top) {
                     VStack(alignment: .leading, spacing: 6) {
                         RallyUIKit.EditorialEyebrow(
-                            text: item.brand,
+                            text: editorialEdit?.eyebrow ?? item.brand,
                             tint: item.accentColor ?? RallyUIKit.Palette.cyan
                         )
                         Text(item.name)
                             .font(RallyUIKit.Typography.title(.title2, weight: .bold))
                             .foregroundStyle(RallyUIKit.Palette.frost)
+                        Text(detailSummary)
+                            .font(RallyUIKit.Typography.body(.caption, weight: .semibold))
+                            .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.78))
                     }
 
                     Spacer(minLength: 12)
@@ -129,6 +136,9 @@ struct ShopItemDetailView: View {
                     }
                     if item.category == .racket {
                         detailChip("Performance frame", tint: item.accentColor ?? RallyUIKit.Palette.gold)
+                    }
+                    if let editorialEdit {
+                        detailChip(editorialEdit.title, tint: item.accentColor ?? RallyUIKit.Palette.champagne)
                     }
                 }
             }
@@ -213,11 +223,11 @@ struct ShopItemDetailView: View {
                         .overlay(Circle().stroke(.white.opacity(0.2), lineWidth: 1))
 
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("Color direction")
+                        Text("Style direction")
                             .font(RallyUIKit.Typography.label(.caption, weight: .bold))
                             .tracking(1.2)
                             .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.7))
-                        Text(item.category.displayName)
+                        Text(styleDirectionTitle)
                             .font(RallyUIKit.Typography.body(.subheadline, weight: .semibold))
                             .foregroundStyle(RallyUIKit.Palette.frost)
                     }
@@ -230,6 +240,10 @@ struct ShopItemDetailView: View {
                             .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.82))
                     }
                 }
+
+                Text(styleDirectionBody)
+                    .font(RallyUIKit.Typography.body(.caption, weight: .medium))
+                    .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.8))
 
                 if let accent = item.accentColor {
                     Divider()
@@ -279,7 +293,7 @@ struct ShopItemDetailView: View {
                         Text("Next step")
                             .font(RallyUIKit.Typography.title(.headline, weight: .bold))
                             .foregroundStyle(RallyUIKit.Palette.frost)
-                        Text("Try it in Rally or move straight to the official product page.")
+                        Text(nextStepCopy)
                             .font(RallyUIKit.Typography.body(.caption, weight: .medium))
                             .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.62))
                     }
@@ -345,7 +359,7 @@ struct ShopItemDetailView: View {
                         Text("Style it with")
                             .font(RallyUIKit.Typography.title(.headline, weight: .bold))
                             .foregroundStyle(RallyUIKit.Palette.frost)
-                        Text("Other pieces from \(item.brand) that keep the look feeling intentional.")
+                        Text(styleItWithCopy)
                             .font(RallyUIKit.Typography.body(.caption, weight: .medium))
                             .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.62))
                     }
@@ -673,10 +687,86 @@ struct ShopItemDetailView: View {
     }
 
     private var detailSummary: String {
+        if let editorialEdit {
+            return editorialEdit.body
+        }
         if let racketProfile {
             return "\(racketProfile.performanceFocus) frame for \(racketProfile.playerFit.lowercased())."
         }
         return "\(item.category.displayName) by \(item.brand)."
+    }
+
+    private var styleDirectionTitle: String {
+        switch item.vendorID {
+        case "newbalance":
+            return "Quiet tournament luxury"
+        case "nike":
+            return "Night-session sharpness"
+        case "wilson":
+            return "Center-court statement"
+        default:
+            return item.category.displayName
+        }
+    }
+
+    private var styleDirectionBody: String {
+        switch item.id {
+        case "newbalance.tournament.tank.white":
+            return "A clean white base that makes the whole fit feel premium immediately."
+        case "newbalance.tournament.skort.white":
+            return "Keeps the silhouette polished without losing match-ready pace."
+        case "newbalance.coco.cg2.sea.salt":
+            return "The finishing shoe that gives the whites edit real presence."
+        case "nike.dri-fit.tee.cobalt":
+            return "Deep cobalt pulls the eye up and gives the outfit sharper contrast."
+        case "nike.court.short.black":
+            return "A grounded base layer that makes the Nike top and shoe pop harder."
+        case "nike.vapor.pro.white":
+            return "Bright white underfoot keeps the darker match edit feeling crisp."
+        case "wilson.pro.staff.97":
+            return "Wilson's Clash 100 V3 reads premium first and competitive second."
+        default:
+            return "A concise piece that fits neatly into the Rally shop edit."
+        }
+    }
+
+    private var styleItWithCopy: String {
+        switch item.vendorID {
+        case "newbalance":
+            return "Build the full whites edit around it."
+        case "nike":
+            return "Pair it into the sharper match-night look."
+        case "wilson":
+            return "Keep the frame story premium with matching Wilson gear."
+        default:
+            return "Other pieces from \(item.brand) that keep the look intentional."
+        }
+    }
+
+    private var nextStepCopy: String {
+        switch item.vendorID {
+        case "newbalance":
+            return "Try the whites edit on, then jump to the official New Balance page."
+        case "nike":
+            return "Check the silhouette in Rally, then open the official Nike product path."
+        case "wilson":
+            return "See the frame on stage, then move to Wilson's official storefront."
+        default:
+            return "Try it in Rally or move straight to the official product page."
+        }
+    }
+
+    private func companionScore(for candidate: ShopItem) -> Int {
+        let categoryWeight: Int
+        switch candidate.category {
+        case .top: categoryWeight = 40
+        case .bottom: categoryWeight = 35
+        case .shoes: categoryWeight = 30
+        case .racket: categoryWeight = 45
+        case .bag: categoryWeight = 20
+        case .accessory: categoryWeight = 10
+        }
+        return categoryWeight + Int(candidate.priceUSD)
     }
 
     private func detailChip(_ text: String, tint: Color) -> some View {

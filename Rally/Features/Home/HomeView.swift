@@ -8,29 +8,18 @@ struct HomeView: View {
     @Query(sort: \TrainingSession.date, order: .reverse) private var trainings: [TrainingSession]
     @Query(sort: \MatchEntry.date, order: .reverse) private var matches: [MatchEntry]
     @Query(sort: \JournalEntry.date, order: .reverse) private var journal: [JournalEntry]
-    @Query(sort: \DailyChallenge.createdDate, order: .reverse) private var dailyChallenges: [DailyChallenge]
-    @Query(sort: \Achievement.earnedDate, order: .reverse) private var achievements: [Achievement]
-    @Query private var battlePasses: [BattlePass]
-    @Query(sort: \SeasonalEvent.startDate, order: .reverse) private var seasonalEvents: [SeasonalEvent]
-    @Query(sort: \RivalChallenge.completedDate, order: .reverse) private var rivalHistory: [RivalChallenge]
 
     @Binding var selectedTab: RallyTab
     @Binding var logbookSection: LogbookSection
+    @Binding var isPlaying: Bool
 
+    @StateObject private var gamePreferences = GamePreferences.shared
     @State private var showingTrainingEditor = false
     @State private var showingMatchEditor = false
     @State private var showingJournalEditor = false
 
     private var avatar: AvatarConfig? { avatarConfigs.first }
     private var progress: PlayerProgress? { progressRecords.first }
-    private var battlePass: BattlePass? { battlePasses.first }
-    private var featuredSeasonEvent: SeasonalEvent? { seasonalEvents.first }
-    private var todaysChallenges: [DailyChallenge] {
-        dailyChallenges.filter { Calendar.current.isDateInToday($0.createdDate) }
-    }
-    private var recentAchievements: [Achievement] {
-        Array(achievements.prefix(4))
-    }
     private var featuredHomeShopItem: ShopItem? {
         ShopCatalog.item(id: "newbalance.tournament.tank.white")
     }
@@ -47,14 +36,9 @@ struct HomeView: View {
                     }
                     avatarCard
                     playerBadge
+                    homeLoadoutSection
+                    pregameSection
                     quickActions
-                    featuredNowSection
-                    competitionSummarySection
-                    seasonalEventSection
-                    dailyChallengesSection
-                    recentAchievementsSection
-                    courtAtlasSection
-                    weeklyStats
                     recentLogbook
                 }
                 .padding(.horizontal, RallyUIKit.Spacing.md)
@@ -102,6 +86,84 @@ struct HomeView: View {
                 NavigationStack { JournalEditorView(entry: nil) }
             }
         }
+    }
+
+    private var homeLoadoutSection: some View {
+        RallyUIKit.LuxePanel(tint: RallyUIKit.Palette.champagne) {
+            VStack(alignment: .leading, spacing: 14) {
+                HStack(alignment: .top, spacing: 12) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        RallyUIKit.EditorialEyebrow(text: "Locker room", tint: RallyUIKit.Palette.champagne)
+                        Text("Pick your loadout, then play")
+                            .font(RallyUIKit.Typography.title(.headline, weight: .bold))
+                            .foregroundStyle(RallyUIKit.Palette.frost)
+                        Text("Racket, top, bottom, and shoes should feel like one look before you head into wall rally.")
+                            .font(RallyUIKit.Typography.body(.caption, weight: .medium))
+                            .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.76))
+                    }
+
+                    Spacer(minLength: 8)
+
+                    Button {
+                        selectedTab = .shop
+                    } label: {
+                        Text("Edit")
+                            .font(RallyUIKit.Typography.label(.caption, weight: .bold))
+                            .foregroundStyle(RallyUIKit.Palette.champagne)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 8)
+                            .background(
+                                Capsule().fill(RallyUIKit.Palette.champagne.opacity(0.12))
+                            )
+                            .overlay(
+                                Capsule().stroke(RallyUIKit.Palette.champagne.opacity(0.22), lineWidth: 1)
+                            )
+                    }
+                    .buttonStyle(.plain)
+                }
+
+                HStack(spacing: 10) {
+                    homeLoadoutChip(title: "Racket", value: equippedItemName(avatar?.equippedRacketID, fallback: "Ready"), tint: RallyUIKit.Palette.cyan)
+                    homeLoadoutChip(title: "Top", value: equippedItemName(avatar?.equippedTopID, fallback: "Top"), tint: RallyUIKit.Palette.champagne)
+                }
+
+                HStack(spacing: 10) {
+                    homeLoadoutChip(title: "Bottom", value: equippedItemName(avatar?.equippedBottomID, fallback: "Bottom"), tint: RallyUIKit.Palette.gold)
+                    homeLoadoutChip(title: "Shoes", value: equippedItemName(avatar?.equippedShoesID, fallback: "Shoes"), tint: RallyUIKit.Palette.rose)
+                }
+            }
+        }
+    }
+
+    private func equippedItemName(_ itemID: String?, fallback: String) -> String {
+        guard let itemID, let item = ShopCatalog.item(id: itemID) else {
+            return fallback
+        }
+        return item.name
+    }
+
+    private func homeLoadoutChip(title: String, value: String, tint: Color) -> some View {
+        VStack(alignment: .leading, spacing: 5) {
+            Text(title.uppercased())
+                .font(RallyUIKit.Typography.body(.caption2, weight: .bold))
+                .tracking(1.0)
+                .foregroundStyle(tint.opacity(0.9))
+            Text(value)
+                .font(RallyUIKit.Typography.label(.caption, weight: .semibold))
+                .foregroundStyle(RallyUIKit.Palette.frost)
+                .lineLimit(2)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 12)
+        .background(
+            RoundedRectangle(cornerRadius: RallyUIKit.Radius.sm)
+                .fill(Color.white.opacity(0.04))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: RallyUIKit.Radius.sm)
+                .stroke(tint.opacity(0.18), lineWidth: 1)
+        )
     }
 
     @ViewBuilder
@@ -167,7 +229,7 @@ struct HomeView: View {
 
     private var greeting: String {
         let raw = avatar?.playerName.trimmingCharacters(in: .whitespaces) ?? ""
-        let name = raw.isEmpty ? "Player" : raw
+        let name = raw.isEmpty ? "Marcy" : raw
         return "Hey, \(name)"
     }
 
@@ -182,7 +244,7 @@ struct HomeView: View {
                             .frame(height: 320)
                     }
                     VStack(alignment: .leading, spacing: RallyUIKit.Spacing.xxs) {
-                        Text(avatar.playerName)
+                        Text(displayName(for: avatar))
                             .font(RallyUIKit.Typography.title(.title, weight: .bold))
                             .tracking(0.4)
                             .foregroundStyle(RallyUIKit.Palette.frost)
@@ -200,6 +262,11 @@ struct HomeView: View {
         let top = ShopCatalog.item(id: avatar.equippedTopID)?.name ?? "—"
         let racket = ShopCatalog.item(id: avatar.equippedRacketID)?.name ?? "—"
         return "\(top) · \(racket)"
+    }
+
+    private func displayName(for avatar: AvatarConfig) -> String {
+        let raw = avatar.playerName.trimmingCharacters(in: .whitespacesAndNewlines)
+        return raw.isEmpty ? "Marcy" : raw
     }
 
     // MARK: - Player badge (level / coins / best)
@@ -290,108 +357,108 @@ struct HomeView: View {
     private var quickActions: some View {
         VStack(spacing: RallyUIKit.Spacing.xs + 2) {
             HStack {
-                Text("Play, style, travel")
+                Text("Play and log")
                     .font(RallyUIKit.Typography.label(.headline, weight: .semibold))
                     .foregroundStyle(RallyUIKit.Palette.frost)
                 Spacer()
             }
             actionButton(icon: "tennis.racket", label: "Practice", tint: RallyUIKit.Palette.cyan, big: true) {
-                selectedTab = .play
+                startPractice()
             }
             HStack(spacing: RallyUIKit.Spacing.xs + 2) {
                 actionButton(icon: "figure.tennis", label: "Training log", tint: RallyUIKit.Palette.lime) {
                     logbookSection = .training
-                    selectedTab = .logs
+                    selectedTab = .journal
                 }
                 actionButton(icon: "trophy", label: "Match log", tint: RallyUIKit.Palette.gold) {
                     logbookSection = .matches
-                    selectedTab = .logs
+                    selectedTab = .journal
                 }
                 actionButton(icon: "book.closed", label: "Journal", tint: RallyUIKit.Palette.rose) {
                     logbookSection = .journal
-                    selectedTab = .logs
+                    selectedTab = .journal
                 }
-            }
-            HStack(spacing: RallyUIKit.Spacing.xs + 2) {
-                actionButton(icon: "bag.fill", label: "Shop edits", tint: RallyUIKit.Palette.champagne) {
-                    selectedTab = .shop
-                }
-                NavigationLink {
-                    CourtsMapView()
-                } label: {
-                    actionButtonLabel(icon: "globe.americas.fill", label: "World atlas", tint: RallyUIKit.Palette.cyan)
-                }
-                .buttonStyle(.plain)
             }
         }
     }
 
-    private var competitionSummarySection: some View {
-        let competitionSubtitle = battlePass?.currentTier == nil
-            ? "Join the race"
-            : "Tier \(battlePass?.currentTier?.id ?? 1) · \(battlePass?.currentTier?.name ?? "Top 10 chase")"
-
-        return VStack(alignment: .leading, spacing: 12) {
-            sectionHeader(title: "Competition", actionTitle: "Explore") {
-                CompetitionOverviewView()
-            }
-
-            NavigationLink {
-                CompetitionOverviewView()
-            } label: {
-                featureRow(
-                    icon: "bolt.circle.fill",
-                    iconTint: RallyUIKit.Palette.rose,
-                    title: "Leaderboard sprint",
-                    subtitle: competitionSubtitle
-                )
-            }
-            .buttonStyle(.plain)
-        }
-    }
-
-    private var seasonalEventSection: some View {
-        guard let event = featuredSeasonEvent else {
-            return AnyView(EmptyView())
-        }
-        return AnyView(
-            VStack(alignment: .leading, spacing: 12) {
-                HStack {
-                    Text("Season event")
-                        .font(.system(.headline, design: .rounded))
-                        .foregroundStyle(.white)
-                    Spacer()
-                    seasonStatusPill(isActive: event.isActive)
-                    NavigationLink(destination: SeasonalEventsView()) {
-                        Text("View season")
-                            .font(RallyUIKit.Typography.label(.caption, weight: .semibold))
-                            .foregroundStyle(RallyUIKit.Palette.cyan)
+    private var pregameSection: some View {
+        RallyUIKit.LuxePanel(tint: RallyUIKit.Palette.cyan) {
+            VStack(alignment: .leading, spacing: 14) {
+                HStack(alignment: .top, spacing: 12) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        RallyUIKit.EditorialEyebrow(text: "Court setup", tint: RallyUIKit.Palette.cyan)
+                        Text("Pick the court before you play")
+                            .font(RallyUIKit.Typography.title(.headline, weight: .bold))
+                            .foregroundStyle(RallyUIKit.Palette.frost)
+                        Text("Keep the live game clean. Choose the venue and handedness here, then step straight into wall rally.")
+                            .font(RallyUIKit.Typography.body(.caption, weight: .medium))
+                            .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.76))
                     }
-                    .buttonStyle(.plain)
+                    Spacer(minLength: 0)
+                    RallyUIKit.IconBadge(systemName: "sportscourt.fill", tint: RallyUIKit.Palette.cyan, size: 38)
                 }
 
-                Text(event.title)
-                    .font(RallyUIKit.Typography.title(.title3, weight: .bold))
-                    .foregroundStyle(RallyUIKit.Palette.frost)
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Venue")
+                        .font(RallyUIKit.Typography.label(.caption, weight: .bold))
+                        .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.88))
+                    HStack(spacing: 8) {
+                        ForEach(CourtVenue.allCases) { venue in
+                            pregameChip(
+                                title: venue.displayName,
+                                isSelected: CourtVenue.current == venue,
+                                tint: venue == .wimbledonGrass ? RallyUIKit.Palette.lime : RallyUIKit.Palette.cyan
+                            ) {
+                                CourtVenue.current = venue
+                            }
+                        }
+                    }
+                }
 
-                Text(event.descriptionText)
-                    .font(RallyUIKit.Typography.body(.caption, weight: .medium))
-                    .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.82))
-                    .lineLimit(2)
-
-                ProgressView(value: event.progressFraction)
-                    .tint(RallyUIKit.Palette.rose)
-
-                HStack(spacing: 8) {
-                    statKicker(label: "Level", value: event.levelName)
-                    Spacer()
-                    statKicker(label: "Reward", value: "\(event.rewardCoins) coins")
-                    Spacer()
-                    statKicker(label: "Time", value: event.isCompleted ? "Complete" : "\(event.daysRemaining)d left")
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Handedness")
+                        .font(RallyUIKit.Typography.label(.caption, weight: .bold))
+                        .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.88))
+                    HStack(spacing: 8) {
+                        ForEach(GamePreferences.DominantHand.allCases) { hand in
+                            pregameChip(
+                                title: hand == .right ? "Righty" : "Lefty",
+                                isSelected: gamePreferences.dominantHand == hand,
+                                tint: hand == .right ? RallyUIKit.Palette.gold : RallyUIKit.Palette.rose
+                            ) {
+                                gamePreferences.dominantHand = hand
+                            }
+                        }
+                    }
                 }
             }
-            .modifier(HomeSectionCardModifier(stroke: RallyUIKit.Palette.rose.opacity(0.28)))
-        )
+        }
+    }
+
+    private func pregameChip(title: String, isSelected: Bool, tint: Color, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(title)
+                .font(RallyUIKit.Typography.label(.caption, weight: .bold))
+                .foregroundStyle(isSelected ? RallyUIKit.Palette.obsidian : RallyUIKit.Palette.frost)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 10)
+                .frame(maxWidth: .infinity)
+                .background(
+                    RoundedRectangle(cornerRadius: RallyUIKit.Radius.sm)
+                        .fill(isSelected ? tint : Color.white.opacity(0.05))
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: RallyUIKit.Radius.sm)
+                        .stroke(tint.opacity(isSelected ? 0.0 : 0.3), lineWidth: 1)
+                )
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func startPractice() {
+        gamePreferences.matchPace = .calm
+        isPlaying = true
     }
 
     // MARK: - Court atlas (world map)
@@ -565,76 +632,20 @@ struct HomeView: View {
         )
     }
 
-    // MARK: - Stats
-
-    private var weeklyStats: some View {
-        let cal = Calendar.current
-        let lastWeek = cal.date(byAdding: .day, value: -7, to: Date()) ?? Date()
-        let recentTrain = trainings.filter { $0.date >= lastWeek }
-        let recentMatches = matches.filter { $0.date >= lastWeek }
-        let totalMins = recentTrain.reduce(0) { $0 + $1.durationMinutes }
-        let wins = recentMatches.filter(\.resultWon).count
-        let losses = recentMatches.count - wins
-
-        return RallyUIKit.LuxePanel(tint: RallyUIKit.Palette.cyan) {
-            VStack(alignment: .leading, spacing: 12) {
-                HStack {
-                    VStack(alignment: .leading, spacing: 4) {
-                        RallyUIKit.EditorialEyebrow(text: "This week", tint: RallyUIKit.Palette.cyan)
-                        Text("Your tennis rhythm")
-                            .font(RallyUIKit.Typography.title(.headline, weight: .bold))
-                            .foregroundStyle(RallyUIKit.Palette.frost)
-                    }
-                    Spacer()
-                    Text("\(recentTrain.count + recentMatches.count)")
-                        .font(RallyUIKit.Typography.title(.title3, weight: .bold))
-                        .foregroundStyle(RallyUIKit.Palette.cyan)
-                }
-
-                HStack(spacing: 12) {
-                    statTile(value: "\(recentTrain.count)", label: "sessions", tint: RallyUIKit.Palette.cyan)
-                    statTile(value: "\(totalMins)m", label: "trained", tint: RallyUIKit.Palette.cyan)
-                    statTile(value: "\(wins)-\(losses)", label: "record", tint: RallyUIKit.Palette.gold)
-                }
-
-                Text("A quick read on how much you trained, how often you played, and what your week looked like on court.")
-                    .font(RallyUIKit.Typography.body(.caption, weight: .medium))
-                    .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.62))
-            }
-        }
-    }
-
-    private func statTile(value: String, label: String, tint: Color) -> some View {
-        VStack(spacing: 4) {
-            Text(value)
-                .font(RallyUIKit.Typography.title(.title2, weight: .bold))
-                .foregroundStyle(tint)
-            Text(label)
-                .font(RallyUIKit.Typography.body(.caption, weight: .medium))
-                .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.62))
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 14)
-        .background(
-            RoundedRectangle(cornerRadius: RallyUIKit.Radius.sm)
-                .fill(Color.white.opacity(0.04))
-        )
-    }
-
-    // MARK: - Logbook preview
+    // MARK: - Journal preview
 
     @ViewBuilder
     private var recentLogbook: some View {
         if !homeLogbookMoments.isEmpty {
             VStack(alignment: .leading, spacing: 12) {
-                sectionHeaderAction(title: "From the logbook", actionTitle: "See all") {
-                    selectedTab = .logs
+                sectionHeaderAction(title: "From your journal", actionTitle: "See all") {
+                    selectedTab = .journal
                 }
                 VStack(spacing: 10) {
                     ForEach(homeLogbookMoments) { moment in
                         Button {
                             logbookSection = moment.section
-                            selectedTab = .logs
+                            selectedTab = .journal
                         } label: {
                             homeLogbookMomentRow(moment)
                         }
@@ -761,170 +772,6 @@ struct HomeView: View {
         return UIImage(data: data)
     }
 
-    // MARK: - Daily Challenges
-
-    private var dailyChallengesSection: some View {
-        RallyUIKit.LuxePanel(tint: RallyUIKit.Palette.cyan) {
-            VStack(alignment: .leading, spacing: 12) {
-                HStack {
-                    VStack(alignment: .leading, spacing: 4) {
-                        RallyUIKit.EditorialEyebrow(text: "Daily rhythm", tint: RallyUIKit.Palette.cyan)
-                        Text("Today's challenges")
-                            .font(RallyUIKit.Typography.title(.headline, weight: .bold))
-                            .foregroundStyle(RallyUIKit.Palette.frost)
-                    }
-                    Spacer()
-                    Text("\(todaysChallenges.count)")
-                        .font(RallyUIKit.Typography.title(.title3, weight: .bold))
-                        .foregroundStyle(RallyUIKit.Palette.cyan)
-                }
-                if todaysChallenges.isEmpty {
-                    Text("No challenges today yet. Tap Play to get started!")
-                        .font(RallyUIKit.Typography.body(.caption, weight: .medium))
-                        .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.62))
-                } else {
-                    VStack(spacing: 10) {
-                        ForEach(todaysChallenges, id: \.id) { challenge in
-                            challengeRow(challenge)
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    // MARK: - Recent Achievements
-
-    private var recentAchievementsSection: some View {
-        RallyUIKit.LuxePanel(tint: RallyUIKit.Palette.gold) {
-            VStack(alignment: .leading, spacing: 12) {
-                HStack {
-                    VStack(alignment: .leading, spacing: 4) {
-                        RallyUIKit.EditorialEyebrow(text: "Milestones", tint: RallyUIKit.Palette.gold)
-                        Text("Recent achievements")
-                            .font(RallyUIKit.Typography.title(.headline, weight: .bold))
-                            .foregroundStyle(RallyUIKit.Palette.frost)
-                    }
-                    Spacer()
-                    Text("\(recentAchievements.count)")
-                        .font(RallyUIKit.Typography.title(.title3, weight: .bold))
-                        .foregroundStyle(RallyUIKit.Palette.gold)
-                }
-                if recentAchievements.isEmpty {
-                    Text("Unlock achievements by hitting milestones!")
-                        .font(RallyUIKit.Typography.body(.caption, weight: .medium))
-                        .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.62))
-                } else {
-                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 80))], spacing: 10) {
-                        ForEach(recentAchievements, id: \.id) { achievement in
-                            achievementTile(achievement)
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    private func challengeRow(_ challenge: DailyChallenge) -> some View {
-        let tint = Color(hex: challenge.colorHex) ?? RallyUIKit.Palette.cyan
-        let stroke = challenge.isCompleted ? Color.green.opacity(0.5) : tint.opacity(0.24)
-
-        return HStack(spacing: 12) {
-            ZStack {
-                Circle()
-                    .fill(tint)
-                    .frame(width: 44, height: 44)
-                    .opacity(0.2)
-                Image(systemName: challenge.iconName)
-                    .font(.system(.caption, design: .default).weight(.bold))
-                    .foregroundStyle(tint)
-            }
-
-            VStack(alignment: .leading, spacing: 4) {
-                Text(challenge.title)
-                    .font(RallyUIKit.Typography.label(.subheadline, weight: .semibold))
-                    .foregroundStyle(RallyUIKit.Palette.frost)
-                HStack(spacing: 8) {
-                    ProgressView(value: challenge.progress)
-                        .tint(tint)
-                    Text("\(challenge.currentProgress)/\(challenge.target)")
-                        .font(RallyUIKit.Typography.body(.caption2, weight: .medium))
-                        .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.72))
-                }
-            }
-
-            Spacer()
-
-            if challenge.isCompleted {
-                Image(systemName: "checkmark.circle.fill")
-                    .foregroundStyle(.green)
-                    .font(.title3)
-            } else {
-                Text("+\(challenge.rewardCoins)")
-                    .font(.caption.weight(.bold))
-                    .foregroundStyle(tint)
-            }
-        }
-        .padding(12)
-        .background(RoundedRectangle(cornerRadius: RallyUIKit.Radius.sm).fill(Color.white.opacity(0.04)))
-        .overlay(RoundedRectangle(cornerRadius: RallyUIKit.Radius.sm).stroke(stroke, lineWidth: 1))
-    }
-
-    private func achievementTile(_ achievement: Achievement) -> some View {
-        let tint = Color(hex: achievement.colorHex) ?? RallyUIKit.Palette.cyan
-
-        return VStack(spacing: 8) {
-            ZStack {
-                Circle()
-                    .fill(tint)
-                    .frame(width: 56, height: 56)
-                    .opacity(0.15)
-                Image(systemName: achievement.iconName)
-                    .font(.title2)
-                    .foregroundStyle(tint)
-            }
-            Text(achievement.title)
-                .font(RallyUIKit.Typography.label(.caption2, weight: .semibold))
-                .foregroundStyle(RallyUIKit.Palette.frost)
-                .lineLimit(2)
-                .multilineTextAlignment(.center)
-            Text(achievement.rarity)
-                .font(RallyUIKit.Typography.body(.caption2, weight: .medium))
-                .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.62))
-        }
-        .padding(8)
-        .frame(maxWidth: .infinity)
-        .background(RoundedRectangle(cornerRadius: RallyUIKit.Radius.sm).fill(Color.white.opacity(0.04)))
-        .overlay(RoundedRectangle(cornerRadius: RallyUIKit.Radius.sm).stroke(tint.opacity(0.3), lineWidth: 1))
-    }
-
-    private func featureRow(icon: String, iconTint: Color, title: String, subtitle: String) -> some View {
-        HStack(spacing: RallyUIKit.Spacing.sm + 2) {
-            ZStack {
-                RoundedRectangle(cornerRadius: RallyUIKit.Radius.md)
-                    .fill(iconTint.opacity(0.18))
-                    .frame(width: 56, height: 56)
-                Image(systemName: icon)
-                    .font(.title2)
-                    .foregroundStyle(iconTint)
-            }
-            VStack(alignment: .leading, spacing: RallyUIKit.Spacing.xxs) {
-                Text(title)
-                    .font(RallyUIKit.Typography.label(.headline, weight: .bold))
-                    .foregroundStyle(RallyUIKit.Palette.frost)
-                Text(subtitle)
-                    .font(RallyUIKit.Typography.body(.caption, weight: .medium))
-                    .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.68))
-                    .multilineTextAlignment(.leading)
-            }
-            Spacer(minLength: 0)
-            Image(systemName: "chevron.right")
-                .font(RallyUIKit.Typography.label(.caption, weight: .bold))
-                .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.46))
-        }
-        .modifier(HomeSectionCardModifier(stroke: iconTint.opacity(0.28)))
-    }
-
     private func atlasHomeChip(_ label: String, tint: Color) -> some View {
         Text(label)
             .font(RallyUIKit.Typography.body(.caption2, weight: .semibold))
@@ -937,47 +784,6 @@ struct HomeView: View {
             .overlay(
                 Capsule().stroke((tint == RallyUIKit.Palette.cloud ? RallyUIKit.Palette.cloud : tint).opacity(0.18), lineWidth: 1)
             )
-    }
-
-    private func seasonStatusPill(isActive: Bool) -> some View {
-        Text(isActive ? "Live now" : "Upcoming")
-            .font(.caption.weight(.semibold))
-            .foregroundStyle(isActive ? RallyUIKit.Palette.lime : RallyUIKit.Palette.cyan)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 6)
-            .background(
-                Capsule().fill((isActive ? RallyUIKit.Palette.lime : RallyUIKit.Palette.cyan).opacity(0.12))
-            )
-    }
-
-    private func statKicker(label: String, value: String) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(label)
-                .font(RallyUIKit.Typography.label(.caption2, weight: .semibold))
-                .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.72))
-            Text(value)
-                .font(RallyUIKit.Typography.label(.caption, weight: .bold))
-                .foregroundStyle(RallyUIKit.Palette.frost)
-        }
-    }
-
-    private func sectionHeader<Destination: View>(
-        title: String,
-        actionTitle: String,
-        @ViewBuilder destination: () -> Destination
-    ) -> some View {
-        HStack {
-            Text(title)
-                .font(RallyUIKit.Typography.label(.headline, weight: .semibold))
-                .foregroundStyle(RallyUIKit.Palette.frost)
-            Spacer()
-            NavigationLink(destination: destination()) {
-                Text(actionTitle)
-                    .font(RallyUIKit.Typography.label(.caption, weight: .semibold))
-                    .foregroundStyle(RallyUIKit.Palette.cyan)
-            }
-            .buttonStyle(.plain)
-        }
     }
 
     private func sectionHeaderAction(title: String, actionTitle: String, action: @escaping () -> Void) -> some View {

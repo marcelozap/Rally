@@ -14,10 +14,10 @@ struct AvatarShopStageView: View {
                     HStack(alignment: .top) {
                         VStack(alignment: .leading, spacing: RallyUIKit.Spacing.xs) {
                             RallyUIKit.EditorialEyebrow(
-                                text: preview == nil ? "Player Studio" : "Try-On Stage",
+                                text: preview == nil ? "Player Studio" : "Fitting Room",
                                 tint: currentAccent
                             )
-                            Text(preview == nil ? "Court fitting" : "Live preview")
+                            Text(preview == nil ? "Sibling style preview" : "Live outfit check")
                                 .font(RallyUIKit.Typography.title(.title3, weight: .bold))
                                 .foregroundStyle(RallyUIKit.Palette.frost)
                         }
@@ -97,6 +97,11 @@ struct AvatarShopStageView: View {
                     }
                     .frame(height: 360)
 
+                    HStack(spacing: RallyUIKit.Spacing.xs) {
+                        stageChip(preview == nil ? "Editorial fit" : "Trying on", tint: currentAccent)
+                        stageChip(preview == nil ? "Ready for shop" : "Preview mode", tint: RallyUIKit.Palette.champagne)
+                    }
+
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: RallyUIKit.Spacing.sm) {
                             ForEach(AvatarShopEmote.allCases) { e in
@@ -113,11 +118,11 @@ struct AvatarShopStageView: View {
     private var stageFooter: some View {
         HStack(spacing: RallyUIKit.Spacing.sm) {
             VStack(alignment: .leading, spacing: 4) {
-                Text(preview?.item.brand ?? "Rally Signature")
+                Text(preview?.item.brand ?? "Rally Edit")
                     .font(RallyUIKit.Typography.label(.caption, weight: .bold))
                     .tracking(1.8)
                     .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.78))
-                Text(preview?.item.name ?? "Current on-court kit")
+                Text(preview?.item.name ?? "Current favorite look")
                     .font(RallyUIKit.Typography.body(.subheadline, weight: .semibold))
                     .foregroundStyle(RallyUIKit.Palette.frost)
                     .lineLimit(1)
@@ -199,6 +204,17 @@ struct AvatarShopStageView: View {
             )
         }
         .buttonStyle(.plain)
+    }
+
+    private func stageChip(_ text: String, tint: Color) -> some View {
+        Text(text)
+            .font(RallyUIKit.Typography.label(.caption2, weight: .bold))
+            .tracking(1.2)
+            .foregroundStyle(RallyUIKit.Palette.frost)
+            .padding(.horizontal, RallyUIKit.Spacing.sm)
+            .padding(.vertical, 7)
+            .background(Capsule().fill(tint.opacity(0.12)))
+            .overlay(Capsule().stroke(tint.opacity(0.2), lineWidth: 1))
     }
 }
 

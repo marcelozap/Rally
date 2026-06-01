@@ -80,7 +80,11 @@ struct RallyApp: App {
 
         let avatars = (try? context.fetch(FetchDescriptor<AvatarConfig>())) ?? []
         if avatars.isEmpty {
-            context.insert(AvatarConfig())
+            let avatar = AvatarConfig()
+            avatar.refreshForCurrentVisualSystem()
+            context.insert(avatar)
+        } else {
+            avatars.forEach { $0.refreshForCurrentVisualSystem() }
         }
 
         let progress = (try? context.fetch(FetchDescriptor<PlayerProgress>())) ?? []

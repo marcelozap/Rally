@@ -23,20 +23,13 @@ struct ShopView: View {
         )
     }
 
+    private var editorialEdits: [ShopEditorialEdit] {
+        ShopCatalog.editorialEdits.filter { !filtered(ShopCatalog.editorialItems(for: $0)).isEmpty }
+    }
+
     private var equippedCount: Int {
         guard let avatar else { return 0 }
         return [avatar.equippedTopID, avatar.equippedBottomID, avatar.equippedShoesID, avatar.equippedRacketID].count
-    }
-
-    private var featuredFashionItems: [ShopItem] {
-        [
-            "newbalance.tournament.tank.white",
-            "newbalance.tournament.skort.white",
-            "newbalance.coco.cg2.sea.salt",
-            "nike.dri-fit.tee.cobalt",
-            "nike.court.short.black",
-            "nike.vapor.pro.white"
-        ].compactMap(ShopCatalog.item)
     }
 
     private var featuredTravelDestinations: [IconicTennisCourt] {
@@ -118,10 +111,10 @@ struct ShopView: View {
 
                 HStack(alignment: .center, spacing: RallyUIKit.Spacing.md) {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("Studio kit drop")
+                        Text("Dress the sibling star first")
                             .font(RallyUIKit.Typography.title(.title3, weight: .bold))
                             .foregroundStyle(RallyUIKit.Palette.frost)
-                        Text("Clean whites first. Then racquets, shoes, and branded pieces.")
+                        Text("Lead with New Balance whites, Nike contrast, and Wilson hero frames.")
                             .font(RallyUIKit.Typography.body(.subheadline, weight: .medium))
                             .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.84))
                     }
@@ -133,6 +126,12 @@ struct ShopView: View {
                         tint: RallyUIKit.Palette.gold,
                         size: 40
                     )
+                }
+
+                HStack(spacing: RallyUIKit.Spacing.xs) {
+                    heroChip("New Balance", tint: RallyUIKit.Palette.champagne)
+                    heroChip("Nike", tint: RallyUIKit.Palette.cyan)
+                    heroChip("Wilson", tint: RallyUIKit.Palette.gold)
                 }
 
                 HStack(spacing: RallyUIKit.Spacing.sm) {
@@ -150,8 +149,8 @@ struct ShopView: View {
             unlockedCourtIDs: unlocks.unlockedCourtIDs,
             equippedIDs: equippedIDs
         )
-        guard let cat = selectedCategory else { return visible }
-        return visible.filter { $0.category == cat }
+        let scoped = selectedCategory == nil ? visible : visible.filter { $0.category == selectedCategory }
+        return scoped.sorted { desirabilityScore(for: $0) > desirabilityScore(for: $1) }
     }
 
     private var categoryFilter: some View {
@@ -159,10 +158,10 @@ struct ShopView: View {
             VStack(alignment: .leading, spacing: RallyUIKit.Spacing.md) {
                 HStack(alignment: .center, spacing: RallyUIKit.Spacing.md) {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("Filter the floor")
+                        Text("Edit the floor")
                             .font(RallyUIKit.Typography.title(.headline, weight: .bold))
                             .foregroundStyle(RallyUIKit.Palette.frost)
-                        Text(groupByVendor ? "Grouped by brand partner" : "Grouped by gear category")
+                        Text(groupByVendor ? "Grouped by brand partner" : "Grouped by wardrobe layer")
                             .font(RallyUIKit.Typography.body(.caption, weight: .semibold))
                             .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.82))
                     }
@@ -202,10 +201,10 @@ struct ShopView: View {
             HStack(spacing: RallyUIKit.Spacing.sm) {
                 RallyUIKit.IconBadge(systemName: "sparkles", tint: RallyUIKit.Palette.champagne, size: 30)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Fashion floor")
+                    Text("Spotlight edits")
                         .font(RallyUIKit.Typography.title(.headline, weight: .bold))
                         .foregroundStyle(RallyUIKit.Palette.frost)
-                    Text("New Balance whites first, then Nike match-day energy.")
+                    Text("Three fast directions instead of one long catalog.")
                         .font(RallyUIKit.Typography.body(.caption, weight: .medium))
                         .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.72))
                 }
@@ -214,21 +213,9 @@ struct ShopView: View {
 
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: RallyUIKit.Spacing.md) {
-                    featuredEditCard(
-                        title: "New Balance Court Whites",
-                        subtitle: "Tank, skort, Coco CG2",
-                        body: "A crisp all-white look that feels expensive the second it loads.",
-                        tint: RallyUIKit.Palette.champagne,
-                        items: featuredFashionItems.filter { $0.vendorID == "newbalance" }
-                    )
-
-                    featuredEditCard(
-                        title: "Nike Match Day",
-                        subtitle: "Slam tee, short, Vapor Pro",
-                        body: "Sharper contrast, cleaner pace, and a stronger match-night silhouette.",
-                        tint: RallyUIKit.Palette.cyan,
-                        items: featuredFashionItems.filter { $0.vendorID == "nike" }
-                    )
+                    ForEach(editorialEdits) { edit in
+                        featuredEditCard(edit: edit, items: filtered(ShopCatalog.editorialItems(for: edit)))
+                    }
                 }
                 .padding(.horizontal, 2)
             }
@@ -348,7 +335,7 @@ struct ShopView: View {
                 Text(category.displayName)
                     .font(RallyUIKit.Typography.title(.title3, weight: .bold))
                     .foregroundStyle(RallyUIKit.Palette.frost)
-                Text("\(count) curated pieces")
+                Text("\(count) style-led picks")
                     .font(RallyUIKit.Typography.body(.caption, weight: .semibold))
                     .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.74))
             }
@@ -365,7 +352,7 @@ struct ShopView: View {
                     Text(vendor.displayName)
                         .font(RallyUIKit.Typography.title(.title3, weight: .bold))
                         .foregroundStyle(RallyUIKit.Palette.frost)
-                    Text("\(count) pieces live now")
+                    Text(vendorSubhead(vendor, count: count))
                         .font(RallyUIKit.Typography.body(.caption, weight: .semibold))
                         .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.72))
                 }
@@ -465,6 +452,12 @@ struct ShopView: View {
                     .font(RallyUIKit.Typography.body(.caption, weight: .semibold))
                     .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.78))
                     .lineLimit(2)
+
+                Text(editorialLine(for: item))
+                    .font(RallyUIKit.Typography.label(.caption2, weight: .bold))
+                    .tracking(0.9)
+                    .foregroundStyle(accent.opacity(0.95))
+                    .lineLimit(1)
             }
 
             Spacer(minLength: 8)
@@ -554,10 +547,20 @@ struct ShopView: View {
         if let racketProfile = ShopCatalog.racketProfile(id: item.id) {
             return "\(racketProfile.performanceFocus) • \(racketProfile.headSizeSqIn) sq in • \(racketProfile.weightGrams) g"
         }
-        if let vendor = ShopCatalog.vendor(id: item.vendorID)?.displayName {
-            return "\(item.category.displayName) • \(vendor)"
+
+        switch item.vendorID {
+        case "newbalance":
+            return "Clean tournament layer"
+        case "nike":
+            return "Match-ready contrast"
+        case "wilson":
+            return "Hero frame for big points"
+        default:
+            if let vendor = ShopCatalog.vendor(id: item.vendorID)?.displayName {
+                return "\(item.category.displayName) • \(vendor)"
+            }
+            return item.category.displayName
         }
-        return item.category.displayName
     }
 
     private func categoryTint(_ category: ShopItem.Category) -> Color {
@@ -582,33 +585,32 @@ struct ShopView: View {
         }
     }
 
-    private func featuredEditCard(
-        title: String,
-        subtitle: String,
-        body: String,
-        tint: Color,
-        items: [ShopItem]
-    ) -> some View {
-        RallyUIKit.SectionCard(stroke: tint.opacity(0.26)) {
+    private func featuredEditCard(edit: ShopEditorialEdit, items: [ShopItem]) -> some View {
+        let tint = edit.tintColor
+
+        return RallyUIKit.SectionCard(stroke: tint.opacity(0.26)) {
             VStack(alignment: .leading, spacing: RallyUIKit.Spacing.md) {
-                apparelMoodBoard(items: items, tint: tint)
+                editorialMoodBoard(edit: edit, items: items, tint: tint)
 
                 VStack(alignment: .leading, spacing: 6) {
-                    Text(title)
+                    Text(edit.eyebrow.uppercased())
+                        .font(RallyUIKit.Typography.label(.caption2, weight: .bold))
+                        .tracking(1.5)
+                        .foregroundStyle(tint.opacity(0.92))
+                    Text(edit.title)
                         .font(RallyUIKit.Typography.title(.headline, weight: .bold))
                         .foregroundStyle(RallyUIKit.Palette.frost)
-                    Text(subtitle.uppercased())
-                        .font(RallyUIKit.Typography.label(.caption2, weight: .bold))
-                        .tracking(1.4)
-                        .foregroundStyle(tint.opacity(0.92))
-                    Text(body)
+                    Text(edit.subtitle)
+                        .font(RallyUIKit.Typography.body(.subheadline, weight: .semibold))
+                        .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.86))
+                    Text(edit.body)
                         .font(RallyUIKit.Typography.body(.caption, weight: .medium))
                         .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.72))
                         .fixedSize(horizontal: false, vertical: true)
                 }
 
                 VStack(spacing: 10) {
-                    ForEach(items.prefix(3)) { item in
+                    ForEach(items.prefix(edit.vendorID == "wilson" ? 1 : 3)) { item in
                         shopRow(item)
                     }
                 }
@@ -617,7 +619,7 @@ struct ShopView: View {
         .frame(width: 328)
     }
 
-    private func apparelMoodBoard(items: [ShopItem], tint: Color) -> some View {
+    private func editorialMoodBoard(edit: ShopEditorialEdit, items: [ShopItem], tint: Color) -> some View {
         ZStack {
             RoundedRectangle(cornerRadius: RallyUIKit.Radius.lg)
                 .fill(
@@ -638,21 +640,34 @@ struct ShopView: View {
                 .blur(radius: 28)
                 .offset(x: 94, y: -26)
 
-            HStack(alignment: .bottom, spacing: 14) {
-                if let top = items.first(where: { $0.category == .top }) {
-                    apparelSwatch(top, width: 88, height: 102)
-                        .offset(y: -10)
+            VStack(alignment: .leading, spacing: 14) {
+                HStack {
+                    detailPill(edit.vendorID == "wilson" ? "Racket first" : "Outfit edit", tint: tint)
+                    Spacer()
+                    Text(edit.vendorID == "wilson" ? "01" : "03")
+                        .font(RallyUIKit.Typography.label(.caption2, weight: .bold))
+                        .tracking(1.2)
+                        .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.58))
                 }
-                if let bottom = items.first(where: { $0.category == .bottom }) {
-                    apparelSwatch(bottom, width: 84, height: 78)
-                }
-                if let shoes = items.first(where: { $0.category == .shoes }) {
-                    apparelSwatch(shoes, width: 92, height: 68)
-                        .offset(y: 6)
+
+                HStack(alignment: .bottom, spacing: 14) {
+                    if let top = items.first(where: { $0.category == .top }) {
+                        apparelSwatch(top, width: 88, height: 102)
+                            .offset(y: -10)
+                    }
+                    if let bottom = items.first(where: { $0.category == .bottom }) {
+                        apparelSwatch(bottom, width: 84, height: 78)
+                    }
+                    if let shoes = items.first(where: { $0.category == .shoes }) {
+                        apparelSwatch(shoes, width: 92, height: 68)
+                            .offset(y: 6)
+                    }
+                    if let racket = items.first(where: { $0.category == .racket }) {
+                        apparelSwatch(racket, width: 228, height: 120)
+                    }
                 }
             }
-            .padding(.horizontal, 18)
-            .padding(.bottom, 14)
+            .padding(18)
         }
         .frame(height: 188)
         .clipShape(RoundedRectangle(cornerRadius: RallyUIKit.Radius.lg))
@@ -687,6 +702,83 @@ struct ShopView: View {
         }
         .frame(width: width, height: height)
         .shadow(color: accent.opacity(0.14), radius: 16, x: 0, y: 10)
+    }
+
+    private func heroChip(_ label: String, tint: Color) -> some View {
+        Text(label)
+            .font(RallyUIKit.Typography.label(.caption, weight: .bold))
+            .foregroundStyle(RallyUIKit.Palette.frost)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 7)
+            .background(Capsule().fill(tint.opacity(0.12)))
+            .overlay(Capsule().stroke(tint.opacity(0.22), lineWidth: 1))
+    }
+
+    private func detailPill(_ text: String, tint: Color) -> some View {
+        Text(text.uppercased())
+            .font(RallyUIKit.Typography.label(.caption2, weight: .bold))
+            .tracking(1.4)
+            .foregroundStyle(RallyUIKit.Palette.frost)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 7)
+            .background(Capsule().fill(tint.opacity(0.12)))
+            .overlay(Capsule().stroke(tint.opacity(0.2), lineWidth: 1))
+    }
+
+    private func desirabilityScore(for item: ShopItem) -> Int {
+        let vendorWeight: Int
+        switch item.vendorID {
+        case "newbalance": vendorWeight = 400
+        case "nike": vendorWeight = 320
+        case "wilson": vendorWeight = 280
+        default: vendorWeight = 100
+        }
+
+        let categoryWeight: Int
+        switch item.category {
+        case .top: categoryWeight = 60
+        case .bottom: categoryWeight = 50
+        case .shoes: categoryWeight = 40
+        case .racket: categoryWeight = 55
+        case .bag: categoryWeight = 20
+        case .accessory: categoryWeight = 10
+        }
+
+        return vendorWeight + categoryWeight + Int(item.priceUSD)
+    }
+
+    private func editorialLine(for item: ShopItem) -> String {
+        switch item.id {
+        case "newbalance.tournament.tank.white":
+            return "FOUNDATION PIECE"
+        case "newbalance.tournament.skort.white":
+            return "CLEAN FINISH"
+        case "newbalance.coco.cg2.sea.salt":
+            return "COCO CG2 HERO"
+        case "nike.dri-fit.tee.cobalt":
+            return "NIGHT-SESSION TOP"
+        case "nike.court.short.black":
+            return "MATCH-DAY BASE"
+        case "nike.vapor.pro.white":
+            return "FAST FINISH"
+        case "wilson.pro.staff.97":
+            return "CENTER-COURT FRAME"
+        default:
+            return "CURATED PICK"
+        }
+    }
+
+    private func vendorSubhead(_ vendor: Vendor, count: Int) -> String {
+        switch vendor.id {
+        case "newbalance":
+            return "\(count) crisp whites and elevated court pieces"
+        case "nike":
+            return "\(count) sharper match-day layers"
+        case "wilson":
+            return "\(count) premium frames and hero gear"
+        default:
+            return "\(count) pieces live now"
+        }
     }
 
     private func travelFact(_ label: String, tint: Color) -> some View {
@@ -767,11 +859,11 @@ private struct FloatingKitHeroCard: View {
                 Spacer()
                 HStack {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("Rally Whites")
+                        Text("EDITORIAL FLOOR")
                             .font(RallyUIKit.Typography.label(.caption, weight: .bold))
                             .tracking(2)
                             .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.72))
-                        Text("Floating edit")
+                        Text("Sibling-ready shop edit")
                             .font(RallyUIKit.Typography.body(.subheadline, weight: .semibold))
                             .foregroundStyle(RallyUIKit.Palette.frost)
                     }
@@ -825,7 +917,7 @@ private struct FloatingKitStageOverlay: View {
                 colors: [
                     Color.clear,
                     accent.opacity(0.08),
-                    RallyUIKit.Palette.champagne.opacity(0.06)
+                    RallyUIKit.Palette.cyan.opacity(0.06)
                 ],
                 startPoint: .top,
                 endPoint: .bottom
@@ -841,13 +933,13 @@ private struct FloatingKitStageOverlay: View {
                         LinearGradient(
                             colors: [
                                 Color.white.opacity(0.02),
-                                accent.opacity(0.07)
+                                accent.opacity(0.08)
                             ],
                             startPoint: .top,
                             endPoint: .bottom
                         )
                     )
-                    .frame(height: 110)
+                    .frame(height: 104)
             }
 
             RoundedRectangle(cornerRadius: 26)
@@ -870,98 +962,67 @@ private struct FloatingKitStageOverlay: View {
 
 private struct FloatingKitTop: View {
     var body: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 24)
-                .fill(
-                    LinearGradient(
-                        colors: [
-                            Color.white,
-                            Color(red: 0.95, green: 0.96, blue: 0.98),
-                            Color(red: 0.88, green: 0.90, blue: 0.94)
-                        ],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
+        RoundedRectangle(cornerRadius: 26)
+            .fill(
+                LinearGradient(
+                    colors: [
+                        Color.white.opacity(0.98),
+                        RallyUIKit.Palette.champagne.opacity(0.84),
+                        Color(red: 0.85, green: 0.87, blue: 0.9)
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
                 )
-                .frame(width: 124, height: 112)
-
-            HStack(spacing: 0) {
-                RoundedRectangle(cornerRadius: 22)
-                    .fill(Color.white.opacity(0.96))
-                    .frame(width: 28, height: 76)
-                    .rotationEffect(.degrees(22))
-                    .offset(x: 3, y: -6)
-
-                Spacer()
-
-                RoundedRectangle(cornerRadius: 22)
-                    .fill(Color.white.opacity(0.96))
-                    .frame(width: 28, height: 76)
-                    .rotationEffect(.degrees(-22))
-                    .offset(x: -3, y: -6)
+            )
+            .frame(width: 118, height: 118)
+            .overlay(
+                RoundedRectangle(cornerRadius: 26)
+                    .stroke(Color.white.opacity(0.34), lineWidth: 1)
+            )
+            .overlay(alignment: .top) {
+                RoundedRectangle(cornerRadius: 10)
+                    .fill(Color.white.opacity(0.66))
+                    .frame(width: 58, height: 16)
+                    .offset(y: -8)
             }
-            .frame(width: 170)
-
-            VStack(spacing: 0) {
+            .overlay(alignment: .bottom) {
                 Capsule()
-                    .fill(RallyUIKit.Palette.ink.opacity(0.94))
-                    .frame(width: 42, height: 18)
-                    .offset(y: -14)
-
-                Spacer()
+                    .fill(Color(red: 0.62, green: 0.68, blue: 0.74).opacity(0.85))
+                    .frame(width: 76, height: 10)
+                    .offset(y: 10)
             }
-            .frame(height: 112)
-
-            RoundedRectangle(cornerRadius: 20)
-                .stroke(Color.white.opacity(0.78), lineWidth: 1.3)
-                .frame(width: 124, height: 112)
-
-            Capsule()
-                .fill(RallyUIKit.Palette.champagne.opacity(0.78))
-                .frame(width: 54, height: 3)
-                .offset(y: 18)
-        }
     }
 }
 
 private struct FloatingKitSkirt: View {
     var body: some View {
         ZStack {
-            ForEach(0..<6, id: \.self) { index in
-                RoundedRectangle(cornerRadius: 14)
-                    .fill(
-                        LinearGradient(
-                            colors: [
-                                Color.white,
-                                Color(red: 0.92, green: 0.94, blue: 0.97)
-                            ],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-                    )
-                    .frame(width: 24, height: 88)
-                    .rotationEffect(.degrees(Double(index - 3) * 5.6))
-                    .offset(x: CGFloat(index - 2) * 16, y: 6)
-            }
-
-            RoundedRectangle(cornerRadius: 12)
-                .fill(RallyUIKit.Palette.ink.opacity(0.96))
-                .frame(width: 104, height: 16)
-                .offset(y: -34)
-
-            RoundedRectangle(cornerRadius: 18)
-                .stroke(Color.white.opacity(0.82), lineWidth: 1.2)
-                .frame(width: 132, height: 98)
-                .clipShape(
-                    UnevenRoundedRectangle(
-                        topLeadingRadius: 16,
-                        bottomLeadingRadius: 28,
-                        bottomTrailingRadius: 28,
-                        topTrailingRadius: 16
+            RoundedRectangle(cornerRadius: 22)
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            Color.white.opacity(0.98),
+                            Color(red: 0.93, green: 0.94, blue: 0.96),
+                            RallyUIKit.Palette.champagne.opacity(0.72)
+                        ],
+                        startPoint: .top,
+                        endPoint: .bottom
                     )
                 )
-                .opacity(0.18)
+                .frame(width: 136, height: 82)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 22)
+                        .stroke(Color.white.opacity(0.34), lineWidth: 1)
+                )
+
+            HStack(spacing: 8) {
+                ForEach(0..<4, id: \.self) { _ in
+                    Capsule()
+                        .fill(Color.white.opacity(0.7))
+                        .frame(width: 18, height: 54)
+                }
+            }
+            .offset(y: 6)
         }
-        .frame(width: 152, height: 104)
     }
 }
