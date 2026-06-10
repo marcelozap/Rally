@@ -178,7 +178,7 @@ struct LockerHubView: View {
                     .font(RallyUIKit.Typography.title(.title3, weight: .bold))
                 Spacer(minLength: 0)
             }
-            .foregroundStyle(RallyUIKit.Palette.obsidian)
+            .foregroundStyle(Color.white)
             .frame(maxWidth: .infinity, minHeight: 58)
             .padding(.horizontal, 18)
                 .background(
@@ -396,7 +396,7 @@ struct LockerHubView: View {
         .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .stroke(accent.opacity(0.14), lineWidth: 1)
+                .stroke(accent.opacity(0.28), lineWidth: 1)
         )
         .shadow(color: Color.black.opacity(0.18), radius: 12, y: 6)
     }
@@ -418,7 +418,7 @@ struct LockerHubView: View {
         Button(action: action) {
             Text(label)
                 .font(RallyUIKit.Typography.label(.caption, weight: .bold))
-                .foregroundStyle(selected ? RallyUIKit.Palette.obsidian : RallyUIKit.Palette.frost)
+                .foregroundStyle(selected ? Color.white : RallyUIKit.Palette.cloud.opacity(0.72))
                 .padding(.horizontal, 12)
                 .padding(.vertical, 9)
                 .background(
@@ -427,7 +427,7 @@ struct LockerHubView: View {
                 )
                 .overlay(
                     Capsule()
-                        .stroke(selected ? Color.clear : tint.opacity(0.2), lineWidth: 1)
+                        .stroke(selected ? tint : tint.opacity(0.22), lineWidth: 1)
                 )
         }
         .buttonStyle(.plain)
