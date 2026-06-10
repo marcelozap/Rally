@@ -27,9 +27,12 @@ enum Tunables {
     //    "oh no" moment. Coincides with the red flash, screen shake, and
     //    descending death tone.
 
-    static let frameStopPerfectMs: Double = 6
-    static let frameStopGreatMs:   Double = 3
-    static let frameStopGoodMs:    Double = 0
+    static let frameStopFrameMs: Double = 1000.0 / 60.0
+    static let frameStopHitFrames: Double = 3
+    static let frameStopPerfectFrames: Double = 5
+    static let frameStopPerfectMs: Double = frameStopFrameMs * frameStopPerfectFrames
+    static let frameStopGreatMs:   Double = frameStopFrameMs * frameStopHitFrames
+    static let frameStopGoodMs:    Double = frameStopFrameMs * frameStopHitFrames
     static let frameStopMissMs:    Double = 0
 
     /// Extended freeze on a combo break — the "you died" moment.
@@ -37,9 +40,9 @@ enum Tunables {
 
     // MARK: - Screen shake (in points, applied to the camera)
 
-    static let shakeAmplitudePerfect: CGFloat = 6
-    static let shakeAmplitudeGreat:   CGFloat = 3
-    static let shakeAmplitudeGood:    CGFloat = 1.5
+    static let shakeAmplitudePerfect: CGFloat = 11
+    static let shakeAmplitudeGreat:   CGFloat = 6.5
+    static let shakeAmplitudeGood:    CGFloat = 2.5
     static let shakeAmplitudeMiss:    CGFloat = 0
     static let shakeAmplitudeDeath:   CGFloat = 18    // The "Flappy hit"
 
@@ -48,37 +51,80 @@ enum Tunables {
 
     // MARK: - Visual feedback timing
 
-    static let hitBurstDurationMs:    Double = 300
-    static let perfectBurstDurationMs: Double = 450
+    static let hitBurstDurationMs:    Double = 430
+    static let perfectBurstDurationMs: Double = 640
     static let scoreTweenDurationMs:  Double = 220
     static let redFlashDurationMs:    Double = 380
     static let tierFlashDurationMs:   Double = 520
 
     // MARK: - Strike-line anticipation pulse
     //
-    // A short brighten + expand on the strike line, scheduled to start
-    // `strikePulseLeadMs` *before* a ball is due to land on it. The point
-    // is to convert the timing read from "judge depth-scale" to "match the
-    // pulse" — the same trick Beat Saber's saber-flash uses.
+    // A short brighten + expand on the strike line, scheduled so its rise
+    // peak lands `strikePulseLeadMs` before a ball is due to land on it.
 
-    /// How far ahead of the ball's arrival the pulse begins.
-    static let strikePulseLeadMs: Double = 120
+    /// How far ahead of the ball's arrival the pulse *peaks* — the Wii Tennis
+    /// "swing now" moment (~0.40–0.50 s before contact), not pulse onset.
+    static let strikePulseLeadMs: Double = 500
 
     /// Total pulse duration (rise + fall).
-    static let strikePulseDurationMs: Double = 180
+    static let strikePulseDurationMs: Double = 340
 
     /// Peak glow width during the pulse — additive over the strike line's
     /// resting glow.
-    static let strikePulseGlowWidth: CGFloat = 28
+    static let strikePulseGlowWidth: CGFloat = 50
 
     /// Peak alpha during the pulse, 0...1.
-    static let strikePulsePeakAlpha: CGFloat = 0.95
+    static let strikePulsePeakAlpha: CGFloat = 1.0
+    static let wallReadLabelLift: CGFloat = 54
+    static let wallFocusReadLabelLift: CGFloat = 98
+    static let wallAnticipationBarWidth: CGFloat = 186
+    static let wallAnticipationBarHeight: CGFloat = 24
+    /// Visual anticipation peak — bar fill and ring pulse target this lead
+    /// before wall contact (same 0.40–0.50 s swing-now window).
+    static let wallAnticipationLeadMs: Double = 520
+    static let wallReboundBandYRatio: CGFloat = 0.902
+    static let wallReboundCueDurationMs: Double = 260
+    static let wallContactRingRadius: CGFloat = 38
+    static let wallApproachWindowRatio: CGFloat = 0.50
+    static let wallSurfaceHeight: CGFloat = 20
+    static let wallSurfaceWidthRatio: CGFloat = 0.42
+    static let wallSurfaceYRatio: CGFloat = 0.902
+    static let wallTargetPanelWidthRatio: CGFloat = 0.20
+    static let wallTargetPanelHeight: CGFloat = 54
+    static let wallLaunchHoldProgress: CGFloat = 0.07
+    static let wallLaunchReleaseProgress: CGFloat = 0.19
+    static let wallCruiseProgress: CGFloat = 0.76
+    static let wallRacketCompressionCenter: CGFloat = 0.955
+    static let wallRacketCompressionWidth: CGFloat = 0.055
+    static let wallRacketCompressionAmount: CGFloat = 0.72
+    static let wallInboundLiftRatio: CGFloat = 0.006
+    static let wallInboundGravityRatio: CGFloat = 0.042
+    static let wallOutboundCompressionAmount: CGFloat = 0.82
+    static let wallOutboundDwellSeconds: Double = 0.028
+    static let wallOutboundCompressionSeconds: Double = 0.06
+    static let wallOutboundReleaseSeconds: Double = 0.082
+    static let wallOutboundReboundLiftRatio: CGFloat = 0.012
+    static let wallReturnExitSpeedScalar: CGFloat = 0.85
+    static let wallReturnAccelerationGain: CGFloat = 0.08
+    static let wallImpactMarkFadeSeconds: TimeInterval = 0.6
+    static let contactFlashRingDuration: TimeInterval = 0.15
+    static let contactSparkMinCount: Int = 6
+    static let contactSparkPerfectCount: Int = 10
+    static let racketContactApproachSeconds: Double = 0.038
+    static let racketContactDwellSeconds: Double = 0.024
+    static let racketContactReleaseSeconds: Double = 0.078
+    static let racketContactCompressionScaleX: CGFloat = 1.34
+    static let racketContactCompressionScaleY: CGFloat = 0.68
+    static let racketContactReleaseScaleX: CGFloat = 0.92
+    static let racketContactReleaseScaleY: CGFloat = 1.18
+    static let racketContactExitDistance: CGFloat = 34
+    static let racketStringFlexDistance: CGFloat = 9
 
     // MARK: - Haptic intensity (0...1)
 
     static let hapticPerfect: Float = 1.0
-    static let hapticGreat:   Float = 0.7
-    static let hapticGood:    Float = 0.4
+    static let hapticGreat:   Float = 0.90
+    static let hapticGood:    Float = 0.56
     static let hapticMiss:    Float = 0.3
     static let hapticDeath:   Float = 1.0
 
@@ -96,15 +142,15 @@ enum Tunables {
         // Per-hit "point" chime. Flappy used a quick high-pitched ding.
         static let pointFreqHz:     Double = 1320
         static let pointGlideHz:    Double = 1760
-        static let pointDurationMs: Double = 120
+        static let pointDurationMs: Double = 148
         static let pointWaveform:   ToneSynth.Waveform = .sine
 
         // Perfect-hit "thump" — closer to Flappy's hit.wav: a low percussive
         // bonk with a noisy attack.
         static let hitFreqHz:        Double = 220
         static let hitGlideHz:       Double = 110
-        static let hitDurationMs:    Double = 180
-        static let hitNoiseMix:      Float  = 0.35
+        static let hitDurationMs:    Double = 252
+        static let hitNoiseMix:      Float  = 0.42
         static let hitWaveform:      ToneSynth.Waveform = .triangle
 
         // Miss/swing — Flappy's wing.wav was a soft filtered whoosh.
@@ -130,19 +176,20 @@ enum Tunables {
         // Envelope shape (ADSR-ish, but compact for casual game SFX).
         static let attackMs:  Double = 4
         static let releaseMs: Double = 60
-        static let peakLevel: Float  = 0.85
+        static let peakLevel: Float  = 0.92
     }
 
     // MARK: - Ball physics / spawn
 
     static let ballRadiusPoints:      CGFloat = 22
-    static let ballTravelSeconds:     Double  = 1.4
+    static let ballTravelSeconds:     Double  = 1.52
     static let strikeLineYRatio:      CGFloat = 0.25
     static let spawnLineYRatio:       CGFloat = 1.05
     static let cullBelowStrikePoints: CGFloat = 40
     static let horizonLaneInsetRatio: CGFloat = 0.12
     static let strikeLaneInsetRatio:  CGFloat = 0.30
     static let ballSpawnScale:        CGFloat = 0.44
+    static let ballStrikeDiameterSceneWidthRatio: CGFloat = 0.055
     static let ballStrikeScale:       CGFloat = 1.14
     static let ballOverrunScale:      CGFloat = 1.28
     static let laneCurveAmount:       CGFloat = 0.08
@@ -187,7 +234,7 @@ enum Tunables {
     /// whether a ball is a legitimate target for the current swing. This is
     /// slightly wider than scoring itself so we prefer "you swung at the
     /// right ball but missed the timing" over "there was no target at all."
-    static let swingTargetSlackSeconds: Double = 0.045
+    static let swingTargetSlackSeconds: Double = 0.064
 
     /// Two notes with arrival times inside this threshold are treated as the
     /// same "double" exchange and can be cleared together.
@@ -202,11 +249,11 @@ enum Tunables {
     static let swingSliceDropPoints:   CGFloat = -28
     static let racketReachBasePoints:  CGFloat = 112
     static let racketReachFromSwingScalar: CGFloat = 0.14
-    static let racketSweetSpotRadius:  CGFloat = 34
-    static let racketOffCenterRadius:  CGFloat = 62
-    static let racketMissRadius:       CGFloat = 104
-    static let recoveryBaseSeconds:    Double = 0.22
-    static let recoveryStretchSeconds: Double = 0.42
+    static let racketSweetSpotRadius:  CGFloat = 44
+    static let racketOffCenterRadius:  CGFloat = 78
+    static let racketMissRadius:       CGFloat = 122
+    static let recoveryBaseSeconds:    Double = 0.25
+    static let recoveryStretchSeconds: Double = 0.18
     static let recoveryOppositeLanePenalty: CGFloat = 1.0
     static let recoverySameLanePenalty: CGFloat = 0.52
     static let recoveryReachPenalty:   CGFloat = 0.26
@@ -233,8 +280,35 @@ enum Tunables {
     static let tennisSpawnJitterX: CGFloat = 72
 
     /// Balls scale from this (far) toward `ballDepthScaleNear` as they approach.
-    static let ballDepthScaleFar:  CGFloat = 0.52
+    static let ballDepthScaleFar:  CGFloat = 0.55
     static let ballDepthScaleNear: CGFloat = 1.0
+    static let ballTrailMinSpeedScalar: CGFloat = 0.12
+    static let ballTrailMaxSpeedScalar: CGFloat = 1.0
+    static let ballShadowHighAlphaScalar: CGFloat = 0.42
+
+    // MARK: - In-game avatar motion
+
+    static let avatarBreathingPeriodSeconds: Double = 0.8
+    static let avatarBreathingScaleAmplitude: CGFloat = 0.02
+    static let avatarWeightShiftPoints: CGFloat = 8
+    static let avatarBackswingSeconds: Double = 0.10
+    static let avatarFollowThroughSeconds: Double = 0.18
+    static let avatarRecoverySeconds: Double = 0.25
+
+    /// Frames where pose interpolation is suppressed after a perfect/great hit.
+    /// Creates a visible "punch" pause that makes contact feel physical.
+    static let swingHitStopSeconds: Double = 0.054
+
+    /// Radius of the white radial burst spawned at the racket head on contact.
+    static let contactRacketBurstRadius: CGFloat = 18
+
+    /// Blend fraction applied to all pose targets during hit-stop (near-zero = frozen).
+    static let hitStopBlendFraction: CGFloat = 0.03
+
+    // MARK: - Timing popup
+
+    static let timingPopupDuration: TimeInterval = 0.50
+    static let timingPopupRise: CGFloat = 20
 
     // MARK: - Tennis ball feed (no rhythm chart)
 
@@ -252,8 +326,8 @@ enum Tunables {
     static let sessionTravelScalarEnd:   Double = 0.86
 
     /// Hit timing window: wider early, tighter late (see `HitQuality`).
-    static let sessionTimingWindowScalarStart: Double = 1.10
-    static let sessionTimingWindowEnd:          Double = 0.88
+    static let sessionTimingWindowScalarStart: Double = 1.24
+    static let sessionTimingWindowEnd:          Double = 0.92
 
     /// Music `phaseFloor` thresholds — fractions of session duration.
     static let sessionPhaseWarmUpCutoff:   Double = 0.14
