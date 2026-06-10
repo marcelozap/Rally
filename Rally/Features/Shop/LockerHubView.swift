@@ -1,90 +1,64 @@
 import SwiftUI
 import SwiftData
 
-/// Default landing: avatar stage, gear shop, and a hero **Play Now** CTA.
 struct LockerHubView: View {
     @EnvironmentObject private var auth: AuthSession
     @Query private var avatarConfigs: [AvatarConfig]
-    @Query private var progressRecords: [PlayerProgress]
 
     @State private var selectedCategory: ShopItem.Category? = nil
     @State private var groupByVendor: Bool = false
-    @State private var shopEmote: AvatarShopEmote = .shopLook
     @ObservedObject private var unlocks = CourtUnlocks.shared
 
     var onPlay: () -> Void
 
     private var avatar: AvatarConfig? { avatarConfigs.first }
-    private var progress: PlayerProgress? { progressRecords.first }
+
+    private var lockerTitle: String {
+        let raw = avatar?.playerName.trimmingCharacters(in: .whitespaces) ?? ""
+        return raw.isEmpty ? "Player" : raw
+    }
 
     private var equippedIDs: Set<String> {
         guard let a = avatar else { return [] }
         return Set([a.equippedTopID, a.equippedBottomID, a.equippedShoesID, a.equippedRacketID])
     }
 
-    private var editorialEdits: [ShopEditorialEdit] {
-        ShopCatalog.editorialEdits.filter { !filtered(ShopCatalog.editorialItems(for: $0)).isEmpty }
-    }
-
     var body: some View {
         NavigationStack {
             ZStack(alignment: .bottom) {
                 ScrollView {
-                    LazyVStack(spacing: 16, pinnedViews: [.sectionHeaders]) {
-                        if auth.isGuestMode {
-                            guestOfflineBanner
-                                .padding(.horizontal, 16)
-                        }
-
-                        if let avatar = avatar {
-                            if usesReferenceAvatarArt(avatar) {
-                                referenceAvatarPanel
-                                    .padding(.horizontal, 16)
-                                    .padding(.top, 4)
-                            } else {
-                                AvatarShopStageView(config: avatar, preview: nil, emote: $shopEmote)
-                                    .padding(.horizontal, 16)
-                                    .padding(.top, 4)
-                            }
-
-                            playerStrip
-                                .padding(.horizontal, 16)
-                        }
-
-                        featuredStyleRail
-                            .padding(.horizontal, 16)
-
-                        worldAtlasBridge
-                            .padding(.horizontal, 16)
+                    LazyVStack(spacing: RallyUIKit.Spacing.xl, pinnedViews: [.sectionHeaders]) {
+                        lockerHero
+                            .padding(.horizontal, RallyUIKit.Spacing.md)
+                            .padding(.top, 4)
 
                         categoryFilter
-                            .padding(.horizontal, 16)
+                            .padding(.horizontal, RallyUIKit.Spacing.md)
 
                         if groupByVendor {
                             ForEach(ShopCatalog.itemsGroupedByVendor(), id: \.0.id) { vendor, items in
-                                Section {
-                                    ForEach(filtered(items)) { item in
-                                        shopRow(item)
+                                let visible = filtered(items)
+                                if !visible.isEmpty {
+                                    Section {
+                                        lockerDesireGridContent(items: visible)
+                                    } header: {
+                                        vendorHeader(vendor)
                                     }
-                                } header: {
-                                    vendorHeader(vendor)
                                 }
                             }
-                            .padding(.horizontal, 16)
+                            .padding(.horizontal, RallyUIKit.Spacing.md)
                         } else {
                             ForEach(ShopItem.Category.allCases) { category in
                                 let items = filtered(ShopCatalog.items(in: category))
                                 if !items.isEmpty {
                                     Section {
-                                        ForEach(items) { item in
-                                            shopRow(item)
-                                        }
+                                        lockerDesireGridContent(items: items)
                                     } header: {
                                         categoryHeader(category)
                                     }
                                 }
                             }
-                            .padding(.horizontal, 16)
+                            .padding(.horizontal, RallyUIKit.Spacing.md)
                         }
                     }
                     .padding(.bottom, 120)
@@ -132,159 +106,93 @@ struct LockerHubView: View {
         }
     }
 
-    private var lockerTitle: String {
-        let raw = avatar?.playerName.trimmingCharacters(in: .whitespaces) ?? ""
-        return raw.isEmpty ? "Marcy" : raw
-    }
-
-    private func usesReferenceAvatarArt(_ avatar: AvatarConfig) -> Bool {
-        let raw = avatar.playerName.trimmingCharacters(in: .whitespacesAndNewlines)
-        return raw.isEmpty || raw.caseInsensitiveCompare("Marcy") == .orderedSame
-    }
-
-    private var referenceAvatarPanel: some View {
-        RallyUIKit.SectionCard(stroke: RallyUIKit.Palette.cyan.opacity(0.18)) {
-            ZStack(alignment: .bottomLeading) {
+    private var lockerHero: some View {
+        PremiumAvatarStageContainer(tone: .calm, accent: RallyUIKit.Palette.champagne, height: 176) {
+            ZStack {
                 LinearGradient(
                     colors: [
-                        RallyUIKit.Palette.ink,
-                        RallyUIKit.Palette.slate,
-                        Color.black
+                        RallyUIKit.Palette.obsidian.opacity(0.98),
+                        RallyUIKit.Palette.ink.opacity(0.94)
                     ],
-                    startPoint: .top,
-                    endPoint: .bottom
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
                 )
 
-                Image("MarcyAvatarReference")
-                    .resizable()
-                    .interpolation(.high)
-                    .scaledToFit()
-                    .padding(.horizontal, 22)
-                    .padding(.top, 12)
-                    .padding(.bottom, 8)
+                VStack(spacing: 0) {
+                    Spacer(minLength: 18)
 
-                VStack(alignment: .leading, spacing: 4) {
-                    RallyUIKit.EditorialEyebrow(text: "Profile look", tint: RallyUIKit.Palette.cyan)
-                    Text("Marcy")
-                        .font(RallyUIKit.Typography.title(.title3, weight: .bold))
-                        .foregroundStyle(RallyUIKit.Palette.frost)
-                    Text("Using your reference look while the live avatar model catches up.")
-                        .font(RallyUIKit.Typography.body(.caption, weight: .medium))
-                        .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.72))
+                    ZStack {
+                        Ellipse()
+                            .fill(RallyUIKit.Palette.champagne.opacity(0.12))
+                            .frame(width: 148, height: 42)
+                            .blur(radius: 16)
+
+                        RoundedRectangle(cornerRadius: 18, style: .continuous)
+                            .fill(
+                                LinearGradient(
+                                    colors: [
+                                        RallyUIKit.Palette.champagne.opacity(0.80),
+                                        RallyUIKit.Palette.gold.opacity(0.42)
+                                    ],
+                                    startPoint: .top,
+                                    endPoint: .bottom
+                                )
+                            )
+                            .frame(width: 168, height: 56)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                                    .stroke(Color.white.opacity(0.12), lineWidth: 1)
+                            )
+                            .overlay {
+                                HStack(spacing: 16) {
+                                    Image(systemName: "shoe.fill")
+                                    Image(systemName: "tshirt.fill")
+                                    Image(systemName: "rectangle.fill")
+                                }
+                                .font(.system(size: 19, weight: .bold))
+                                .foregroundStyle(.white.opacity(0.92))
+                            }
+                    }
+
+                    Spacer(minLength: 14)
+
+                    HStack {
+                        Text("Locker")
+                            .font(RallyUIKit.Typography.title(.headline, weight: .bold))
+                            .foregroundStyle(RallyUIKit.Palette.frost)
+                        Spacer()
+                    }
+                    .padding(.horizontal, 18)
+                    .padding(.bottom, 16)
                 }
-                .padding(18)
             }
-            .frame(height: 360)
-            .clipShape(RoundedRectangle(cornerRadius: RallyUIKit.Radius.xl))
         }
     }
-
-    // MARK: - Play CTA
 
     private var playNowButton: some View {
         Button(action: onPlay) {
-            HStack(spacing: 12) {
-                RallyUIKit.IconBadge(systemName: "tennis.racket", tint: RallyUIKit.Palette.obsidian, size: 44)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Play now")
-                        .font(RallyUIKit.Typography.title(.title3, weight: .bold))
-                    Text("Wall rally · loadout ready")
-                        .font(RallyUIKit.Typography.body(.caption, weight: .medium))
-                        .opacity(0.85)
-                }
+            HStack(spacing: 10) {
+                Image(systemName: "play.fill")
+                    .font(.title3.weight(.bold))
+                Text("Play")
+                    .font(RallyUIKit.Typography.title(.title3, weight: .bold))
                 Spacer(minLength: 0)
-                Image(systemName: "arrow.right.circle.fill")
-                    .font(.title2)
             }
             .foregroundStyle(RallyUIKit.Palette.obsidian)
-            .frame(maxWidth: .infinity, minHeight: 72, alignment: .leading)
+            .frame(maxWidth: .infinity, minHeight: 58)
             .padding(.horizontal, 18)
-            .padding(.vertical, 14)
-            .background(
-                RoundedRectangle(cornerRadius: RallyUIKit.Radius.xl, style: .continuous)
-                    .fill(RallyUIKit.accentGradient(RallyUIKit.Palette.cyan))
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: RallyUIKit.Radius.xl, style: .continuous)
-                    .stroke(Color.white.opacity(0.35), lineWidth: 1)
-            )
-            .shadow(color: RallyUIKit.Palette.cyan.opacity(0.36), radius: 18, y: 8)
+                .background(
+                    RoundedRectangle(cornerRadius: RallyUIKit.Radius.xl, style: .continuous)
+                        .fill(RallyUIKit.accentGradient(RallyUIKit.Palette.cyan))
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: RallyUIKit.Radius.xl, style: .continuous)
+                        .stroke(Color.white.opacity(0.30), lineWidth: 1)
+                )
+                .shadow(color: RallyUIKit.Palette.cyan.opacity(0.32), radius: 16, y: 6)
         }
         .buttonStyle(PlayNowButtonStyle())
-        .contentShape(RoundedRectangle(cornerRadius: RallyUIKit.Radius.xl, style: .continuous))
-    }
-
-    // MARK: - Player strip
-
-    @ViewBuilder
-    private var playerStrip: some View {
-        if let p = progress {
-            RallyUIKit.SectionCard(stroke: RallyUIKit.Palette.cyan.opacity(0.18)) {
-                HStack(spacing: 14) {
-                    ZStack {
-                        Circle()
-                            .fill(RallyUIKit.accentGradient(RallyUIKit.Palette.cyan))
-                            .frame(width: 42, height: 42)
-                        Text("\(p.level)")
-                            .font(RallyUIKit.Typography.label(.headline, weight: .bold))
-                            .foregroundStyle(RallyUIKit.Palette.obsidian)
-                    }
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text("Level \(p.level)")
-                            .font(RallyUIKit.Typography.body(.subheadline, weight: .bold))
-                            .foregroundStyle(RallyUIKit.Palette.frost)
-                        GeometryReader { geo in
-                            ZStack(alignment: .leading) {
-                                Capsule().fill(Color.white.opacity(0.08))
-                                Capsule()
-                                    .fill(
-                                        LinearGradient(
-                                            colors: [RallyUIKit.Palette.cyan, RallyUIKit.Palette.rose],
-                                            startPoint: .leading,
-                                            endPoint: .trailing
-                                        )
-                                    )
-                                    .frame(width: geo.size.width * CGFloat(max(0.02, p.levelProgress)))
-                            }
-                        }
-                        .frame(height: 4)
-                    }
-                    Spacer()
-                    statPill("\(p.coins)", icon: "circle.hexagongrid.fill", tint: RallyUIKit.Palette.gold)
-                    statPill("\(p.bestScore)", icon: "star.fill", tint: RallyUIKit.Palette.cyan)
-                }
-            }
-        }
-    }
-
-    private func statPill(_ value: String, icon: String, tint: Color) -> some View {
-        HStack(spacing: 4) {
-            Image(systemName: icon)
-                .font(.caption2)
-                .foregroundStyle(tint)
-            Text(value)
-                .font(RallyUIKit.Typography.label(.caption, weight: .bold))
-                .foregroundStyle(RallyUIKit.Palette.frost)
-        }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 6)
-        .background(Capsule().fill(tint.opacity(0.12)))
-        .overlay(Capsule().stroke(tint.opacity(0.18), lineWidth: 1))
-    }
-
-    private var guestOfflineBanner: some View {
-        HStack(alignment: .top, spacing: 12) {
-            Image(systemName: "icloud.slash")
-                .font(.title3)
-                .foregroundStyle(RallyUIKit.Palette.gold)
-            Text("You're browsing offline for now. Everything stays on this device until you sign in and sync.")
-                .font(RallyUIKit.Typography.body(.caption, weight: .medium))
-                .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.72))
-                .fixedSize(horizontal: false, vertical: true)
-        }
-        .padding(12)
-        .background(RoundedRectangle(cornerRadius: RallyUIKit.Radius.md).fill(RallyUIKit.Palette.gold.opacity(0.12)))
-        .overlay(RoundedRectangle(cornerRadius: RallyUIKit.Radius.md).stroke(RallyUIKit.Palette.gold.opacity(0.28), lineWidth: 1))
+        .accessibilityLabel("Play")
     }
 
     private var accountMenu: some View {
@@ -299,76 +207,11 @@ struct LockerHubView: View {
                 auth.logout()
             }
         } label: {
-            Image(systemName: "person.text.rectangle")
+            Image(systemName: auth.isGuestMode ? "icloud.slash" : "person.text.rectangle")
                 .font(.body.weight(.semibold))
                 .foregroundStyle(RallyUIKit.Palette.cyan)
         }
         .accessibilityLabel("Account")
-    }
-
-    private var featuredStyleRail: some View {
-        RallyUIKit.SectionCard(stroke: RallyUIKit.Palette.champagne.opacity(0.18)) {
-            VStack(alignment: .leading, spacing: 12) {
-                HStack(spacing: 10) {
-                    RallyUIKit.IconBadge(systemName: "sparkles", tint: RallyUIKit.Palette.champagne, size: 30)
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text("Style edits")
-                            .font(RallyUIKit.Typography.body(.headline, weight: .bold))
-                            .foregroundStyle(RallyUIKit.Palette.frost)
-                        Text("Lead with New Balance, Nike, and Wilson instead of a flat catalog.")
-                            .font(RallyUIKit.Typography.body(.caption, weight: .medium))
-                            .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.62))
-                    }
-                }
-
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 12) {
-                        ForEach(editorialEdits) { edit in
-                            lockerStyleCard(edit: edit, items: filtered(ShopCatalog.editorialItems(for: edit)))
-                        }
-                    }
-                    .padding(.horizontal, 2)
-                }
-                .scrollClipDisabled()
-            }
-        }
-    }
-
-    private var worldAtlasBridge: some View {
-        NavigationLink {
-            CourtsMapView()
-        } label: {
-            RallyUIKit.LuxePanel(tint: RallyUIKit.Palette.lime) {
-                VStack(alignment: .leading, spacing: 12) {
-                    HStack(alignment: .top, spacing: 12) {
-                        VStack(alignment: .leading, spacing: 4) {
-                            RallyUIKit.EditorialEyebrow(text: "Travel next", tint: RallyUIKit.Palette.lime)
-                            Text("Courts and camps around the world")
-                                .font(RallyUIKit.Typography.title(.title3, weight: .bold))
-                                .foregroundStyle(RallyUIKit.Palette.frost)
-                            Text("After the kit comes the destination: iconic venues, global camps, and official booking or enrollment links only.")
-                                .font(RallyUIKit.Typography.body(.caption, weight: .medium))
-                                .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.76))
-                        }
-
-                        Spacer(minLength: 8)
-
-                        RallyUIKit.IconBadge(
-                            systemName: "globe.europe.africa.fill",
-                            tint: RallyUIKit.Palette.lime,
-                            size: 36
-                        )
-                    }
-
-                    HStack(spacing: 8) {
-                        hubChip("Venues", tint: RallyUIKit.Palette.cyan)
-                        hubChip("Camps", tint: RallyUIKit.Palette.gold)
-                        hubChip("Official links", tint: RallyUIKit.Palette.rose)
-                    }
-                }
-            }
-        }
-        .buttonStyle(.plain)
     }
 
     // MARK: - Shop rows (from ShopView)
@@ -379,284 +222,316 @@ struct LockerHubView: View {
             unlockedCourtIDs: unlocks.unlockedCourtIDs,
             equippedIDs: equippedIDs
         )
-        let scoped = selectedCategory == nil ? visible : visible.filter { $0.category == selectedCategory }
+        let owned = visible.filter { isOwned($0) }
+        let scoped = selectedCategory == nil ? owned : owned.filter { $0.category == selectedCategory }
         return scoped.sorted { desirabilityScore(for: $0) > desirabilityScore(for: $1) }
     }
 
+    private func isOwned(_ item: ShopItem) -> Bool {
+        if equippedIDs.contains(item.id) { return true }
+        if item.priceUSD == 0 { return true }
+        if ShopCatalog.courtGatedItemIDs.contains(item.id) {
+            let unlockedItemIDs = Set(
+                unlocks.unlockedCourtIDs.compactMap { ShopCatalog.courtUnlockToShopItem[$0] }
+            )
+            return unlockedItemIDs.contains(item.id)
+        }
+        return false
+    }
+
     private var categoryFilter: some View {
-        RallyUIKit.SectionCard(stroke: RallyUIKit.Palette.line) {
-            VStack(alignment: .leading, spacing: RallyUIKit.Spacing.md) {
-                HStack(alignment: .center, spacing: RallyUIKit.Spacing.md) {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Edit the floor")
-                            .font(RallyUIKit.Typography.title(.headline, weight: .bold))
-                            .foregroundStyle(RallyUIKit.Palette.frost)
-                        Text(groupByVendor ? "Grouped by brand partner" : "Grouped by wardrobe layer")
-                            .font(RallyUIKit.Typography.body(.caption, weight: .semibold))
-                            .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.82))
+        VStack(alignment: .leading, spacing: 8) {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    lockerFilterChip(label: "All", selected: selectedCategory == nil, tint: RallyUIKit.Palette.champagne) {
+                        selectedCategory = nil
                     }
-
-                    Spacer()
-
-                    Button {
-                        groupByVendor.toggle()
-                    } label: {
-                        HStack(spacing: RallyUIKit.Spacing.xs) {
-                            Image(systemName: groupByVendor ? "person.2.fill" : "square.grid.2x2.fill")
-                            Text(groupByVendor ? "Brands" : "Categories")
+                    ForEach(ShopItem.Category.allCases) { c in
+                        lockerFilterChip(label: c.displayName, selected: selectedCategory == c, tint: categoryTint(c)) {
+                            selectedCategory = (selectedCategory == c) ? nil : c
                         }
                     }
-                    .buttonStyle(SecondaryButtonStyle(tint: groupByVendor ? RallyUIKit.Palette.rose : RallyUIKit.Palette.cyan))
                 }
-
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: RallyUIKit.Spacing.xs) {
-                        lockerFilterChip(label: "All gear", selected: selectedCategory == nil, tint: RallyUIKit.Palette.champagne) {
-                            selectedCategory = nil
-                        }
-                        ForEach(ShopItem.Category.allCases) { c in
-                            lockerFilterChip(label: c.displayName, selected: selectedCategory == c, tint: categoryTint(c)) {
-                                selectedCategory = (selectedCategory == c) ? nil : c
-                            }
-                        }
-                    }
-                    .padding(.horizontal, 2)
-                }
+                .padding(.horizontal, 2)
             }
+            .scrollClipDisabled()
         }
     }
 
     private func categoryHeader(_ category: ShopItem.Category) -> some View {
-        HStack(spacing: RallyUIKit.Spacing.sm) {
-            RallyUIKit.IconBadge(systemName: category.iconSystemName, tint: categoryTint(category), size: 34)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(category.displayName)
-                    .font(RallyUIKit.Typography.title(.title3, weight: .bold))
-                    .foregroundStyle(RallyUIKit.Palette.frost)
-                Text("\(filtered(ShopCatalog.items(in: category)).count) style-led picks")
-                    .font(RallyUIKit.Typography.body(.caption, weight: .semibold))
-                    .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.72))
-            }
+        HStack(spacing: 10) {
+            RallyUIKit.IconBadge(systemName: category.iconSystemName, tint: categoryTint(category), size: 26)
+            Text(category.displayName)
+                .font(RallyUIKit.Typography.title(.headline, weight: .bold))
+                .foregroundStyle(RallyUIKit.Palette.frost)
             Spacer()
         }
-        .padding(.vertical, RallyUIKit.Spacing.xs)
-        .background(RallyUIKit.Palette.ink)
+        .padding(.horizontal, 4)
+        .padding(.vertical, 8)
     }
 
     private func vendorHeader(_ vendor: Vendor) -> some View {
-        VStack(alignment: .leading, spacing: RallyUIKit.Spacing.xs) {
-            HStack {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(vendor.displayName)
-                        .font(RallyUIKit.Typography.title(.title3, weight: .bold))
-                        .foregroundStyle(RallyUIKit.Palette.frost)
-                    Text(vendorSubhead(vendor, count: filtered(ShopCatalog.itemsGroupedByVendor().first(where: { $0.0.id == vendor.id })?.1 ?? []).count))
-                        .font(RallyUIKit.Typography.body(.caption, weight: .semibold))
-                        .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.72))
-                }
-                Spacer()
-                Link(destination: vendor.websiteURL) {
-                    HStack(spacing: 4) {
-                        Text("Store")
-                        Image(systemName: "arrow.up.right.square")
-                    }
-                    .font(RallyUIKit.Typography.label(.caption, weight: .semibold))
-                    .foregroundStyle(RallyUIKit.Palette.cyan)
-                }
-            }
-            if let loyalty = vendor.loyaltyProgramURL {
-                Link(destination: loyalty) {
-                    HStack(spacing: 6) {
-                        Image(systemName: "gift.circle.fill")
-                            .foregroundStyle(RallyUIKit.Palette.gold)
-                        Text("Official member / referral hub")
-                            .font(RallyUIKit.Typography.label(.caption, weight: .semibold))
-                            .foregroundStyle(RallyUIKit.Palette.champagne)
-                        Spacer()
-                        Image(systemName: "arrow.up.right")
-                            .font(.caption2)
-                            .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.5))
-                    }
-                }
+        HStack(spacing: 8) {
+            Circle()
+                .fill(vendorTint(vendor.id))
+                .frame(width: 8, height: 8)
+            Text(vendor.displayName)
+                .font(RallyUIKit.Typography.title(.subheadline, weight: .bold))
+                .foregroundStyle(RallyUIKit.Palette.frost)
+            Spacer()
+            Button {
+                RallyReferralLinkRouter.shared.openVenueLink(vendor.websiteURL, venueName: vendor.displayName)
+            } label: {
+                Image(systemName: "arrow.up.right")
+                    .font(.caption2.weight(.bold))
+                    .foregroundStyle(RallyUIKit.Palette.cyan.opacity(0.7))
             }
         }
-        .padding(.vertical, RallyUIKit.Spacing.xs)
-        .background(RallyUIKit.Palette.ink)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+        .background(RoundedRectangle(cornerRadius: 18).fill(Color.white.opacity(0.04)))
     }
 
-    private func shopRow(_ item: ShopItem) -> some View {
+    private func vendorTint(_ vendorID: String) -> Color {
+        switch vendorID {
+        case "newbalance": return RallyUIKit.Palette.champagne
+        case "nike": return RallyUIKit.Palette.cyan
+        case "wilson": return RallyUIKit.Palette.gold
+        default: return RallyUIKit.Palette.cloud
+        }
+    }
+
+    private func lockerDesireGridContent(items: [ShopItem]) -> some View {
+        LazyVGrid(
+            columns: [
+                GridItem(.flexible(), spacing: 12),
+                GridItem(.flexible(), spacing: 12)
+            ],
+            spacing: 18
+        ) {
+            ForEach(items) { item in
+                lockerDesireTile(item)
+            }
+        }
+        .padding(.vertical, 4)
+    }
+
+    @ViewBuilder
+    private func lockerDesireTile(_ item: ShopItem) -> some View {
+        let accent = item.accentColor ?? categoryTint(item.category)
+
         Group {
             if let avatar {
                 NavigationLink {
-                    ShopItemDetailView(item: item, avatar: avatar)
+                    ShopItemDetailView(item: item, avatar: avatar, context: .locker)
                 } label: {
-                    shopRowLabel(item)
+                    lockerDesireTileContent(item, accent: accent)
                 }
-                .buttonStyle(.plain)
             } else {
-                shopRowLabel(item)
+                lockerDesireTileContent(item, accent: accent)
             }
         }
+        .buttonStyle(.plain)
     }
 
-    private func shopRowLabel(_ item: ShopItem) -> some View {
-        let accent = item.accentColor ?? categoryTint(item.category)
+    private func lockerDesireTileContent(_ item: ShopItem, accent: Color) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            ZStack(alignment: .topLeading) {
+                RoundedRectangle(cornerRadius: 24, style: .continuous)
+                    .fill(lockerTileGradient(accent: accent, itemColor: item.color))
+                    .frame(height: 236)
 
-        return HStack(spacing: 14) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 18)
-                    .fill(
-                        LinearGradient(
-                            colors: [
-                                item.color.opacity(0.95),
-                                accent.opacity(0.76),
-                                RallyUIKit.Palette.obsidian.opacity(0.9)
-                            ],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-                    .frame(width: 72, height: 78)
-
-                RoundedRectangle(cornerRadius: 18)
-                    .stroke(Color.white.opacity(0.16), lineWidth: 1)
-                    .frame(width: 72, height: 78)
+                Circle()
+                    .fill(item.color.opacity(0.20))
+                    .frame(width: 110, height: 110)
+                    .blur(radius: 32)
+                    .offset(x: -16, y: -8)
 
                 Image(systemName: item.category.iconSystemName)
-                    .font(.system(size: 24, weight: .bold))
-                    .foregroundStyle(.white)
-                    .shadow(color: Color.black.opacity(0.22), radius: 6, y: 3)
+                    .font(.system(size: item.category == .racket ? 76 : 64, weight: .bold))
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: [.white, .white.opacity(0.90)],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
+                    .shadow(color: accent.opacity(0.32), radius: 14, y: 7)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+                if isEquipped(item) {
+                    HStack {
+                        Spacer()
+                        detailPill("Wearing", tint: RallyUIKit.Palette.champagne)
+                    }
+                    .padding(14)
+                }
             }
 
-            VStack(alignment: .leading, spacing: 4) {
-                HStack(alignment: .firstTextBaseline) {
-                    Text(item.brand.uppercased())
-                        .font(RallyUIKit.Typography.label(.caption2, weight: .bold))
-                        .tracking(1.4)
-                        .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.62))
-                    Spacer(minLength: 8)
-                    Text(item.priceUSD == 0 ? "Included" : item.priceDisplay)
-                        .font(RallyUIKit.Typography.label(.caption, weight: .bold))
-                        .foregroundStyle(accent)
-                }
+            VStack(alignment: .leading, spacing: 8) {
                 Text(item.name)
-                    .font(RallyUIKit.Typography.body(.body, weight: .semibold))
+                    .font(RallyUIKit.Typography.title(.headline, weight: .bold))
                     .foregroundStyle(RallyUIKit.Palette.frost)
-                Text(rowMeta(item))
-                    .font(RallyUIKit.Typography.body(.caption, weight: .semibold))
-                    .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.78))
                     .lineLimit(2)
-                Text(editorialLine(for: item))
-                    .font(RallyUIKit.Typography.label(.caption2, weight: .bold))
-                    .tracking(0.8)
-                    .foregroundStyle(accent.opacity(0.95))
-                    .lineLimit(1)
+                    .minimumScaleFactor(0.9)
+                HStack {
+                    Text(rowMeta(item))
+                        .font(RallyUIKit.Typography.body(.caption2, weight: .medium))
+                        .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.52))
+                        .lineLimit(1)
+                    Spacer()
+                    Image(systemName: "arrow.up.right")
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(accent.opacity(0.58))
+                }
             }
-            Spacer()
-            if isEquipped(item) {
-                Text("EQUIPPED")
-                    .font(RallyUIKit.Typography.label(.caption2, weight: .bold))
-                    .padding(.vertical, 4)
-                    .padding(.horizontal, 8)
-                    .background(Capsule().fill(RallyUIKit.accentGradient(RallyUIKit.Palette.cyan)))
-                    .foregroundStyle(RallyUIKit.Palette.obsidian)
-            }
-            Image(systemName: "chevron.right")
-                .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.3))
+            .padding(.horizontal, 14)
+            .padding(.vertical, 14)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(
+                RoundedRectangle(cornerRadius: 24, style: .continuous)
+                    .fill(Color.white.opacity(0.03))
+            )
         }
-        .padding(RallyUIKit.Spacing.md)
-        .background(
-            RoundedRectangle(cornerRadius: RallyUIKit.Radius.md)
-                .fill(
-                    LinearGradient(
-                        colors: [Color.white.opacity(0.06), Color.white.opacity(0.035)],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
-        )
+        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: RallyUIKit.Radius.md)
-                .stroke(accent.opacity(0.18), lineWidth: 1)
+            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                .stroke(accent.opacity(0.14), lineWidth: 1)
+        )
+        .shadow(color: Color.black.opacity(0.18), radius: 12, y: 6)
+    }
+
+    private func lockerTileGradient(accent: Color, itemColor: Color) -> LinearGradient {
+        LinearGradient(
+            colors: [
+                itemColor.opacity(0.24),
+                Color(red: 0.08, green: 0.08, blue: 0.11),
+                RallyUIKit.Palette.obsidian,
+                accent.opacity(0.16)
+            ],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
         )
     }
 
     private func lockerFilterChip(label: String, selected: Bool, tint: Color, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            HStack(spacing: RallyUIKit.Spacing.xs) {
-                Circle()
-                    .fill(selected ? RallyUIKit.Palette.obsidian : tint)
-                    .frame(width: 8, height: 8)
-                Text(label)
-                    .font(RallyUIKit.Typography.label(.subheadline, weight: .semibold))
-            }
-            .padding(.vertical, 10)
-            .padding(.horizontal, 14)
-            .background(
-                RoundedRectangle(cornerRadius: 20)
-                    .fill(selected ? AnyShapeStyle(RallyUIKit.accentGradient(tint)) : AnyShapeStyle(Color.white.opacity(0.08)))
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 20)
-                    .stroke(selected ? Color.white.opacity(0.16) : tint.opacity(0.18), lineWidth: 1)
-            )
-            .foregroundStyle(selected ? RallyUIKit.Palette.obsidian : RallyUIKit.Palette.frost)
+            Text(label)
+                .font(RallyUIKit.Typography.label(.caption, weight: .bold))
+                .foregroundStyle(selected ? RallyUIKit.Palette.obsidian : RallyUIKit.Palette.frost)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 9)
+                .background(
+                    Capsule()
+                        .fill(selected ? AnyShapeStyle(RallyUIKit.accentGradient(tint)) : AnyShapeStyle(Color.white.opacity(0.06)))
+                )
+                .overlay(
+                    Capsule()
+                        .stroke(selected ? Color.clear : tint.opacity(0.2), lineWidth: 1)
+                )
         }
         .buttonStyle(.plain)
     }
 
-    private func lockerStyleCard(edit: ShopEditorialEdit, items: [ShopItem]) -> some View {
+    private func lockerCampaignCard(edit: ShopEditorialEdit, items: [ShopItem]) -> some View {
         let tint = edit.tintColor
 
-        return VStack(alignment: .leading, spacing: 10) {
-            HStack(alignment: .bottom, spacing: 10) {
-                ForEach(items.prefix(edit.vendorID == "wilson" ? 1 : 3)) { item in
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 18)
-                            .fill(
-                                LinearGradient(
-                                    colors: [
-                                        item.color.opacity(0.96),
-                                        (item.accentColor ?? tint).opacity(0.68),
-                                        RallyUIKit.Palette.obsidian.opacity(0.9)
-                                    ],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                )
-                            )
-                        RoundedRectangle(cornerRadius: 18)
-                            .stroke(Color.white.opacity(0.14), lineWidth: 1)
-                        Image(systemName: item.category.iconSystemName)
-                            .font(.system(size: 18, weight: .bold))
-                            .foregroundStyle(.white)
-                    }
-                    .frame(
-                        width: edit.vendorID == "wilson" ? 210 : 68,
-                        height: edit.vendorID == "wilson" ? 96 : (item.category == .shoes ? 54 : 82)
-                    )
-                }
-            }
-
-            VStack(alignment: .leading, spacing: 4) {
-                Text(edit.title)
-                    .font(RallyUIKit.Typography.body(.subheadline, weight: .bold))
-                    .foregroundStyle(RallyUIKit.Palette.frost)
-                Text(edit.subtitle.uppercased())
-                    .font(RallyUIKit.Typography.label(.caption2, weight: .bold))
-                    .tracking(1.1)
-                    .foregroundStyle(tint)
+        return HStack(alignment: .bottom, spacing: 10) {
+            ForEach(items.prefix(edit.vendorID == "wilson" ? 1 : 3)) { item in
+                lockerTappableSwatch(item, tint: tint)
             }
         }
-        .padding(12)
-        .frame(width: edit.vendorID == "wilson" ? 266 : 244, alignment: .leading)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(16)
         .background(
-            RoundedRectangle(cornerRadius: 20)
-                .fill(Color.white.opacity(0.05))
+            RoundedRectangle(cornerRadius: 18)
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            RallyUIKit.Palette.obsidian,
+                            tint.opacity(0.10)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
         )
-        .overlay(
+        .overlay(RoundedRectangle(cornerRadius: 18).stroke(tint.opacity(0.12), lineWidth: 1))
+        .accessibilityLabel(edit.title)
+    }
+
+    @ViewBuilder
+    private func lockerTappableSwatch(_ item: ShopItem, tint: Color) -> some View {
+        if let avatar {
+            NavigationLink {
+                ShopItemDetailView(item: item, avatar: avatar, context: .locker)
+            } label: {
+                lockerApparelSwatch(item, tint: tint)
+            }
+            .buttonStyle(.plain)
+        } else {
+            lockerApparelSwatch(item, tint: tint)
+        }
+    }
+
+    private func lockerApparelSwatch(_ item: ShopItem, tint: Color) -> some View {
+        let accent = item.accentColor ?? tint
+        return ZStack {
             RoundedRectangle(cornerRadius: 20)
-                .stroke(tint.opacity(0.16), lineWidth: 1)
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            item.color.opacity(0.96),
+                            accent.opacity(0.65),
+                            RallyUIKit.Palette.obsidian.opacity(0.9)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+            Image(systemName: item.category.iconSystemName)
+                .font(.system(size: item.category == .racket ? 28 : 20, weight: .bold))
+                .foregroundStyle(.white)
+        }
+        .frame(
+            width: item.category == .racket ? 220 : 72,
+            height: item.category == .racket ? 100 : (item.category == .shoes ? 56 : 84)
         )
+        .overlay(RoundedRectangle(cornerRadius: 20).stroke(Color.white.opacity(0.12), lineWidth: 1))
+    }
+
+    @ViewBuilder
+    private func lockerCampaignChip(_ item: ShopItem, tint: Color) -> some View {
+        let accent = item.accentColor ?? categoryTint(item.category)
+
+        Group {
+            if let avatar {
+                NavigationLink {
+                    ShopItemDetailView(item: item, avatar: avatar, context: .locker)
+                } label: {
+                    lockerChipLabel(item, accent: accent)
+                }
+            } else {
+                lockerChipLabel(item, accent: accent)
+            }
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func lockerChipLabel(_ item: ShopItem, accent: Color) -> some View {
+        HStack(spacing: 8) {
+            Text(item.brand)
+                .font(RallyUIKit.Typography.label(.caption2, weight: .bold))
+                .foregroundStyle(RallyUIKit.Palette.frost)
+                .lineLimit(1)
+            Text(item.category.displayName)
+                .font(RallyUIKit.Typography.label(.caption2, weight: .bold))
+                .foregroundStyle(accent)
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 7)
+        .background(Capsule().fill(Color.black.opacity(0.26)))
+        .overlay(Capsule().stroke(accent.opacity(0.16), lineWidth: 1))
     }
 
     private func hubChip(_ label: String, tint: Color) -> some View {
@@ -673,22 +548,22 @@ struct LockerHubView: View {
 
     private func rowMeta(_ item: ShopItem) -> String {
         if let racketProfile = ShopCatalog.racketProfile(id: item.id) {
-            return "\(racketProfile.performanceFocus) • \(racketProfile.headSizeSqIn) sq in • \(racketProfile.weightGrams) g"
+            return "\(racketProfile.headSizeSqIn) sq in · \(racketProfile.weightGrams) g"
         }
+        if let vendor = ShopCatalog.vendor(id: item.vendorID)?.displayName {
+            return "\(item.category.displayName) · \(vendor)"
+        }
+        return item.category.displayName
+    }
 
-        switch item.vendorID {
-        case "newbalance":
-            return "Clean tournament layer"
-        case "nike":
-            return "Match-ready contrast"
-        case "wilson":
-            return "Hero frame for big points"
-        default:
-            if let vendor = ShopCatalog.vendor(id: item.vendorID)?.displayName {
-                return "\(item.category.displayName) • \(vendor)"
-            }
-            return item.category.displayName
-        }
+    private func detailPill(_ text: String, tint: Color) -> some View {
+        Text(text)
+            .font(RallyUIKit.Typography.label(.caption2, weight: .bold))
+            .foregroundStyle(RallyUIKit.Palette.frost)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 7)
+            .background(Capsule().fill(tint.opacity(0.12)))
+            .overlay(Capsule().stroke(tint.opacity(0.2), lineWidth: 1))
     }
 
     private func categoryTint(_ category: ShopItem.Category) -> Color {

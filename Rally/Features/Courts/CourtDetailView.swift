@@ -473,33 +473,46 @@ struct CourtDetailView: View {
                     }
                 }
 
+                // All venue links route through RallyReferralLinkRouter — W-3/W-4 audit gates.
                 if let url = court.venueWebsiteURL {
-                    Link(destination: court.trackingURL(for: url)) {
+                    Button {
+                        RallyReferralLinkRouter.shared.openVenueLink(court.trackingURL(for: url), venueName: court.name)
+                    } label: {
                         linkRow(
                             icon: court.kind == .venue ? "safari.fill" : "building.columns.fill",
                             title: court.kind == .venue ? "Official venue site" : "Official academy site",
                             subtitle: court.kind == .venue ? "Hours, news & visitor info" : "Campus overview, coaching philosophy, and contact info"
                         )
                     }
+                    .buttonStyle(.plain)
                 }
                 if let url = court.bookingOrMembershipURL {
-                    Link(destination: court.trackingURL(for: url)) {
+                    Button {
+                        RallyReferralLinkRouter.shared.openVenueLink(court.trackingURL(for: url), venueName: court.name + " booking")
+                    } label: {
                         linkRow(
                             icon: court.kind == .venue ? "ticket.fill" : "person.crop.rectangle.badge.plus",
                             title: court.kind == .venue ? "Tickets / hospitality / membership" : "Official enrollment / booking",
                             subtitle: court.kind == .venue ? "Purchase paths vary by event" : "Register through the academy or camp operator"
                         )
                     }
+                    .buttonStyle(.plain)
                 }
                 if let url = court.officialProgramURL {
-                    Link(destination: court.trackingURL(for: url)) {
+                    Button {
+                        RallyReferralLinkRouter.shared.openVenueLink(court.trackingURL(for: url), venueName: court.name + " program")
+                    } label: {
                         linkRow(icon: "figure.tennis", title: "Featured program page", subtitle: "Training format, session type, and camp specifics")
                     }
+                    .buttonStyle(.plain)
                 }
                 if let url = court.sponsorHostURL, let name = court.sponsorHostName {
-                    Link(destination: court.trackingURL(for: url)) {
+                    Button {
+                        RallyReferralLinkRouter.shared.openVenueLink(court.trackingURL(for: url), venueName: name)
+                    } label: {
                         linkRow(icon: "rosette", title: "Official host / sponsor", subtitle: name)
                     }
+                    .buttonStyle(.plain)
                 }
             }
         }

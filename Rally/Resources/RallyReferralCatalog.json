@@ -1,0 +1,134 @@
+[
+  {
+    "id": "nike.vapor11.white",
+    "brand": "Nike",
+    "name": "Air Zoom Vapor 11",
+    "slot": "shoes",
+    "colorwayName": "White / Black",
+    "priceDisplay": "$140",
+    "productImageURL": "https://static.nike.com/a/images/t_PDP_1280_v1/f_auto,q_auto:eco/a59e6752-4c07-4557-b9a3-e6e1e9c7c7e7/air-zoom-vapor-11-tennis-shoes-cCKf2S.png",
+    "referralURL": "https://www.nike.com/t/air-zoom-vapor-11-tennis-shoes/DR6965-101?affiliates={REFERRAL_CODE}",
+    "accentColorHex": "#00C0D1"
+  },
+  {
+    "id": "nike.vapor11.black",
+    "brand": "Nike",
+    "name": "Air Zoom Vapor 11",
+    "slot": "shoes",
+    "colorwayName": "Black / White",
+    "priceDisplay": "$140",
+    "productImageURL": "https://static.nike.com/a/images/t_PDP_1280_v1/f_auto,q_auto:eco/2c5cab86-0a4b-4c42-aeb7-49cb694e1f84/air-zoom-vapor-11-tennis-shoes-cCKf2S.png",
+    "referralURL": "https://www.nike.com/t/air-zoom-vapor-11-tennis-shoes/DR6965-002?affiliates={REFERRAL_CODE}",
+    "accentColorHex": "#F5F5F5"
+  },
+  {
+    "id": "adidas.barricade13.black",
+    "brand": "Adidas",
+    "name": "Barricade 13",
+    "slot": "shoes",
+    "colorwayName": "Core Black / Impact Yellow",
+    "priceDisplay": "$150",
+    "productImageURL": "https://assets.adidas.com/images/w_600,f_auto,q_auto/2024-barricade-13-shoes/IF0407/IF0407_01_standard.jpg",
+    "referralURL": "https://www.adidas.com/us/barricade-13-shoes/IF0407.html?cm_mmc={REFERRAL_CODE}",
+    "accentColorHex": "#F5E642"
+  },
+  {
+    "id": "wilson.blade98.v9.green",
+    "brand": "Wilson",
+    "name": "Blade 98 v9 16×19",
+    "slot": "racket",
+    "colorwayName": "Dark Green / Gold",
+    "priceDisplay": "$249",
+    "productImageURL": "https://www.wilson.com/en-us/media/catalog/product/W/R/WR125911U_1.png",
+    "referralURL": "https://www.wilson.com/en-us/product/blade-98-v9-tennis-racket/WR125911U.html?affref={REFERRAL_CODE}",
+    "accentColorHex": "#006649"
+  },
+  {
+    "id": "babolat.puredrive2023.blue",
+    "brand": "Babolat",
+    "name": "Pure Drive 2023",
+    "slot": "racket",
+    "colorwayName": "Blue / White",
+    "priceDisplay": "$239",
+    "productImageURL": "https://www.babolat.us/media/catalog/product/cache/738b1498dc9e43c8a2d03bfa33af4fde/1/0/101436_pure-drive-2023_q0006_vision-1.png",
+    "referralURL": "https://www.babolat.us/equipment/tennis/tennis-racquets/pure-drive-tennis-racquet-101436?ref={REFERRAL_CODE}",
+    "accentColorHex": "#004B98"
+  },
+  {
+    "id": "head.speedmp.2024.black",
+    "brand": "Head",
+    "name": "Speed MP 2024",
+    "slot": "racket",
+    "colorwayName": "Black / Teal",
+    "priceDisplay": "$229",
+    "productImageURL": "https://www.head.com/dw/image/v2/BBGS_PRD/on/demandware.static/-/Sites-head-master-catalog/default/dwa4b38d7d/images/Speed-MP-2024_233604.png",
+    "referralURL": "https://www.head.com/en_US/speed-mp-tennis-racquet-233604.html?tracking={REFERRAL_CODE}",
+    "accentColorHex": "#00B8A0"
+  },
+  {
+    "id": "nike.slamtop.navy",
+    "brand": "Nike",
+    "name": "NikeCourt Dri-FIT Slam",
+    "slot": "top",
+    "colorwayName": "Obsidian Navy",
+    "priceDisplay": "$60",
+    "productImageURL": "https://static.nike.com/a/images/t_PDP_1280_v1/f_auto,q_auto:eco/nikecourt-slam-tennis-top/DV3280-451.png",
+    "referralURL": "https://www.nike.com/t/nikecourt-slam-dri-fit-tennis-top/DV3280-451?affiliates={REFERRAL_CODE}",
+    "accentColorHex": "#65DFF2"
+  },
+  {
+    "id": "newbalance.tournament.tank.white",
+    "brand": "New Balance",
+    "name": "Tournament Tank",
+    "slot": "top",
+    "colorwayName": "White",
+    "priceDisplay": "$55",
+    "productImageURL": "https://nb.scene7.com/is/image/NB/mt61k74k_nb_02_i?$pdpflexf2$&qlt=80&fmt=webp&wid=880&hei=880",
+    "referralURL": "https://www.newbalance.com/pd/tournament-tank/WT61K74K.html?ecid={REFERRAL_CODE}",
+    "accentColorHex": "#CF0A2C"
+  },
+  {
+    "id": "nike.slamshort.black",
+    "brand": "Nike",
+    "name": "NikeCourt Dri-FIT Slam 9\" Short",
+    "slot": "shorts",
+    "colorwayName": "Black / White",
+    "priceDisplay": "$65",
+    "productImageURL": "https://static.nike.com/a/images/t_PDP_1280_v1/f_auto,q_auto:eco/nikecourt-slam-tennis-shorts/FV4768-010.png",
+    "referralURL": "https://www.nike.com/t/nikecourt-slam-dri-fit-9-tennis-shorts/FV4768-010?affiliates={REFERRAL_CODE}",
+    "accentColorHex": "#F5F5F5"
+  },
+  {
+    "id": "adidas.melbourne.ergo.white",
+    "brand": "Adidas",
+    "name": "Melbourne Ergo 7\" Short",
+    "slot": "shorts",
+    "colorwayName": "White / Black",
+    "priceDisplay": "$70",
+    "productImageURL": "https://assets.adidas.com/images/w_600,f_auto,q_auto/melbourne-ergo-7-inch-tennis-shorts/HS3268/HS3268_01_standard.jpg",
+    "referralURL": "https://www.adidas.com/us/melbourne-ergo-7-inch-tennis-shorts/HS3268.html?cm_mmc={REFERRAL_CODE}",
+    "accentColorHex": "#000000"
+  },
+  {
+    "id": "nike.headband.red",
+    "brand": "Nike",
+    "name": "Dri-FIT Swoosh Headband",
+    "slot": "headband",
+    "colorwayName": "University Red",
+    "priceDisplay": "$16",
+    "productImageURL": "https://static.nike.com/a/images/t_PDP_1280_v1/f_auto,q_auto:eco/swoosh-dri-fit-headband/AC4414-657.png",
+    "referralURL": "https://www.nike.com/t/swoosh-dri-fit-headband/AC4414-657?affiliates={REFERRAL_CODE}",
+    "accentColorHex": "#FFFFFF"
+  },
+  {
+    "id": "nike.multiplier.socks.white",
+    "brand": "Nike",
+    "name": "Multiplier Crew Tennis Socks",
+    "slot": "socks",
+    "colorwayName": "White / Black",
+    "priceDisplay": "$18",
+    "productImageURL": "https://static.nike.com/a/images/t_PDP_1280_v1/f_auto,q_auto:eco/multiplier-crew-tennis-socks/SX6893-100.png",
+    "referralURL": "https://www.nike.com/t/multiplier-crew-tennis-socks-2-pairs/SX6893-100?affiliates={REFERRAL_CODE}",
+    "accentColorHex": "#000000"
+  }
+]

@@ -1,10 +1,17 @@
 import SwiftUI
 import SwiftData
 import UIKit
+import SafariServices
+
+enum ShopItemDetailContext {
+    case shop
+    case locker
+}
 
 struct ShopItemDetailView: View {
     let item: ShopItem
     let avatar: AvatarConfig
+    var context: ShopItemDetailContext = .shop
 
     @Environment(\.modelContext) private var modelContext
     @State private var tryingOn: Bool = true
@@ -12,6 +19,8 @@ struct ShopItemDetailView: View {
 
     private var vendor: Vendor? { ShopCatalog.vendor(id: item.vendorID) }
     private var racketProfile: RacketProfile? { ShopCatalog.racketProfile(id: item.id) }
+    /// Live commerce data from the referral catalog, if this item has an entry.
+    private var referralItem: RallyGearItem? { RallyReferralCatalog.referralItem(matchingShopItemID: item.id) }
     private var relatedItems: [ShopItem] {
         ShopCatalog.allItems.filter {
             $0.id != item.id &&
@@ -52,164 +61,353 @@ struct ShopItemDetailView: View {
         return ids.compactMap { lookup[$0] }
     }
 
-    init(item: ShopItem, avatar: AvatarConfig) {
+    init(item: ShopItem, avatar: AvatarConfig, context: ShopItemDetailContext = .shop) {
         self.item = item
         self.avatar = avatar
+        self.context = context
     }
+
+    private var isLocker: Bool { context == .locker }
 
     var body: some View {
         ScrollView {
-            VStack(spacing: RallyUIKit.Spacing.lg) {
+            VStack(spacing: RallyUIKit.Spacing.xl) {
                 AvatarShopStageView(
                     config: avatar,
                     preview: tryingOn && item.category != .bag && item.category != .accessory
                         ? (slot: item.category, item: item)
                         : nil,
+                    tone: isLocker ? .calm : .shop,
                     emote: $stageEmote
                 )
-                .padding(.horizontal)
 
-                VStack(alignment: .leading, spacing: RallyUIKit.Spacing.md) {
-                    header
-                    productVisual
-                    identityRow
-                    if let racketProfile {
-                        racketSpecsSection(racketProfile)
-                    }
-                    if !relatedItems.isEmpty {
-                        styleItWithSection
-                    }
-                    if !travelEditDestinations.isEmpty {
-                        wearItToSection
-                    }
-                    if item.category != .bag, item.category != .accessory {
-                        tryOnToggle
-                    }
-                    actionRow
-                    referralSection
-                    if let vendor = vendor {
-                        vendorCard(vendor)
-                    }
+                productVisualHero
+
+                if let racketProfile {
+                    racketSpecsSection(racketProfile)
                 }
-                .padding(.horizontal, 20)
-                .padding(.bottom, 40)
+
+                if item.category != .bag, item.category != .accessory {
+                    tryOnToggle
+                }
+
+                actionRow
+
+                if !relatedItems.isEmpty {
+                    relatedItemsRail
+                }
+
+                if !isLocker, let vendor = vendor {
+                    vendorLink(vendor)
+                }
             }
+            .padding(.horizontal, RallyUIKit.Spacing.md)
+            .padding(.top, 8)
+            .padding(.bottom, 48)
         }
         .background(RallyUIKit.screenBackground)
         .navigationTitle(item.name)
         .navigationBarTitleDisplayMode(.inline)
     }
 
-    private var header: some View {
-        RallyUIKit.LuxePanel(tint: item.accentColor ?? RallyUIKit.Palette.cyan) {
-            VStack(alignment: .leading, spacing: RallyUIKit.Spacing.sm) {
+    private var productVisualHero: some View {
+        let accent = item.accentColor ?? RallyUIKit.Palette.cyan
+
+        return VStack(alignment: .leading, spacing: 14) {
+            HStack(alignment: .firstTextBaseline, spacing: 12) {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(item.brand.uppercased())
+                        .font(RallyUIKit.Typography.label(.caption2, weight: .bold))
+                        .tracking(2.2)
+                        .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.52))
+                    Text(item.name)
+                        .font(RallyUIKit.Typography.display(28, weight: .bold))
+                        .foregroundStyle(RallyUIKit.Palette.frost)
+                        .lineLimit(3)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer(minLength: 8)
+                if isLocker {
+                    Text(isEquipped ? "Wearing" : item.category.displayName)
+                        .font(RallyUIKit.Typography.label(.caption, weight: .bold))
+                        .foregroundStyle(RallyUIKit.Palette.champagne.opacity(0.82))
+                } else {
+                    VStack(alignment: .trailing, spacing: 4) {
+                        Text(item.priceUSD == 0 ? "Included" : item.priceDisplay)
+                            .font(RallyUIKit.Typography.display(26, weight: .bold))
+                            .foregroundStyle(accent)
+                        Text(isEquipped ? "Equipped" : item.category.displayName)
+                            .font(RallyUIKit.Typography.label(.caption2, weight: .bold))
+                            .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.52))
+                    }
+                }
+            }
+
+            // Product image — AsyncImage when the referral catalog has a URL;
+            // branded gradient + icon fallback only if no image is available.
+            // S-3 audit gate: SF Symbol is never the final/terminal visual state
+            // when a productImageURL exists.
+            ZStack {
+                RoundedRectangle(cornerRadius: RallyUIKit.Radius.xl, style: .continuous)
+                    .fill(
+                        RadialGradient(
+                            colors: [
+                                item.color.opacity(0.58),
+                                RallyUIKit.Palette.obsidian,
+                                Color.black
+                            ],
+                            center: .topLeading,
+                            startRadius: 24,
+                            endRadius: 300
+                        )
+                    )
+                    .frame(height: 220)
+
+                Circle()
+                    .fill(accent.opacity(0.16))
+                    .frame(width: 180, height: 180)
+                    .blur(radius: 40)
+                    .offset(x: 80, y: -20)
+
+                if let imageURL = referralItem?.productImageURL {
+                    AsyncImage(url: imageURL) { phase in
+                        switch phase {
+                        case .success(let image):
+                            image
+                                .resizable()
+                                .scaledToFit()
+                                .frame(maxHeight: 188)
+                                .padding(12)
+                        case .failure:
+                            // Real network failure — show branded fallback,
+                            // not a generic SF Symbol.
+                            productIconFallback(accent: accent)
+                        case .empty:
+                            ProgressView()
+                                .tint(accent)
+                        @unknown default:
+                            productIconFallback(accent: accent)
+                        }
+                    }
+                } else {
+                    productIconFallback(accent: accent)
+                }
+            }
+            .clipShape(RoundedRectangle(cornerRadius: RallyUIKit.Radius.xl, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: RallyUIKit.Radius.xl, style: .continuous)
+                    .stroke(accent.opacity(0.18), lineWidth: 1)
+            )
+        }
+    }
+
+    private var relatedItemsRail: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(isLocker ? "Style with" : "Pair with")
+                .font(RallyUIKit.Typography.title(.headline, weight: .bold))
+                .foregroundStyle(RallyUIKit.Palette.frost)
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 12) {
+                    ForEach(relatedItems.prefix(5)) { related in
+                        relatedStyleCard(related)
+                    }
+                }
+                .padding(.horizontal, 2)
+            }
+            .scrollClipDisabled()
+        }
+    }
+
+    /// Branded gradient + category icon shown when no productImageURL is available.
+    @ViewBuilder
+    private func productIconFallback(accent: Color) -> some View {
+        Image(systemName: item.category.iconSystemName)
+            .font(.system(size: item.category == .racket ? 92 : 76, weight: .bold))
+            .foregroundStyle(
+                LinearGradient(
+                    colors: [.white, .white.opacity(0.86)],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+            )
+            .shadow(color: accent.opacity(0.36), radius: 18, y: 10)
+    }
+
+    private func vendorLink(_ vendor: Vendor) -> some View {
+        Button {
+            // Route through RallyReferralLinkRouter — never raw openURL.
+            RallyReferralLinkRouter.shared.openVenueLink(vendor.websiteURL, venueName: vendor.displayName)
+        } label: {
+            HStack(spacing: 12) {
+                Text(vendor.displayName)
+                    .font(RallyUIKit.Typography.title(.headline, weight: .bold))
+                    .foregroundStyle(RallyUIKit.Palette.frost)
+                Spacer()
+                Label("Open", systemImage: "arrow.up.right")
+                    .font(RallyUIKit.Typography.label(.caption, weight: .bold))
+                    .foregroundStyle(item.accentColor ?? RallyUIKit.Palette.cyan)
+            }
+            .padding(14)
+            .background(RoundedRectangle(cornerRadius: 18).fill(Color.white.opacity(0.05)))
+            .overlay(
+                RoundedRectangle(cornerRadius: 18)
+                    .stroke((item.accentColor ?? RallyUIKit.Palette.cyan).opacity(0.16), lineWidth: 1)
+            )
+        }
+    }
+
+    private var campaignHeroBand: some View {
+        let accent = item.accentColor ?? RallyUIKit.Palette.cyan
+
+        return ZStack(alignment: .bottomLeading) {
+            LinearGradient(
+                colors: [
+                    RallyUIKit.Palette.obsidian,
+                    item.color.opacity(0.32),
+                    accent.opacity(0.22),
+                    RallyUIKit.Palette.ink
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+
+            Circle()
+                .fill(item.color.opacity(0.28))
+                .frame(width: 240, height: 240)
+                .blur(radius: 40)
+                .offset(x: -80, y: -60)
+
+            Circle()
+                .fill(accent.opacity(0.24))
+                .frame(width: 200, height: 200)
+                .blur(radius: 36)
+                .offset(x: 120, y: -20)
+
+            VStack(alignment: .leading, spacing: RallyUIKit.Spacing.md) {
                 HStack(alignment: .top) {
-                    VStack(alignment: .leading, spacing: 6) {
+                    VStack(alignment: .leading, spacing: 8) {
                         RallyUIKit.EditorialEyebrow(
-                            text: editorialEdit?.eyebrow ?? item.brand,
-                            tint: item.accentColor ?? RallyUIKit.Palette.cyan
+                            text: editorialEdit?.eyebrow ?? "\(item.brand) · SS26",
+                            tint: accent
                         )
                         Text(item.name)
-                            .font(RallyUIKit.Typography.title(.title2, weight: .bold))
+                            .font(RallyUIKit.Typography.display(34, weight: .bold))
                             .foregroundStyle(RallyUIKit.Palette.frost)
-                        Text(detailSummary)
-                            .font(RallyUIKit.Typography.body(.caption, weight: .semibold))
-                            .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.78))
+                            .fixedSize(horizontal: false, vertical: true)
+                        Text(campaignPullQuote)
+                            .font(RallyUIKit.Typography.title(.title3, weight: .semibold))
+                            .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.88))
+                            .italic()
                     }
-
                     Spacer(minLength: 12)
-
                     VStack(alignment: .trailing, spacing: 6) {
                         Text(item.priceUSD == 0 ? "Included" : item.priceDisplay)
-                            .font(RallyUIKit.Typography.title(.title3, weight: .bold))
-                            .foregroundStyle(item.accentColor ?? RallyUIKit.Palette.cyan)
-                        Text(isEquipped ? "In your current kit" : "Available now")
-                            .font(RallyUIKit.Typography.body(.caption, weight: .semibold))
-                            .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.8))
+                            .font(RallyUIKit.Typography.display(28, weight: .bold))
+                            .foregroundStyle(accent)
+                        Text(isEquipped ? "In kit" : "On floor")
+                            .font(RallyUIKit.Typography.label(.caption, weight: .bold))
+                            .tracking(1.2)
+                            .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.72))
                     }
                 }
 
-                HStack(spacing: RallyUIKit.Spacing.xs) {
+                HStack(spacing: 8) {
+                    detailChip(item.brand, tint: accent)
                     detailChip(item.category.displayName, tint: item.color)
-                    if isEquipped {
-                        detailChip("Equipped", tint: RallyUIKit.Palette.cyan)
-                    }
-                    if item.category == .racket {
-                        detailChip("Performance frame", tint: item.accentColor ?? RallyUIKit.Palette.gold)
-                    }
+                    if isEquipped { detailChip("Equipped", tint: RallyUIKit.Palette.cyan) }
                     if let editorialEdit {
-                        detailChip(editorialEdit.title, tint: item.accentColor ?? RallyUIKit.Palette.champagne)
+                        detailChip(editorialEdit.title, tint: RallyUIKit.Palette.champagne)
+                    }
+                }
+
+                ZStack {
+                    RoundedRectangle(cornerRadius: 28)
+                        .fill(
+                            LinearGradient(
+                                colors: [
+                                    item.color.opacity(0.96),
+                                    accent.opacity(0.78),
+                                    RallyUIKit.Palette.obsidian.opacity(0.9)
+                                ],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .frame(height: 200)
+
+                    Image(systemName: item.category.iconSystemName)
+                        .font(.system(size: item.category == .racket ? 72 : 56, weight: .bold))
+                        .foregroundStyle(.white)
+                        .shadow(color: Color.black.opacity(0.3), radius: 14, y: 8)
+                }
+                .overlay(
+                    RoundedRectangle(cornerRadius: 28)
+                        .stroke(Color.white.opacity(0.14), lineWidth: 1)
+                )
+            }
+            .padding(.horizontal, 20)
+            .padding(.top, 20)
+            .padding(.bottom, 28)
+        }
+        .frame(minHeight: 420)
+    }
+
+    private var productStoryBlock: some View {
+        let accent = item.accentColor ?? RallyUIKit.Palette.cyan
+
+        return RallyUIKit.LuxePanel(tint: accent) {
+            VStack(alignment: .leading, spacing: RallyUIKit.Spacing.md) {
+                Text("THE STORY")
+                    .font(RallyUIKit.Typography.label(.caption2, weight: .bold))
+                    .tracking(2.4)
+                    .foregroundStyle(accent.opacity(0.9))
+
+                Text(detailSummary)
+                    .font(RallyUIKit.Typography.body(.body, weight: .medium))
+                    .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.86))
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Text(styleDirectionBody)
+                    .font(RallyUIKit.Typography.title(.title3, weight: .semibold))
+                    .foregroundStyle(RallyUIKit.Palette.frost)
+
+                Text(productManifesto)
+                    .font(RallyUIKit.Typography.body(.subheadline, weight: .medium))
+                    .foregroundStyle(RallyUIKit.Palette.smoke.opacity(0.94))
+
+                HStack(spacing: 8) {
+                    detailChip(styleDirectionTitle, tint: accent)
+                    if item.category == .racket {
+                        detailChip("Performance icon", tint: RallyUIKit.Palette.gold)
+                    } else {
+                        detailChip("Editorial hero", tint: RallyUIKit.Palette.champagne)
                     }
                 }
             }
         }
     }
 
-    private var productVisual: some View {
-        let accent = item.accentColor ?? RallyUIKit.Palette.cyan
+    private var campaignPullQuote: String {
+        if let editorialEdit { return editorialEdit.subtitle }
+        switch item.vendorID {
+        case "newbalance": return "Quiet tournament luxury."
+        case "nike": return "Sharper contrast, faster silhouette."
+        case "wilson": return "Big-match frame energy."
+        default: return "Curated for the Rally floor."
+        }
+    }
 
-        return RallyUIKit.SectionCard(stroke: accent.opacity(0.28)) {
-            ZStack {
-                RoundedRectangle(cornerRadius: RallyUIKit.Radius.lg)
-                    .fill(
-                        LinearGradient(
-                            colors: [
-                                RallyUIKit.Palette.obsidian,
-                                item.color.opacity(0.22),
-                                accent.opacity(0.16)
-                            ],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-
-                Circle()
-                    .fill(item.color.opacity(0.24))
-                    .frame(width: 170, height: 170)
-                    .blur(radius: 26)
-                    .offset(x: -86, y: -44)
-
-                Circle()
-                    .fill(accent.opacity(0.22))
-                    .frame(width: 150, height: 150)
-                    .blur(radius: 24)
-                    .offset(x: 112, y: -12)
-
-                VStack(spacing: 16) {
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 26)
-                            .fill(
-                                LinearGradient(
-                                    colors: [
-                                        item.color.opacity(0.96),
-                                        accent.opacity(0.74),
-                                        RallyUIKit.Palette.obsidian.opacity(0.92)
-                                    ],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                )
-                            )
-                            .frame(width: 128, height: 138)
-
-                        RoundedRectangle(cornerRadius: 26)
-                            .stroke(Color.white.opacity(0.18), lineWidth: 1)
-                            .frame(width: 128, height: 138)
-
-                        Image(systemName: item.category.iconSystemName)
-                            .font(.system(size: 44, weight: .bold))
-                            .foregroundStyle(.white)
-                            .shadow(color: Color.black.opacity(0.22), radius: 10, y: 6)
-                    }
-
-                    HStack(spacing: 10) {
-                        detailChip(item.brand, tint: accent)
-                        detailChip(item.category.displayName, tint: item.color)
-                    }
-                }
-                .padding(.vertical, 18)
-            }
-            .frame(height: 240)
-            .clipShape(RoundedRectangle(cornerRadius: RallyUIKit.Radius.lg))
+    private var productManifesto: String {
+        switch item.vendorID {
+        case "newbalance":
+            return "Every white layer should feel intentional — premium base, clean finish, match-ready pace."
+        case "nike":
+            return "Contrast is the story: deep color up top, grounded base below, crisp white underfoot."
+        case "wilson":
+            return "The racket leads the look. Shape, balance, and presence before utility copy."
+        default:
+            return "Headline product energy — shape and color justify its place in the kit."
         }
     }
 
@@ -265,81 +463,84 @@ struct ShopItemDetailView: View {
     }
 
     private var tryOnToggle: some View {
-        Toggle(isOn: $tryingOn) {
+        Button {
+            tryingOn.toggle()
+        } label: {
             HStack(spacing: 8) {
-                RallyUIKit.IconBadge(
-                    systemName: tryingOn ? "tshirt.fill" : "tshirt",
-                    tint: item.accentColor ?? RallyUIKit.Palette.cyan,
-                    size: 26
-                )
-                Text(tryingOn ? "Trying it on" : "Try it on")
+                Image(systemName: tryingOn ? "tshirt.fill" : "tshirt")
+                    .font(.body.weight(.bold))
+                Text(tryOnToggleLabel)
+                    .font(RallyUIKit.Typography.label(.subheadline, weight: .bold))
             }
-            .foregroundStyle(.white)
+            .foregroundStyle(tryingOn ? RallyUIKit.Palette.obsidian : RallyUIKit.Palette.frost)
+            .padding(.horizontal, 18)
+            .padding(.vertical, 12)
+            .background(
+                Capsule()
+                    .fill(tryingOn ? (item.accentColor ?? RallyUIKit.Palette.cyan) : Color.white.opacity(0.06))
+            )
         }
-        .tint(item.accentColor ?? RallyUIKit.Palette.cyan)
-        .padding(.vertical, 4)
+        .buttonStyle(.plain)
+        .frame(maxWidth: .infinity)
+    }
+
+    private var tryOnToggleLabel: String {
+        if isLocker {
+            return tryingOn ? "Wearing" : "Wear"
+        }
+        return tryingOn ? "Trying on" : "Try on"
     }
 
     private var actionRow: some View {
-        RallyUIKit.SectionCard(stroke: (item.accentColor ?? RallyUIKit.Palette.cyan).opacity(0.24)) {
-            VStack(alignment: .leading, spacing: 12) {
+        VStack(spacing: 10) {
+            if item.category == .bag || item.category == .accessory {
+                EmptyView()
+            } else if isEquipped {
                 HStack(spacing: 8) {
-                    RallyUIKit.IconBadge(
-                        systemName: "checkmark.circle.badge.questionmark",
-                        tint: item.accentColor ?? RallyUIKit.Palette.cyan,
-                        size: 26
-                    )
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Next step")
-                            .font(RallyUIKit.Typography.title(.headline, weight: .bold))
-                            .foregroundStyle(RallyUIKit.Palette.frost)
-                        Text(nextStepCopy)
-                            .font(RallyUIKit.Typography.body(.caption, weight: .medium))
-                            .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.62))
-                    }
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.title3.weight(.bold))
+                    Text("Equipped")
+                        .font(RallyUIKit.Typography.label(.headline, weight: .bold))
                 }
-
-                if item.category == .bag || item.category == .accessory {
-                    Text("Bag and accessory preview motion is still lighter than apparel and racquets.")
-                        .font(RallyUIKit.Typography.body(.caption, weight: .medium))
-                        .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.58))
-                } else if isEquipped {
+                .foregroundStyle(item.accentColor ?? RallyUIKit.Palette.cyan)
+                .frame(maxWidth: .infinity, minHeight: 54)
+                .background(
+                    RoundedRectangle(cornerRadius: 16)
+                        .fill((item.accentColor ?? RallyUIKit.Palette.cyan).opacity(0.12))
+                )
+            } else {
+                Button {
+                    equip()
+                } label: {
                     HStack(spacing: 8) {
-                        Image(systemName: "checkmark.circle.fill")
-                        Text("Equipped")
+                        Image(systemName: isLocker ? "tshirt.fill" : "checkmark.circle.fill")
+                            .font(.title3.weight(.bold))
+                        Text(isLocker ? "Wear" : "Equip")
+                            .font(RallyUIKit.Typography.label(.headline, weight: .bold))
                     }
-                    .font(RallyUIKit.Typography.label(.headline, weight: .bold))
-                    .foregroundStyle(item.accentColor ?? RallyUIKit.Palette.cyan)
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 14)
-                    .frame(maxWidth: .infinity)
-                    .background(
-                        RoundedRectangle(cornerRadius: 14)
-                            .fill((item.accentColor ?? RallyUIKit.Palette.cyan).opacity(0.12))
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 14)
-                            .stroke((item.accentColor ?? RallyUIKit.Palette.cyan).opacity(0.35), lineWidth: 1)
-                    )
-                } else {
-                    Button {
-                        equip()
-                    } label: {
-                        HStack(spacing: 8) {
-                            Image(systemName: "checkmark.circle.fill")
-                            Text("Equip")
-                        }
-                    }
-                    .buttonStyle(PrimaryButtonStyle(tint: item.accentColor ?? RallyUIKit.Palette.cyan))
                 }
+                .buttonStyle(PrimaryButtonStyle(tint: item.accentColor ?? RallyUIKit.Palette.cyan))
+            }
 
-                Link(destination: item.trackingProductURL) {
+            if !isLocker {
+                // Route through RallyReferralLinkRouter — S-5 audit gate.
+                // Prefer the referral catalog URL (has {REFERRAL_CODE} injection);
+                // fall back to the ShopItem trackingProductURL.
+                let shopURL = referralItem?.referralURL ?? item.trackingProductURL
+                Button {
+                    if let gearItem = referralItem {
+                        RallyReferralLinkRouter.shared.openProduct(gearItem)
+                    } else {
+                        RallyReferralLinkRouter.shared.open(shopURL, context: "shop:\(item.id)")
+                    }
+                } label: {
                     HStack(spacing: 8) {
                         Image(systemName: "cart.fill")
-                        Text(item.priceUSD == 0 ? "View on rally.app" : "Buy at \(item.brand)")
-                        Spacer()
-                        Image(systemName: "arrow.up.right")
+                            .font(.title3.weight(.bold))
+                        Text(item.priceUSD == 0 ? "View product" : "Buy · \(item.priceDisplay)")
+                            .font(RallyUIKit.Typography.label(.headline, weight: .bold))
                     }
+                    .frame(maxWidth: .infinity, minHeight: 54)
                 }
                 .buttonStyle(SecondaryButtonStyle(tint: item.accentColor ?? RallyUIKit.Palette.cyan))
             }
@@ -472,7 +673,9 @@ struct ShopItemDetailView: View {
                             .foregroundStyle(RallyUIKit.Palette.cyan.opacity(0.88))
                     }
                     if let loyalty = vendor.loyaltyProgramURL {
-                        Link(destination: loyalty) {
+                        Button {
+                            RallyReferralLinkRouter.shared.openVenueLink(loyalty, venueName: vendor.displayName + " loyalty")
+                        } label: {
                             HStack {
                                 Image(systemName: "gift.fill")
                                 Text("Official loyalty & member offers")
@@ -494,54 +697,42 @@ struct ShopItemDetailView: View {
         let accent = related.accentColor ?? related.color
 
         return NavigationLink {
-            ShopItemDetailView(item: related, avatar: avatar)
+            ShopItemDetailView(item: related, avatar: avatar, context: context)
         } label: {
-            VStack(alignment: .leading, spacing: 10) {
+            VStack(alignment: .leading, spacing: 6) {
                 ZStack {
-                    RoundedRectangle(cornerRadius: 18)
+                    RoundedRectangle(cornerRadius: 20)
                         .fill(
                             LinearGradient(
                                 colors: [
-                                    related.color.opacity(0.96),
-                                    accent.opacity(0.7),
-                                    RallyUIKit.Palette.obsidian.opacity(0.9)
+                                    RallyUIKit.Palette.obsidian,
+                                    related.color.opacity(0.52),
+                                    accent.opacity(0.34)
                                 ],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
                             )
                         )
-                        .frame(height: 108)
-
-                    RoundedRectangle(cornerRadius: 18)
-                        .stroke(Color.white.opacity(0.16), lineWidth: 1)
-                        .frame(height: 108)
+                        .frame(width: 120, height: 120)
 
                     Image(systemName: related.category.iconSystemName)
-                        .font(.system(size: 28, weight: .bold))
+                        .font(.system(size: 36, weight: .bold))
                         .foregroundStyle(.white)
-                        .shadow(color: Color.black.opacity(0.24), radius: 8, y: 5)
+                        .shadow(color: Color.black.opacity(0.25), radius: 8, y: 5)
                 }
 
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(related.name)
-                        .font(RallyUIKit.Typography.body(.caption, weight: .bold))
-                        .foregroundStyle(RallyUIKit.Palette.frost)
-                        .lineLimit(2)
+                Text(related.name)
+                    .font(RallyUIKit.Typography.label(.caption2, weight: .bold))
+                    .foregroundStyle(RallyUIKit.Palette.frost)
+                    .lineLimit(2)
+                    .frame(width: 120, alignment: .leading)
+
+                if !isLocker {
                     Text(related.priceUSD == 0 ? "Included" : related.priceDisplay)
-                        .font(RallyUIKit.Typography.label(.caption2, weight: .bold))
+                        .font(RallyUIKit.Typography.label(.caption2, weight: .semibold))
                         .foregroundStyle(accent)
                 }
             }
-            .padding(12)
-            .frame(width: 154, alignment: .leading)
-            .background(
-                RoundedRectangle(cornerRadius: 20)
-                    .fill(Color.white.opacity(0.05))
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 20)
-                    .stroke(accent.opacity(0.16), lineWidth: 1)
-            )
         }
         .buttonStyle(.plain)
     }
@@ -658,7 +849,9 @@ struct ShopItemDetailView: View {
     }
 
     private func vendorCard(_ vendor: Vendor) -> some View {
-        Link(destination: vendor.websiteURL) {
+        Button {
+            RallyReferralLinkRouter.shared.openVenueLink(vendor.websiteURL, venueName: vendor.displayName)
+        } label: {
             RallyUIKit.SectionCard(stroke: (item.accentColor ?? RallyUIKit.Palette.cyan).opacity(0.26)) {
                 HStack(spacing: 12) {
                     RallyUIKit.IconBadge(
@@ -684,6 +877,7 @@ struct ShopItemDetailView: View {
                 }
             }
         }
+        .buttonStyle(.plain)
     }
 
     private var detailSummary: String {
