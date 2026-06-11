@@ -1124,6 +1124,7 @@ final class GameScene: SKScene {
             bodyScale: bodyScale,
             upper: shoes.mixed(with: .black, ratio: 0.06), accent: shoesAccent,
             zBase: 2,
+            xFlip: true,   // left foot: mirror shoe so toe faces outward, not inward-caved
             primaryRef: &playerTrailShoe
         )
 
@@ -1193,7 +1194,7 @@ final class GameScene: SKScene {
             zPos: 0
         )
 
-        let backHair = SKShapeNode(path: RallyAvatarGeometry.premiumBackHairPath(scale: layout.headPathScale * 0.88))
+        let backHair = SKShapeNode(path: RallyAvatarGeometry.premiumBackHairPath(scale: layout.headPathScale * 0.92))
         backHair.fillColor = appearance.hairUIColor
         backHair.strokeColor = .clear
         backHair.lineWidth = 0
@@ -1202,7 +1203,7 @@ final class GameScene: SKScene {
         root.addChild(backHair)
         playerBackHair = backHair
 
-        let hair = SKShapeNode(path: RallyAvatarGeometry.premiumHairPath(scale: layout.headPathScale * 0.76))
+        let hair = SKShapeNode(path: RallyAvatarGeometry.premiumHairPath(scale: layout.headPathScale * 0.82))
         hair.fillColor = appearance.hairUIColor
         hair.strokeColor = .clear
         hair.lineWidth = 0
@@ -1228,7 +1229,7 @@ final class GameScene: SKScene {
         rightEar.zPosition = 5.85
         root.addChild(rightEar)
 
-        let hairHighlight = SKShapeNode(path: RallyAvatarGeometry.hairHighlightPath(scale: layout.headPathScale * 0.76))
+        let hairHighlight = SKShapeNode(path: RallyAvatarGeometry.hairHighlightPath(scale: layout.headPathScale * 0.82))
         hairHighlight.fillColor = UIColor(red: 0.165, green: 0.165, blue: 0.188, alpha: 0.42)
         hairHighlight.strokeColor = .clear
         hairHighlight.position = CGPoint(x: 0, y: layout.hairY + 12 * bodyScale)
@@ -1474,9 +1475,13 @@ final class GameScene: SKScene {
         bodyScale: CGFloat,
         upper: UIColor, accent: UIColor,
         zBase: CGFloat,
+        xFlip: Bool = false,
         primaryRef: inout SKShapeNode?
     ) {
-        // 1. Midsole/outsole — darkest layer, sits lowest
+        // Mirror factor: -1 for left foot so toe faces outward, not caved inward.
+        let flip: CGFloat = xFlip ? -1 : 1
+
+        // 1. Midsole/outsole — darkest layer, sits lowest (symmetric — no flip needed)
         let sole = SKShapeNode(path: RallyAvatarGeometry.shoeSolePath(scale: bodyScale))
         sole.fillColor = upper.mixed(with: .black, ratio: 0.42) ?? UIColor(white: 0.1, alpha: 1)
         sole.strokeColor = .clear
@@ -1484,20 +1489,22 @@ final class GameScene: SKScene {
         sole.zPosition = zBase
         root.addChild(sole)
 
-        // 2. Shoe upper — main body
+        // 2. Shoe upper — main body (asymmetric: toe at +x; flip for left foot)
         let body = SKShapeNode(path: RallyAvatarGeometry.shoeBodyPath(scale: bodyScale))
         body.fillColor = upper
         body.strokeColor = accent.withAlphaComponent(0.55)
         body.lineWidth = 1.2 * bodyScale
+        body.xScale = flip
         body.position = CGPoint(x: x, y: y)
         body.zPosition = zBase + 0.05
         root.addChild(body)
         primaryRef = body
 
-        // 3. Side brand stripe
+        // 3. Side brand stripe (asymmetric: stripe on toe side; flip for left foot)
         let stripe = SKShapeNode(path: RallyAvatarGeometry.shoeStripePath(scale: bodyScale))
         stripe.fillColor = accent.withAlphaComponent(0.82)
         stripe.strokeColor = .clear
+        stripe.xScale = flip
         stripe.position = CGPoint(x: x, y: y)
         stripe.zPosition = zBase + 0.06
         root.addChild(stripe)
