@@ -12,7 +12,7 @@ Governing priority: RALLY_NORTH_STAR.md > CLAUDE_CODE_PARALLEL_PLAN.md > RALLY_O
 |------------|------------|------|-----------------------------------|-------------------------------------------------|
 | 2026-06-11 | dd3d701    | sync | Avatar overhaul + pro body mech   | torso uncoil 5.2×, sleeve gaps, scale 1.14      |
 | 2026-06-11 | 39fb976    | [CC] | Gameplay player credibility pass  | Trail shoe mirror (xFlip), hair scale 0.82/0.92 |
-| 2026-06-11 | (pending)  | [CC] | World marketplace                 | 20th listing, DEBUG router, category cards      |
+| 2026-06-11 | 21e75ba    | [CC] | World marketplace                 | 20th listing, DEBUG router, category cards      |
 
 Credibility pass (39fb976) is partial progress toward **T4 Gameplay feel** and **T5 Avatar polish**.
 Note: shoe/hair edits modify avatar drawing inside GameScene.swift — per North Star law 1, avatar
@@ -29,10 +29,10 @@ takeover=YES.
 **Spec source:** RALLY_OVERHAUL_DIRECTIVE.md Workstream C
 
 - [x] 1a Venue listing model — `IconicTennisCourt` covers all required fields
-- [ ] 1b 20-listing seed catalog with real URLs — 19 now; add 1 venue
-- [ ] 1c Link repair via RallyReferralLinkRouter — DEBUG logging; zero nil-URL controls
-- [ ] 1d Safe area + marker decluttering + functional category chips
-- [ ] 1e Per-category storefront cards + disclosure line
+- [x] 1b 20-listing seed catalog with real URLs — 20 listings (21e75ba)
+- [x] 1c Link repair via RallyReferralLinkRouter — DEBUG logging; zero nil-URL controls (21e75ba)
+- [x] 1d Safe area — .safeAreaInset(edge: .top) confirmed; category chips functional (21e75ba)
+- [x] 1e Per-category storefront cards (venues=cyan, camps=gold) + disclosure line (21e75ba)
 
 Accept criteria (W-series audit gates from RALLY_OVERHAUL_DIRECTIVE.md §5):
 - W-1: No element occluded by Dynamic Island on iPhone 16 Pro
