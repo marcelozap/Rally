@@ -30,10 +30,10 @@ enum CourtVenue: String, CaseIterable, Identifiable {
 
     var displayName: String {
         switch self {
-        case .miamiHard:      return "Miami · Hard"
-        case .wimbledonGrass: return "Wimbledon · Grass"
-        case .redClay:        return "Red Clay"
-        case .barcelonaClay:  return "Barcelona · Clay"
+        case .miamiHard:      return "Australia"
+        case .wimbledonGrass: return "Wimbledon"
+        case .redClay:        return "Clay"
+        case .barcelonaClay:  return "Barcelona"
         }
     }
 

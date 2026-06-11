@@ -31,7 +31,7 @@ final class ParticleManager {
     private func handle(_ event: GameEvent) {
         guard isEnabled, let scene = scene else { return }
         switch event {
-        case .hit(let quality, _, let position, _):
+        case .hit(let quality, _, let position, _, _):
             emitHitBurst(quality: quality, at: position, in: scene)
             applyHitShake(quality: quality)
         case .miss:

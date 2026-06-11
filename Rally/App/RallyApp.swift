@@ -10,6 +10,7 @@ struct RallyApp: App {
     let modelContainer: ModelContainer
 
     @StateObject private var authSession = AuthSession()
+    @StateObject private var avatarAppearanceStore = RallyAvatarAppearanceStore()
 
     init() {
         // Build the container before touching any view code so first-launch
@@ -44,9 +45,17 @@ struct RallyApp: App {
         HapticManager.shared.prewarm()
 
         // Request notification permissions and schedule recurring reminders
-        NotificationManager.requestPermission()
-        NotificationManager.scheduleDailyReminder(hour: 9, minute: 0)
-        NotificationManager.scheduleStreakWarning(hour: 22, minute: 0)
+        // Skip during automated testing/autoplay to avoid blocking the UI
+        #if DEBUG
+        let isAutoPlay = ProcessInfo.processInfo.arguments.contains("-RallyAutoPlay")
+        #else
+        let isAutoPlay = false
+        #endif
+        if !isAutoPlay {
+            NotificationManager.requestPermission()
+            NotificationManager.scheduleDailyReminder(hour: 9, minute: 0)
+            NotificationManager.scheduleStreakWarning(hour: 22, minute: 0)
+        }
     }
 
     @Environment(\.scenePhase) private var scenePhase
@@ -55,6 +64,7 @@ struct RallyApp: App {
         WindowGroup {
             RootView()
                 .environmentObject(authSession)
+                .environmentObject(avatarAppearanceStore)
                 .task {
                     // Optional remote-tunables refresh. No-op when the
                     // feature flag is off — see RemoteTunables.swift.

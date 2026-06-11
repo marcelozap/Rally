@@ -13,7 +13,7 @@ import os
 ///
 /// ## Composition
 ///
-/// Track is in **A minor**, **110 BPM**, four-on-the-floor. Resolution is a
+/// Track is in **A minor**, **104 BPM**, four-on-the-floor. Resolution is a
 /// 16th-note grid; each call to `tick()` advances the grid by one slot.
 ///
 /// Stems unlock progressively as the combo tier climbs:
@@ -128,7 +128,7 @@ final class MusicEngine {
     private let _phaseFloor = OSAllocatedUnfairLock(initialState: 0)
 
     private enum Constants {
-        static let bpm: Double = 110
+        static let bpm: Double = 104
         /// Per-tick fade speed (linear). At 16th-note intervals of ~136 ms,
         /// a `0.0625` step crossfades a stem fully in/out in ~16 ticks, i.e.
         /// roughly 4 beats — squarely inside the 2-6 beat brief and slow
@@ -151,8 +151,9 @@ final class MusicEngine {
             fireKick(velocity: gates.kick)
         }
         if posInBar % 2 == 0 {
-            // Accents on the off-beat (counts 2 and 4 of the bar).
-            let accent = (posInBar == 4 || posInBar == 12) ? 1.3 : 1.0
+            // Off-beats breathe harder than downbeats so the bed feels like
+            // motion, not a metronome.
+            let accent = (posInBar == 2 || posInBar == 6 || posInBar == 10 || posInBar == 14) ? 1.34 : 0.92
             fireHat(velocity: gates.hat * Float(accent))
         }
 
@@ -209,48 +210,48 @@ final class MusicEngine {
 
     /// Root motion: A → A → C → E. A simple, hooky bass line that fits the
     /// neon-cyberpunk aesthetic without sounding like a video-game cliché.
-    private let bassPattern: [Double] = [55.0, 55.0, 65.4, 82.4]
+    private let bassPattern: [Double] = [55.0, 55.0, 49.0, 65.4]
 
     /// 8th-note minor-7 arpeggio: A4 C5 E5 G5 E5 C5 E5 G5
     private let arpPattern: [Double] = [
-        220.0, 261.6, 329.6, 392.0,
-        329.6, 261.6, 329.6, 392.0
+        164.8, 220.0, 261.6, 329.6,
+        261.6, 220.0, 261.6, 349.2
     ]
 
     /// 16th-note slots → optional lead note. Hooky melodic phrase that
     /// resolves down to A4. Nil slots mean rest.
     /// Positions are 0…15 (one bar).
     private let leadPattern: [Int: Double] = [
-        0:  659.3,  // E5  (octave up: feels triumphant)
-        4:  587.3,  // D5
-        6:  523.3,  // C5
+        2:  523.3,  // C5
+        5:  587.3,  // D5
         8:  659.3,  // E5
-        12: 440.0   // A4
+        11: 587.3,  // D5
+        14: 440.0   // A4
     ]
 
     // MARK: - Stem firing (all routed through ToneSynth on the music synth)
 
     private func fireKick(velocity: Float) {
         synth.play(ToneSynth.Patch(
-            freqStartHz: 110, freqEndHz: 45,
-            durationMs: 150,
-            waveform: .sine,
-            noiseMix: 0.25,
-            peak: 0.55 * velocity,
+            freqStartHz: 96, freqEndHz: 42,
+            durationMs: 170,
+            waveform: .triangle,
+            noiseMix: 0.18,
+            peak: 0.62 * velocity,
             attackMs: 1,
-            releaseMs: 110
+            releaseMs: 124
         ))
     }
 
     private func fireHat(velocity: Float) {
         synth.play(ToneSynth.Patch(
-            freqStartHz: 9000, freqEndHz: 7000,
-            durationMs: 45,
+            freqStartHz: 7600, freqEndHz: 6200,
+            durationMs: 52,
             waveform: .sine,
-            noiseMix: 1.0,
-            peak: 0.18 * velocity,
+            noiseMix: 0.92,
+            peak: 0.11 * velocity,
             attackMs: 1,
-            releaseMs: 35
+            releaseMs: 42
         ))
     }
 
@@ -258,12 +259,12 @@ final class MusicEngine {
         let f = bassPattern[idx]
         synth.play(ToneSynth.Patch(
             freqStartHz: f, freqEndHz: f,
-            durationMs: 360,
+            durationMs: 420,
             waveform: .triangle,
-            noiseMix: 0,
-            peak: 0.45 * velocity,
-            attackMs: 4,
-            releaseMs: 180
+            noiseMix: 0.03,
+            peak: 0.54 * velocity,
+            attackMs: 6,
+            releaseMs: 220
         ))
     }
 
@@ -271,38 +272,38 @@ final class MusicEngine {
         let f = arpPattern[idx]
         synth.play(ToneSynth.Patch(
             freqStartHz: f, freqEndHz: f,
-            durationMs: 130,
-            waveform: .sawtooth,
+            durationMs: 168,
+            waveform: .triangle,
             noiseMix: 0,
-            peak: 0.22 * velocity,
-            attackMs: 2,
-            releaseMs: 80
+            peak: 0.18 * velocity,
+            attackMs: 8,
+            releaseMs: 112
         ))
     }
 
     private func fireLead(freqHz: Double, velocity: Float) {
         synth.play(ToneSynth.Patch(
             freqStartHz: freqHz, freqEndHz: freqHz,
-            durationMs: 480,
-            waveform: .square,
+            durationMs: 520,
+            waveform: .triangle,
             noiseMix: 0,
-            peak: 0.20 * velocity,
-            attackMs: 6,
-            releaseMs: 240
+            peak: 0.16 * velocity,
+            attackMs: 18,
+            releaseMs: 280
         ))
     }
 
     private func firePad(velocity: Float) {
-        // Three-voice minor chord stack: A2, C3, E3.
-        for f in [110.0, 130.8, 164.8] {
+        // Four-voice suspended minor stack: A2, C3, E3, G3.
+        for f in [110.0, 130.8, 164.8, 196.0] {
             synth.play(ToneSynth.Patch(
                 freqStartHz: f, freqEndHz: f,
-                durationMs: 1800,
+                durationMs: 2200,
                 waveform: .triangle,
                 noiseMix: 0,
-                peak: 0.12 * velocity,
-                attackMs: 200,
-                releaseMs: 600
+                peak: 0.13 * velocity,
+                attackMs: 280,
+                releaseMs: 760
             ))
         }
     }

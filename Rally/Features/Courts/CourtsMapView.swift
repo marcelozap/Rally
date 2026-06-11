@@ -185,6 +185,27 @@ struct CourtsMapView: View {
             }
         }
         .mapStyle(mapStyle)
+        .overlay {
+            LinearGradient(
+                colors: [
+                    Color.black.opacity(0.28),
+                    .clear,
+                    Color.black.opacity(0.36)
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .allowsHitTesting(false)
+        }
+        .overlay {
+            RadialGradient(
+                colors: [.clear, Color.black.opacity(0.22)],
+                center: .center,
+                startRadius: 120,
+                endRadius: 420
+            )
+            .allowsHitTesting(false)
+        }
         .mapControls {
             MapPitchToggle()
             MapCompass()
@@ -196,175 +217,95 @@ struct CourtsMapView: View {
                         VStack(alignment: .leading, spacing: 12) {
                             HStack(alignment: .center, spacing: 12) {
                                 RallyUIKit.IconBadge(
-                                    systemName: "magnifyingglass",
-                                    tint: RallyUIKit.Palette.lime,
+                                    systemName: "globe.europe.africa.fill",
+                                    tint: RallyUIKit.Palette.cyan,
                                     size: 30
                                 )
 
                                 VStack(alignment: .leading, spacing: 4) {
-                                    Text("Explore the tennis world")
+                                    Text("Earth Courts")
                                         .font(.system(.subheadline, design: .rounded).weight(.bold))
                                         .foregroundStyle(.white)
-                                    Text("Search places, then narrow by destination type and camp fit.")
+                                    Text(filteredCountLabel)
                                         .font(.caption)
                                         .foregroundStyle(.white.opacity(0.58))
                                 }
+
+                                Spacer(minLength: 0)
+
+                                ZStack {
+                                    Circle()
+                                        .fill(RallyUIKit.Palette.cyan.opacity(0.16))
+                                        .frame(width: 34, height: 34)
+                                        .blur(radius: 8)
+                                    Image(systemName: "sparkles")
+                                        .font(.system(size: 12, weight: .bold))
+                                        .foregroundStyle(RallyUIKit.Palette.gold)
+                                }
                             }
 
-                            TextField("Search name, city, country, or region", text: $searchText)
+                            TextField("Search court, city, or country", text: $searchText)
                                 .textInputAutocapitalization(.never)
                                 .autocorrectionDisabled()
                                 .rallyTextFieldStyle()
-                        }
-                    }
-                    .padding(.horizontal, 16)
 
-                    filterStrip(
-                        title: "Destination type",
-                        icon: "line.3.horizontal.decrease.circle.fill",
-                        tint: RallyUIKit.Palette.cyan
-                    ) {
-                        ScrollView(.horizontal, showsIndicators: false) {
-                            LazyHStack(spacing: 10) {
-                                ForEach(AtlasFilter.allCases) { mode in
-                                    atlasModeChip(mode)
-                                }
-                            }
-                            .padding(.horizontal, 2)
-                        }
-                        .scrollClipDisabled()
-                    }
-
-                    filterStrip(
-                        title: "Map layer",
-                        icon: "square.2.layers.3d.fill",
-                        tint: RallyUIKit.Palette.rose
-                    ) {
-                        ScrollView(.horizontal, showsIndicators: false) {
-                            LazyHStack(spacing: 10) {
-                                ForEach(MapLook.allCases) { mode in
-                                    mapLookChip(mode)
-                                }
-                            }
-                            .padding(.horizontal, 2)
-                        }
-                        .scrollClipDisabled()
-                    }
-
-                    filterStrip(
-                        title: "Region",
-                        icon: "globe.central.south.asia.fill",
-                        tint: RallyUIKit.Palette.lime
-                    ) {
-                        ScrollView(.horizontal, showsIndicators: false) {
-                            LazyHStack(spacing: 10) {
-                                regionChip(nil, label: "World")
-                                ForEach(regionOptions, id: \.self) { region in
-                                    regionChip(region, label: region)
-                                }
-                            }
-                            .padding(.horizontal, 2)
-                        }
-                        .scrollClipDisabled()
-                    }
-
-                    filterStrip(
-                        title: "Best for",
-                        icon: "sparkles",
-                        tint: RallyUIKit.Palette.gold
-                    ) {
-                        ScrollView(.horizontal, showsIndicators: false) {
-                            LazyHStack(spacing: 10) {
-                                bestForChip(nil, label: "Any fit")
-                                ForEach(bestForOptions) { option in
-                                    bestForChip(option, label: option.rawValue)
-                                }
-                            }
-                            .padding(.horizontal, 2)
-                        }
-                        .scrollClipDisabled()
-                    }
-
-                    RallyUIKit.SectionCard(stroke: RallyUIKit.Palette.mist) {
-                        VStack(alignment: .leading, spacing: 10) {
-                            VStack(alignment: .leading, spacing: 6) {
-                                Text(filteredCountLabel.uppercased())
-                                    .font(.system(.caption2, design: .rounded).weight(.bold))
-                                    .tracking(1.2)
-                                    .foregroundStyle(.white.opacity(0.5))
-                                Text(bestForSummary)
-                                    .font(.system(.subheadline, design: .rounded).weight(.semibold))
-                                    .foregroundStyle(.white)
-                                Text("Apple Maps imagery — tap a pin for official venue, camp, sponsor-host, and enrollment links.")
-                                    .font(.caption)
-                                    .foregroundStyle(.white.opacity(0.42))
-                            }
-
-                            if !activeFilterHighlights.isEmpty {
-                                ScrollView(.horizontal, showsIndicators: false) {
-                                    HStack(spacing: 8) {
-                                        ForEach(Array(activeFilterHighlights.enumerated()), id: \.offset) { _, item in
-                                            atlasFactTag(item.0, tint: item.1)
-                                        }
-                                    }
-                                    .padding(.horizontal, 1)
-                                }
-                                .scrollClipDisabled()
-                            }
-
-                            HStack(spacing: 8) {
-                                ForEach(Array(availabilityHighlights.enumerated()), id: \.offset) { _, item in
-                                    atlasCountTag(title: item.0, value: item.1, tint: item.2)
-                                }
-                            }
-
-                            if hasActiveFilters {
-                                HStack(spacing: 10) {
-                                    Button {
-                                        clearFilters()
-                                    } label: {
-                                        Label("Reset atlas", systemImage: "arrow.counterclockwise")
-                                    }
-                                    .buttonStyle(SecondaryButtonStyle(tint: RallyUIKit.Palette.cyan))
-                                    .frame(maxWidth: .infinity)
-
-                                    if !destinations.isEmpty {
-                                        Button {
-                                            focus(on: destinations)
-                                        } label: {
-                                            Label("Focus results", systemImage: "scope")
-                                        }
-                                        .buttonStyle(GhostButtonStyle())
-                                        .frame(maxWidth: .infinity)
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    .padding(.horizontal, 16)
-
-                    if !destinations.isEmpty {
-                        filterStrip(
-                            title: "Featured now",
-                            icon: "sparkles.rectangle.stack.fill",
-                            tint: RallyUIKit.Palette.champagne
-                        ) {
                             ScrollView(.horizontal, showsIndicators: false) {
-                                HStack(spacing: 12) {
-                                    ForEach(featuredDestinations) { court in
-                                        featuredDestinationCard(court)
+                                HStack(spacing: 10) {
+                                    ForEach(AtlasFilter.allCases) { mode in
+                                        atlasModeChip(mode)
+                                    }
+                                    Divider()
+                                        .overlay(Color.white.opacity(0.16))
+                                        .frame(height: 22)
+                                    regionChip(nil, label: "World")
+                                    ForEach(regionOptions, id: \.self) { region in
+                                        regionChip(region, label: region)
+                                    }
+                                    Divider()
+                                        .overlay(Color.white.opacity(0.16))
+                                        .frame(height: 22)
+                                    bestForChip(nil, label: "Any fit")
+                                    ForEach(bestForOptions) { option in
+                                        bestForChip(option, label: option.rawValue)
                                     }
                                 }
                                 .padding(.horizontal, 2)
                             }
                             .scrollClipDisabled()
                         }
+                    }
+                    .padding(.horizontal, 16)
 
-                        filterStrip(
-                            title: "Visible now",
-                            icon: "rectangle.grid.1x2.fill",
-                            tint: RallyUIKit.Palette.lime
-                        ) {
+                    if hasActiveFilters {
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 8) {
+                                ForEach(Array(activeFilterHighlights.enumerated()), id: \.offset) { _, item in
+                                    atlasFactTag(item.0, tint: item.1)
+                                }
+                                Button("Reset") {
+                                    clearFilters()
+                                }
+                                .buttonStyle(SecondaryButtonStyle(tint: RallyUIKit.Palette.cyan))
+                            }
+                            .padding(.horizontal, 18)
+                        }
+                        .scrollClipDisabled()
+                    }
+
+                    if !destinations.isEmpty {
+                        if !featuredDestinations.isEmpty {
+                            ScrollView(.horizontal, showsIndicators: false) {
+                                HStack(spacing: 12) {
+                                    ForEach(featuredDestinations) { court in
+                                        featuredDestinationCard(court)
+                                    }
+                                }
+                                .padding(.horizontal, 18)
+                            }
+                            .scrollClipDisabled()
+                        }
+
+                        RallyUIKit.SectionCard(stroke: RallyUIKit.Palette.lime.opacity(0.18)) {
                             ScrollView {
                                 LazyVStack(spacing: 10) {
                                     ForEach(destinations.prefix(6)) { court in
@@ -374,6 +315,7 @@ struct CourtsMapView: View {
                             }
                             .frame(maxHeight: 260)
                         }
+                        .padding(.horizontal, 16)
                     } else {
                         RallyUIKit.SectionCard(stroke: RallyUIKit.Palette.rose.opacity(0.18)) {
                             VStack(alignment: .leading, spacing: 10) {
@@ -419,7 +361,7 @@ struct CourtsMapView: View {
             }
         }
         .allowsHitTesting(true)
-        .navigationTitle("World tennis atlas")
+        .navigationTitle("World")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
@@ -436,16 +378,10 @@ struct CourtsMapView: View {
         }
     }
 
-    private func filterStrip<Content: View>(title: String, icon: String, tint: Color, @ViewBuilder content: () -> Content) -> some View {
+    private func filterStrip<Content: View>(icon: String, tint: Color, @ViewBuilder content: () -> Content) -> some View {
         RallyUIKit.SectionCard(stroke: tint.opacity(0.22)) {
             VStack(alignment: .leading, spacing: 10) {
-                HStack(spacing: 8) {
-                    RallyUIKit.IconBadge(systemName: icon, tint: tint, size: 24)
-                    Text(title)
-                        .font(.system(.caption, design: .rounded).weight(.bold))
-                        .tracking(1)
-                        .foregroundStyle(.white.opacity(0.62))
-                }
+                RallyUIKit.IconBadge(systemName: icon, tint: tint, size: 24)
                 content()
             }
         }
@@ -675,7 +611,8 @@ struct CourtsMapView: View {
     }
 
     private func featuredDestinationCard(_ court: IconicTennisCourt) -> some View {
-        let tint = court.kind == .venue ? RallyUIKit.Palette.cyan : RallyUIKit.Palette.gold
+        let surface = court.surfaceAccent
+        let tint = court.kind == .venue ? surface.primary : RallyUIKit.Palette.gold
 
         return Button {
             selectedCourt = court
@@ -688,7 +625,8 @@ struct CourtsMapView: View {
                             LinearGradient(
                                 colors: [
                                     RallyUIKit.Palette.obsidian,
-                                    tint.opacity(0.22),
+                                    surface.primary.opacity(0.28),
+                                    surface.secondary.opacity(0.12),
                                     Color.white.opacity(0.04)
                                 ],
                                 startPoint: .topLeading,
@@ -698,7 +636,7 @@ struct CourtsMapView: View {
                         .frame(height: 158)
 
                     Circle()
-                        .fill(tint.opacity(0.2))
+                        .fill(surface.primary.opacity(0.24))
                         .frame(width: 110, height: 110)
                         .blur(radius: 18)
                         .offset(x: 18, y: -18)
@@ -712,9 +650,10 @@ struct CourtsMapView: View {
                                 .padding(.vertical, 5)
                                 .background(Capsule().fill(tint.opacity(0.14)))
                                 .foregroundStyle(tint)
+                            atlasFactTag(surface.label, tint: surface.primary)
                             Spacer()
                             RallyUIKit.IconBadge(
-                                systemName: court.kind == .venue ? "sportscourt.fill" : "figure.tennis",
+                                systemName: court.kind == .venue ? surface.symbol : "figure.tennis",
                                 tint: tint,
                                 size: 28
                             )
@@ -896,39 +835,86 @@ struct CourtsMapView: View {
 
     @ViewBuilder
     private func courtMarker(_ court: IconicTennisCourt) -> some View {
-        VStack(spacing: 2) {
+        let surface = court.surfaceAccent
+        let tint = court.kind == .venue ? surface.primary : RallyUIKit.Palette.gold
+
+        VStack(spacing: 4) {
             ZStack {
                 Circle()
                     .fill(
                         RadialGradient(
                             colors: [
-                                court.kind == .venue ? Color.green.opacity(0.95) : RallyUIKit.Palette.gold.opacity(0.95),
-                                court.kind == .venue ? Color.green.opacity(0.55) : RallyUIKit.Palette.rose.opacity(0.55)
+                                tint.opacity(0.96),
+                                surface.secondary.opacity(0.72)
                             ],
                             center: .center,
                             startRadius: 2,
                             endRadius: 22
                         )
                     )
-                    .frame(width: 40, height: 40)
-                    .overlay(Circle().stroke(Color.white.opacity(0.35), lineWidth: 1))
-                Image(systemName: court.kind == .venue ? "sportscourt.fill" : "figure.tennis")
-                    .font(.system(size: 17, weight: .bold))
+                    .frame(width: 42, height: 42)
+                    .overlay(Circle().stroke(Color.white.opacity(0.38), lineWidth: 1.2))
+                Image(systemName: court.kind == .venue ? surface.symbol : "figure.tennis")
+                    .font(.system(size: 16, weight: .bold))
                     .foregroundStyle(.white)
             }
+            .shadow(color: tint.opacity(0.45), radius: 8, x: 0, y: 3)
             .shadow(color: .black.opacity(0.35), radius: 4, x: 0, y: 2)
 
             Text(court.shortLabel)
-                .font(.system(size: 9, weight: .bold))
-                .foregroundStyle(.white)
-                .padding(.horizontal, 6)
+                .font(RallyUIKit.Typography.label(.caption2, weight: .bold))
+                .foregroundStyle(RallyUIKit.Palette.frost)
+                .padding(.horizontal, 7)
                 .padding(.vertical, 3)
-                .background(Capsule().fill(Color.black.opacity(0.55)))
+                .background(Capsule().fill(Color.black.opacity(0.62)))
         }
     }
 }
 
 private extension IconicTennisCourt {
+    struct SurfaceAccent {
+        let label: String
+        let symbol: String
+        let primary: Color
+        let secondary: Color
+    }
+
+    /// Infers surface palette from venue vibe/copy for map pins and cards.
+    var surfaceAccent: SurfaceAccent {
+        if kind == .academy {
+            return SurfaceAccent(
+                label: "Camp",
+                symbol: "figure.tennis",
+                primary: RallyUIKit.Palette.gold,
+                secondary: RallyUIKit.Palette.rose
+            )
+        }
+
+        let haystack = "\(vibe) \(detail) \(name)".lowercased()
+        if haystack.contains("clay") {
+            return SurfaceAccent(
+                label: "Clay",
+                symbol: "circle.grid.cross.fill",
+                primary: Color(red: 0.82, green: 0.38, blue: 0.22),
+                secondary: Color(red: 0.58, green: 0.22, blue: 0.14)
+            )
+        }
+        if haystack.contains("grass") {
+            return SurfaceAccent(
+                label: "Grass",
+                symbol: "leaf.fill",
+                primary: Color(red: 0.34, green: 0.72, blue: 0.38),
+                secondary: Color(red: 0.18, green: 0.48, blue: 0.24)
+            )
+        }
+        return SurfaceAccent(
+            label: "Hard",
+            symbol: "sportscourt.fill",
+            primary: RallyUIKit.Palette.cyan,
+            secondary: Color(red: 0.12, green: 0.34, blue: 0.62)
+        )
+    }
+
     /// Abbreviated marker label under the pin.
     var shortLabel: String {
         if let first = name.split(separator: "·").first {

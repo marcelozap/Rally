@@ -1,5 +1,16 @@
 import CoreGraphics
 
+// MARK: - Safe rounded-rect helper
+// CGPathAddRoundedRect asserts if cornerWidth/Height > half the dimension.
+// This extension clamps the radii so callers never have to think about it.
+private extension CGMutablePath {
+    func addSafeRoundedRect(in rect: CGRect, cornerWidth cw: CGFloat, cornerHeight ch: CGFloat) {
+        let safeCW = min(cw, abs(rect.width)  * 0.5)
+        let safeCH = min(ch, abs(rect.height) * 0.5)
+        addRoundedRect(in: rect, cornerWidth: safeCW, cornerHeight: safeCH)
+    }
+}
+
 enum RallyAvatarGeometry {
     // MARK: - Head & Hair
 
@@ -114,7 +125,7 @@ enum RallyAvatarGeometry {
             height: height
         )
         let path = CGMutablePath()
-        path.addRoundedRect(in: rect, cornerWidth: width * 0.42, cornerHeight: height * 0.48)
+        path.addSafeRoundedRect(in: rect, cornerWidth: width * 0.42, cornerHeight: height * 0.48)
         return path
     }
 
@@ -194,8 +205,8 @@ enum RallyAvatarGeometry {
         path.addLine(to: CGPoint(x: -halfWidth - 0.2 * scale, y: fringeBaseY - 1.2 * scale))
         path.closeSubpath()
 
-        path.addRoundedRect(in: CGRect(x: -halfWidth - 3.6 * scale, y: -9.5 * scale, width: 5.2 * scale, height: 15.5 * scale), cornerWidth: 2.5 * scale, cornerHeight: 2.5 * scale)
-        path.addRoundedRect(in: CGRect(x: halfWidth - 1.0 * scale, y: -7.6 * scale, width: 4.4 * scale, height: 11.8 * scale), cornerWidth: 2.1 * scale, cornerHeight: 2.1 * scale)
+        path.addSafeRoundedRect(in: CGRect(x: -halfWidth - 3.6 * scale, y: -9.5 * scale, width: 5.2 * scale, height: 15.5 * scale), cornerWidth: 2.5 * scale, cornerHeight: 2.5 * scale)
+        path.addSafeRoundedRect(in: CGRect(x: halfWidth - 1.0 * scale, y: -7.6 * scale, width: 4.4 * scale, height: 11.8 * scale), cornerWidth: 2.1 * scale, cornerHeight: 2.1 * scale)
         return path
     }
 
@@ -223,8 +234,8 @@ enum RallyAvatarGeometry {
         path.addQuadCurve(to: CGPoint(x: -halfWidth - 2.0 * scale, y: -4 * scale), control: CGPoint(x: -halfWidth - 1.0 * scale, y: -10.0 * scale))
         path.closeSubpath()
 
-        path.addRoundedRect(in: CGRect(x: -halfWidth - 3.4 * scale, y: -17.2 * scale, width: 6.2 * scale, height: 24 * scale), cornerWidth: 3.1 * scale, cornerHeight: 3.1 * scale)
-        path.addRoundedRect(in: CGRect(x: halfWidth - 2.1 * scale, y: -14.4 * scale, width: 5.4 * scale, height: 19 * scale), cornerWidth: 2.7 * scale, cornerHeight: 2.7 * scale)
+        path.addSafeRoundedRect(in: CGRect(x: -halfWidth - 3.4 * scale, y: -17.2 * scale, width: 6.2 * scale, height: 24 * scale), cornerWidth: 3.1 * scale, cornerHeight: 3.1 * scale)
+        path.addSafeRoundedRect(in: CGRect(x: halfWidth - 2.1 * scale, y: -14.4 * scale, width: 5.4 * scale, height: 19 * scale), cornerWidth: 2.7 * scale, cornerHeight: 2.7 * scale)
         return path
     }
 
@@ -374,10 +385,11 @@ enum RallyAvatarGeometry {
     static func shoeSolePath(scale: CGFloat) -> CGPath {
         let w: CGFloat = 38 * scale
         let h: CGFloat = 5 * scale
+        let corner = min(3 * scale, w * 0.5, h * 0.5)   // never exceed half-dimension
         let path = CGMutablePath()
-        path.addRoundedRect(
+        path.addSafeRoundedRect(
             in: CGRect(x: -w * 0.5, y: -h * 0.5, width: w, height: h),
-            cornerWidth: 3 * scale, cornerHeight: 3 * scale
+            cornerWidth: corner, cornerHeight: corner
         )
         return path
     }
@@ -387,7 +399,7 @@ enum RallyAvatarGeometry {
         let w: CGFloat = 11 * scale
         let h: CGFloat = 9 * scale
         let path = CGMutablePath()
-        path.addRoundedRect(
+        path.addSafeRoundedRect(
             in: CGRect(x: -w * 0.5, y: 1.2 * scale, width: w, height: h),
             cornerWidth: 3 * scale, cornerHeight: 3 * scale
         )
@@ -444,7 +456,7 @@ enum RallyAvatarGeometry {
         let w: CGFloat = 46 * scale
         let h: CGFloat = 5.5 * scale
         let path = CGMutablePath()
-        path.addRoundedRect(
+        path.addSafeRoundedRect(
             in: CGRect(x: -w * 0.5, y: -h * 0.5, width: w, height: h),
             cornerWidth: 2.5 * scale, cornerHeight: 2.5 * scale
         )
@@ -458,7 +470,7 @@ enum RallyAvatarGeometry {
         let w: CGFloat = 9 * scale
         let h: CGFloat = 32 * scale
         let path = CGMutablePath()
-        path.addRoundedRect(
+        path.addSafeRoundedRect(
             in: CGRect(x: -w * 0.5, y: 2 * scale, width: w, height: h),
             cornerWidth: w * 0.5, cornerHeight: w * 0.5
         )
@@ -471,7 +483,7 @@ enum RallyAvatarGeometry {
         let h: CGFloat = 40 * scale
         let x:  CGFloat = side * 10 * scale
         let path = CGMutablePath()
-        path.addRoundedRect(
+        path.addSafeRoundedRect(
             in: CGRect(x: x - w * 0.5, y: -h * 0.06, width: w, height: h),
             cornerWidth: w * 0.42, cornerHeight: w * 0.42
         )
@@ -483,7 +495,7 @@ enum RallyAvatarGeometry {
         let w: CGFloat = 4.6 * scale
         let h: CGFloat = legVisualHeight * 0.33
         let path = CGMutablePath()
-        path.addRoundedRect(
+        path.addSafeRoundedRect(
             in: CGRect(x: -w * 0.5, y: -h * 0.08, width: w, height: h),
             cornerWidth: w * 0.5, cornerHeight: w * 0.5
         )

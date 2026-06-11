@@ -31,7 +31,7 @@ struct JournalView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
+                VStack(alignment: .leading, spacing: 28) {
                     insightsHeader
                     featuredPromptCard
                     filterChips
@@ -41,10 +41,11 @@ struct JournalView: View {
                         timelineSections
                     }
                 }
-                .padding(.horizontal, 16)
-                .padding(.bottom, 28)
+                .padding(.horizontal, 18)
+                .padding(.top, 8)
+                .padding(.bottom, 36)
             }
-            .background(RallyUIKit.screenBackground)
+            .background(journalBackground)
             .navigationTitle("Journal")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -74,89 +75,126 @@ struct JournalView: View {
 
     // MARK: - Insights (streak card)
 
-    private var insightsHeader: some View {
-        RallyUIKit.LuxePanel(tint: RallyUIKit.Palette.rose) {
-            HStack(spacing: 14) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 18)
-                        .fill(
-                            LinearGradient(
-                                colors: [RallyUIKit.Palette.rose.opacity(0.48), RallyUIKit.Palette.gold.opacity(0.24)],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                    VStack(spacing: 6) {
-                        RallyUIKit.IconBadge(
-                            systemName: insights.journalingStreakDays > 0 ? "flame.fill" : "sparkles",
-                            tint: RallyUIKit.Palette.gold,
-                            size: 34
-                        )
-                        Text("\(insights.journalingStreakDays)")
-                            .font(.system(.title, design: .rounded).weight(.heavy))
-                            .foregroundStyle(.white)
-                        Text("day streak")
-                            .font(.system(.caption, design: .rounded).weight(.semibold))
-                            .foregroundStyle(.white.opacity(0.75))
-                    }
-                    .padding(.vertical, 14)
-                }
-                .frame(width: 110, height: 116)
+    private var journalBackground: some View {
+        ZStack {
+            LinearGradient(
+                colors: [
+                    Color(red: 0.04, green: 0.03, blue: 0.07),
+                    Color(red: 0.02, green: 0.02, blue: 0.04),
+                    Color.black
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .ignoresSafeArea()
 
-                VStack(alignment: .leading, spacing: 8) {
-                    RallyUIKit.EditorialEyebrow(text: "Your rhythm", tint: RallyUIKit.Palette.rose)
-                    Text("\(insights.entriesThisWeek) this week · \(insights.entriesThisMonth) this month")
-                        .font(RallyUIKit.Typography.body(.subheadline, weight: .semibold))
+            RadialGradient(
+                colors: [RallyUIKit.Palette.rose.opacity(0.10), .clear],
+                center: .topLeading,
+                startRadius: 20,
+                endRadius: 420
+            )
+            .ignoresSafeArea()
+
+            RadialGradient(
+                colors: [RallyUIKit.Palette.champagne.opacity(0.06), .clear],
+                center: .bottomTrailing,
+                startRadius: 40,
+                endRadius: 380
+            )
+            .ignoresSafeArea()
+
+            LinearGradient(
+                colors: [Color.black.opacity(0.0), Color.black.opacity(0.42)],
+                startPoint: .center,
+                endPoint: .bottom
+            )
+            .ignoresSafeArea()
+        }
+    }
+
+    private var insightsHeader: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            RallyUIKit.EditorialEyebrow(text: "Your rhythm", tint: RallyUIKit.Palette.rose)
+
+            HStack(alignment: .bottom, spacing: 18) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("\(insights.journalingStreakDays)")
+                        .font(RallyUIKit.Typography.display(52, weight: .bold))
                         .foregroundStyle(RallyUIKit.Palette.frost)
-                    Text("\(insights.totalEntries) total entries")
-                        .font(RallyUIKit.Typography.body(.caption, weight: .semibold))
-                        .foregroundStyle(RallyUIKit.Palette.cyan.opacity(0.88))
+                    Text(insights.journalingStreakDays == 1 ? "day in a row" : "days in a row")
+                        .font(RallyUIKit.Typography.body(.subheadline, weight: .medium))
+                        .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.58))
                 }
+
                 Spacer(minLength: 0)
+
+                VStack(alignment: .trailing, spacing: 6) {
+                    Text("\(insights.entriesThisWeek) this week")
+                        .font(RallyUIKit.Typography.body(.caption, weight: .semibold))
+                        .foregroundStyle(RallyUIKit.Palette.frost.opacity(0.82))
+                    Text("\(insights.totalEntries) memories saved")
+                        .font(RallyUIKit.Typography.body(.caption2, weight: .medium))
+                        .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.46))
+                }
             }
         }
+        .padding(.horizontal, 4)
+        .padding(.top, 4)
     }
 
     // MARK: - Featured prompt (daily inspiration)
 
     private var featuredPromptCard: some View {
-        RallyUIKit.LuxePanel(tint: RallyUIKit.Palette.cyan) {
-            VStack(alignment: .leading, spacing: 12) {
-                HStack {
-                    RallyUIKit.IconBadge(
-                        systemName: "lightbulb.max.fill",
-                        tint: RallyUIKit.Palette.gold,
-                        size: 28
-                    )
-                    RallyUIKit.EditorialEyebrow(text: "Today's prompt", tint: RallyUIKit.Palette.cyan)
-                    Spacer()
-                    Text(featured.focus.shortLabel.uppercased())
-                        .font(.caption2.weight(.heavy))
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(Capsule().fill(RallyUIKit.Palette.cyan.opacity(0.18)))
-                        .foregroundStyle(RallyUIKit.Palette.cyan)
-                }
-
-                Text(featured.title)
-                    .font(RallyUIKit.Typography.body(.headline, weight: .bold))
-                    .foregroundStyle(RallyUIKit.Palette.frost)
-                Text(String(featured.bodyStarter.trimmingCharacters(in: .newlines).prefix(120)))
-                    .font(RallyUIKit.Typography.body(.caption, weight: .medium))
-                    .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.58))
-                    .lineLimit(3)
-
-                Button {
-                    composerRoute = .seeded(featured)
-                } label: {
-                    HStack {
-                        Text("Write with this prompt")
-                        Image(systemName: "arrow.right.circle.fill")
-                    }
-                }
-                .buttonStyle(PrimaryButtonStyle(tint: RallyUIKit.Palette.cyan))
+        VStack(alignment: .leading, spacing: 18) {
+            HStack {
+                RallyUIKit.EditorialEyebrow(text: "Today's prompt", tint: RallyUIKit.Palette.champagne)
+                Spacer()
+                Text(featured.focus.shortLabel)
+                    .font(RallyUIKit.Typography.label(.caption2, weight: .bold))
+                    .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.52))
             }
+
+            Text(featured.title)
+                .font(RallyUIKit.Typography.display(24, weight: .bold))
+                .foregroundStyle(RallyUIKit.Palette.frost)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Text(String(featured.bodyStarter.trimmingCharacters(in: .newlines).prefix(140)))
+                .font(RallyUIKit.Typography.body(.subheadline, weight: .medium))
+                .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.62))
+                .lineSpacing(4)
+                .lineLimit(4)
+
+            Button {
+                composerRoute = .seeded(featured)
+            } label: {
+                HStack {
+                    Text("Begin writing")
+                    Image(systemName: "arrow.right")
+                }
+            }
+            .buttonStyle(PrimaryButtonStyle(tint: RallyUIKit.Palette.rose))
         }
+        .padding(22)
+        .background(
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            Color.white.opacity(0.06),
+                            RallyUIKit.Palette.rose.opacity(0.08),
+                            Color.black.opacity(0.28)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .stroke(Color.white.opacity(0.08), lineWidth: 1)
+        )
     }
 
     // MARK: - Filters
@@ -208,18 +246,12 @@ struct JournalView: View {
     // MARK: - Timeline
 
     private var timelineSections: some View {
-        LazyVStack(alignment: .leading, spacing: 18) {
+        LazyVStack(alignment: .leading, spacing: 28) {
             ForEach(timeline) { section in
-                VStack(alignment: .leading, spacing: 10) {
-                    HStack(spacing: 10) {
-                        Capsule()
-                            .fill(RallyUIKit.Palette.cyan.opacity(0.82))
-                            .frame(width: 18, height: 4)
-                        Text(section.title.uppercased())
-                            .font(RallyUIKit.Typography.label(.caption, weight: .bold))
-                            .tracking(1.2)
-                            .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.42))
-                    }
+                VStack(alignment: .leading, spacing: 14) {
+                    Text(section.title)
+                        .font(RallyUIKit.Typography.title(.subheadline, weight: .bold))
+                        .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.48))
                     ForEach(section.entries) { entry in
                         NavigationLink {
                             JournalEditorView(entry: entry)
@@ -234,30 +266,36 @@ struct JournalView: View {
     }
 
     private var emptyState: some View {
-        VStack(spacing: 14) {
-            RallyUIKit.IconBadge(
-                systemName: "book.pages.fill",
-                tint: RallyUIKit.Palette.cyan,
-                size: 72
-            )
-            Text(filterFocus == nil ? "Start your journal" : "Nothing in \(filterFocus!.shortLabel.lowercased()) yet")
-                .font(.system(.title3, design: .rounded).weight(.semibold))
-                .foregroundStyle(.white)
-            Text("Capture practice notes, match debriefs, and Rally sessions — one tap at a time.")
-                .font(.system(.subheadline, design: .rounded).weight(.medium))
-                .multilineTextAlignment(.center)
-                .foregroundStyle(.white.opacity(0.52))
-                .padding(.horizontal)
+        RallyUIKit.LuxePanel(tint: RallyUIKit.Palette.rose) {
+            VStack(spacing: 18) {
+                RallyUIKit.IconBadge(
+                    systemName: "book.pages.fill",
+                    tint: RallyUIKit.Palette.cyan,
+                    size: 64
+                )
+                RallyUIKit.EditorialEyebrow(text: "Your tennis story", tint: RallyUIKit.Palette.rose)
+                Text(filterFocus == nil ? "Your court diary" : "Nothing in \(filterFocus!.shortLabel.lowercased()) yet")
+                    .font(RallyUIKit.Typography.display(24, weight: .bold))
+                    .foregroundStyle(RallyUIKit.Palette.frost)
+                    .multilineTextAlignment(.center)
+                Text("Practice notes, match debriefs, quiet moments between sets.")
+                    .font(RallyUIKit.Typography.body(.subheadline, weight: .medium))
+                    .multilineTextAlignment(.center)
+                    .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.62))
+                    .lineSpacing(4)
+                    .padding(.horizontal, 8)
 
-            Button {
-                composerRoute = .seeded(featured)
-            } label: {
-                Label("Try today's prompt", systemImage: "wand.and.stars")
+                Button {
+                    composerRoute = .seeded(featured)
+                } label: {
+                    Label("Begin with today's prompt", systemImage: "pencil.line")
+                }
+                .buttonStyle(SecondaryButtonStyle(tint: RallyUIKit.Palette.rose))
             }
-            .buttonStyle(SecondaryButtonStyle(tint: RallyUIKit.Palette.cyan))
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 8)
         }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 36)
+        .padding(.vertical, 12)
     }
 
     private func delete(at offsets: IndexSet, from sectionEntries: [JournalEntry]) {
@@ -289,79 +327,66 @@ private struct JournalRow: View {
     let entry: JournalEntry
 
     var body: some View {
-        HStack(alignment: .top, spacing: 12) {
-            ZStack {
-                Circle()
-                    .fill(moodTint.opacity(0.18))
-                Text(moodEmoji)
-                    .font(.title3)
-            }
-            .frame(width: 42, height: 42)
+        VStack(alignment: .leading, spacing: 0) {
+            if let previewImage {
+                ZStack(alignment: .bottomLeading) {
+                    Image(uiImage: previewImage)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(height: 148)
+                        .frame(maxWidth: .infinity)
+                        .clipped()
 
-            VStack(alignment: .leading, spacing: 8) {
-                HStack(alignment: .top, spacing: 8) {
-                    Image(systemName: entry.focus.symbolName)
-                        .font(.caption.weight(.bold))
-                        .foregroundStyle(focusTint.opacity(0.9))
-                    Text(entry.title.isEmpty ? "Untitled entry" : entry.title)
-                        .font(RallyUIKit.Typography.body(.headline, weight: .bold))
-                        .foregroundStyle(RallyUIKit.Palette.frost)
-                        .lineLimit(1)
-                    Spacer(minLength: 0)
-                    Text(entry.date, format: .dateTime.month(.abbreviated).day())
-                        .font(RallyUIKit.Typography.body(.caption2, weight: .semibold))
-                        .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.4))
+                    LinearGradient(
+                        colors: [.clear, Color.black.opacity(0.62)],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                    .frame(height: 148)
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(entry.title.isEmpty ? "Untitled" : entry.title)
+                            .font(RallyUIKit.Typography.title(.headline, weight: .bold))
+                            .foregroundStyle(RallyUIKit.Palette.frost)
+                            .lineLimit(2)
+                        Text(entry.date, format: .dateTime.month(.wide).day().year())
+                            .font(RallyUIKit.Typography.label(.caption2, weight: .semibold))
+                            .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.72))
+                    }
+                    .padding(16)
                 }
+            }
 
-                HStack(spacing: 8) {
-                    entryMetaTag(entry.focus.displayName, tint: focusTint)
-                    if !entry.promptId.isEmpty {
-                        entryMetaTag("Guided", tint: RallyUIKit.Palette.gold, systemName: "wand.and.stars")
+            VStack(alignment: .leading, spacing: 12) {
+                if previewImage == nil {
+                    HStack(alignment: .firstTextBaseline) {
+                        Text(entry.title.isEmpty ? "Untitled entry" : entry.title)
+                            .font(RallyUIKit.Typography.title(.headline, weight: .bold))
+                            .foregroundStyle(RallyUIKit.Palette.frost)
+                            .lineLimit(2)
+                        Spacer(minLength: 8)
+                        Text(entry.date, format: .dateTime.month(.abbreviated).day())
+                            .font(RallyUIKit.Typography.body(.caption2, weight: .semibold))
+                            .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.42))
                     }
                 }
 
                 if !entry.body.isEmpty {
                     Text(entry.body)
                         .font(RallyUIKit.Typography.body(.subheadline, weight: .medium))
-                        .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.66))
-                        .lineLimit(2)
+                        .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.68))
+                        .lineLimit(previewImage == nil ? 3 : 2)
+                        .lineSpacing(3)
                 }
 
-                if let previewImage {
-                    ZStack(alignment: .bottomLeading) {
-                        Image(uiImage: previewImage)
-                            .resizable()
-                            .scaledToFill()
-                            .frame(height: 118)
-                            .frame(maxWidth: .infinity)
-                            .clipShape(RoundedRectangle(cornerRadius: 14))
-                            .overlay(
-                                LinearGradient(
-                                    colors: [Color.clear, Color.black.opacity(0.38)],
-                                    startPoint: .top,
-                                    endPoint: .bottom
-                                )
-                                .clipShape(RoundedRectangle(cornerRadius: 14))
-                            )
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 14)
-                                    .stroke(Color.white.opacity(0.08), lineWidth: 1)
-                            )
-
-                        HStack(spacing: 6) {
-                            Image(systemName: "photo.fill")
-                                .font(.caption2.weight(.bold))
-                            Text("Saved memory")
-                                .font(RallyUIKit.Typography.label(.caption2, weight: .bold))
-                        }
-                        .foregroundStyle(.white.opacity(0.92))
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 7)
-                        .background(
-                            Capsule().fill(Color.black.opacity(0.34))
-                        )
-                        .padding(10)
+                HStack(spacing: 8) {
+                    entryMetaTag(entry.focus.displayName, tint: focusTint)
+                    if !entry.promptId.isEmpty {
+                        entryMetaTag("Guided", tint: RallyUIKit.Palette.champagne, systemName: "sparkles")
                     }
+                    Spacer(minLength: 0)
+                    Text(moodEmoji)
+                        .font(.body)
                 }
 
                 if !entry.tags.isEmpty {
@@ -372,8 +397,8 @@ private struct JournalRow: View {
                                     .font(RallyUIKit.Typography.body(.caption2, weight: .semibold))
                                     .padding(.vertical, 5)
                                     .padding(.horizontal, 9)
-                                    .background(Capsule().fill(RallyUIKit.Palette.cyan.opacity(0.12)))
-                                    .foregroundStyle(RallyUIKit.Palette.cyan.opacity(0.92))
+                                    .background(Capsule().fill(Color.white.opacity(0.06)))
+                                    .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.72))
                             }
                         }
                         .padding(.horizontal, 1)
@@ -381,23 +406,16 @@ private struct JournalRow: View {
                     .scrollClipDisabled()
                 }
             }
-
-            Spacer(minLength: 0)
-
-            Image(systemName: "chevron.right")
-                .font(.caption.weight(.bold))
-                .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.28))
+            .padding(18)
         }
-        .padding(15)
         .background(
-            RoundedRectangle(cornerRadius: 18)
-                .fill(Color.white.opacity(0.045))
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .fill(Color.white.opacity(0.035))
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 18)
-                .stroke(Color.white.opacity(0.08), lineWidth: 1)
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .stroke(Color.white.opacity(0.07), lineWidth: 1)
         )
-        .shadow(color: .black.opacity(0.14), radius: 10, x: 0, y: 5)
     }
 
     private func entryMetaTag(_ text: String, tint: Color, systemName: String? = nil) -> some View {
@@ -426,16 +444,6 @@ private struct JournalRow: View {
         case .practice: return RallyUIKit.Palette.cyan
         case .match: return RallyUIKit.Palette.gold
         case .rallyGame: return RallyUIKit.Palette.rose
-        }
-    }
-
-    private var moodTint: Color {
-        switch entry.mood {
-        case 1: return RallyUIKit.Palette.rose
-        case 2: return RallyUIKit.Palette.gold
-        case 3: return RallyUIKit.Palette.cloud
-        case 4: return RallyUIKit.Palette.cyan
-        default: return RallyUIKit.Palette.lime
         }
     }
 

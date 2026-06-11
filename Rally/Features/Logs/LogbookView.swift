@@ -65,14 +65,23 @@ struct LogbookView: View {
                     JournalView()
                 }
             }
-            .background(Color.black.ignoresSafeArea())
+            .background(
+                ZStack {
+                    RallyUIKit.screenBackground
+                    LinearGradient(
+                        colors: [
+                            activeTint.opacity(section == .journal ? 0.10 : 0.06),
+                            Color.clear,
+                            RallyUIKit.Palette.obsidian.opacity(0.42)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                }
+                .ignoresSafeArea()
+            )
             .navigationTitle(title)
             .navigationBarTitleDisplayMode(.inline)
-            .onAppear {
-                if section == .journal {
-                    section = .training
-                }
-            }
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     HStack(spacing: 10) {

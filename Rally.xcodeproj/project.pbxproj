@@ -114,7 +114,8 @@
 		D7187FF7AE4642598C9F7399 /* RallyShopCatalogAudit.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8452CBCE79643F4AEFF79C2 /* RallyShopCatalogAudit.swift */; };
 		7D7FE793E2E44CBCA139E9F8 /* RallyWorldLinkAudit.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFDF7D3DB82B42CFB371F188 /* RallyWorldLinkAudit.swift */; };
 		333BDB1C56824B8D87B70D8B /* RallyReferralCatalog.json in Resources */ = {isa = PBXBuildFile; fileRef = FF9BB2E4211B4A70A5D92FA3 /* RallyReferralCatalog.json */; };
-/* End PBXBuildFile section */
+		489A0E7356654802AB927C2B /* RallyAvatarPartRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F43AC5BE0F2D422AA1E337A9 /* RallyAvatarPartRenderer.swift */; };
+		/* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
 		C73E635A6B5D3135A85C64E9 /* PBXContainerItemProxy */ = {
@@ -238,7 +239,8 @@
 		F8452CBCE79643F4AEFF79C2 /* RallyShopCatalogAudit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RallyShopCatalogAudit.swift; sourceTree = "<group>"; };
 		BFDF7D3DB82B42CFB371F188 /* RallyWorldLinkAudit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RallyWorldLinkAudit.swift; sourceTree = "<group>"; };
 		FF9BB2E4211B4A70A5D92FA3 /* RallyReferralCatalog.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = RallyReferralCatalog.json; sourceTree = "<group>"; };
-/* End PBXFileReference section */
+		F43AC5BE0F2D422AA1E337A9 /* RallyAvatarPartRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RallyAvatarPartRenderer.swift; sourceTree = "<group>"; };
+		/* End PBXFileReference section */
 
 /* Begin PBXGroup section */
 		042A8A19E3649669EEB64EFE /* Utilities */ = {
@@ -291,7 +293,8 @@
 			
 				3A71098D7172422C96A4F728 /* RallyGearItem.swift */,
 				EFF56FB41D244881A74290BE /* RallyReferralLinkRouter.swift */,
-				85229D18E8FD4009AE8957DD /* RallyReferralCatalog.swift */,);
+				85229D18E8FD4009AE8957DD /* RallyReferralCatalog.swift */,
+			);
 			path = Services;
 			sourceTree = "<group>";
 		};
@@ -362,7 +365,8 @@
 			children = (
 				4565569C11AFDE663466D6F9 /* cosmetics.json */,
 			
-				FF9BB2E4211B4A70A5D92FA3 /* RallyReferralCatalog.json */,);
+				FF9BB2E4211B4A70A5D92FA3 /* RallyReferralCatalog.json */,
+			);
 			path = Resources;
 			sourceTree = "<group>";
 		};
@@ -536,6 +540,7 @@
 				A30000000000000000000012 /* RallyAvatarRebuildDefaults.swift */,
 				A30000000000000000000013 /* RallyAvatarAppearance.swift */,
 				A30000000000000000000014 /* RallyAvatarView.swift */,
+				F43AC5BE0F2D422AA1E337A9 /* RallyAvatarPartRenderer.swift */,
 				A10000000000000000000021 /* Debug */,
 			);
 			path = Avatar;
@@ -551,7 +556,8 @@
 				A30000000000000000000015 /* RallyAvatarUnificationAudit.swift */,
 			
 				F8452CBCE79643F4AEFF79C2 /* RallyShopCatalogAudit.swift */,
-				BFDF7D3DB82B42CFB371F188 /* RallyWorldLinkAudit.swift */,);
+				BFDF7D3DB82B42CFB371F188 /* RallyWorldLinkAudit.swift */,
+			);
 			path = Debug;
 			sourceTree = "<group>";
 		};
@@ -658,7 +664,8 @@
 				CCB2195A58AAE304F9D6625F /* Assets.xcassets in Resources */,
 				EEFF0A9DAC191198D5646055 /* cosmetics.json in Resources */,
 			
-				333BDB1C56824B8D87B70D8B /* RallyReferralCatalog.json in Resources */,);
+				333BDB1C56824B8D87B70D8B /* RallyReferralCatalog.json in Resources */,
+			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
@@ -779,7 +786,9 @@
 				7505C4F3B58A4FB890583301 /* RallyReferralLinkRouter.swift in Sources */,
 				E1F811C31E114EBAB442852E /* RallyReferralCatalog.swift in Sources */,
 				D7187FF7AE4642598C9F7399 /* RallyShopCatalogAudit.swift in Sources */,
-				7D7FE793E2E44CBCA139E9F8 /* RallyWorldLinkAudit.swift in Sources */,);
+				7D7FE793E2E44CBCA139E9F8 /* RallyWorldLinkAudit.swift in Sources */,
+				489A0E7356654802AB927C2B /* RallyAvatarPartRenderer.swift in Sources */,
+			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */

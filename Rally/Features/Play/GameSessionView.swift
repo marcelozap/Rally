@@ -13,16 +13,18 @@ import SwiftData
 struct GameSessionView: View {
 
     @Environment(\.modelContext) private var modelContext
+    @EnvironmentObject private var avatarAppearanceStore: RallyAvatarAppearanceStore
     @Query private var progressRecords: [PlayerProgress]
     @Query private var avatarConfigs: [AvatarConfig]
 
     @StateObject private var viewModel = GameSessionViewModel()
+    @StateObject private var atmosphere = SessionAtmosphereModel()
     @StateObject private var gamePreferences = GamePreferences.shared
     @State private var scene: GameScene? = nil
     @State private var sessionKey = UUID()
     @State private var reflectionPrompt: JournalPrompt? = nil
     @State private var viewportSize: CGSize = .zero
-    @State private var autoPlayEnabled = false
+    @State private var autoPlayEnabled = ProcessInfo.processInfo.arguments.contains("-RallyAutoPlay")
 
     /// Optional rival opponent when launching a rival challenge session.
     var rivalOpponent: RivalOpponent? = nil
@@ -48,23 +50,6 @@ struct GameSessionView: View {
                         }
                         .overlay {
                             matchAtmosphere
-                        }
-                        .overlay {
-                            RoundedRectangle(cornerRadius: 34)
-                                .stroke(
-                                    LinearGradient(
-                                        colors: [
-                                            RallyUIKit.Palette.champagne.opacity(0.14),
-                                            Color.white.opacity(0.02),
-                                            RallyUIKit.Palette.cyan.opacity(0.12)
-                                        ],
-                                        startPoint: .topLeading,
-                                        endPoint: .bottomTrailing
-                                    ),
-                                    lineWidth: 1
-                                )
-                                .padding(12)
-                                .allowsHitTesting(false)
                         }
                 } else {
                     loadingState
@@ -100,6 +85,7 @@ struct GameSessionView: View {
                 viewModel.bindIfNeeded { result in
                     handleSessionEnded(result: result)
                 }
+                atmosphere.bindIfNeeded()
             }
             .onChange(of: size.width) { _, _ in
                 viewportSize = size
@@ -134,58 +120,110 @@ struct GameSessionView: View {
     }
 
     private var sessionChrome: some View {
-        VStack(spacing: 0) {
-            HStack(alignment: .center, spacing: 10) {
-                Spacer(minLength: 0)
-                aiButton
+        HStack(alignment: .top) {
+            Spacer()
+            VStack(alignment: .trailing, spacing: 10) {
                 exitButton
+                if autoPlayEnabled {
+                    aiButton
+                        .scaleEffect(0.88)
+                        .opacity(0.78)
+                }
             }
         }
-        .padding(.horizontal, 16)
-        .padding(.top, 18)
+        .frame(maxWidth: .infinity, alignment: .topTrailing)
+        .padding(.trailing, 14)
+        .padding(.top, 42)
+    }
+
+    private var topInfoStrip: some View {
+        VStack(alignment: .center, spacing: 8) {
+            Text("Wall Rally")
+                .font(RallyUIKit.Typography.label(.caption, weight: .bold))
+                .foregroundStyle(RallyUIKit.Palette.gold)
+                .frame(maxWidth: .infinity, alignment: .center)
+            HStack(spacing: 8) {
+                infoPill(CourtVenue.current.displayName)
+                infoPill(gamePreferences.dominantHand == .right ? "Right Hand" : "Left Hand")
+                infoPill(gamePreferences.matchPace.title)
+            }
+            .frame(maxWidth: .infinity, alignment: .center)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+        .frame(maxWidth: 330)
+        .background(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(Color.black.opacity(0.34))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(Color.white.opacity(0.08), lineWidth: 1)
+        )
+    }
+
+    private func infoPill(_ text: String) -> some View {
+        Text(text)
+            .font(RallyUIKit.Typography.label(.caption2, weight: .bold))
+            .foregroundStyle(RallyUIKit.Palette.frost.opacity(0.9))
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .background(
+                Capsule(style: .continuous)
+                    .fill(Color.white.opacity(0.08))
+            )
     }
 
     private var matchAtmosphere: some View {
         ZStack {
             LinearGradient(
-                colors: [Color.black.opacity(0.26), .clear, Color.black.opacity(0.34)],
+                colors: [
+                    Color.black.opacity(0.10 + atmosphere.intensity * 0.04),
+                    .clear,
+                    Color.black.opacity(0.16 + atmosphere.intensity * 0.06)
+                ],
                 startPoint: .top,
                 endPoint: .bottom
             )
-            .ignoresSafeArea()
 
-            HStack {
-                LinearGradient(
-                    colors: [RallyUIKit.Palette.champagne.opacity(0.08), .clear],
-                    startPoint: .leading,
-                    endPoint: .trailing
-                )
-                .frame(width: 90)
+            RadialGradient(
+                colors: [
+                    atmosphere.accentColor.opacity(atmosphere.intensity * 0.22),
+                    .clear
+                ],
+                center: .center,
+                startRadius: 40,
+                endRadius: max(viewportSize.width, viewportSize.height) * 0.72
+            )
 
-                Spacer()
-
-                LinearGradient(
-                    colors: [.clear, RallyUIKit.Palette.cyan.opacity(0.08)],
-                    startPoint: .leading,
-                    endPoint: .trailing
-                )
-                .frame(width: 90)
+            if atmosphere.breakFlash > 0.01 {
+                Color.red.opacity(atmosphere.breakFlash * 0.18)
+                    .transition(.opacity)
             }
+
+            LinearGradient(
+                colors: [.clear, atmosphere.accentColor.opacity(atmosphere.intensity * 0.08)],
+                startPoint: .leading,
+                endPoint: .trailing
+            )
         }
+        .ignoresSafeArea()
         .allowsHitTesting(false)
+        .animation(.easeOut(duration: 0.28), value: atmosphere.intensity)
+        .animation(.easeOut(duration: 0.22), value: atmosphere.breakFlash)
     }
 
     private var loadingState: some View {
-        VStack(spacing: 18) {
-            RallyUIKit.IconBadge(systemName: "tennisball.fill", tint: RallyUIKit.Palette.gold, size: 60)
-            Text("Stepping onto court")
-                .font(RallyUIKit.Typography.display(30, weight: .bold))
-                .foregroundStyle(RallyUIKit.Palette.frost)
-            Text("Loading Marcy, your court, and one live rally.")
-                .font(RallyUIKit.Typography.body(.subheadline, weight: .medium))
-                .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.72))
-            ProgressView()
-                .tint(RallyUIKit.Palette.cyan)
+        RallyUIKit.LuxePanel(tint: RallyUIKit.Palette.champagne) {
+            VStack(spacing: 18) {
+                RallyUIKit.IconBadge(systemName: "tennisball.fill", tint: RallyUIKit.Palette.gold, size: 60)
+                Text("Stepping onto court")
+                    .font(RallyUIKit.Typography.display(30, weight: .bold))
+                    .foregroundStyle(RallyUIKit.Palette.frost)
+                ProgressView()
+                    .tint(RallyUIKit.Palette.cyan)
+            }
+            .frame(maxWidth: 420)
         }
         .padding(28)
     }
@@ -193,19 +231,20 @@ struct GameSessionView: View {
     private var exitButton: some View {
         Button(action: onExit) {
             Image(systemName: "xmark")
-                .font(.body.weight(.bold))
-                .foregroundStyle(RallyUIKit.Palette.frost)
-                .frame(width: 36, height: 36)
+                .font(.system(size: 10, weight: .black))
+                .foregroundStyle(RallyUIKit.Palette.frost.opacity(0.82))
+                .frame(width: 22, height: 22)
                 .background(
                     Circle()
-                        .fill(RallyUIKit.Palette.rose.opacity(0.16))
+                        .fill(Color.black.opacity(0.18))
                 )
                 .overlay(
                     Circle()
-                        .stroke(RallyUIKit.Palette.rose.opacity(0.78), lineWidth: 1)
+                        .stroke(Color.white.opacity(0.10), lineWidth: 1)
                 )
         }
         .buttonStyle(.plain)
+        .shadow(color: Color.black.opacity(0.10), radius: 4, y: 2)
         .accessibilityLabel("Exit match")
     }
 
@@ -214,21 +253,26 @@ struct GameSessionView: View {
             autoPlayEnabled.toggle()
             scene?.autoPlayEnabled = autoPlayEnabled
         } label: {
-            Text(autoPlayEnabled ? "AI On" : "AI")
+            Image(systemName: autoPlayEnabled ? "sparkles.rectangle.stack.fill" : "sparkles")
                 .font(RallyUIKit.Typography.label(.caption, weight: .bold))
                 .foregroundStyle(autoPlayEnabled ? RallyUIKit.Palette.obsidian : RallyUIKit.Palette.cyan)
-                .padding(.horizontal, 10)
-                .padding(.vertical, 7)
+                .frame(width: 42, height: 36)
                 .background(
-                    Capsule()
-                        .fill(autoPlayEnabled ? RallyUIKit.Palette.cyan : RallyUIKit.Palette.cyan.opacity(0.14))
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .fill(autoPlayEnabled ? RallyUIKit.Palette.cyan : Color.black.opacity(0.40))
                 )
                 .overlay(
-                    Capsule()
-                        .stroke(RallyUIKit.Palette.cyan.opacity(autoPlayEnabled ? 0 : 0.34), lineWidth: 1)
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .stroke(
+                            autoPlayEnabled
+                                ? Color.white.opacity(0.24)
+                                : RallyUIKit.Palette.cyan.opacity(0.28),
+                            lineWidth: 1
+                        )
                 )
         }
         .buttonStyle(.plain)
+        .shadow(color: autoPlayEnabled ? RallyUIKit.Palette.cyan.opacity(0.18) : Color.black.opacity(0.18), radius: 14, y: 8)
         .accessibilityLabel("Toggle autoplay")
     }
 
@@ -238,7 +282,12 @@ struct GameSessionView: View {
         let s = GameScene(size: size)
         s.scaleMode = .resizeFill
         if let avatar = avatarConfigs.first {
-            s.avatarSpec = AvatarVisualSpec.from(config: avatar, preview: nil)
+            avatar.refreshForCurrentVisualSystem()
+            try? modelContext.save()
+            avatarAppearanceStore.sync(from: avatar)
+            s.avatarAppearance = avatarAppearanceStore.appearance
+        } else {
+            s.avatarAppearance = avatarAppearanceStore.appearance
         }
         if let equippedRacketID = avatarConfigs.first?.equippedRacketID,
            let profile = ShopCatalog.racketProfile(id: equippedRacketID) {
@@ -588,5 +637,69 @@ final class GameSessionViewModel: ObservableObject {
     func dismiss() {
         self.lastResult = nil
         self.lastOutcome = nil
+    }
+}
+
+/// Tracks combo tier and break flashes so SwiftUI atmosphere can react without
+/// touching SpriteKit — readable even with sound off.
+@MainActor
+final class SessionAtmosphereModel: ObservableObject {
+    @Published private(set) var intensity: Double = 0
+    @Published private(set) var breakFlash: Double = 0
+    @Published private(set) var accentColor: Color = RallyUIKit.Palette.cyan
+
+    private var hasBound = false
+    private var decayTask: Task<Void, Never>?
+
+    func bindIfNeeded() {
+        guard !hasBound else { return }
+        hasBound = true
+        GameEventBus.shared.subscribe(self) { [weak self] event in
+            guard let self else { return }
+            switch event {
+            case .sessionStart:
+                intensity = 0
+                breakFlash = 0
+                accentColor = RallyUIKit.Palette.cyan
+            case .comboTier(let tier):
+                let clamped = min(5, max(1, tier))
+                intensity = Double(clamped) / 5.0
+                accentColor = tierAccent(clamped)
+            case .comboBreak:
+                intensity = 0.08
+                breakFlash = 1
+                accentColor = RallyUIKit.Palette.rose
+                scheduleBreakFade()
+            case .hit(_, _, _, let combo, _):
+                if combo > 0 {
+                    let tier = min(5, max(1, (combo - 1) / 3 + 1))
+                    intensity = max(intensity, Double(tier) / 5.0)
+                    accentColor = tierAccent(tier)
+                }
+            default:
+                break
+            }
+        }
+    }
+
+    private func tierAccent(_ tier: Int) -> Color {
+        switch tier {
+        case 1: return RallyUIKit.Palette.cyan
+        case 2: return RallyUIKit.Palette.lime
+        case 3: return RallyUIKit.Palette.gold
+        case 4: return RallyUIKit.Palette.rose
+        default: return RallyUIKit.Palette.champagne
+        }
+    }
+
+    private func scheduleBreakFade() {
+        decayTask?.cancel()
+        decayTask = Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(180))
+            guard !Task.isCancelled else { return }
+            withAnimation(.easeOut(duration: 0.35)) {
+                breakFlash = 0
+            }
+        }
     }
 }

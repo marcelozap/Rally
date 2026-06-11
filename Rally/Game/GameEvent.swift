@@ -9,7 +9,7 @@ enum GameEvent {
     case sessionStart
     case sessionEnd(GameResult)
 
-    case hit(quality: HitQuality, lane: Lane, position: CGPoint, combo: Int)
+    case hit(quality: HitQuality, lane: Lane, position: CGPoint, combo: Int, power: CGFloat)
     case miss(lane: Lane)
 
     /// Fired only when the combo _crosses_ a tier boundary, not every hit.

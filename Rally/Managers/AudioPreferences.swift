@@ -10,16 +10,13 @@ final class AudioPreferences: ObservableObject {
         didSet {
             guard oldValue != isSoundEnabled else { return }
             UserDefaults.standard.set(isSoundEnabled, forKey: UserDefaultsKeys.soundEnabled)
+            UserDefaults.standard.set(true, forKey: UserDefaultsKeys.soundPreferenceExplicitlySet)
             AudioManager.shared.applySoundEnabled(isSoundEnabled)
         }
     }
 
     private init() {
-        if UserDefaults.standard.object(forKey: UserDefaultsKeys.soundEnabled) == nil {
-            isSoundEnabled = false
-        } else {
-            isSoundEnabled = UserDefaults.standard.bool(forKey: UserDefaultsKeys.soundEnabled)
-        }
+        isSoundEnabled = RallyDefaults.resolvedSoundEnabled()
         AudioManager.shared.applySoundEnabled(isSoundEnabled)
     }
 }

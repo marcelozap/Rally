@@ -143,7 +143,7 @@ final class HapticManager {
     private func handle(_ event: GameEvent) {
         guard isEnabled else { return }
         switch event {
-        case .hit(let quality, _, _, _):
+        case .hit(let quality, _, _, _, _):
             play(quality: quality)
         case .miss:
             playMiss()
@@ -262,19 +262,19 @@ final class HapticManager {
         let snap2 = CHHapticEvent(
             eventType: .hapticTransient,
             parameters: [
-                .init(parameterID: .hapticIntensity, value: 0.72),
-                .init(parameterID: .hapticSharpness, value: 0.9)
+                .init(parameterID: .hapticIntensity, value: 0.88),
+                .init(parameterID: .hapticSharpness, value: 0.98)
             ],
-            relativeTime: 0.022
+            relativeTime: 0.018
         )
         let tail = CHHapticEvent(
             eventType: .hapticContinuous,
             parameters: [
-                .init(parameterID: .hapticIntensity, value: 0.45),
-                .init(parameterID: .hapticSharpness, value: 0.85)
+                .init(parameterID: .hapticIntensity, value: 0.58),
+                .init(parameterID: .hapticSharpness, value: 0.82)
             ],
-            relativeTime: 0.005,
-            duration: 0.050
+            relativeTime: 0.004,
+            duration: 0.068
         )
         return try? CHHapticPattern(events: [snap1, snap2, tail], parameters: [])
     }
@@ -285,37 +285,45 @@ final class HapticManager {
         let snap = CHHapticEvent(
             eventType: .hapticTransient,
             parameters: [
-                .init(parameterID: .hapticIntensity, value: 0.85),
-                .init(parameterID: .hapticSharpness, value: 0.7)
+                .init(parameterID: .hapticIntensity, value: Tunables.hapticGreat),
+                .init(parameterID: .hapticSharpness, value: 0.84)
             ],
             relativeTime: 0
         )
         let body = CHHapticEvent(
             eventType: .hapticContinuous,
             parameters: [
-                .init(parameterID: .hapticIntensity, value: Tunables.hapticGreat * 0.6),
-                .init(parameterID: .hapticSharpness, value: 0.55)
+                .init(parameterID: .hapticIntensity, value: Tunables.hapticGreat * 0.70),
+                .init(parameterID: .hapticSharpness, value: 0.50)
             ],
-            relativeTime: 0.004,
-            duration: 0.038
+            relativeTime: 0.002,
+            duration: 0.044
         )
         return try? CHHapticPattern(events: [snap, body], parameters: [])
     }
 
     private func makeGoodPattern() -> CHHapticPattern? {
-        // Soft pad with *no* transient — the ball glanced off the strings.
-        // Low sharpness reads as a cushion bump rather than a sharp snap so
-        // the player physically feels the grade gap with .great.
+        // Safe contact still needs a front edge; otherwise "good" reads too
+        // close to "nothing happened". Keep the transient small and blunt so
+        // the tactile gap with .great stays obvious.
+        let tap = CHHapticEvent(
+            eventType: .hapticTransient,
+            parameters: [
+                .init(parameterID: .hapticIntensity, value: Tunables.hapticGood * 0.42),
+                .init(parameterID: .hapticSharpness, value: 0.12)
+            ],
+            relativeTime: 0
+        )
         let pad = CHHapticEvent(
             eventType: .hapticContinuous,
             parameters: [
-                .init(parameterID: .hapticIntensity, value: Tunables.hapticGood * 0.9),
-                .init(parameterID: .hapticSharpness, value: 0.20)
+                .init(parameterID: .hapticIntensity, value: Tunables.hapticGood * 0.92),
+                .init(parameterID: .hapticSharpness, value: 0.12)
             ],
-            relativeTime: 0,
-            duration: 0.065
+            relativeTime: 0.002,
+            duration: 0.060
         )
-        return try? CHHapticPattern(events: [pad], parameters: [])
+        return try? CHHapticPattern(events: [tap, pad], parameters: [])
     }
 
     private func makeMissPattern() -> CHHapticPattern? {

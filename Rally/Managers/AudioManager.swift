@@ -63,7 +63,7 @@ final class AudioManager {
 
     private enum Constants {
         /// Music sits a bit under SFX so hits cut through the bed.
-        static let musicMixLevel: Float = 0.7
+        static let musicMixLevel: Float = 0.82
     }
 
     private init() {
@@ -72,11 +72,7 @@ final class AudioManager {
         engine.attach(mixer)
         engine.attach(musicMixer)
 
-        if UserDefaults.standard.object(forKey: UserDefaultsKeys.soundEnabled) == nil {
-            isEnabled = false
-        } else {
-            isEnabled = UserDefaults.standard.bool(forKey: UserDefaultsKeys.soundEnabled)
-        }
+        isEnabled = RallyDefaults.resolvedSoundEnabled()
         refreshOutputVolumes()
 
         engine.connect(mixer, to: engine.mainMixerNode, format: nil)
@@ -113,7 +109,9 @@ final class AudioManager {
     private func configureSession() {
         let session = AVAudioSession.sharedInstance()
         do {
-            try session.setCategory(.ambient, mode: .default, options: [.mixWithOthers])
+            // Rally should still speak when the phone is in silent mode; this
+            // is a game, not a passive ambient app.
+            try session.setCategory(.playback, mode: .default, options: [.mixWithOthers])
             try session.setActive(true)
         } catch {
             // Audio failures must never crash gameplay.
@@ -157,8 +155,8 @@ final class AudioManager {
     private func handle(_ event: GameEvent) {
         guard isEnabled, engine.isRunning else { return }
         switch event {
-        case .hit(let quality, _, _, let combo):
-            handleHit(quality: quality, combo: combo)
+        case .hit(let quality, _, _, let combo, let power):
+            handleHit(quality: quality, combo: combo, power: power)
         case .miss:
             sfxSynth.play(ToneSynth.patchWing)
         case .comboTier(let tier):
@@ -196,7 +194,7 @@ final class AudioManager {
         }
     }
 
-    private func handleHit(quality: HitQuality, combo: Int) {
+    private func handleHit(quality: HitQuality, combo: Int, power: CGFloat) {
         // Transpose the per-hit chime up by 2 semitones per combo tier so
         // sustained streaks audibly *ascend*. The thump (`patchHit`) is
         // left at base pitch — its character is the body of the impact;
@@ -205,23 +203,56 @@ final class AudioManager {
         // semitones = 2 * tier  →  ratio = 2^(semitones / 12) = 2^(tier/6)
         let tier = Tunables.comboTier(forCombo: combo)
         let chimeRatio = pow(2.0, Double(tier) / 6.0)
+        let powerPitch = 0.92 + Double(max(0.25, min(1.45, power))) * 0.22
 
         var chime = ToneSynth.patchPoint
-        chime.freqStartHz *= chimeRatio
-        chime.freqEndHz   *= chimeRatio
+        chime.freqStartHz *= chimeRatio * powerPitch
+        chime.freqEndHz   *= chimeRatio * powerPitch
+        var body = ToneSynth.patchHit
+        body.freqStartHz *= powerPitch
+        body.freqEndHz *= powerPitch
 
         switch quality {
         case .perfect:
-            // Two voices for that Flappy chunky-thump feel: a low bonk plus
-            // a high chime, fired simultaneously.
-            sfxSynth.play(ToneSynth.patchHit)
+            // Body + chime + a short noise transient for physical attack.
+            body.peak *= 1.08
+            body.durationMs *= 1.04
+            body.noiseMix = min(0.60, body.noiseMix + 0.15)
+            chime.peak *= 1.0
+            chime.durationMs *= 0.88
+            var crackle = body
+            crackle.freqStartHz = 520
+            crackle.freqEndHz = 280
+            crackle.durationMs = 54
+            crackle.noiseMix = 0.78
+            crackle.peak *= 0.46
+            sfxSynth.play(body)
             sfxSynth.play(chime)
+            sfxSynth.play(crackle)
         case .great:
+            // Great hits should still sound like contact first, reward second.
+            body.peak *= 0.98
+            body.freqStartHz *= 1.10
+            body.freqEndHz *= 1.16
+            body.durationMs *= 0.94
+            body.noiseMix = min(0.52, body.noiseMix + 0.10)
+            chime.peak *= 0.84
+            chime.durationMs *= 0.94
+            sfxSynth.play(body)
             sfxSynth.play(chime)
         case .good:
-            chime.peak *= 0.6
-            chime.freqStartHz *= 0.8
-            chime.freqEndHz   *= 0.8
+            // Good hits keep a softer body so even safe contact still feels
+            // physical instead of purely melodic.
+            body.peak *= 0.54
+            body.freqStartHz *= 0.95
+            body.freqEndHz *= 0.93
+            body.durationMs *= 0.80
+            body.noiseMix = min(0.40, body.noiseMix + 0.04)
+            chime.peak *= 0.42
+            chime.freqStartHz *= 0.80
+            chime.freqEndHz   *= 0.80
+            chime.durationMs *= 0.86
+            sfxSynth.play(body)
             sfxSynth.play(chime)
         case .miss:
             break

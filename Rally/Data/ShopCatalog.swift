@@ -194,8 +194,8 @@ enum ShopCatalog {
     // has _something_ equipped in every slot.
     static let defaultTopID    = "rally.default.top"
     static let defaultBottomID = "rally.default.bottom"
-    static let defaultShoesID  = "rally.default.shoes"
-    static let defaultRacketID = "rally.default.racket"
+    static let defaultShoesID  = "asics.court.ff.3.novak"
+    static let defaultRacketID = "wilson.rf01.pro"
 
     static let vendors: [Vendor] = [
         .init(
@@ -312,10 +312,11 @@ enum ShopCatalog {
             title: "Wilson Center Court",
             eyebrow: "Hero frame",
             subtitle: "Big-match racket energy",
-            body: "Clash 100 V3 leads the floor with premium match-point presence.",
+            body: "RF 01 Pro leads the floor with heavyweight match-point presence.",
             tintHex: "#F2C14E",
             itemIDs: [
-                "wilson.pro.staff.97"
+                "wilson.rf01.pro",
+                "wilson.blade.98.16x19.v9"
             ]
         )
     ]
@@ -324,7 +325,7 @@ enum ShopCatalog {
         // Default kit (free) ---------------------------------------------
         .init(id: defaultTopID,    category: .top,    name: "Rally Tee",      brand: "Rally", vendorID: "rally-co",
               productURL: URL(string: "https://rally.app/shop/default-top")!,
-              priceUSD: 0, colorHex: "#FFFFFF", accentHex: nil,
+              priceUSD: 0, colorHex: "#121820", accentHex: "#65D8EA",
               checkoutPromoCode: "RALLYKIT",
               promoNote: "Rally-original — demo code for in-app cosmetics."),
         .init(id: defaultBottomID, category: .bottom, name: "Court Shorts",   brand: "Rally", vendorID: "rally-co",
@@ -332,12 +333,12 @@ enum ShopCatalog {
               priceUSD: 0, colorHex: "#1A1A1A", accentHex: nil,
               checkoutPromoCode: "RALLYKIT",
               promoNote: "Rally-original — demo code for in-app cosmetics."),
-        .init(id: defaultShoesID,  category: .shoes,  name: "Baseliners",     brand: "Rally", vendorID: "rally-co",
+        .init(id: "rally.default.shoes",  category: .shoes,  name: "Baseliners",     brand: "Rally", vendorID: "rally-co",
               productURL: URL(string: "https://rally.app/shop/default-shoes")!,
               priceUSD: 0, colorHex: "#FFFFFF", accentHex: "#00E5FF",
               checkoutPromoCode: "RALLYKIT",
               promoNote: "Rally-original — demo code for in-app cosmetics."),
-        .init(id: defaultRacketID, category: .racket, name: "Rally R-1",      brand: "Rally", vendorID: "rally-co",
+        .init(id: "rally.default.racket", category: .racket, name: "Rally R-1",      brand: "Rally", vendorID: "rally-co",
               productURL: URL(string: "https://rally.app/shop/default-racket")!,
               priceUSD: 0, colorHex: "#C0C0C0", accentHex: "#00E5FF",
               checkoutPromoCode: "RALLYKIT",
@@ -376,6 +377,15 @@ enum ShopCatalog {
               priceUSD: 30, colorHex: "#646464", accentHex: nil),
 
         // Shoes ----------------------------------------------------------
+        .init(id: "asics.court.ff.3.novak", category: .shoes, name: "COURT FF 3 Novak", brand: "ASICS", vendorID: "asics",
+              productURL: URL(string: "https://www.asics.com/us/en-us/court-ff-3/c/aa50104000/")!,
+              priceUSD: 180, colorHex: "#F3F6F4", accentHex: "#17D8E8"),
+        .init(id: "nike.vapor.pro.3", category: .shoes, name: "Nike Vapor Pro 3", brand: "Nike", vendorID: "nike",
+              productURL: URL(string: "https://www.nike.com/w/tennis-shoes")!,
+              priceUSD: 135, colorHex: "#FFFFFF", accentHex: "#111111"),
+        .init(id: "adidas.adizero.ubersonic.5", category: .shoes, name: "Adizero Ubersonic 5", brand: "adidas", vendorID: "adidas",
+              productURL: URL(string: "https://www.adidas.com/us/tennis-shoes")!,
+              priceUSD: 150, colorHex: "#FAF7EC", accentHex: "#F05A28"),
         .init(id: "newbalance.coco.cg2.sea.salt", category: .shoes, name: "Coco CG2", brand: "New Balance", vendorID: "newbalance",
               productURL: URL(string: "https://www.newbalance.com/pd/coco-cg2/WCOC9AL-D-11.html")!,
               priceUSD: 160, colorHex: "#F2EEE7", accentHex: "#7FA9D8"),
@@ -393,6 +403,15 @@ enum ShopCatalog {
               priceUSD: 150, colorHex: "#0A2B5C", accentHex: "#FFD400"),
 
         // Rackets --------------------------------------------------------
+        .init(id: "wilson.rf01.pro", category: .racket, name: "RF 01 Pro", brand: "Wilson", vendorID: "wilson",
+              productURL: URL(string: "https://www.wilson.com/en-us/tennis/rackets/rf-01")!,
+              priceUSD: 299, colorHex: "#161616", accentHex: "#D8C89A"),
+        .init(id: "wilson.blade.98.16x19.v9", category: .racket, name: "Blade 98 16x19 V9", brand: "Wilson", vendorID: "wilson",
+              productURL: URL(string: "https://www.wilson.com/en-us/tennis/rackets/blade")!,
+              priceUSD: 259, colorHex: "#10251E", accentHex: "#8AE0C0"),
+        .init(id: "yonex.percept.97h", category: .racket, name: "PERCEPT 97H", brand: "Yonex", vendorID: "yonex",
+              productURL: URL(string: "https://www.yonex.com/tennis/racquets/percept")!,
+              priceUSD: 340, colorHex: "#253B67", accentHex: "#7FD26A"),
         .init(id: "wilson.pro.staff.97",     category: .racket, name: "Clash 100 V3", brand: "Wilson", vendorID: "wilson",
               productURL: URL(string: "https://www.wilson.com/en-us/product/clash-100-v3-0-frm-wr17280")!,
               priceUSD: 269, colorHex: "#1B1B1B", accentHex: "#C0392B"),
@@ -503,15 +522,66 @@ enum ShopCatalog {
     private static let racketProfiles: [String: RacketProfile] = [
         defaultRacketID: .init(
             id: defaultRacketID,
-            family: "Rally Originals",
-            playerFit: "All-around starter",
-            performanceFocus: "Balanced",
+            family: "RF",
+            playerFit: "Advanced players who want controlled weight",
+            performanceFocus: "Precision + plow",
             headSizeSqIn: 100,
-            weightGrams: 300,
+            weightGrams: 320,
+            balanceMM: 315,
+            stringPattern: "16x19",
+            summary: "Wilson RF 01 Pro-style tuning: heavier, stable, precise, and deliberate through contact.",
+            gameplayTuning: .init(
+                travelScalar: 0.985,
+                timingAssistScalar: 1.02,
+                horizonSpreadScalar: 0.96,
+                strikeWidthScalar: 0.98,
+                curveScalar: 0.94,
+                spawnScaleScalar: 1.0,
+                strikeScaleScalar: 1.08,
+                overrunScaleScalar: 1.04
+            )
+        ),
+        "wilson.blade.98.16x19.v9": .init(
+            id: "wilson.blade.98.16x19.v9",
+            family: "Blade",
+            playerFit: "All-court players who want feel and shape",
+            performanceFocus: "Control + feel",
+            headSizeSqIn: 98,
+            weightGrams: 305,
             balanceMM: 320,
             stringPattern: "16x19",
-            summary: "Neutral demo frame used as Rally's baseline tuning.",
-            gameplayTuning: .balanced
+            summary: "Blade-style tuning emphasizes clean timing, controlled launch, and a sharper contact read.",
+            gameplayTuning: .init(
+                travelScalar: 1.0,
+                timingAssistScalar: 1.03,
+                horizonSpreadScalar: 0.98,
+                strikeWidthScalar: 0.99,
+                curveScalar: 1.03,
+                spawnScaleScalar: 1.0,
+                strikeScaleScalar: 1.02,
+                overrunScaleScalar: 1.0
+            )
+        ),
+        "yonex.percept.97h": .init(
+            id: "yonex.percept.97h",
+            family: "PERCEPT",
+            playerFit: "Strong control players who create their own pace",
+            performanceFocus: "Feel + stability",
+            headSizeSqIn: 97,
+            weightGrams: 330,
+            balanceMM: 310,
+            stringPattern: "16x19",
+            summary: "PERCEPT 97H-style tuning is heavy, grounded, and surgical with a smaller timing assist.",
+            gameplayTuning: .init(
+                travelScalar: 1.01,
+                timingAssistScalar: 0.99,
+                horizonSpreadScalar: 0.96,
+                strikeWidthScalar: 0.96,
+                curveScalar: 1.08,
+                spawnScaleScalar: 0.98,
+                strikeScaleScalar: 1.0,
+                overrunScaleScalar: 0.98
+            )
         ),
         "wilson.pro.staff.97": .init(
             id: "wilson.pro.staff.97",

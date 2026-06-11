@@ -33,12 +33,19 @@ final class TennisCourtBackdrop: SKNode {
         rebuild(with: size)
     }
 
+    func resize(to size: CGSize, strikeYRatio _: CGFloat) {
+        resize(to: size)
+    }
+
     private func rebuild(with size: CGSize) {
         let pal = venue.palette
         removeAllChildren()
         netBandRef = nil
 
         let strikeY = size.height * strikeYRatio
+        // Extend the near edge below the visible viewport so gameplay never
+        // reads like the court ends before the player's feet.
+        let nearY = -size.height * Tunables.gameplayCourtNearOverscanRatio
         let topY = size.height * 1.02
 
         let skyLower = SKShapeNode(rect: CGRect(x: 0, y: strikeY, width: size.width, height: topY - strikeY))
@@ -54,14 +61,14 @@ final class TennisCourtBackdrop: SKNode {
         skyUpper.zPosition = -99
         addChild(skyUpper)
 
-        let farY = strikeY + size.height * 0.62
-        let nearHalf = size.width * 0.48
-        let farHalf = size.width * 0.18
+        let farY = size.height * Tunables.gameplayCourtFarYRatio
+        let nearHalf = size.width * Tunables.gameplayCourtNearHalfWidthRatio
+        let farHalf = size.width * Tunables.gameplayCourtFarHalfWidthRatio
         let cx = size.width / 2
 
         let courtPath = CGMutablePath()
-        courtPath.move(to: CGPoint(x: cx - nearHalf, y: strikeY))
-        courtPath.addLine(to: CGPoint(x: cx + nearHalf, y: strikeY))
+        courtPath.move(to: CGPoint(x: cx - nearHalf, y: nearY))
+        courtPath.addLine(to: CGPoint(x: cx + nearHalf, y: nearY))
         courtPath.addLine(to: CGPoint(x: cx + farHalf, y: farY))
         courtPath.addLine(to: CGPoint(x: cx - farHalf, y: farY))
         courtPath.closeSubpath()
@@ -77,7 +84,7 @@ final class TennisCourtBackdrop: SKNode {
         let gridSteps = 6
         for g in 1..<gridSteps {
             let u = CGFloat(g) / CGFloat(gridSteps)
-            let y = strikeY + (farY - strikeY) * u
+            let y = nearY + (farY - nearY) * u
             let halfAtY = nearHalf + (farHalf - nearHalf) * u
             let gp = CGMutablePath()
             gp.move(to: CGPoint(x: cx - halfAtY, y: y))
@@ -99,8 +106,8 @@ final class TennisCourtBackdrop: SKNode {
                 let fx0 = cx - farHalf + (2 * farHalf) * t0
                 let fx1 = cx - farHalf + (2 * farHalf) * t1
                 let sp = CGMutablePath()
-                sp.move(to: CGPoint(x: lx0, y: strikeY))
-                sp.addLine(to: CGPoint(x: lx1, y: strikeY))
+                sp.move(to: CGPoint(x: lx0, y: nearY))
+                sp.addLine(to: CGPoint(x: lx1, y: nearY))
                 sp.addLine(to: CGPoint(x: fx1, y: farY))
                 sp.addLine(to: CGPoint(x: fx0, y: farY))
                 sp.closeSubpath()
@@ -114,7 +121,7 @@ final class TennisCourtBackdrop: SKNode {
 
         for sign in [-1, 1] as [Int] {
             let path = CGMutablePath()
-            path.move(to: CGPoint(x: cx + CGFloat(sign) * nearHalf, y: strikeY))
+            path.move(to: CGPoint(x: cx + CGFloat(sign) * nearHalf, y: nearY))
             path.addLine(to: CGPoint(x: cx + CGFloat(sign) * farHalf, y: farY))
             let line = SKShapeNode(path: path)
             line.strokeColor = pal.line.withAlphaComponent(0.9)
@@ -125,7 +132,7 @@ final class TennisCourtBackdrop: SKNode {
         }
 
         let cm = CGMutablePath()
-        cm.move(to: CGPoint(x: cx, y: strikeY + 8))
+        cm.move(to: CGPoint(x: cx, y: nearY + 10))
         cm.addLine(to: CGPoint(x: cx, y: farY - 6))
         // SKShapeNode lacks lineDashPattern, so dash the CGPath itself.
         let dashedCenter = cm.copy(dashingWithPhase: 0, lengths: [6, 8])
@@ -144,9 +151,9 @@ final class TennisCourtBackdrop: SKNode {
         farBaseline.zPosition = -91
         addChild(farBaseline)
 
-        let netY = strikeY + (farY - strikeY) * 0.42
-        let netHalfNear = nearHalf * 0.72
-        let netHalfFar = farHalf * 1.15
+        let netY = nearY + (farY - nearY) * Tunables.gameplayCourtNetDepthRatio
+        let netHalfNear = nearHalf * Tunables.gameplayCourtNetNearHalfScalar
+        let netHalfFar = farHalf * Tunables.gameplayCourtNetFarHalfScalar
         let np = CGMutablePath()
         np.move(to: CGPoint(x: cx - netHalfNear, y: netY))
         np.addLine(to: CGPoint(x: cx + netHalfNear, y: netY))
@@ -169,5 +176,38 @@ final class TennisCourtBackdrop: SKNode {
         let up = SKAction.fadeAlpha(to: min(1, 0.55 + 0.35 * intensity), duration: 0.06)
         let down = SKAction.fadeAlpha(to: 1.0, duration: 0.28)
         netBand.run(.sequence([up, down]), withKey: "pulseNet")
+    }
+
+    func setMomentum(tier: Int, phase: String, breaking: Bool) {
+        let intensity: CGFloat
+        if breaking {
+            intensity = 0.68
+        } else {
+            switch tier {
+            case 4: intensity = 1.0
+            case 3: intensity = 0.92
+            case 2: intensity = 0.84
+            case 1: intensity = 0.76
+            default:
+                intensity = (phase == "pressure" || phase == "breaker") ? 0.82 : 0.72
+            }
+        }
+
+        let duration = 0.22
+        let netAlpha = 0.88 + intensity * 0.12
+        let skyAlpha = 0.90 + intensity * 0.10
+        let courtAlpha = 0.94 + intensity * 0.06
+
+        children.compactMap { $0 as? SKShapeNode }.forEach { node in
+            if node == netBandRef {
+                node.run(.fadeAlpha(to: netAlpha, duration: duration))
+            } else if node.zPosition <= -99 {
+                node.run(.fadeAlpha(to: skyAlpha, duration: duration))
+            } else if node.zPosition <= -91 {
+                node.run(.fadeAlpha(to: courtAlpha, duration: duration))
+            }
+        }
+
+        pulseHorizon(intensity: intensity)
     }
 }

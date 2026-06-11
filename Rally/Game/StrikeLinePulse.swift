@@ -34,17 +34,18 @@ final class StrikeLinePulse: SKShapeNode {
         path = CGPath(rect: rect, transform: nil)
     }
 
-    /// Schedule a pulse so its peak coincides with `arrivalTime` (in track
-    /// seconds). The pulse begins `Tunables.strikePulseLeadMs` before
-    /// arrival and runs for `Tunables.strikePulseDurationMs` total.
+    /// Schedule a pulse so its rise peak lands `Tunables.strikePulseLeadMs`
+    /// before `arrivalTime` (in track seconds). The pulse starts one rise
+    /// phase earlier and runs for `Tunables.strikePulseDurationMs` total.
     ///
-    /// If `arrivalTime - currentTrackTime <= leadMs` (ball is arriving
-    /// imminently) the pulse fires immediately so the player still gets a
-    /// cue, just a short one.
+    /// If the ball is arriving before the computed start, the pulse fires
+    /// immediately so the player still gets a cue, just a short one.
     func schedule(arrivalTime: Double, currentTrackTime: Double) {
-        let leadSec = Tunables.live.strikePulseLeadMs.seconds
-        let durSec  = Tunables.strikePulseDurationMs.seconds
-        let until = arrivalTime - currentTrackTime - leadSec
+        let peakLeadSec = Tunables.live.strikePulseLeadMs.seconds
+        let durSec = Tunables.strikePulseDurationMs.seconds
+        let riseSec = durSec * 0.42
+        let startLeadSec = peakLeadSec + riseSec
+        let until = arrivalTime - currentTrackTime - startLeadSec
         let wait = max(0, until)
 
         let rise = SKAction.group([

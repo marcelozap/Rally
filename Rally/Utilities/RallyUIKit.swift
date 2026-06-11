@@ -19,21 +19,23 @@ struct RallyUIKit {
     }
 
     struct Palette {
-        static let obsidian = Color(red: 0.03, green: 0.04, blue: 0.06)
-        static let ink = Color(red: 0.06, green: 0.08, blue: 0.12)
-        static let slate = Color(red: 0.12, green: 0.14, blue: 0.19)
-        static let graphite = Color(red: 0.18, green: 0.20, blue: 0.26)
-        static let mist = Color.white.opacity(0.08)
-        static let line = Color.white.opacity(0.14)
-        static let cloud = Color.white.opacity(0.78)
-        static let frost = Color.white.opacity(0.92)
-        static let cyan = Color(red: 0.37, green: 0.87, blue: 0.95)
-        static let teal = Color(red: 0.17, green: 0.67, blue: 0.72)
-        static let lime = Color(red: 0.77, green: 0.92, blue: 0.38)
-        static let coral = Color(red: 0.96, green: 0.53, blue: 0.39)
-        static let rose = Color(red: 0.80, green: 0.33, blue: 0.55)
-        static let gold = Color(red: 0.87, green: 0.71, blue: 0.43)
-        static let champagne = Color(red: 0.96, green: 0.88, blue: 0.74)
+        static let obsidian = Color(red: 0.015, green: 0.02, blue: 0.035)
+        static let ink = Color(red: 0.04, green: 0.055, blue: 0.095)
+        static let slate = Color(red: 0.09, green: 0.11, blue: 0.17)
+        static let graphite = Color(red: 0.16, green: 0.18, blue: 0.25)
+        static let mist = Color.white.opacity(0.09)
+        static let line = Color.white.opacity(0.15)
+        static let cloud = Color(red: 0.84, green: 0.87, blue: 0.93)
+        static let frost = Color(red: 0.97, green: 0.98, blue: 0.99)
+        static let cyan = Color(red: 0.35, green: 0.86, blue: 0.97)
+        static let iconCyan = Color(red: 0.45, green: 0.91, blue: 0.99)
+        static let teal = Color(red: 0.18, green: 0.69, blue: 0.73)
+        static let lime = Color(red: 0.78, green: 0.92, blue: 0.42)
+        static let coral = Color(red: 0.98, green: 0.54, blue: 0.42)
+        static let rose = Color(red: 0.84, green: 0.36, blue: 0.58)
+        static let gold = Color(red: 0.89, green: 0.73, blue: 0.41)
+        static let champagne = Color(red: 0.96, green: 0.89, blue: 0.77)
+        static let smoke = Color(red: 0.55, green: 0.61, blue: 0.70)
     }
 
     enum Typography {
@@ -68,9 +70,9 @@ struct RallyUIKit {
     static var premiumGradient: LinearGradient {
         LinearGradient(
             colors: [
-                Palette.champagne.opacity(0.10),
-                Palette.cyan.opacity(0.18),
-                Palette.rose.opacity(0.10),
+                Palette.champagne.opacity(0.12),
+                Palette.cyan.opacity(0.20),
+                Palette.rose.opacity(0.12),
                 Palette.obsidian
             ],
             startPoint: .topLeading,
@@ -81,7 +83,7 @@ struct RallyUIKit {
     static var screenBackground: some View {
         ZStack {
             LinearGradient(
-                colors: [Palette.obsidian, Palette.ink, Palette.slate],
+                colors: [Palette.obsidian, Palette.ink, Palette.slate, Palette.obsidian],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
@@ -109,6 +111,31 @@ struct RallyUIKit {
                 startRadius: 40,
                 endRadius: 380
             )
+            .ignoresSafeArea()
+
+            LinearGradient(
+                colors: [
+                    Color.white.opacity(0.08),
+                    Color.clear,
+                    Color.black.opacity(0.28)
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .ignoresSafeArea()
+
+            VStack(spacing: 0) {
+                Rectangle()
+                    .fill(
+                        LinearGradient(
+                            colors: [Palette.champagne.opacity(0.12), .clear],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
+                    .frame(height: 180)
+                Spacer()
+            }
             .ignoresSafeArea()
         }
     }
@@ -272,8 +299,9 @@ struct RallyUIKit {
                         .fill(
                             LinearGradient(
                                 colors: [
-                                    Color.white.opacity(0.10),
-                                    Color.white.opacity(0.045)
+                                    Color.white.opacity(0.11),
+                                    Color.white.opacity(0.03),
+                                    Color.black.opacity(0.08)
                                 ],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
@@ -282,15 +310,31 @@ struct RallyUIKit {
                 )
                 .background(
                     RoundedRectangle(cornerRadius: Radius.xl)
-                        .fill(.ultraThinMaterial.opacity(0.3))
+                        .fill(.ultraThinMaterial.opacity(0.26))
                 )
+                .overlay(alignment: .top) {
+                    RoundedRectangle(cornerRadius: Radius.xl)
+                        .fill(
+                            LinearGradient(
+                                colors: [Color.white.opacity(0.18), .clear],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                        )
+                        .frame(height: 72)
+                        .clipShape(
+                            RoundedRectangle(cornerRadius: Radius.xl, style: .continuous)
+                        )
+                        .allowsHitTesting(false)
+                }
                 .overlay(
                     RoundedRectangle(cornerRadius: Radius.xl)
                         .stroke(
                             LinearGradient(
                                 colors: [
-                                    tint.opacity(0.44),
-                                    Color.white.opacity(0.08)
+                                    tint.opacity(0.42),
+                                    Color.white.opacity(0.10),
+                                    Color.clear
                                 ],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
@@ -298,8 +342,8 @@ struct RallyUIKit {
                             lineWidth: 1
                         )
                 )
-                .shadow(color: Shadow.glow(tint), radius: 20, x: 0, y: 10)
-                .shadow(color: Color.black.opacity(0.24), radius: 26, x: 0, y: 16)
+                .shadow(color: Shadow.glow(tint), radius: 22, x: 0, y: 10)
+                .shadow(color: Color.black.opacity(0.28), radius: 32, x: 0, y: 18)
         }
     }
 
@@ -362,12 +406,86 @@ struct RallyUIKit {
                 .padding(Spacing.md)
                 .background(
                     RoundedRectangle(cornerRadius: Radius.md)
-                        .fill(Color.white.opacity(0.045))
+                        .fill(
+                            LinearGradient(
+                                colors: [Color.white.opacity(0.055), Color.white.opacity(0.025)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
                 )
                 .overlay(
                     RoundedRectangle(cornerRadius: Radius.md)
                         .stroke(tint.opacity(0.24), lineWidth: 1)
                 )
+        }
+    }
+
+    struct PremiumStage<Content: View>: View {
+        let tint: Color
+        let content: Content
+
+        init(tint: Color = Palette.cyan, @ViewBuilder content: () -> Content) {
+            self.tint = tint
+            self.content = content()
+        }
+
+        var body: some View {
+            ZStack {
+                RoundedRectangle(cornerRadius: 24)
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                Palette.ink,
+                                Palette.slate,
+                                Color.black
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+
+                Circle()
+                    .fill(tint.opacity(0.14))
+                    .frame(width: 180, height: 180)
+                    .blur(radius: 26)
+                    .offset(x: -80, y: -78)
+
+                Circle()
+                    .fill(Palette.champagne.opacity(0.12))
+                    .frame(width: 160, height: 160)
+                    .blur(radius: 22)
+                    .offset(x: 86, y: 98)
+
+                VStack {
+                    HStack {
+                        Capsule()
+                            .fill(Color.white.opacity(0.16))
+                            .frame(width: 120, height: 16)
+                            .blur(radius: 10)
+                            .rotationEffect(.degrees(14))
+                            .offset(x: 12, y: -6)
+                        Spacer()
+                    }
+                    Spacer()
+                }
+                .padding(18)
+
+                content
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 10)
+
+                RoundedRectangle(cornerRadius: 24)
+                    .stroke(
+                        LinearGradient(
+                            colors: [tint.opacity(0.28), Color.white.opacity(0.10), Color.clear],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        lineWidth: 1
+                    )
+            }
+            .shadow(color: Shadow.glow(tint), radius: 18, x: 0, y: 10)
         }
     }
 }

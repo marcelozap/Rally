@@ -24,6 +24,14 @@ final class AuthSession: ObservableObject {
     func bootstrap(modelContext: ModelContext) async {
         defer { isBootstrapped = true }
 
+        #if DEBUG
+        if ProcessInfo.processInfo.arguments.contains("-RallyAutoPlay") {
+            isGuestMode = true
+            isAuthenticated = false
+            return
+        }
+        #endif
+
         if KeychainStore.shared.token != nil {
             do {
                 try await RallySyncCoordinator.pull(modelContext: modelContext)

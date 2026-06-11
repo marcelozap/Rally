@@ -184,6 +184,15 @@ enum Tunables {
     static let ballRadiusPoints:      CGFloat = 22
     static let ballTravelSeconds:     Double  = 1.52
     static let strikeLineYRatio:      CGFloat = 0.25
+    static let gameplayCameraYOffsetRatio: CGFloat = -0.055
+    static let gameplayCourtNearOverscanRatio: CGFloat = 0.16
+    static let gameplayCourtFarYRatio: CGFloat = 0.905
+    static let gameplayCourtNearHalfWidthRatio: CGFloat = 0.68
+    static let gameplayCourtFarHalfWidthRatio: CGFloat = 0.145
+    static let gameplayCourtNetDepthRatio: CGFloat = 0.53
+    static let gameplayCourtNetNearHalfScalar: CGFloat = 0.66
+    static let gameplayCourtNetFarHalfScalar: CGFloat = 1.18
+    static let gameplayPlayerRootYRatio: CGFloat = 0.145
     static let spawnLineYRatio:       CGFloat = 1.05
     static let cullBelowStrikePoints: CGFloat = 40
     static let horizonLaneInsetRatio: CGFloat = 0.12
@@ -304,6 +313,109 @@ enum Tunables {
 
     /// Blend fraction applied to all pose targets during hit-stop (near-zero = frozen).
     static let hitStopBlendFraction: CGFloat = 0.03
+
+    // MARK: - Swing body mechanics (TopSpin 2K25 model)
+
+    /// Swing phase boundaries — 0…1 maps full backswing to end of follow-through.
+    static let swingLoadPhaseEnd:    CGFloat = 0.40
+    static let swingContactPhaseEnd: CGFloat = 0.58
+    static let swingContactPhaseCenter: CGFloat = 0.50
+    static let swingContactPhaseRadius: CGFloat = 0.09
+
+    /// TopSpin-style body-coil targets. Positive/negative are screen-space rotations.
+    static let forehandLoadTorsoRotation: CGFloat = -0.46   // deeper shoulder coil on backswing
+    static let backhandLoadTorsoRotation: CGFloat = 0.80   // stronger two-hander load
+    static let torsoContactUncoilMultiplier: CGFloat = 5.2  // explosive torso release at contact — drives through ball
+    static let forehandFollowTorsoRotation: CGFloat = 0.74  // full chest-to-target rotation through shot
+    static let backhandFollowTorsoRotation: CGFloat = 0.18  // backhand rotates through more
+
+    static let forehandLeadArmLoadRotation: CGFloat = -0.82 // arm coils deeper behind torso on load
+    static let forehandLeadShoulderFollowDip: CGFloat = -28.0 // hitting shoulder dips hard into follow (pro tilt)
+    static let forehandFollowHandleX: CGFloat = -64.0       // racket wraps far over opposite shoulder
+    static let forehandFollowHandleY: CGFloat = 182.0       // high finish — racket over left shoulder
+    static let backhandFollowHandleX: CGFloat = -82.0
+    static let backhandFollowHandleY: CGFloat = 182.0
+    static let backhandFollowHeadX: CGFloat = -110.0
+    static let backhandFollowHeadY: CGFloat = 216.0
+
+    /// Extra hip-lead over shoulders during backswing coil (radians).
+    static let torsoHipLeadAngle: CGFloat = 0.18            // hips clearly lead shoulders
+
+    /// Racket handle waits until torso has reached this fraction of its target
+    /// rotation before fully committing to load targets — simulates kinetic chain lag.
+    static let racketHandLagTorsoFrac: CGFloat = 0.55       // arm commits a bit earlier but still lags
+
+    /// Torso uncoil velocity accumulates at this lerp weight per frame during load.
+    static let torsoVelocityAccumRate: CGFloat = 0.17       // loads torso velocity faster
+    /// And releases (decays toward zero) at this rate per frame after contact.
+    static let torsoVelocityDecayRate: CGFloat = 0.62       // faster uncoil burst at contact
+
+    /// Racket-head overshoot amplitude on contact wrist-snap (points).
+    static let wristSnapAmplitude: CGFloat = 24.0           // more visible snap through ball
+    static let wristSnapHoldSeconds: Double = 0.042
+    /// Exponential decay rate for wrist snap (units: 1/second).
+    static let wristSnapDecayRate: CGFloat  = 22.0          // slower decay = snap lingers longer
+    static let forehandWristSnapAxisX: CGFloat = 0.94
+    static let forehandWristSnapAxisY: CGFloat = 0.34
+    static let backhandWristSnapAxisX: CGFloat = -0.92
+    static let backhandWristSnapAxisY: CGFloat = 0.38
+
+    /// Exponent for easeOut on follow-through positions: pow(1−t, exp).
+    static let followEaseOutPow: CGFloat = 2.4              // snaps through faster, decelerates more smoothly
+
+    // MARK: - Footwork system (TopSpin 2K25 model)
+
+    /// Duration of the full split-step up→down animation (seconds).
+    static let splitStepDuration: Double = 0.195             // slightly longer — more athletic hop
+    /// Peak vertical lift during split-step (points).
+    static let splitStepHeight: CGFloat = 8.0               // bigger hop — more visible anticipation
+    /// approachProgress threshold that triggers the split-step.
+    static let splitStepApproachTrigger: CGFloat = 0.36
+    /// approachProgress threshold where the player commits the outside foot.
+    static let footworkSideCommitTrigger: CGFloat = 0.46
+    /// Max lateral drift toward the live lane before contact.
+    static let footworkRootLoadShiftPoints: CGFloat = 10.0
+    /// Extra space between feet during split/load.
+    static let footworkStanceWidenPoints: CGFloat = 12.0
+    /// Outside foot steps wider than the neutral leg target.
+    static let footworkOutsidePlantPoints: CGFloat = 15.0
+    /// Inside foot pushes/cross-recovers after contact.
+    static let footworkInsidePushPoints: CGFloat = 7.0
+    /// Slight body drop during the split-step landing.
+    static let footworkSplitLandCompression: CGFloat = 0.042  // more body drop on split-step landing
+    /// Crouch into the loaded outside foot.
+    static let footworkLoadCrouchScale: CGFloat = 0.068       // noticeably sinks into loaded leg
+    /// Extra compression at the exact contact stomp.
+    static let footworkContactCompressionScale: CGFloat = 0.050  // body squats at contact moment
+    /// Toe-out angle for the planted outside shoe.
+    static let footworkOutsideToeOutRadians: CGFloat = 0.20
+    /// Trail-foot drag/toe angle during recovery.
+    static let footworkRecoveryToeDragRadians: CGFloat = 0.14
+    /// Blend speed for side-to-side weight transfer.
+    static let footworkWeightShiftBlend: CGFloat = 0.22
+    /// Extra maximum blend toward lane target in wall-rally mode.
+    static let footworkLaneBlendMax: CGFloat = 0.56
+
+    /// Non-planted foot lift during weight transfer (points, positive = up).
+    static let weightTransferLiftPt: CGFloat = 5.0           // off-foot lifts more — visible weight shift
+    /// Planted foot stomp depth at contact (points, negative = into court).
+    static let footStompPt: CGFloat = 3.5                    // planted foot drives into court harder
+    /// Time to recover both feet to neutral split stance after contact (seconds).
+    static let footRecoveryDuration: Double = 0.220
+
+    // MARK: - Wrist / racket-face angles (TopSpin 2K25 model)
+
+    /// Racket face tilts back by this many radians during load (wrist cock).
+    static let wristCockAngleLoad: CGFloat = -0.46           // more laid-back wrist on backswing
+    /// Extra pronation at end of forehand follow-through (butt cap faces up).
+    static let wristPronateFinal: CGFloat   = 0.24           // full pronation — butt cap clearly up
+    /// Racket-face angle at contact for each shot shape.
+    static let racketFaceFlat:     CGFloat  =  0.00
+    static let racketFaceTopspin:  CGFloat  = -0.24   // closes toward court
+    static let racketFaceSlice:    CGFloat  =  0.14   // opens away from court
+
+    /// Shadow lateral shift per unit of weightSide (points).
+    static let shadowWeightShiftPt: CGFloat = 4.0
 
     // MARK: - Timing popup
 

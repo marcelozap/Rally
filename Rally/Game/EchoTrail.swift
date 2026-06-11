@@ -50,7 +50,7 @@ final class EchoTrail {
     private func handle(_ event: GameEvent) {
         guard isEnabled else { return }
         switch event {
-        case .hit(let quality, _, let position, let combo):
+        case .hit(let quality, _, let position, let combo, _):
             guard quality == .perfect, combo >= activationCombo else { return }
             append(point: position, combo: combo)
         case .comboBreak:

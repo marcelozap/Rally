@@ -5,9 +5,9 @@ import SwiftData
 final class AvatarConfig {
     var id: UUID = UUID()
     var playerName: String = ""
-    var skinToneRaw: String = AvatarSkinTone.medium.rawValue
-    var hairStyleRaw: String = AvatarHairStyle.short.rawValue
-    var hairColorHex: String = "#3A2A1A"
+    var skinToneRaw: String = AvatarSkinTone.light.rawValue
+    var hairStyleRaw: String = AvatarHairStyle.medium.rawValue
+    var hairColorHex: String = "#050507"
     var bodyTypeRaw: String = AvatarBodyType.athletic.rawValue
 
     var equippedTopID: String = ShopCatalog.defaultTopID
@@ -44,20 +44,29 @@ final class AvatarConfig {
     }
 
     func refreshForCurrentVisualSystem() {
+        if equippedRacketID == "rally.default.racket" {
+            equippedRacketID = ShopCatalog.defaultRacketID
+        }
+        if equippedShoesID == "rally.default.shoes" {
+            equippedShoesID = ShopCatalog.defaultShoesID
+        }
+
         let trimmedName = playerName.trimmingCharacters(in: .whitespacesAndNewlines)
-        if trimmedName.isEmpty || ["player", "sam"].contains(trimmedName.lowercased()) {
-            playerName = "Marcy"
+        let staleStarterNames = ["player", "sam", "marcy"]
+        let isStarterIdentity = trimmedName.isEmpty || staleStarterNames.contains(trimmedName.lowercased())
+        if isStarterIdentity {
+            playerName = "Player"
         }
 
-        if hairColorHex == "#3A2A1A" {
-            hairColorHex = "#2C221D"
+        if hairColorHex == "#3A2A1A" || hairColorHex == "#2C221D" || hairColorHex == "#101114" || isStarterIdentity {
+            hairColorHex = "#050507"
         }
 
-        guard !hasCompletedSetup || isUsingStarterLoadout else { return }
+        guard isStarterIdentity || !hasCompletedSetup || isUsingStarterLoadout else { return }
 
         skinTone = .light
         bodyType = .athletic
-        hairStyle = .short
+        hairStyle = .medium
     }
 }
 
@@ -71,7 +80,7 @@ enum AvatarSkinTone: String, CaseIterable, Identifiable {
         case .medium: return "#C58F66"
         case .tan: return "#A06B40"
         case .deep: return "#6D4326"
-        case .rich: return "#3D2718"
+        case .rich: return "#5A341F"
         }
     }
     var displayName: String { rawValue.capitalized }

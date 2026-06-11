@@ -19,6 +19,7 @@ struct AvatarCustomizerView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var auth: AuthSession
+    @EnvironmentObject private var avatarAppearanceStore: RallyAvatarAppearanceStore
     @FocusState private var nameFieldFocused: Bool
 
     var isFirstLaunch: Bool = false
@@ -45,9 +46,11 @@ struct AvatarCustomizerView: View {
                     ZStack(alignment: .bottom) {
                         heroBackdrop
 
-                        AvatarRealityKitView(
-                            spec: AvatarVisualSpec.from(config: config, preview: nil),
-                            emote: .shopLook
+                        RallyAvatarView(
+                            appearance: avatarAppearanceStore.appearance(for: config),
+                            targetHeight: isFirstLaunch ? 300 : 336,
+                            showsRacket: true,
+                            breathingPhase: Date().timeIntervalSinceReferenceDate * 1.8
                         )
                         .frame(height: isFirstLaunch ? 300 : 336)
                         .clipShape(RoundedRectangle(cornerRadius: 26, style: .continuous))
@@ -79,6 +82,7 @@ struct AvatarCustomizerView: View {
         .toolbar(isFirstLaunch ? .hidden : .visible, for: .navigationBar)
         .background(RallyUIKit.screenBackground.ignoresSafeArea())
         .onAppear {
+            avatarAppearanceStore.sync(from: config)
             if isFirstLaunch {
                 // Tiny delay so the keyboard avoidance settles after layout.
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
@@ -86,6 +90,10 @@ struct AvatarCustomizerView: View {
                 }
             }
         }
+        .onChange(of: config.skinToneRaw) { _, _ in avatarAppearanceStore.sync(from: config) }
+        .onChange(of: config.hairStyleRaw) { _, _ in avatarAppearanceStore.sync(from: config) }
+        .onChange(of: config.hairColorHex) { _, _ in avatarAppearanceStore.sync(from: config) }
+        .onChange(of: config.bodyTypeRaw) { _, _ in avatarAppearanceStore.sync(from: config) }
     }
 
     // MARK: - First-launch hero
@@ -272,7 +280,7 @@ struct AvatarCustomizerView: View {
 
     private func save() {
         config.playerName = config.playerName.trimmingCharacters(in: .whitespaces)
-        if config.playerName.isEmpty { config.playerName = "Marcy" }
+        if config.playerName.isEmpty { config.playerName = "Player" }
         config.hasCompletedSetup = true
         try? modelContext.save()
         if auth.isAuthenticated {

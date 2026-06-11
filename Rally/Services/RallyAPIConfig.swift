@@ -4,12 +4,24 @@ enum UserDefaultsKeys {
     static let savedEmail = "rally.savedEmail"
     /// Persisted **Continue offline** choice until sign-in clears it.
     static let guestMode = "rally.guestMode"
-    /// Master mute for music + SFX. Defaults to `false` (muted) on first launch.
+    /// Master mute for music + SFX.
     static let soundEnabled = "rally.soundEnabled"
+    /// Marks that the player intentionally changed the sound setting.
+    static let soundPreferenceExplicitlySet = "rally.soundPreferenceExplicitlySet"
     static let gameDominantHand = "rally.gameDominantHand"
     static let gameShowCoachingCues = "rally.gameShowCoachingCues"
     static let gameHapticsEnabled = "rally.gameHapticsEnabled"
     static let gameMatchPace = "rally.gameMatchPace"
+}
+
+enum RallyDefaults {
+    /// Sound should come up on unless the player explicitly turned it off.
+    static func resolvedSoundEnabled(_ defaults: UserDefaults = .standard) -> Bool {
+        if defaults.bool(forKey: UserDefaultsKeys.soundPreferenceExplicitlySet) {
+            return defaults.bool(forKey: UserDefaultsKeys.soundEnabled)
+        }
+        return true
+    }
 }
 
 enum RallyAPIConfig {

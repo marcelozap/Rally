@@ -34,7 +34,7 @@ struct RallyNavBar: View {
             Rectangle()
                 .fill(
                     LinearGradient(
-                        colors: [Color.cyan.opacity(0.35), Color.white.opacity(0.08)],
+                        colors: [RallyUIKit.Palette.iconCyan.opacity(0.35), Color.white.opacity(0.08)],
                         startPoint: .leading,
                         endPoint: .trailing
                     )
@@ -57,12 +57,12 @@ struct RallyNavBar: View {
                     .font(.system(size: 10, weight: selected ? .semibold : .medium, design: .rounded))
                     .tracking(0.3)
             }
-            .foregroundStyle(selected ? Color.cyan : Color.white.opacity(0.42))
+            .foregroundStyle(selected ? RallyUIKit.Palette.iconCyan : Color.white.opacity(0.42))
             .frame(maxWidth: .infinity, minHeight: 44)
             .padding(.vertical, 4)
             .background(
                 Capsule()
-                    .fill(selected ? Color.cyan.opacity(0.12) : Color.clear)
+                    .fill(selected ? RallyUIKit.Palette.iconCyan.opacity(0.12) : Color.clear)
                     .padding(.horizontal, 8)
             )
             .contentShape(Rectangle())

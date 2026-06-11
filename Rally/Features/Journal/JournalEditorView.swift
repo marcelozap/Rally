@@ -93,35 +93,34 @@ struct JournalEditorView: View {
 
                 cardSection(title: "Entry") {
                     TextField("Title", text: $title)
+                        .font(RallyUIKit.Typography.title(.title2, weight: .bold))
+                        .foregroundStyle(RallyUIKit.Palette.frost)
                         .rallyTextFieldStyle()
 
                     ZStack(alignment: .topLeading) {
                         if body_.isEmpty {
                             Text("Write freely…")
-                                .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.28))
+                                .font(RallyUIKit.Typography.body(.body, weight: .medium))
+                                .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.24))
                                 .padding(.horizontal, 16)
-                                .padding(.vertical, 14)
+                                .padding(.vertical, 16)
                         }
                         TextEditor(text: $body_)
                             .scrollContentBackground(.hidden)
-                            .foregroundStyle(RallyUIKit.Palette.frost.opacity(0.92))
-                            .frame(minHeight: 200)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 6)
+                            .font(RallyUIKit.Typography.body(.body, weight: .medium))
+                            .foregroundStyle(RallyUIKit.Palette.frost.opacity(0.90))
+                            .lineSpacing(5)
+                            .frame(minHeight: 240)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 8)
                     }
                     .background(
-                        RoundedRectangle(cornerRadius: 14)
-                            .fill(
-                                LinearGradient(
-                                    colors: [Color.white.opacity(0.07), Color.white.opacity(0.035)],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                )
-                            )
+                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                            .fill(Color.white.opacity(0.04))
                     )
                     .overlay(
-                        RoundedRectangle(cornerRadius: 14)
-                            .stroke(RallyUIKit.Palette.line, lineWidth: 1)
+                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                            .stroke(Color.white.opacity(0.08), lineWidth: 1)
                     )
                 }
 
@@ -204,7 +203,7 @@ struct JournalEditorView: View {
             .padding(.vertical, 12)
             .padding(.bottom, 40)
         }
-        .background(Color.black.ignoresSafeArea())
+        .background(editorBackground)
         .navigationTitle(existing == nil ? "New entry" : "Edit entry")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -237,11 +236,30 @@ struct JournalEditorView: View {
 
     // MARK: - Sections
 
+    private var editorBackground: some View {
+        ZStack {
+            LinearGradient(
+                colors: [
+                    Color(red: 0.05, green: 0.04, blue: 0.08),
+                    Color.black
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .ignoresSafeArea()
+
+            RadialGradient(
+                colors: [RallyUIKit.Palette.rose.opacity(0.08), .clear],
+                center: .topLeading,
+                startRadius: 20,
+                endRadius: 360
+            )
+            .ignoresSafeArea()
+        }
+    }
+
     private var focusSection: some View {
-        cardSection(title: "Practice · Match · Game") {
-            Text("Where does this entry live? (filters your timeline)")
-                .font(.caption)
-                .foregroundStyle(.white.opacity(0.45))
+        cardSection(title: "Focus") {
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
                 ForEach(JournalFocus.allCases) { f in
                     Button {
@@ -273,11 +291,7 @@ struct JournalEditorView: View {
     }
 
     private var promptsSection: some View {
-        cardSection(title: "Guided prompts") {
-            Text("Templates like Journey — tap to insert text (you can edit everything).")
-                .font(.caption)
-                .foregroundStyle(.white.opacity(0.45))
-
+        cardSection(title: "Prompts") {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 10) {
                     ForEach(promptsForFocus) { prompt in
@@ -339,15 +353,21 @@ struct JournalEditorView: View {
     }
 
     private func cardSection(title: String, @ViewBuilder content: () -> some View) -> some View {
-        RallyUIKit.SectionCard(stroke: RallyUIKit.Palette.line) {
-            VStack(alignment: .leading, spacing: 12) {
-                Text(title.uppercased())
-                    .font(RallyUIKit.Typography.label(.caption, weight: .bold))
-                    .tracking(1.1)
-                    .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.42))
-                content()
-            }
+        VStack(alignment: .leading, spacing: 14) {
+            Text(title)
+                .font(RallyUIKit.Typography.title(.subheadline, weight: .bold))
+                .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.52))
+            content()
         }
+        .padding(18)
+        .background(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(Color.white.opacity(0.03))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(Color.white.opacity(0.06), lineWidth: 1)
+        )
     }
 
     private func apply(_ prompt: JournalPrompt) {

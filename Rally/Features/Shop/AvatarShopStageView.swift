@@ -1,277 +1,187 @@
 import SwiftUI
 
-/// Shop-centric avatar presenter: **RealityKit** figure + horizontal emote picker.
-/// Keeps try-on previews (`preview`) in sync with the parent sheet/detail row.
-struct AvatarShopStageView: View {
-    let config: AvatarConfig
-    var preview: (slot: ShopItem.Category, item: ShopItem)?
-    @Binding var emote: AvatarShopEmote
+enum PremiumStageTone {
+    case calm
+    case shop
+}
 
-    var body: some View {
-        VStack(spacing: RallyUIKit.Spacing.md) {
-            RallyUIKit.LuxePanel(tint: currentAccent) {
-                VStack(alignment: .leading, spacing: RallyUIKit.Spacing.md) {
-                    HStack(alignment: .top) {
-                        VStack(alignment: .leading, spacing: RallyUIKit.Spacing.xs) {
-                            RallyUIKit.EditorialEyebrow(
-                                text: preview == nil ? "Player Studio" : "Fitting Room",
-                                tint: currentAccent
-                            )
-                            Text(preview == nil ? "Sibling style preview" : "Live outfit check")
-                                .font(RallyUIKit.Typography.title(.title3, weight: .bold))
-                                .foregroundStyle(RallyUIKit.Palette.frost)
-                        }
+/// Shared stage shell for avatar presentation across Home, Shop, and Locker.
+struct PremiumAvatarStageContainer<Content: View>: View {
+    var tone: PremiumStageTone = .shop
+    var accent: Color = RallyUIKit.Palette.cyan
+    var height: CGFloat = 480
+    @ViewBuilder var content: () -> Content
 
-                        Spacer()
-
-                        HStack(spacing: RallyUIKit.Spacing.xs) {
-                            RallyUIKit.IconBadge(
-                                systemName: preview == nil ? "figure.tennis" : previewCategoryIcon,
-                                tint: currentAccent,
-                                size: 36
-                            )
-                            if preview != nil {
-                                Text("Preview")
-                                    .font(RallyUIKit.Typography.label(.caption, weight: .bold))
-                                    .tracking(1.3)
-                                    .foregroundStyle(RallyUIKit.Palette.frost)
-                                    .padding(.horizontal, RallyUIKit.Spacing.sm)
-                                    .padding(.vertical, 8)
-                                    .background(
-                                        Capsule()
-                                            .fill(Color.white.opacity(0.08))
-                                    )
-                                    .overlay(
-                                        Capsule()
-                                            .stroke(currentAccent.opacity(0.26), lineWidth: 1)
-                                    )
-                            }
-                        }
-                    }
-
-                    ZStack(alignment: .bottom) {
-                        RoundedRectangle(cornerRadius: RallyUIKit.Radius.xl)
-                            .fill(
-                                LinearGradient(
-                                    colors: [
-                                        RallyUIKit.Palette.obsidian,
-                                        RallyUIKit.Palette.ink,
-                                        Color.black
-                                    ],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                )
-                            )
-                            .overlay(alignment: .topLeading) {
-                                Circle()
-                                    .fill(currentAccent.opacity(0.18))
-                                    .frame(width: 190, height: 190)
-                                    .blur(radius: 28)
-                                    .offset(x: -28, y: -26)
-                            }
-                            .overlay(alignment: .topTrailing) {
-                                Circle()
-                                    .fill(RallyUIKit.Palette.champagne.opacity(0.10))
-                                    .frame(width: 150, height: 150)
-                                    .blur(radius: 24)
-                                    .offset(x: 18, y: -18)
-                            }
-                            .overlay {
-                                StageCourtOverlay(accent: currentAccent)
-                                    .clipShape(RoundedRectangle(cornerRadius: RallyUIKit.Radius.xl))
-                            }
-                            .overlay(
-                                RoundedRectangle(cornerRadius: RallyUIKit.Radius.xl)
-                                    .stroke(currentAccent.opacity(0.22), lineWidth: 1)
-                            )
-
-                        AvatarRealityKitView(
-                            spec: AvatarVisualSpec.from(config: config, preview: preview),
-                            emote: emote
-                        )
-                        .frame(height: 316)
-                        .padding(.top, RallyUIKit.Spacing.xs)
-
-                        stageFooter
-                            .padding(RallyUIKit.Spacing.md)
-                    }
-                    .frame(height: 360)
-
-                    HStack(spacing: RallyUIKit.Spacing.xs) {
-                        stageChip(preview == nil ? "Editorial fit" : "Trying on", tint: currentAccent)
-                        stageChip(preview == nil ? "Ready for shop" : "Preview mode", tint: RallyUIKit.Palette.champagne)
-                    }
-
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: RallyUIKit.Spacing.sm) {
-                            ForEach(AvatarShopEmote.allCases) { e in
-                                emoteChip(e)
-                            }
-                        }
-                        .padding(.horizontal, 2)
-                    }
-                }
-            }
+    private var stageGradient: [Color] {
+        switch tone {
+        case .calm:
+            return [
+                Color(red: 0.13, green: 0.12, blue: 0.15),
+                Color(red: 0.06, green: 0.06, blue: 0.09),
+                Color(red: 0.02, green: 0.02, blue: 0.04),
+                Color.black
+            ]
+        case .shop:
+            return [
+                Color(red: 0.12, green: 0.13, blue: 0.17),
+                Color(red: 0.07, green: 0.08, blue: 0.12),
+                Color(red: 0.03, green: 0.03, blue: 0.06),
+                Color.black
+            ]
         }
     }
 
-    private var stageFooter: some View {
-        HStack(spacing: RallyUIKit.Spacing.sm) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(preview?.item.brand ?? "Rally Edit")
-                    .font(RallyUIKit.Typography.label(.caption, weight: .bold))
-                    .tracking(1.8)
-                    .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.78))
-                Text(preview?.item.name ?? "Current favorite look")
-                    .font(RallyUIKit.Typography.body(.subheadline, weight: .semibold))
-                    .foregroundStyle(RallyUIKit.Palette.frost)
-                    .lineLimit(1)
-            }
+    var body: some View {
+        ZStack(alignment: .bottom) {
+            RoundedRectangle(cornerRadius: RallyUIKit.Radius.xl, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: stageGradient,
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
 
-            Spacer()
+            // Top light wash — editorial studio key
+            RoundedRectangle(cornerRadius: RallyUIKit.Radius.xl, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            Color.white.opacity(tone == .calm ? 0.07 : 0.05),
+                            Color.clear
+                        ],
+                        startPoint: .top,
+                        endPoint: .center
+                    )
+                )
 
-            HStack(spacing: RallyUIKit.Spacing.xs) {
-                Image(systemName: emote.symbolName)
-                Text(emote.label)
-                    .lineLimit(1)
+            Circle()
+                .fill((tone == .calm ? RallyUIKit.Palette.champagne : accent).opacity(tone == .calm ? 0.20 : 0.22))
+                .frame(width: height * 0.72, height: height * 0.72)
+                .blur(radius: 54)
+                .offset(x: -height * 0.14, y: -height * 0.20)
+
+            Circle()
+                .fill(accent.opacity(tone == .calm ? 0.10 : 0.18))
+                .frame(width: height * 0.88, height: height * 0.88)
+                .blur(radius: 64)
+                .offset(x: height * 0.24, y: -height * 0.02)
+
+            Ellipse()
+                .fill((tone == .calm ? RallyUIKit.Palette.cyan : accent).opacity(tone == .calm ? 0.07 : 0.11))
+                .frame(width: height * 0.86, height: height * 0.20)
+                .blur(radius: 34)
+                .offset(y: height * 0.36)
+
+            // Floor reflection pool
+            Ellipse()
+                .fill(accent.opacity(tone == .calm ? 0.05 : 0.08))
+                .frame(width: height * 0.52, height: height * 0.06)
+                .blur(radius: 18)
+                .offset(y: height * 0.42)
+
+            content()
+
+            // Soft vignette
+            RoundedRectangle(cornerRadius: RallyUIKit.Radius.xl, style: .continuous)
+                .fill(
+                    RadialGradient(
+                        colors: [.clear, Color.black.opacity(tone == .calm ? 0.38 : 0.32)],
+                        center: .center,
+                        startRadius: height * 0.18,
+                        endRadius: height * 0.72
+                    )
+                )
+                .allowsHitTesting(false)
+
+            VStack(spacing: 0) {
+                Spacer()
+                Rectangle()
+                    .fill(Color.white.opacity(0.06))
+                    .frame(height: 1)
+                    .padding(.horizontal, 28)
+                Rectangle()
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                Color.clear,
+                                accent.opacity(tone == .calm ? 0.06 : 0.10),
+                                Color.black.opacity(0.36)
+                            ],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
+                    .frame(height: height * 0.14)
             }
-            .font(RallyUIKit.Typography.label(.caption, weight: .semibold))
-            .foregroundStyle(RallyUIKit.Palette.frost)
-            .padding(.horizontal, RallyUIKit.Spacing.sm)
-            .padding(.vertical, 9)
-            .background(
-                Capsule()
-                    .fill(Color.black.opacity(0.26))
-            )
-            .overlay(
-                Capsule()
-                    .stroke(RallyUIKit.Palette.line.opacity(0.8), lineWidth: 1)
-            )
         }
-        .padding(.horizontal, RallyUIKit.Spacing.md)
-        .padding(.vertical, RallyUIKit.Spacing.sm)
-        .background(
-            RoundedRectangle(cornerRadius: RallyUIKit.Radius.md)
-                .fill(Color.black.opacity(0.24))
-        )
+        .frame(height: height)
+        .clipShape(RoundedRectangle(cornerRadius: RallyUIKit.Radius.xl, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: RallyUIKit.Radius.md)
-                .stroke(RallyUIKit.Palette.line.opacity(0.7), lineWidth: 1)
+            RoundedRectangle(cornerRadius: RallyUIKit.Radius.xl, style: .continuous)
+                .stroke(
+                    LinearGradient(
+                        colors: [
+                            Color.white.opacity(tone == .calm ? 0.10 : 0.12),
+                            Color.white.opacity(0.04)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    ),
+                    lineWidth: 1
+                )
         )
+        .shadow(color: Color.black.opacity(0.32), radius: 32, y: 20)
+    }
+}
+
+struct AvatarShopStageView: View {
+    let config: AvatarConfig
+    var preview: (slot: ShopItem.Category, item: ShopItem)?
+    var tone: PremiumStageTone = .shop
+    @Binding var emote: AvatarShopEmote
+    @EnvironmentObject private var avatarAppearanceStore: RallyAvatarAppearanceStore
+
+    var body: some View {
+        VStack(spacing: 0) {
+            PremiumAvatarStageContainer(
+                tone: tone,
+                accent: currentAccent,
+                height: preview == nil ? 540 : 520
+            ) {
+                TimelineView(.animation) { timeline in
+                    RallyAvatarView(
+                        appearance: avatarAppearanceStore.appearance(for: config, previewItem: preview?.item),
+                        targetHeight: preview == nil ? 420 : 400,
+                        showsRacket: true,
+                        breathingPhase: timeline.date.timeIntervalSinceReferenceDate * 1.7
+                    )
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .padding(.horizontal, 0)
+                    .padding(.bottom, tone == .calm ? 8 : 0)
+                    .scaleEffect(emoteScale)
+                }
+            }
+        }
+        .onAppear {
+            avatarAppearanceStore.sync(from: config)
+        }
     }
 
     private var currentAccent: Color {
         preview?.item.accentColor ?? preview?.item.color ?? RallyUIKit.Palette.cyan
     }
 
-    private var previewCategoryIcon: String {
-        preview?.slot.iconSystemName ?? "figure.tennis"
-    }
-
-    private var stageSummary: String {
-        if let preview {
-            return "Preview \(preview.item.name)."
-        }
-        return "Browse the current fit."
-    }
-
-    private func emoteChip(_ e: AvatarShopEmote) -> some View {
-        let selected = emote == e
-        return Button {
-            emote = e
-        } label: {
-            HStack(spacing: RallyUIKit.Spacing.xs) {
-                Image(systemName: e.symbolName)
-                    .font(.system(size: 13, weight: .bold))
-                Text(e.label)
-                    .font(RallyUIKit.Typography.label(.caption, weight: .semibold))
-                    .lineLimit(1)
-            }
-            .foregroundStyle(selected ? RallyUIKit.Palette.obsidian : RallyUIKit.Palette.frost)
-            .padding(.horizontal, RallyUIKit.Spacing.sm)
-            .padding(.vertical, 10)
-            .background(
-                Capsule()
-                    .fill(
-                        selected
-                            ? AnyShapeStyle(RallyUIKit.accentGradient(currentAccent))
-                            : AnyShapeStyle(Color.white.opacity(0.06))
-                    )
-            )
-            .overlay(
-                Capsule()
-                    .stroke(selected ? Color.white.opacity(0.26) : currentAccent.opacity(0.2), lineWidth: 1)
-            )
-        }
-        .buttonStyle(.plain)
-    }
-
-    private func stageChip(_ text: String, tint: Color) -> some View {
-        Text(text)
-            .font(RallyUIKit.Typography.label(.caption2, weight: .bold))
-            .tracking(1.2)
-            .foregroundStyle(RallyUIKit.Palette.frost)
-            .padding(.horizontal, RallyUIKit.Spacing.sm)
-            .padding(.vertical, 7)
-            .background(Capsule().fill(tint.opacity(0.12)))
-            .overlay(Capsule().stroke(tint.opacity(0.2), lineWidth: 1))
-    }
-}
-
-private struct StageCourtOverlay: View {
-    let accent: Color
-
-    var body: some View {
-        ZStack {
-            LinearGradient(
-                colors: [
-                    Color.clear,
-                    accent.opacity(0.08),
-                    RallyUIKit.Palette.champagne.opacity(0.06)
-                ],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-
-            VStack(spacing: 0) {
-                Spacer()
-                Rectangle()
-                    .fill(Color.white.opacity(0.08))
-                    .frame(height: 1)
-                Rectangle()
-                    .fill(
-                        LinearGradient(
-                            colors: [
-                                Color.white.opacity(0.02),
-                                accent.opacity(0.07)
-                            ],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-                    )
-                    .frame(height: 110)
-            }
-
-            RoundedRectangle(cornerRadius: 26)
-                .stroke(accent.opacity(0.08), lineWidth: 1)
-                .padding(18)
-
-            Rectangle()
-                .fill(Color.white.opacity(0.05))
-                .frame(width: 1)
-                .padding(.vertical, 48)
-
-            Rectangle()
-                .fill(Color.white.opacity(0.04))
-                .frame(height: 1)
-                .padding(.horizontal, 58)
-                .offset(y: 54)
-
-            Ellipse()
-                .fill(Color.black.opacity(0.22))
-                .frame(width: 220, height: 34)
-                .blur(radius: 14)
-                .offset(y: 114)
+    private var emoteScale: CGFloat {
+        switch emote {
+        case .idle:
+            return 1.0
+        case .wave:
+            return 1.015
+        case .celebrate:
+            return 1.035
+        case .shopLook:
+            return 1.02
         }
     }
 }

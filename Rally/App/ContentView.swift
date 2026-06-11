@@ -14,9 +14,15 @@ struct ContentView: View {
     @Query private var avatarConfigs: [AvatarConfig]
 
     @State private var selectedTab: RallyTab = .home
-    @State private var logbookSection: LogbookSection = .training
+    @State private var logbookSection: LogbookSection = .journal
     @State private var isPlaying = false
     @State private var hasAppeared = false
+
+    #if DEBUG
+    private var shouldAutoStartGameplay: Bool {
+        ProcessInfo.processInfo.arguments.contains("-RallyAutoPlay")
+    }
+    #endif
 
     var body: some View {
         ZStack {
@@ -51,14 +57,32 @@ struct ContentView: View {
             withAnimation(.spring(response: 0.55, dampingFraction: 0.9)) {
                 hasAppeared = true
             }
+            #if DEBUG
+            if shouldAutoStartGameplay {
+                // Delay long enough for SwiftData @Query + mainTabs to render
+                // so the fullScreenCover modifier is already attached when we flip isPlaying.
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
+                    isPlaying = true
+                }
+            }
+            #endif
         }
         .animation(.easeInOut(duration: 0.3), value: avatarConfigs.first?.hasCompletedSetup ?? false)
+        // Keep the fullScreenCover at root level so it's always in the hierarchy
+        // regardless of whether mainTabs has rendered yet.
+        .fullScreenCover(isPresented: $isPlaying) {
+            GameSessionView(onExit: {
+                isPlaying = false
+                selectedTab = .home
+            })
+            .preferredColorScheme(.dark)
+        }
     }
 
     private var mainTabs: some View {
         TabView(selection: $selectedTab) {
-            LogbookView(section: $logbookSection, title: "Journal")
-                .tabItem { Label("Journal", systemImage: "book.fill") }
+            CourtsMapView()
+                .tabItem { Label("World", systemImage: "globe.americas.fill") }
                 .tag(RallyTab.journal)
                 .transition(.asymmetric(insertion: .opacity.combined(with: .scale(scale: 0.95)), removal: .opacity))
 
@@ -72,7 +96,7 @@ struct ContentView: View {
                 .tag(RallyTab.shop)
                 .transition(.asymmetric(insertion: .opacity.combined(with: .scale(scale: 0.95)), removal: .opacity))
         }
-        .tint(RallyUIKit.Palette.cyan)
+        .tint(RallyUIKit.Palette.iconCyan)
         .toolbarBackground(
             LinearGradient(
                 colors: [
@@ -87,20 +111,13 @@ struct ContentView: View {
         .toolbarBackground(.visible, for: .tabBar)
         .toolbarColorScheme(.dark, for: .tabBar)
         .animation(.easeInOut(duration: 0.25), value: selectedTab)
-        .fullScreenCover(isPresented: $isPlaying) {
-            GameSessionView(onExit: {
-                isPlaying = false
-                selectedTab = .home
-            })
-            .preferredColorScheme(.dark)
-        }
     }
 
     private var setupFallback: some View {
         VStack(spacing: 18) {
             Image(systemName: "sparkles.rectangle.stack.fill")
                 .font(.system(size: 34, weight: .bold))
-                .foregroundStyle(RallyUIKit.Palette.cyan)
+                .foregroundStyle(RallyUIKit.Palette.iconCyan)
 
             VStack(spacing: 8) {
                 Text("Setting up Rally")
@@ -115,7 +132,7 @@ struct ContentView: View {
             }
 
             ProgressView()
-                .tint(RallyUIKit.Palette.cyan)
+                .tint(RallyUIKit.Palette.iconCyan)
         }
         .padding(28)
         .frame(maxWidth: 320)
