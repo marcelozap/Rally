@@ -161,6 +161,73 @@ struct CourtsMapView: View {
         return highlights
     }
 
+    /// Category-specific intro card shown when Venues or Camps filter is active.
+    /// Provides a quick editorial summary and count so the player understands
+    /// what they are browsing before scrolling the list.
+    @ViewBuilder
+    private var categoryStorefrontCard: some View {
+        switch filter {
+        case .venues:
+            RallyUIKit.SectionCard(stroke: RallyUIKit.Palette.cyan.opacity(0.22)) {
+                HStack(alignment: .top, spacing: 14) {
+                    RallyUIKit.IconBadge(systemName: "mappin.and.ellipse", tint: RallyUIKit.Palette.cyan, size: 32)
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Iconic Venues")
+                            .font(RallyUIKit.Typography.label(.headline, weight: .bold))
+                            .foregroundStyle(RallyUIKit.Palette.frost)
+                        Text("\(visibleDestinations.count) slam stadiums, club courts, and Masters venues with official tickets and hospitality links.")
+                            .font(RallyUIKit.Typography.body(.caption, weight: .medium))
+                            .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.68))
+                            .fixedSize(horizontal: false, vertical: true)
+                        HStack(spacing: 8) {
+                            ForEach(availabilityHighlights, id: \.0) { label, count, tint in
+                                HStack(spacing: 4) {
+                                    Text(label)
+                                        .font(RallyUIKit.Typography.label(.caption2, weight: .bold))
+                                    Text(count)
+                                        .font(RallyUIKit.Typography.label(.caption2, weight: .medium))
+                                }
+                                .foregroundStyle(tint)
+                                .padding(.horizontal, 8).padding(.vertical, 5)
+                                .background(Capsule().fill(tint.opacity(0.12)))
+                            }
+                        }
+                    }
+                }
+            }
+        case .camps:
+            RallyUIKit.SectionCard(stroke: RallyUIKit.Palette.gold.opacity(0.22)) {
+                HStack(alignment: .top, spacing: 14) {
+                    RallyUIKit.IconBadge(systemName: "figure.tennis", tint: RallyUIKit.Palette.gold, size: 32)
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Training Camps & Academies")
+                            .font(RallyUIKit.Typography.label(.headline, weight: .bold))
+                            .foregroundStyle(RallyUIKit.Palette.frost)
+                        Text("\(visibleDestinations.count) professional academies with official enrollment links — Rafa Nadal, Mouratoglou, IMG, Ferrero, and more.")
+                            .font(RallyUIKit.Typography.body(.caption, weight: .medium))
+                            .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.68))
+                            .fixedSize(horizontal: false, vertical: true)
+                        HStack(spacing: 8) {
+                            ForEach(availabilityHighlights, id: \.0) { label, count, tint in
+                                HStack(spacing: 4) {
+                                    Text(label)
+                                        .font(RallyUIKit.Typography.label(.caption2, weight: .bold))
+                                    Text(count)
+                                        .font(RallyUIKit.Typography.label(.caption2, weight: .medium))
+                                }
+                                .foregroundStyle(tint)
+                                .padding(.horizontal, 8).padding(.vertical, 5)
+                                .background(Capsule().fill(tint.opacity(0.12)))
+                            }
+                        }
+                    }
+                }
+            }
+        case .all:
+            EmptyView()
+        }
+    }
+
     private var mapStyle: MapStyle {
         switch mapLook {
         case .satellite: return .imagery
@@ -305,6 +372,12 @@ struct CourtsMapView: View {
                             .scrollClipDisabled()
                         }
 
+                        // Per-category storefront card — appears when a specific filter is active.
+                        if filter != .all {
+                            categoryStorefrontCard
+                                .padding(.horizontal, 16)
+                        }
+
                         RallyUIKit.SectionCard(stroke: RallyUIKit.Palette.lime.opacity(0.18)) {
                             ScrollView {
                                 LazyVStack(spacing: 10) {
@@ -314,6 +387,17 @@ struct CourtsMapView: View {
                                 }
                             }
                             .frame(maxHeight: 260)
+
+                            // Disclosure line — official links only, no fabricated codes.
+                            HStack(spacing: 6) {
+                                Image(systemName: "lock.shield.fill")
+                                    .font(.system(size: 10, weight: .bold))
+                                    .foregroundStyle(RallyUIKit.Palette.lime.opacity(0.72))
+                                Text("Rally surfaces official venue and camp pages only. No fabricated codes or undisclosed referral arrangements.")
+                                    .font(RallyUIKit.Typography.label(.caption2, weight: .medium))
+                                    .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.44))
+                            }
+                            .padding(.top, 6)
                         }
                         .padding(.horizontal, 16)
                     } else {

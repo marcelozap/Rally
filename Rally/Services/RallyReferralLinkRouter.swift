@@ -100,6 +100,9 @@ final class RallyReferralLinkRouter {
     /// Silently no-ops in Release on validation failure.
     func open(_ url: URL?, context: String = "unknown") {
         guard let resolved = validated(url, context: context) else { return }
+        #if DEBUG
+        print("[RallyReferralLinkRouter] Opening \(context) → \(resolved.absoluteString)")
+        #endif
         present(resolved)
     }
 

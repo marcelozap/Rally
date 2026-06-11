@@ -445,6 +445,29 @@ enum IconicCourtsCatalog {
             referralSummary: "Contact RVTA through the official academy site for program fit, intake, and university-linked training logistics."
         ),
         IconicTennisCourt(
+            id: "sanchez.casal",
+            kind: .academy,
+            name: "Sanchez-Casal Academy",
+            subtitle: "Barcelona · Spain",
+            region: "Europe",
+            latitude: 41.4155,
+            longitude: 2.1686,
+            vibe: "Red-clay discipline campus behind Barcelona's skyline.",
+            detail: "One of Europe's most recognized junior pathways. The Sanchez-Casal methodology emphasizes tactical-technical development on clay, with international boarding and non-boarding formats.",
+            venueWebsiteURL: URL(string: "https://www.sanchezcasal.com/"),
+            bookingOrMembershipURL: URL(string: "https://www.sanchezcasal.com/en/our-tennis-programs/"),
+            officialProgramURL: URL(string: "https://www.sanchezcasal.com/en/international-programs/"),
+            campProfile: CampProfile(
+                audience: "Juniors and competitive adults",
+                programFocus: "Clay-court technical-tactical development, international camp weeks",
+                surfaceMix: "Clay primary, all-weather secondary",
+                bestFor: "Players wanting a European clay-specialist academy block",
+                stayStyle: "Boarding and non-boarding; weekly and multi-week",
+                bestForTag: .allAround
+            ),
+            referralSummary: "Use the official Sanchez-Casal program pages for international-camp enrollment. Rally surfaces official pathways only."
+        ),
+        IconicTennisCourt(
             id: "rna.costamujeres",
             kind: .academy,
             name: "Rafa Nadal Tennis Center Costa Mujeres",
