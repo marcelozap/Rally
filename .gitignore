@@ -52,6 +52,14 @@ fastlane/test_output
 *.swp
 *~
 
+# Local agent/simulator artifacts
+.derivedData/
+Artifacts/
+scripts/
+/*.png
+/*.mp4
+/PASTE_THIS_INTO_CURSOR.md
+
 # Node backend
 backend/node_modules/
 backend/data/
