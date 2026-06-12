@@ -22,6 +22,15 @@ See `CLAUDE_CODE_PARALLEL_PLAN.md` for the full boundary map.
 Additive-only rule applies to any file marked shared — Claude Code may ADD a call site
 or injection but must NOT rearrange existing code in those files.
 
+## LANE OWNERSHIP — CURRENT ACTIVE SPLIT
+
+| Lane | Owner | Files |
+| --- | --- | --- |
+| CX | Codex/Cursor | `Rally/Features/Home/HomeView.swift`, `Rally/Features/Avatar/RallyAvatarGeometry.swift`, `Rally/Features/Avatar/RallyAvatarView.swift`, `Rally/Features/Avatar/RallyAvatarAppearance.swift`, avatar-creator files, `Rally/Features/Avatar/AvatarCustomizerView.swift`, `Rally/Features/Shop/AvatarShopStageView.swift`, `Rally/Features/Shop/ShopView.swift`, `Rally/Features/Shop/ShopItemDetailView.swift`, `Rally/Features/Shop/LockerHubView.swift` |
+| CC | Claude Code | `Rally/Game/GameScene.swift`, `Rally/Game/Tunables.swift`, gameplay-only helpers under `Rally/Game/`, `Rally/Features/Journal/`, `Rally/Features/Courts/`, audio and haptics files |
+
+For the current avatar craft pass, CX owns shared avatar geometry and SwiftUI avatar rendering. CC may consume those values from gameplay code but must not independently redraw or redesign the avatar.
+
 ## SYNC STATE (last verified: 2026-06-11)
 - Duplicate hunt: clean (stale copy renamed)
 - iCloud eviction: none found, Desktop not iCloud-managed
