@@ -123,18 +123,26 @@ final class RallyReferralLinkRouter {
         safari.preferredControlTintColor = UIColor(red: 0, green: 0.753, blue: 0.82, alpha: 1) // cyan
         safari.dismissButtonStyle = .close
 
-        guard let scene = UIApplication.shared.connectedScenes
+        // Use keyWindow (iOS 15+) — scene.windows + isKeyWindow is deprecated
+        // on iOS 16+ and can return nil in SwiftUI-hosted apps.
+        let activeScene = UIApplication.shared.connectedScenes
             .compactMap({ $0 as? UIWindowScene })
-            .first(where: { $0.activationState == .foregroundActive }),
-              let root = scene.windows.first(where: { $0.isKeyWindow })?.rootViewController else {
-            // Fallback: open in default browser if no presenting VC available.
-            UIApplication.shared.open(url)
+            .first(where: { $0.activationState == .foregroundActive })
+
+        guard let root = activeScene?.keyWindow?.rootViewController else {
+            #if DEBUG
+            print("[RallyReferralLinkRouter] ⚠️ No key window found — opening in Safari: \(url.absoluteString)")
+            #endif
+            UIApplication.shared.open(url, options: [:], completionHandler: nil)
             return
         }
         var presenter = root
         while let presented = presenter.presentedViewController {
             presenter = presented
         }
+        #if DEBUG
+        print("[RallyReferralLinkRouter] Presenting SFSafariViewController for: \(url.absoluteString)")
+        #endif
         presenter.present(safari, animated: true)
     }
 }
