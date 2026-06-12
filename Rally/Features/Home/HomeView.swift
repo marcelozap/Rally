@@ -6,6 +6,7 @@ struct HomeView: View {
     @EnvironmentObject private var avatarAppearanceStore: RallyAvatarAppearanceStore
     @Environment(\.modelContext) private var modelContext
     @Query private var avatarConfigs: [AvatarConfig]
+    @Query(sort: \JournalEntry.date, order: .reverse) private var journalEntries: [JournalEntry]
 
     @Binding var selectedTab: RallyTab
     @Binding var isPlaying: Bool
@@ -13,6 +14,7 @@ struct HomeView: View {
     @StateObject private var gamePreferences = GamePreferences.shared
     @State private var selectedCourt: CourtVenue = CourtVenue.current
     @State private var selectedLoadoutCategory: ShopItem.Category = .racket
+    @State private var showsJournal = false
 
     private var avatar: AvatarConfig? { avatarConfigs.first }
     private let editableLoadoutCategories: [ShopItem.Category] = [.racket, .top, .bottom, .shoes]
@@ -29,37 +31,29 @@ struct HomeView: View {
 
                 loadoutScreen
             }
-            .safeAreaInset(edge: .bottom) {
-                playDock
+            .sheet(isPresented: $showsJournal) {
+                JournalView()
             }
             .navigationTitle(displayName(for: avatar))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Menu {
-                        if auth.isGuestMode {
-                            Label("Offline on this device", systemImage: "wifi.slash")
-                        }
-                        if let email = auth.userEmail {
-                            Label(email, systemImage: "envelope.fill")
-                        }
-                        Button(auth.isGuestMode ? "Leave offline mode…" : "Sign out", role: .destructive) {
-                            auth.logout()
-                        }
+                    Button {
+                        showsJournal = true
                     } label: {
-                        Image(systemName: auth.isGuestMode ? "icloud.slash" : "person.text.rectangle")
-                            .foregroundStyle(RallyUIKit.Palette.champagne)
+                        topChromeIcon(systemName: "calendar")
                     }
-                    .accessibilityLabel("Account")
+                    .buttonStyle(LoadoutPlayButtonStyle())
+                    .accessibilityLabel("Open journal")
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     if let avatar = avatar {
                         NavigationLink {
                             AvatarCustomizerView(config: avatar)
                         } label: {
-                            Image(systemName: "person.crop.circle")
-                                .foregroundStyle(RallyUIKit.Palette.champagne)
+                            topChromeIcon(systemName: "person.crop.circle")
                         }
+                        .buttonStyle(LoadoutPlayButtonStyle())
                         .accessibilityLabel("Edit look")
                     }
                 }
@@ -74,9 +68,9 @@ struct HomeView: View {
 
     private var loadoutScreen: some View {
         GeometryReader { proxy in
-            let stageHeight = min(402, max(354, proxy.size.height * 0.50))
+            let stageHeight = min(HomeCraft.stageMaxHeight, max(HomeCraft.stageMinHeight, proxy.size.height * HomeCraft.stageHeightShare))
 
-            VStack(spacing: 9) {
+            VStack(spacing: HomeCraft.verticalRhythm) {
                 loadoutTopChrome
 
                 livingPregameStage
@@ -86,40 +80,39 @@ struct HomeView: View {
 
                 courtRail
 
-                Spacer(minLength: 78)
+                playDock
+
+                Spacer(minLength: 0)
             }
-            .padding(.horizontal, 16)
+            .padding(.horizontal, HomeCraft.horizontalPadding)
             .padding(.top, 8)
+            .padding(.bottom, 72)
             .frame(width: proxy.size.width, height: proxy.size.height, alignment: .top)
         }
     }
 
     private var loadoutTopChrome: some View {
-        ZStack {
-            VStack(alignment: .center, spacing: 3) {
-                Text("LOADOUT")
-                    .font(.system(size: 11, weight: .black, design: .rounded))
-                    .tracking(2.2)
-                    .foregroundStyle(RallyUIKit.Palette.cyan.opacity(0.82))
-            }
+        Text("LOADOUT")
+            .font(.system(size: 11, weight: .black, design: .rounded))
+            .tracking(2.2)
+            .foregroundStyle(RallyUIKit.Palette.cyan.opacity(0.82))
             .frame(maxWidth: .infinity)
-
-            HStack {
-                Spacer()
-
-                Button {
-                    selectedTab = .shop
-                } label: {
-                    Image(systemName: "tshirt.fill")
-                        .font(.system(size: 15, weight: .black))
-                        .foregroundStyle(RallyUIKit.Palette.obsidian)
-                        .frame(width: 36, height: 36)
-                        .background(Circle().fill(RallyUIKit.Palette.champagne))
-                }
-                .buttonStyle(.plain)
-            }
-        }
         .padding(.horizontal, 2)
+    }
+
+    private func topChromeIcon(systemName: String, isFilled: Bool = false) -> some View {
+        Image(systemName: systemName)
+            .font(.system(size: 16, weight: .bold))
+            .foregroundStyle(isFilled ? RallyUIKit.Palette.obsidian : RallyUIKit.Palette.champagne)
+            .frame(width: HomeCraft.headerTapTarget, height: HomeCraft.headerTapTarget)
+            .background(
+                Circle()
+                    .fill(isFilled ? RallyUIKit.Palette.champagne : Color.white.opacity(0.075))
+            )
+            .overlay(
+                Circle()
+                    .stroke(Color.white.opacity(isFilled ? 0.22 : 0.12), lineWidth: 1)
+            )
     }
 
     private func stageArrow(systemName: String, action: @escaping () -> Void) -> some View {
@@ -342,12 +335,12 @@ struct HomeView: View {
 
     private var livingPregameStage: some View {
         ZStack(alignment: .top) {
-            RoundedRectangle(cornerRadius: 32, style: .continuous)
+            RoundedRectangle(cornerRadius: HomeCraft.largeRadius, style: .continuous)
                 .fill(stageGradient(for: selectedCourt))
-                .overlay(movingStageLight.clipShape(RoundedRectangle(cornerRadius: 32, style: .continuous)))
-                .overlay(courtLinesOverlay(for: selectedCourt).clipShape(RoundedRectangle(cornerRadius: 32, style: .continuous)))
+                .overlay(movingStageLight.clipShape(RoundedRectangle(cornerRadius: HomeCraft.largeRadius, style: .continuous)))
+                .overlay(courtLinesOverlay(for: selectedCourt).clipShape(RoundedRectangle(cornerRadius: HomeCraft.largeRadius, style: .continuous)))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 32, style: .continuous)
+                    RoundedRectangle(cornerRadius: HomeCraft.largeRadius, style: .continuous)
                         .stroke(Color.white.opacity(0.12), lineWidth: 1)
                 )
 
@@ -374,7 +367,7 @@ struct HomeView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
-        .clipShape(RoundedRectangle(cornerRadius: 32, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: HomeCraft.largeRadius, style: .continuous))
         .gesture(
             DragGesture(minimumDistance: 24)
                 .onEnded { value in
@@ -560,77 +553,282 @@ struct HomeView: View {
     }
 
     private var wardrobeRail: some View {
-        HStack(spacing: 9) {
-            ForEach(editableLoadoutCategories, id: \.self) { category in
-                Button {
-                    selectedLoadoutCategory = category
-                } label: {
-                    VStack(spacing: 8) {
-                        ZStack {
-                            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                                .fill(loadoutFill(for: category))
-                                .frame(width: 70, height: 72)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 18, style: .continuous)
-                                        .stroke(
-                                            selectedLoadoutCategory == category
-                                                ? RallyUIKit.Palette.cyan.opacity(0.72)
-                                                : Color.white.opacity(0.09),
-                                            lineWidth: selectedLoadoutCategory == category ? 1.6 : 1
-                                        )
-                                )
-                            Image(systemName: icon(for: category))
-                                .font(.system(size: 25, weight: .bold))
-                                .foregroundStyle(.white.opacity(0.92))
-                        }
-                        Text(shortLabel(for: category))
-                            .font(RallyUIKit.Typography.label(.caption2, weight: .bold))
-                            .foregroundStyle(selectedLoadoutCategory == category ? RallyUIKit.Palette.cyan : RallyUIKit.Palette.cloud.opacity(0.66))
+        VStack(spacing: 11) {
+            HStack(alignment: .center, spacing: 10) {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(shortLabel(for: selectedLoadoutCategory).uppercased())
+                        .font(.system(size: 10, weight: .black, design: .rounded))
+                        .tracking(1.7)
+                        .foregroundStyle(categoryAccent(for: selectedLoadoutCategory))
+
+                    Text(selectedLoadoutItem?.name ?? "Choose \(shortLabel(for: selectedLoadoutCategory))")
+                        .font(.system(size: 15, weight: .black, design: .rounded))
+                        .foregroundStyle(RallyUIKit.Palette.frost)
+                        .lineLimit(1)
+
+                    Text(selectedLoadoutItem?.brand.uppercased() ?? "RALLY")
+                        .font(.system(size: 9, weight: .black, design: .rounded))
+                        .tracking(1.1)
+                        .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.48))
+                        .lineLimit(1)
+                }
+
+                Spacer(minLength: 8)
+
+                HStack(spacing: 7) {
+                    compactCycleButton(systemName: "chevron.left") {
+                        cycleLoadout(-1)
+                    }
+                    compactCycleButton(systemName: "chevron.right") {
+                        cycleLoadout(1)
                     }
                 }
-                .buttonStyle(.plain)
+            }
+
+            HStack(spacing: 9) {
+                ForEach(editableLoadoutCategories, id: \.self) { category in
+                    let item = equippedItem(for: category)
+                    Button {
+                        if selectedLoadoutCategory == category {
+                            cycleLoadout(1)
+                        } else {
+                            withAnimation(.spring(response: 0.22, dampingFraction: 0.82)) {
+                                selectedLoadoutCategory = category
+                            }
+                        }
+                    } label: {
+                        loadoutSlotTile(
+                            category: category,
+                            item: item,
+                            isSelected: selectedLoadoutCategory == category
+                        )
+                    }
+                    .buttonStyle(LoadoutPlayButtonStyle())
+                    .accessibilityLabel("\(shortLabel(for: category)) \(item?.name ?? "empty")")
+                }
             }
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 8)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
         .background(
-            RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .fill(Color.black.opacity(0.18))
+            RoundedRectangle(cornerRadius: HomeCraft.largeRadius, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            Color.black.opacity(0.38),
+                            RallyUIKit.Palette.ink.opacity(0.72)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .stroke(Color.white.opacity(0.06), lineWidth: 1)
+            RoundedRectangle(cornerRadius: HomeCraft.largeRadius, style: .continuous)
+                .stroke(Color.white.opacity(0.10), lineWidth: 1)
         )
     }
 
+    private func compactCycleButton(systemName: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: systemName)
+                .font(.system(size: 12, weight: .black))
+                .foregroundStyle(RallyUIKit.Palette.frost)
+                .frame(width: 34, height: 30)
+                .background(
+                    Capsule(style: .continuous)
+                        .fill(Color.white.opacity(0.08))
+                )
+                .overlay(
+                    Capsule(style: .continuous)
+                        .stroke(Color.white.opacity(0.12), lineWidth: 1)
+                )
+        }
+        .buttonStyle(LoadoutPlayButtonStyle())
+    }
+
+    private func loadoutSlotTile(category: ShopItem.Category, item: ShopItem?, isSelected: Bool) -> some View {
+        let accent = item?.accentColor ?? categoryAccent(for: category)
+
+        return VStack(spacing: 7) {
+            ZStack(alignment: .topTrailing) {
+                RoundedRectangle(cornerRadius: HomeCraft.smallRadius, style: .continuous)
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                RallyUIKit.Palette.slate.opacity(isSelected ? 0.98 : 0.76),
+                                RallyUIKit.Palette.ink.opacity(0.96),
+                                RallyUIKit.Palette.obsidian.opacity(0.98)
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: HomeCraft.smallRadius, style: .continuous)
+                            .stroke(Color.white.opacity(isSelected ? 0.24 : 0.12), lineWidth: 1)
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: HomeCraft.smallRadius, style: .continuous)
+                            .stroke(isSelected ? accent.opacity(0.95) : Color.clear, lineWidth: 2)
+                    )
+                    .shadow(color: isSelected ? accent.opacity(0.24) : .clear, radius: 13, y: 6)
+
+                Image(systemName: icon(for: category))
+                    .font(.system(size: 24, weight: .semibold))
+                    .symbolRenderingMode(.monochrome)
+                    .foregroundStyle(isSelected ? .white : RallyUIKit.Palette.cloud.opacity(0.62))
+                    .saturation(isSelected ? 1 : 0.60)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+                Circle()
+                    .fill(accent)
+                    .frame(width: 6, height: 6)
+                    .padding(8)
+                    .opacity(item == nil ? 0 : 1)
+            }
+            .frame(maxWidth: .infinity)
+            .frame(height: HomeCraft.loadoutTileHeight)
+
+            Text(shortLabel(for: category))
+                .font(.system(size: 10, weight: .black, design: .rounded))
+                .foregroundStyle(isSelected ? .white : RallyUIKit.Palette.cloud.opacity(0.58))
+                .lineLimit(1)
+        }
+    }
+
     private var courtRail: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: 9) {
             ForEach(featuredCourtVenues) { venue in
                 Button {
-                    setCourt(venue)
+                    withAnimation(.spring(response: 0.24, dampingFraction: 0.82)) {
+                        setCourt(venue)
+                    }
                 } label: {
                     HStack(spacing: 7) {
                         Circle()
                             .fill(courtAccent(for: venue))
-                            .frame(width: 8, height: 8)
+                            .frame(width: 7, height: 7)
                         Text(venueShortName(venue))
-                            .font(RallyUIKit.Typography.label(.caption2, weight: .bold))
-                            .foregroundStyle(venue == selectedCourt ? RallyUIKit.Palette.obsidian : RallyUIKit.Palette.cloud.opacity(0.66))
+                            .font(.system(size: 11, weight: .black, design: .rounded))
+                            .tracking(0.2)
+                            .foregroundStyle(venue == selectedCourt ? RallyUIKit.Palette.frost : RallyUIKit.Palette.cloud.opacity(0.62))
                     }
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 10)
+                    .padding(.vertical, 8)
                     .background(
                         Capsule(style: .continuous)
-                            .fill(venue == selectedCourt ? AnyShapeStyle(RallyUIKit.accentGradient(courtAccent(for: venue))) : AnyShapeStyle(Color.white.opacity(0.07)))
+                            .fill(
+                                venue == selectedCourt
+                                    ? AnyShapeStyle(
+                                        LinearGradient(
+                                            colors: [
+                                                courtAccent(for: venue).opacity(0.84),
+                                                courtAccent(for: venue).opacity(0.48)
+                                            ],
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        )
+                                    )
+                                    : AnyShapeStyle(RallyUIKit.Palette.obsidian.opacity(0.72))
+                            )
                     )
                     .overlay(
                         Capsule(style: .continuous)
-                            .stroke(venue == selectedCourt ? Color.white.opacity(0.24) : Color.white.opacity(0.08), lineWidth: 1)
+                            .stroke(venue == selectedCourt ? Color.white.opacity(0.26) : Color.white.opacity(0.12), lineWidth: 1)
                     )
+                    .shadow(color: venue == selectedCourt ? courtAccent(for: venue).opacity(0.18) : .clear, radius: 10, y: 5)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(LoadoutPlayButtonStyle())
             }
         }
+        .padding(.top, 2)
+    }
+
+    private var thisWeekStrip: some View {
+        let days = currentWeekDays()
+
+        return HStack(spacing: 6) {
+            ForEach(days, id: \.self) { day in
+                Button {
+                    showsJournal = true
+                } label: {
+                    weekDayCell(day)
+                }
+                .buttonStyle(LoadoutPlayButtonStyle())
+                .accessibilityLabel("Open journal for \(weekdayAccessibilityLabel(day))")
+            }
+        }
+        .padding(8)
+        .background(
+            RoundedRectangle(cornerRadius: HomeCraft.smallRadius, style: .continuous)
+                .fill(RallyUIKit.Palette.obsidian.opacity(0.60))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: HomeCraft.smallRadius, style: .continuous)
+                .stroke(Color.white.opacity(0.11), lineWidth: 1)
+        )
+    }
+
+    private func weekDayCell(_ day: Date) -> some View {
+        let calendar = Calendar.current
+        let count = min(3, entriesCount(on: day))
+        let isToday = calendar.isDateInToday(day)
+        let accent = courtAccent(for: selectedCourt)
+
+        return VStack(spacing: 6) {
+            Text(weekdayInitial(day))
+                .font(.system(size: 10, weight: .black, design: .rounded))
+                .foregroundStyle(isToday ? .white : RallyUIKit.Palette.cloud.opacity(0.68))
+
+            HStack(spacing: 2) {
+                ForEach(0..<3, id: \.self) { index in
+                    Circle()
+                        .fill(index < count ? accent : Color.white.opacity(0.10))
+                        .frame(width: 4, height: 4)
+                        .opacity(index < count ? 1 : 0.55)
+                }
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .frame(height: 42)
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(isToday ? accent.opacity(0.18) : Color.white.opacity(0.035))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .stroke(isToday ? accent.opacity(0.92) : Color.white.opacity(0.06), lineWidth: isToday ? 1.2 : 1)
+        )
+    }
+
+    private func currentWeekDays() -> [Date] {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let weekday = calendar.component(.weekday, from: today)
+        let daysFromMonday = (weekday + 5) % 7
+        let monday = calendar.date(byAdding: .day, value: -daysFromMonday, to: today) ?? today
+
+        return (0..<7).compactMap { offset in
+            calendar.date(byAdding: .day, value: offset, to: monday)
+        }
+    }
+
+    private func entriesCount(on day: Date) -> Int {
+        journalEntries.filter { Calendar.current.isDate($0.date, inSameDayAs: day) }.count
+    }
+
+    private func weekdayInitial(_ day: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "E"
+        return String(formatter.string(from: day).prefix(1)).uppercased()
+    }
+
+    private func weekdayAccessibilityLabel(_ day: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .full
+        return formatter.string(from: day)
     }
 
     private var playDock: some View {
@@ -653,14 +851,15 @@ struct HomeView: View {
                 }
                 .foregroundStyle(.white)
                 .padding(.horizontal, 24)
-                .frame(height: 64)
+                .frame(maxWidth: .infinity)
+                .frame(height: 60)
                 .background(
-                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    RoundedRectangle(cornerRadius: HomeCraft.largeRadius, style: .continuous)
                         .fill(
                             LinearGradient(
                                 colors: [
-                                    RallyUIKit.Palette.cyan,
-                                    RallyUIKit.Palette.teal,
+                                    courtAccent(for: selectedCourt).opacity(0.98),
+                                    RallyUIKit.Palette.cyan.opacity(0.82),
                                     RallyUIKit.Palette.ink
                                 ],
                                 startPoint: .topLeading,
@@ -669,23 +868,20 @@ struct HomeView: View {
                         )
                 )
                 .overlay(
-                    RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .stroke(Color.white.opacity(0.16), lineWidth: 1)
+                    RoundedRectangle(cornerRadius: HomeCraft.largeRadius, style: .continuous)
+                        .stroke(Color.white.opacity(0.22), lineWidth: 1)
                 )
-                .shadow(color: RallyUIKit.Palette.cyan.opacity(0.24 + pulse * 0.10), radius: 18 + pulse * 4, y: 8)
-                .padding(.horizontal, RallyUIKit.Spacing.md)
-                .padding(.bottom, 7)
-                .background(
-                    LinearGradient(
-                        colors: [Color.black.opacity(0), Color.black.opacity(0.64)],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                    .ignoresSafeArea()
+                .overlay(
+                    RoundedRectangle(cornerRadius: HomeCraft.largeRadius, style: .continuous)
+                        .stroke(courtAccent(for: selectedCourt).opacity(0.24), lineWidth: 3)
+                        .blur(radius: 8)
+                        .opacity(0.45 + pulse * 0.20)
                 )
+                .shadow(color: courtAccent(for: selectedCourt).opacity(0.24 + pulse * 0.10), radius: 18 + pulse * 4, y: 8)
             }
             .buttonStyle(LoadoutPlayButtonStyle())
         }
+        .padding(.top, 8)
     }
 
     private var avatarCard: some View {
@@ -1029,8 +1225,21 @@ private struct LoadoutPlayButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .scaleEffect(configuration.isPressed ? 0.97 : 1)
+            .brightness(configuration.isPressed ? -0.08 : 0)
             .animation(.spring(response: 0.18, dampingFraction: 0.72), value: configuration.isPressed)
     }
+}
+
+private enum HomeCraft {
+    static let horizontalPadding: CGFloat = 16
+    static let verticalRhythm: CGFloat = 9
+    static let headerTapTarget: CGFloat = 44
+    static let largeRadius: CGFloat = 30
+    static let smallRadius: CGFloat = 18
+    static let loadoutTileHeight: CGFloat = 52
+    static let stageHeightShare: CGFloat = 0.36
+    static let stageMinHeight: CGFloat = 268
+    static let stageMaxHeight: CGFloat = 304
 }
 
 private struct PerspectiveCourtPlate: Shape {
