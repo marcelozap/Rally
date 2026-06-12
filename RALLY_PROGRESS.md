@@ -10,7 +10,8 @@ Governing priority: RALLY_NORTH_STAR.md > CLAUDE_CODE_PARALLEL_PLAN.md > RALLY_O
 
 | Date       | Commit     | Lane | Work                              | Notes                                           |
 |------------|------------|------|-----------------------------------|-------------------------------------------------|
-| 2026-06-12 | (pending)  | [CC] | T4: rally-loop depth + return urgency | Outbound depth shrink 0.58, return accel 2.9×, speed tail. BUILD NOT RUN — verify locally |
+| 2026-06-12 | (pending)  | [CC] | Shop/avatar sync fixes (CX override) | equip() → appearanceStore.sync (A-4/S-4); ShopView cards render catalog imagery (S-3). User-instructed override of CX lane. BUILD NOT RUN |
+| 2026-06-12 | 11f8eba    | [CC] | T4: rally-loop depth + return urgency | Outbound depth shrink 0.58, return accel 2.9×, speed tail. BUILD NOT RUN — verify locally |
 | 2026-06-11 | dd3d701    | sync | Avatar overhaul + pro body mech   | torso uncoil 5.2×, sleeve gaps, scale 1.14      |
 | 2026-06-11 | 39fb976    | [CC] | Gameplay player credibility pass  | Trail shoe mirror (xFlip), hair scale 0.82/0.92 |
 | 2026-06-11 | 21e75ba    | [CC] | World marketplace                 | 20th listing, DEBUG router, category cards      |
@@ -91,7 +92,15 @@ All avatar visual edits to GameScene.swift are tech debt until this ships.
 **Spec source:** RALLY_OVERHAUL_DIRECTIVE.md Workstream B
 
 - RallyReferralCatalog.json has 12 items (meets S1 audit)
-- Needs editorial product cards, Try On → appearance store, Shop → router
+- [x] Shop CTA → router (ShopItemDetailView routes via RallyReferralLinkRouter; verified 2026-06-12)
+- [x] Detail-view product imagery via AsyncImage (verified present 2026-06-12)
+- [x] Browse cards (apparelSwatch, brandVisualCardContent) render catalog imagery — SF Symbol
+      now loading/fallback only, not terminal state (2026-06-12, CC override per user instruction)
+- [x] equip() now writes to shared RallyAvatarAppearanceStore — was stale until next onAppear
+      re-sync (2026-06-12, CC override per user instruction)
+- [ ] Try On writes to appearance store slots (currently preview-only via appearance(for:previewItem:);
+      works visually on stage — CX to decide if store-write is still wanted per directive B3)
+- [ ] CX: review the two 2026-06-12 CC-override edits in ShopView.swift / ShopItemDetailView.swift
 
 ---
 

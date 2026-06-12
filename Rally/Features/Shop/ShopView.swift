@@ -472,11 +472,31 @@ struct ShopView: View {
                 .frame(width: 100, height: 120)
 
             if let heroItem {
-                Image(systemName: heroItem.category.iconSystemName)
-                    .font(.system(size: 26, weight: .bold))
-                    .foregroundStyle(.white)
+                // Same S-3 rule as apparelSwatch: real imagery first,
+                // category icon only while loading or with no catalog entry.
+                if let imageURL = RallyReferralCatalog.referralItem(matchingShopItemID: heroItem.id)?.productImageURL {
+                    AsyncImage(url: imageURL) { phase in
+                        switch phase {
+                        case .success(let image):
+                            image
+                                .resizable()
+                                .scaledToFit()
+                                .padding(10)
+                        default:
+                            Image(systemName: heroItem.category.iconSystemName)
+                                .font(.system(size: 26, weight: .bold))
+                                .foregroundStyle(.white)
+                        }
+                    }
+                } else {
+                    Image(systemName: heroItem.category.iconSystemName)
+                        .font(.system(size: 26, weight: .bold))
+                        .foregroundStyle(.white)
+                }
             }
         }
+        .frame(width: 100, height: 120)
+        .clipShape(RoundedRectangle(cornerRadius: 18))
         .accessibilityLabel(label)
     }
 
@@ -651,6 +671,10 @@ struct ShopView: View {
 
     private func apparelSwatch(_ item: ShopItem, width: CGFloat, height: CGFloat) -> some View {
         let accent = item.accentColor ?? categoryTint(item.category)
+        // S-3 audit gate: when the referral catalog carries real product
+        // imagery, render it — the SF Symbol is only a loading/failure
+        // fallback, never the terminal state for catalog-backed items.
+        let productImageURL = RallyReferralCatalog.referralItem(matchingShopItemID: item.id)?.productImageURL
         return ZStack {
             RoundedRectangle(cornerRadius: 24)
                 .fill(
@@ -667,13 +691,34 @@ struct ShopView: View {
             RoundedRectangle(cornerRadius: 24)
                 .stroke(Color.white.opacity(0.14), lineWidth: 1)
 
-            Image(systemName: item.category.iconSystemName)
-                .font(.system(size: min(width, height) * 0.28, weight: .bold))
-                .foregroundStyle(.white)
-                .shadow(color: Color.black.opacity(0.25), radius: 8, y: 5)
+            if let productImageURL {
+                AsyncImage(url: productImageURL) { phase in
+                    switch phase {
+                    case .success(let image):
+                        image
+                            .resizable()
+                            .scaledToFit()
+                            .padding(min(width, height) * 0.10)
+                    default:
+                        swatchCategoryIcon(item, width: width, height: height)
+                    }
+                }
+            } else {
+                swatchCategoryIcon(item, width: width, height: height)
+            }
         }
         .frame(width: width, height: height)
+        .clipShape(RoundedRectangle(cornerRadius: 24))
         .shadow(color: accent.opacity(0.14), radius: 16, x: 0, y: 10)
+    }
+
+    /// Branded category icon used as the swatch's loading state and as the
+    /// terminal state only for items with no catalog imagery.
+    private func swatchCategoryIcon(_ item: ShopItem, width: CGFloat, height: CGFloat) -> some View {
+        Image(systemName: item.category.iconSystemName)
+            .font(.system(size: min(width, height) * 0.28, weight: .bold))
+            .foregroundStyle(.white)
+            .shadow(color: Color.black.opacity(0.25), radius: 8, y: 5)
     }
 
     private func shopTileGradient(accent: Color, itemColor: Color) -> LinearGradient {

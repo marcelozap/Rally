@@ -14,6 +14,7 @@ struct ShopItemDetailView: View {
     var context: ShopItemDetailContext = .shop
 
     @Environment(\.modelContext) private var modelContext
+    @EnvironmentObject private var avatarAppearanceStore: RallyAvatarAppearanceStore
     @State private var tryingOn: Bool = true
     @State private var stageEmote: AvatarShopEmote = .shopLook
 
@@ -998,6 +999,11 @@ struct ShopItemDetailView: View {
         case .bag, .accessory: return
         }
         try? modelContext.save()
+        // North Star law 4: gear selection writes to the shared appearance
+        // store so Home, Locker, and GameScene update immediately (A-4/S-4).
+        // Without this, the store stays stale until another surface's
+        // onAppear happens to re-sync.
+        avatarAppearanceStore.sync(from: avatar)
         RallySyncTriggers.pushAfterLocalSave(modelContext: modelContext)
     }
 }
