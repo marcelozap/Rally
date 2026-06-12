@@ -633,17 +633,18 @@ struct HomeView: View {
     private func compactCycleButton(systemName: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: systemName)
-                .font(.system(size: 12, weight: .black))
+                .font(.system(size: 13, weight: .black))
                 .foregroundStyle(RallyUIKit.Palette.frost)
-                .frame(width: 34, height: 30)
+                .frame(width: 40, height: 34)
                 .background(
                     Capsule(style: .continuous)
-                        .fill(Color.white.opacity(0.08))
+                        .fill(Color.white.opacity(0.11))
                 )
                 .overlay(
                     Capsule(style: .continuous)
-                        .stroke(Color.white.opacity(0.12), lineWidth: 1)
+                        .stroke(Color.white.opacity(0.18), lineWidth: 1)
                 )
+                .shadow(color: .black.opacity(0.22), radius: 8, y: 4)
         }
         .buttonStyle(LoadoutPlayButtonStyle())
     }
@@ -675,11 +676,7 @@ struct HomeView: View {
                     )
                     .shadow(color: isSelected ? accent.opacity(0.24) : .clear, radius: 13, y: 6)
 
-                Image(systemName: icon(for: category))
-                    .font(.system(size: 24, weight: .semibold))
-                    .symbolRenderingMode(.monochrome)
-                    .foregroundStyle(isSelected ? .white : RallyUIKit.Palette.cloud.opacity(0.62))
-                    .saturation(isSelected ? 1 : 0.60)
+                loadoutGlyph(for: category, isSelected: isSelected, accent: accent)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
 
                 Circle()
@@ -695,6 +692,45 @@ struct HomeView: View {
                 .font(.system(size: 10, weight: .black, design: .rounded))
                 .foregroundStyle(isSelected ? .white : RallyUIKit.Palette.cloud.opacity(0.58))
                 .lineLimit(1)
+        }
+    }
+
+    @ViewBuilder
+    private func loadoutGlyph(for category: ShopItem.Category, isSelected: Bool, accent: Color) -> some View {
+        let primary = isSelected ? Color.white : RallyUIKit.Palette.cloud.opacity(0.66)
+        let secondary = isSelected ? accent.opacity(0.88) : RallyUIKit.Palette.cloud.opacity(0.24)
+
+        switch category {
+        case .bottom:
+            LoadoutShortsGlyph(primary: primary, accent: secondary)
+                .frame(width: 34, height: 30)
+        case .shoes:
+            LoadoutTennisShoeGlyph(primary: primary, accent: secondary)
+                .frame(width: 42, height: 28)
+        case .top:
+            Image(systemName: "tshirt.fill")
+                .font(.system(size: 24, weight: .semibold))
+                .symbolRenderingMode(.monochrome)
+                .foregroundStyle(primary)
+                .saturation(isSelected ? 1 : 0.60)
+        case .racket:
+            Image(systemName: "tennis.racket")
+                .font(.system(size: 24, weight: .semibold))
+                .symbolRenderingMode(.monochrome)
+                .foregroundStyle(primary)
+                .saturation(isSelected ? 1 : 0.60)
+        case .bag:
+            Image(systemName: "duffle.bag.fill")
+                .font(.system(size: 24, weight: .semibold))
+                .symbolRenderingMode(.monochrome)
+                .foregroundStyle(primary)
+                .saturation(isSelected ? 1 : 0.60)
+        case .accessory:
+            Image(systemName: "sparkles")
+                .font(.system(size: 24, weight: .semibold))
+                .symbolRenderingMode(.monochrome)
+                .foregroundStyle(primary)
+                .saturation(isSelected ? 1 : 0.60)
         }
     }
 
@@ -1227,6 +1263,75 @@ private struct LoadoutPlayButtonStyle: ButtonStyle {
             .scaleEffect(configuration.isPressed ? 0.97 : 1)
             .brightness(configuration.isPressed ? -0.08 : 0)
             .animation(.spring(response: 0.18, dampingFraction: 0.72), value: configuration.isPressed)
+    }
+}
+
+private struct LoadoutShortsGlyph: View {
+    let primary: Color
+    let accent: Color
+
+    var body: some View {
+        Canvas { context, size in
+            let w = size.width
+            let h = size.height
+            let waistband = CGRect(x: w * 0.18, y: h * 0.10, width: w * 0.64, height: h * 0.16)
+            let leftLeg = CGRect(x: w * 0.18, y: h * 0.22, width: w * 0.29, height: h * 0.58)
+            let rightLeg = CGRect(x: w * 0.53, y: h * 0.22, width: w * 0.29, height: h * 0.58)
+
+            context.fill(Path(roundedRect: waistband, cornerRadius: h * 0.07), with: .color(primary))
+            context.fill(Path(roundedRect: leftLeg, cornerRadius: h * 0.10), with: .color(primary))
+            context.fill(Path(roundedRect: rightLeg, cornerRadius: h * 0.10), with: .color(primary))
+
+            var centerSeam = Path()
+            centerSeam.move(to: CGPoint(x: w * 0.50, y: h * 0.28))
+            centerSeam.addLine(to: CGPoint(x: w * 0.50, y: h * 0.74))
+            context.stroke(centerSeam, with: .color(accent), lineWidth: max(1.2, w * 0.045))
+
+            var hem = Path()
+            hem.move(to: CGPoint(x: w * 0.22, y: h * 0.74))
+            hem.addLine(to: CGPoint(x: w * 0.45, y: h * 0.74))
+            hem.move(to: CGPoint(x: w * 0.55, y: h * 0.74))
+            hem.addLine(to: CGPoint(x: w * 0.78, y: h * 0.74))
+            context.stroke(hem, with: .color(accent.opacity(0.72)), lineWidth: max(1.0, w * 0.035))
+        }
+    }
+}
+
+private struct LoadoutTennisShoeGlyph: View {
+    let primary: Color
+    let accent: Color
+
+    var body: some View {
+        Canvas { context, size in
+            let w = size.width
+            let h = size.height
+
+            var upper = Path()
+            upper.move(to: CGPoint(x: w * 0.18, y: h * 0.62))
+            upper.addQuadCurve(to: CGPoint(x: w * 0.43, y: h * 0.30), control: CGPoint(x: w * 0.28, y: h * 0.30))
+            upper.addQuadCurve(to: CGPoint(x: w * 0.78, y: h * 0.45), control: CGPoint(x: w * 0.60, y: h * 0.24))
+            upper.addQuadCurve(to: CGPoint(x: w * 0.90, y: h * 0.64), control: CGPoint(x: w * 0.90, y: h * 0.52))
+            upper.addQuadCurve(to: CGPoint(x: w * 0.20, y: h * 0.72), control: CGPoint(x: w * 0.58, y: h * 0.78))
+            upper.closeSubpath()
+            context.fill(upper, with: .color(primary))
+
+            var sole = Path()
+            sole.move(to: CGPoint(x: w * 0.12, y: h * 0.72))
+            sole.addQuadCurve(to: CGPoint(x: w * 0.92, y: h * 0.70), control: CGPoint(x: w * 0.48, y: h * 0.86))
+            context.stroke(sole, with: .color(accent.opacity(0.86)), lineWidth: max(2, h * 0.11))
+
+            var laces = Path()
+            laces.move(to: CGPoint(x: w * 0.48, y: h * 0.42))
+            laces.addLine(to: CGPoint(x: w * 0.58, y: h * 0.53))
+            laces.move(to: CGPoint(x: w * 0.58, y: h * 0.40))
+            laces.addLine(to: CGPoint(x: w * 0.68, y: h * 0.52))
+            context.stroke(laces, with: .color(accent), lineWidth: max(1.1, w * 0.035))
+
+            var toe = Path()
+            toe.move(to: CGPoint(x: w * 0.75, y: h * 0.47))
+            toe.addQuadCurve(to: CGPoint(x: w * 0.87, y: h * 0.61), control: CGPoint(x: w * 0.88, y: h * 0.50))
+            context.stroke(toe, with: .color(accent.opacity(0.60)), lineWidth: max(1, w * 0.03))
+        }
     }
 }
 

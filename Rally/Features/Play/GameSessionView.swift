@@ -111,6 +111,9 @@ struct GameSessionView: View {
         .onChange(of: gamePreferences.matchPace) { _, _ in
             applyPreferences()
         }
+        .onChange(of: avatarAppearanceStore.appearance) { _, appearance in
+            scene?.applyAvatarAppearance(appearance)
+        }
         .sheet(item: $reflectionPrompt) { prompt in
             NavigationStack {
                 JournalEditorView(entry: nil, seedPrompt: prompt)

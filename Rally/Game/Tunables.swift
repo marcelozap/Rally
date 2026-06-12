@@ -83,6 +83,7 @@ enum Tunables {
     /// before wall contact (same 0.40–0.50 s swing-now window).
     static let wallAnticipationLeadMs: Double = 520
     static let wallReboundBandYRatio: CGFloat = 0.902
+    static let minimalHUDScoreYRatio: CGFloat = 0.824
     static let wallReboundCueDurationMs: Double = 260
     static let wallContactRingRadius: CGFloat = 38
     static let wallApproachWindowRatio: CGFloat = 0.50
@@ -238,6 +239,13 @@ enum Tunables {
     /// Pan velocity (pt/s) above which the swing counts as "committed."
     /// Below this we still register the swing but emit a softer trail.
     static let swingFastVelocity:     CGFloat = 1400
+
+    /// In wall rally, lane intent comes from the side of the court the swipe
+    /// begins on, not from crossing the center line. This preserves the
+    /// "swipe up on left / swipe up on right" mental model.
+    static let swingLaneSideStartWeight: CGFloat = 0.72
+    static let swingLaneCenterDeadZoneRatio: CGFloat = 0.055
+    static let swingWallMinUpwardRisePoints: CGFloat = 10
 
     /// Extra grace added on top of the `.good` timing window when deciding
     /// whether a ball is a legitimate target for the current swing. This is

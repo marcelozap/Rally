@@ -241,37 +241,37 @@ struct RallyAvatarView: View {
             lineWidth: 0.55 * scale
         )
         drawPath(
-            RallyAvatarGeometry.premiumBackHairPath(scale: layout.headPathScale * 0.88),
+            RallyAvatarGeometry.premiumBackHairPath(scale: layout.headPathScale * 0.98),
             in: &context,
             centerX: centerX,
             baseline: baseline,
             x: 0,
-            y: layout.headY + idleLift * 0.42 + 0.5 * scale,
-            fill: Color(uiColor: appearance.hairUIColor.rallyBlended(withFraction: 0.05, of: .white)),
+            y: layout.headY + idleLift * 0.42 + 3.8 * scale,
+            fill: Color(uiColor: appearance.hairUIColor.rallyBlended(withFraction: 0.08, of: .white)),
             stroke: .clear,
             lineWidth: 0
         )
         drawPath(
-            RallyAvatarGeometry.premiumHairPath(scale: layout.headPathScale * 0.76),
+            RallyAvatarGeometry.premiumHairPath(scale: layout.headPathScale * 0.98),
             in: &context,
             centerX: centerX,
             baseline: baseline,
             x: 0,
-            y: layout.hairY + 12 * scale + idleLift * 0.55,
+            y: layout.headY + 7.8 * scale + idleLift * 0.55,
             fill: appearance.hairColor,
-            stroke: .clear,
-            lineWidth: 0
+            stroke: Color.white.opacity(0.06),
+            lineWidth: 0.5 * scale
         )
         drawPath(
-            RallyAvatarGeometry.hairHighlightPath(scale: layout.headPathScale * 0.76),
+            RallyAvatarGeometry.hairHighlightPath(scale: layout.headPathScale * 0.98),
             in: &context,
             centerX: centerX,
             baseline: baseline,
             x: 0,
-            y: layout.hairY + 12 * scale + idleLift * 0.55,
+            y: layout.headY + 7.8 * scale + idleLift * 0.55,
             fill: .clear,
-            stroke: Color(red: 0.165, green: 0.165, blue: 0.188).opacity(0.42),
-            lineWidth: 1.1 * scale
+            stroke: Color(red: 0.22, green: 0.22, blue: 0.25).opacity(0.58),
+            lineWidth: 1.25 * scale
         )
         drawFace(in: &context, centerX: centerX, baseline: baseline, headY: layout.headY + idleLift, scale: faceScale)
 

@@ -395,6 +395,13 @@ final class GameScene: SKScene {
         runCountdown()
     }
 
+    func applyAvatarAppearance(_ appearance: RallyAvatarAppearance) {
+        avatarAppearance = appearance
+        guard playerRoot != nil else { return }
+        playerRoot.removeFromParent()
+        setupCourtAvatar()
+    }
+
     private var usesMinimalWallHUD: Bool {
         sessionMode == .wallRally
     }
@@ -870,7 +877,7 @@ final class GameScene: SKScene {
 
     private func layoutWallHUDPositions() {
         guard usesMinimalWallHUD else { return }
-        let courtScoreY = size.height * 0.858
+        let courtScoreY = size.height * Tunables.minimalHUDScoreYRatio
         scoreLabel?.position = CGPoint(x: size.width / 2, y: courtScoreY)
         hudTopPlate?.position = CGPoint(x: size.width / 2, y: courtScoreY)
         hudMaxLabel?.position = CGPoint(x: size.width * 0.78, y: courtScoreY)
@@ -1194,20 +1201,21 @@ final class GameScene: SKScene {
             zPos: 0
         )
 
-        let backHair = SKShapeNode(path: RallyAvatarGeometry.premiumBackHairPath(scale: layout.headPathScale * 0.92))
+        let hairScale = layout.headPathScale * 0.98
+        let backHair = SKShapeNode(path: RallyAvatarGeometry.premiumBackHairPath(scale: hairScale))
         backHair.fillColor = appearance.hairUIColor
         backHair.strokeColor = .clear
         backHair.lineWidth = 0
-        backHair.position = CGPoint(x: 0, y: layout.headY + 0.5 * bodyScale)
+        backHair.position = CGPoint(x: 0, y: layout.headY + 3.8 * bodyScale)
         backHair.zPosition = showsRearAvatar ? 6.55 : 5.7
         root.addChild(backHair)
         playerBackHair = backHair
 
-        let hair = SKShapeNode(path: RallyAvatarGeometry.premiumHairPath(scale: layout.headPathScale * 0.82))
+        let hair = SKShapeNode(path: RallyAvatarGeometry.premiumHairPath(scale: hairScale))
         hair.fillColor = appearance.hairUIColor
         hair.strokeColor = .clear
         hair.lineWidth = 0
-        hair.position = CGPoint(x: 0, y: layout.hairY + 12 * bodyScale)
+        hair.position = CGPoint(x: 0, y: layout.headY + 7.8 * bodyScale)
         hair.zPosition = 7
         hair.isHidden = showsRearAvatar
         root.addChild(hair)
@@ -1229,10 +1237,10 @@ final class GameScene: SKScene {
         rightEar.zPosition = 5.85
         root.addChild(rightEar)
 
-        let hairHighlight = SKShapeNode(path: RallyAvatarGeometry.hairHighlightPath(scale: layout.headPathScale * 0.82))
+        let hairHighlight = SKShapeNode(path: RallyAvatarGeometry.hairHighlightPath(scale: hairScale))
         hairHighlight.fillColor = UIColor(red: 0.165, green: 0.165, blue: 0.188, alpha: 0.42)
         hairHighlight.strokeColor = .clear
-        hairHighlight.position = CGPoint(x: 0, y: layout.hairY + 12 * bodyScale)
+        hairHighlight.position = CGPoint(x: 0, y: layout.headY + 7.8 * bodyScale)
         hairHighlight.zPosition = 7.1
         hairHighlight.isHidden = showsRearAvatar
         root.addChild(hairHighlight)
@@ -1645,7 +1653,7 @@ final class GameScene: SKScene {
         score.position = CGPoint(
             x: size.width / 2,
             y: usesMinimalWallHUD
-                ? size.height * 0.858
+                ? size.height * Tunables.minimalHUDScoreYRatio
                 : size.height * 0.875
         )
         score.zPosition = 50
@@ -1724,7 +1732,7 @@ final class GameScene: SKScene {
         }
 
         let instruction = SKLabelNode(fontNamed: "AvenirNext-DemiBold")
-        instruction.text = usesMinimalWallHUD ? "" : "Swipe toward the lane as the ball meets the line"
+        instruction.text = usesMinimalWallHUD ? "" : "Swipe up on the side the ball is arriving"
         instruction.fontSize = 15
         instruction.fontColor = UIColor(white: 1, alpha: 0.82)
         instruction.position = CGPoint(x: size.width / 2, y: size.height * 0.14)
@@ -3387,11 +3395,10 @@ final class GameScene: SKScene {
     /// - `.began`: capture the touch origin in scene coords, instantiate the
     ///   swing trail node.
     /// - `.changed`: redraw the trail from origin → current finger position.
-    /// - `.ended`: compute the release vector + velocity. If the drag is
-    ///   long enough (`Tunables.swingMinDistance`), resolve a swing on the
-    ///   lane indicated by the dominant horizontal sign and grade with the
-    ///   existing hit-timing logic. Short flicks below the threshold are
-    ///   ignored — they're how the player adjusts grip without committing.
+    /// - `.ended`: compute the release vector + velocity. In wall rally,
+    ///   the lane is the side where the swipe happens, while upward release
+    ///   supplies the stroke commitment. The player should not have to drag
+    ///   across the center axis to hit a down-the-line ball.
     @objc private func handlePan(_ pan: UIPanGestureRecognizer) {
         guard let view = self.view else { return }
         let viewPoint = pan.location(in: view)
@@ -3423,7 +3430,10 @@ final class GameScene: SKScene {
             let distance = hypot(dx, dy)
 
             let v = pan.velocity(in: view)
-            let speed = hypot(v.x, v.y)
+            let upwardVelocity = max(0, -v.y)
+            let speed = sessionMode == .wallRally
+                ? max(hypot(v.x, v.y), upwardVelocity)
+                : hypot(v.x, v.y)
 
             // Ignore taps and accidental contact — only deliberate motion
             // commits a swing.
@@ -3435,24 +3445,31 @@ final class GameScene: SKScene {
                 : 0
             guard distance >= minimumDistance || speed >= minimumSpeed else { return }
 
-            // Lane is decided by the dominant horizontal sign. Verticality
-            // is currently informational only (reserved for future "lob" or
-            // "drop shot" variants).
+            // Lane is side-based, not cross-axis based. A left-side upward
+            // swipe hits the left lane; a right-side upward swipe hits the
+            // right lane. If the gesture starts nearly centered, defer to the
+            // currently arriving ball.
             let lane: Lane
             if sessionMode == .wallRally {
                 let focusLane = wallFocusLane()
-                let strongHorizontal = size.width * 0.11
-                if abs(dx) >= strongHorizontal {
-                    lane = dx < 0 ? .left : .right
+                let weightedSideX = origin.x * Tunables.swingLaneSideStartWeight
+                    + scenePoint.x * (1 - Tunables.swingLaneSideStartWeight)
+                let centerDeadZone = size.width * Tunables.swingLaneCenterDeadZoneRatio
+                if abs(weightedSideX - size.width * 0.5) > centerDeadZone {
+                    lane = weightedSideX < size.width * 0.5 ? .left : .right
                 } else {
                     lane = focusLane
                 }
             } else {
-                lane = dx < 0 ? .left : .right
+                let weightedSideX = origin.x * Tunables.swingLaneSideStartWeight
+                    + scenePoint.x * (1 - Tunables.swingLaneSideStartWeight)
+                lane = weightedSideX < size.width * 0.5 ? .left : .right
             }
             swingVisualLane = lane
             swingVisualImpactUntil = currentTimeSnapshot + 0.26
-            swingVisualReach = distance
+            swingVisualReach = sessionMode == .wallRally
+                ? hypot(dx, max(dy, Tunables.swingWallMinUpwardRisePoints))
+                : distance
             let swingIntent = classifySwingIntent(dx: dx, dy: dy)
             swingVisualIntent = swingIntent
             resolveSwing(

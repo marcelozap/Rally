@@ -20,6 +20,7 @@ struct AvatarCustomizerView: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var auth: AuthSession
     @EnvironmentObject private var avatarAppearanceStore: RallyAvatarAppearanceStore
+    @StateObject private var gamePreferences = GamePreferences.shared
     @FocusState private var nameFieldFocused: Bool
 
     var isFirstLaunch: Bool = false
@@ -64,6 +65,7 @@ struct AvatarCustomizerView: View {
 
                 VStack(alignment: .leading, spacing: 18) {
                     namingSection
+                    handednessSection
                     skinSection
                     hairStyleSection
                     hairColorSection
@@ -185,6 +187,26 @@ struct AvatarCustomizerView: View {
                         .onTapGesture { config.skinTone = tone }
                 }
             }
+        }
+    }
+
+    private var handednessSection: some View {
+        sectionCard(title: "Dominant hand") {
+            HStack(spacing: 10) {
+                ForEach(GamePreferences.DominantHand.allCases) { hand in
+                    Chip(
+                        label: "\(hand.title) hand",
+                        selected: gamePreferences.dominantHand == hand
+                    ) {
+                        gamePreferences.dominantHand = hand
+                    }
+                }
+            }
+
+            Text(gamePreferences.dominantHand.coachingCopy)
+                .font(RallyUIKit.Typography.label(.caption, weight: .semibold))
+                .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.58))
+                .padding(.top, 2)
         }
     }
 
