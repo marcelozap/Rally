@@ -139,18 +139,33 @@ final class RallyContinuousBallExchange {
 
         let reboundFade = max(0, wallProgress - (1 - config.reboundFadeOutLead)) / max(0.0001, config.reboundFadeOutLead)
         let alpha = phase == .wallRebound ? max(0.32, 1 - reboundFade * 0.68) : 1
+        let depth = depthScalar(forWallProgress: wallProgress)
 
         return RallyContinuousBallExchangeFrame(
             phase: isComplete ? .complete : phase,
             point: wallFrame.point,
-            xScale: wallFrame.xScale,
-            yScale: wallFrame.yScale,
+            xScale: wallFrame.xScale * depth,
+            yScale: wallFrame.yScale * depth,
             alpha: alpha,
             shadowAlpha: wallFrame.shadowAlpha,
-            shadowXScale: wallFrame.shadowXScale,
+            shadowXScale: wallFrame.shadowXScale * depth,
             didBeginWallImpact: didBeginWallImpact,
             isComplete: isComplete
         )
+    }
+
+    /// Perspective shrink on the outbound leg: the ball leaves the racket at
+    /// player depth (1.0) and reads as far (wallExchangeDepthFarScale) by the
+    /// time it reaches the wall plane. Ease-out so the shrink is fastest right
+    /// off the racket — the strongest "traveling away" cue — then settles.
+    /// From compression onward the ball stays at far depth until reentry
+    /// hands it back toward the player.
+    private func depthScalar(forWallProgress progress: CGFloat) -> CGFloat {
+        let approachEnd = CGFloat(config.wall.approachDuration / max(0.0001, config.wall.totalDuration))
+        let local = max(0, min(1, progress / max(0.0001, approachEnd)))
+        let inverted = 1 - local
+        let eased = 1 - inverted * inverted
+        return 1 + (Tunables.wallExchangeDepthFarScale - 1) * eased
     }
 
     private func map(_ phase: RallyManualContactPhase) -> RallyContinuousExchangePhase {

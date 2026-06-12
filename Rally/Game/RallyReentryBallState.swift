@@ -14,7 +14,7 @@ struct RallyReentryConfig {
     var apexLift: CGFloat
 
     static let rallyDefault = RallyReentryConfig(
-        returnTravelDuration: 0.62,
+        returnTravelDuration: Tunables.wallReturnTravelSeconds,
         contactRearmDelay: 0.045,
         normalizationHandoffProgress: 0.70,
         readabilityBias: 0.08,
@@ -32,6 +32,9 @@ struct RallyReentryBallFrame {
     let xScale: CGFloat
     let yScale: CGFloat
     let shadowAlpha: CGFloat
+    /// Normalized instantaneous return speed, 0…1 (1 = terminal speed at the
+    /// player). Drives trail emphasis so the acceleration is readable.
+    let speedScalar: CGFloat
     let armed: Bool
     let handoffReady: Bool
     let isComplete: Bool
@@ -81,10 +84,20 @@ struct RallyReentryBallState {
             xScale: xScale,
             yScale: yScale,
             shadowAlpha: shadowAlpha,
+            speedScalar: returnSpeedScalar(progress),
             armed: armed,
             handoffReady: handoffReady,
             isComplete: raw >= 1.12
         )
+    }
+
+    /// Instantaneous velocity of the accelerated return profile, normalized
+    /// to terminal speed. v(t) = exit + 2·gain·t for the quadratic travel curve.
+    private func returnSpeedScalar(_ t: CGFloat) -> CGFloat {
+        let exit = Tunables.wallReturnExitSpeedScalar
+        let gain = Tunables.wallReturnAccelerationGain
+        let velocity = exit + 2 * gain * max(0, min(1, t))
+        return max(0, min(1, velocity / max(0.0001, exit + 2 * gain)))
     }
 
     private func quadratic(start: CGPoint, control: CGPoint, end: CGPoint, t: CGFloat) -> CGPoint {

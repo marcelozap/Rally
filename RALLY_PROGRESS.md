@@ -10,6 +10,7 @@ Governing priority: RALLY_NORTH_STAR.md > CLAUDE_CODE_PARALLEL_PLAN.md > RALLY_O
 
 | Date       | Commit     | Lane | Work                              | Notes                                           |
 |------------|------------|------|-----------------------------------|-------------------------------------------------|
+| 2026-06-12 | (pending)  | [CC] | T4: rally-loop depth + return urgency | Outbound depth shrink 0.58, return accel 2.9×, speed tail. BUILD NOT RUN — verify locally |
 | 2026-06-11 | dd3d701    | sync | Avatar overhaul + pro body mech   | torso uncoil 5.2×, sleeve gaps, scale 1.14      |
 | 2026-06-11 | 39fb976    | [CC] | Gameplay player credibility pass  | Trail shoe mirror (xFlip), hair scale 0.82/0.92 |
 | 2026-06-11 | 21e75ba    | [CC] | World marketplace                 | 20th listing, DEBUG router, category cards      |
@@ -24,7 +25,7 @@ takeover=YES.
 
 ## BACKLOG
 
-### T1 — World marketplace (Courts/Atlas screen)  ← ACTIVE
+### T1 — World marketplace (Courts/Atlas screen)  ← DONE (21e75ba; Courts/World reverts to CX lane)
 **Lane:** [CC] override (CX owns Courts normally; user promoted to CC for this task)
 **Spec source:** RALLY_OVERHAUL_DIRECTIVE.md Workstream C
 
@@ -61,14 +62,18 @@ Commit: `[CC] World marketplace: listings, live referral links, declutter, safe 
 
 ---
 
-### T4 — Gameplay feel (camera/physics/contact)
+### T4 — Gameplay feel (camera/physics/contact)  ← ACTIVE
 **Lane:** [CC]
 **Spec source:** RALLY_NORTH_STAR.md §Gameplay Feel Contract
 
-- readable depth: ball scale, shadow, court perspective
-- contact payoff: hit-stop, flash, sparks, haptic, timing text
-- return acceleration urgency
-- miss clarity
+- [x] readable depth: outbound leg (racket→wall) now shrinks to wallExchangeDepthFarScale
+      (was full-size to the wall); reentry inherits far handoff scale and grows back (2026-06-12)
+- [x] return acceleration urgency: exit 0.70 / gain 0.65 (~2.9× terminal vs exit speed,
+      was ~1.19×); return travel 0.62→0.56 s; speed-driven tail alpha/length (2026-06-12)
+- [ ] contact payoff: hit-stop, flash, sparks, haptic, timing text — already strong; re-audit on device
+- [ ] miss clarity — wallMissCue/popup system in place; re-audit on device
+- [ ] VERIFY: xcodebuild not run for 2026-06-12 changes (agent had no Xcode); build + simulator
+      check that wall ball reads far at wall plane and return feels urgent, not teleported
 
 ---
 

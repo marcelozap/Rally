@@ -6839,7 +6839,6 @@ final class BallNode: SKShapeNode {
         focusRingNode.alpha = frame.armed ? 0.14 : 0
         auraNode.alpha = frame.armed ? 0.34 : 0.18
         coreNode.alpha = frame.armed ? 0.28 : 0.2
-        tailNode.alpha = 0.12
         shadowNode.alpha = frame.shadowAlpha
         shadowNode.xScale = 1.0 + (1 - frame.shadowAlpha) * 0.42
         shadowNode.yScale = 0.9
@@ -6854,6 +6853,12 @@ final class BallNode: SKShapeNode {
         if let reentryState {
             updateTail(progress: min(1, CGFloat((trackTime - reentryState.startTime) / max(0.0001, reentryState.travelSeconds))), eased: 0.82, bounceProgress: 0.74, overrun: 0)
         }
+        // Return-leg urgency read: tail brightens and lengthens with the
+        // accelerating return speed instead of holding a fixed dim alpha.
+        tailNode.alpha = Tunables.wallReturnTailAlphaFloor
+            + (Tunables.wallReturnTailAlphaPeak - Tunables.wallReturnTailAlphaFloor) * frame.speedScalar
+        tailNode.xScale *= 0.88 + frame.speedScalar * 0.42
+        tailNode.yScale *= 0.94 + frame.speedScalar * 0.18
     }
 
     @discardableResult

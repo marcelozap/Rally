@@ -105,8 +105,21 @@ enum Tunables {
     static let wallOutboundCompressionSeconds: Double = 0.06
     static let wallOutboundReleaseSeconds: Double = 0.082
     static let wallOutboundReboundLiftRatio: CGFloat = 0.012
-    static let wallReturnExitSpeedScalar: CGFloat = 0.85
-    static let wallReturnAccelerationGain: CGFloat = 0.08
+    /// Ball speed coming off the wall, as a fraction of terminal return speed.
+    /// Low = visible brake at the wall, then a building sprint back at the player.
+    static let wallReturnExitSpeedScalar: CGFloat = 0.70
+    /// Quadratic acceleration gain on the return leg. With exit 0.70 / gain 0.65
+    /// the ball ends the return ~2.9× faster than it left the wall — the
+    /// "accelerating back toward the player" read from the North Star.
+    static let wallReturnAccelerationGain: CGFloat = 0.65
+    /// Total wall→player return flight time (seconds).
+    static let wallReturnTravelSeconds: Double = 0.56
+    /// Ball-node scale at the wall plane during the racket→wall exchange,
+    /// relative to its scale at racket release. Sells the outbound depth leg.
+    static let wallExchangeDepthFarScale: CGFloat = 0.58
+    /// Return-leg tail alpha at exit speed (slow) and terminal speed (fast).
+    static let wallReturnTailAlphaFloor: CGFloat = 0.10
+    static let wallReturnTailAlphaPeak: CGFloat = 0.38
     static let wallImpactMarkFadeSeconds: TimeInterval = 0.6
     static let contactFlashRingDuration: TimeInterval = 0.15
     static let contactSparkMinCount: Int = 6
