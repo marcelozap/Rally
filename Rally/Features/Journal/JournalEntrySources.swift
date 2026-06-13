@@ -72,6 +72,9 @@ struct RallySessionJournalSource: JournalEntrySource {
         let accuracyPct = Int((result.accuracy * 100).rounded())
         let title = "Wall Rally — \(result.finalScore) pts"
 
+        // Use the canonical narrative headline from GameResult
+        let headline = result.segments.count == 3 ? result.narrativeHeadline : nil
+
         var lines: [String] = [
             "Score \(result.finalScore) · Best combo ×\(result.maxCombo) · \(accuracyPct)% accuracy.",
             "Perfect \(result.perfectHits) · Great \(result.greatHits) · Good \(result.goodHits) · Miss \(result.misses)."
@@ -88,15 +91,13 @@ struct RallySessionJournalSource: JournalEntrySource {
             lines.append("Thirds: \(breakdown).")
         }
 
-        // Narrative tag: clutch finish, strong start, or flat session
-        if segs.count == 3 {
-            let lateAcc  = segs[2].accuracy
-            let earlyAcc = segs[0].accuracy
-            if lateAcc >= 0.85 && lateAcc > earlyAcc + 0.15 {
-                lines.append("Clutch finish — best in the final third.")
-            } else if earlyAcc >= 0.85 && earlyAcc > lateAcc + 0.15 {
-                lines.append("Strong opener, faded late — work on sustaining focus.")
-            }
+        if let headline { lines.append(headline + ".") }
+
+        // Match story highlights (clean returns, change-up winners, pressure holds)
+        let highlights = result.matchStoryHighlights
+        if !highlights.isEmpty {
+            let story = highlights.map { "\($0.label): \($0.value)" }.joined(separator: " · ")
+            lines.append(story + ".")
         }
 
         let body = lines.joined(separator: "\n")
