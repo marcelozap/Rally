@@ -11,6 +11,7 @@ Governing priority: RALLY_NORTH_STAR.md > CLAUDE_CODE_PARALLEL_PLAN.md > RALLY_O
 | Date       | Commit     | Lane | Work                              | Notes                                           |
 |------------|------------|------|-----------------------------------|-------------------------------------------------|
 | 2026-06-13 | aac00cc    | [CC] | T4: contact payoff + miss clarity | Perfect banners live (combo ≤3, every 5th); miss popup red/amber; wallMissCue coaching text |
+| 2026-06-13 | 662b4f5    | [CX] | Avatar hair/face/stance polish    | Hair lowered/tightened, eyes reduced, shoulders/neck stronger, SwiftUI shoe mirroring fixed |
 | 2026-06-13 | 2649794    | [CC] | Courts label fix                  | "Open official camp/destination" → "View details →" |
 | 2026-06-13 | c3a664d    | [CC] | Journal: venue + gear worn in session | courtName, gearCSV on JournalEntry; auto-logger reads CourtVenue + appearance store |
 | 2026-06-13 | a5cb5b4    | [CC] | Journal: narrativeHeadline + matchStoryHighlights in body | canonical game engine narrative in auto-log |
