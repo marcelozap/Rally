@@ -1,5 +1,7 @@
 ## SESSION HANDSHAKE — MANDATORY FIRST ACTION
-Before any work: read `RALLY_REPO_GUARD.md`, then run `pwd` and `git log --oneline -1` and print both. The path MUST be /Users/a14/Desktop/Rally and the commit must be the repo's latest (run `git pull` first if a remote exists). If the path is anything else, STOP — you are in a stale copy — and say so instead of working. Run `git status` and report any uncommitted changes from a previous session before adding new work.
+Before any work: read `RALLY_REPO_GUARD.md` **and `RALLY_AGENT_LOCK.md`**, then run `pwd` and `git log --oneline -1` and print both. The path MUST be /Users/a14/Desktop/Rally and the commit must be the repo's latest (run `git pull` first if a remote exists). If the path is anything else, STOP — you are in a stale copy — and say so instead of working. Run `git status` and report any uncommitted changes from a previous session before adding new work.
+
+**Parallel-agent collision guard:** two agents (`[CC]`, `[CX]`) share this repo. `RALLY_AGENT_LOCK.md` holds the live ACTIVE LOCKS table and SHARED HOT ZONES. Before editing any file, check it — if the other agent holds a file you need, STOP and surface it to the user instead of editing. Claim your own work with a `[lock]` commit before you start.
 
 ## NORTH STAR — MANDATORY READING
 Before changing code, read `RALLY_NORTH_STAR.md` in full. It is the canonical product and craft direction for Rally: avatar identity, gameplay feel, shop/locker commerce, journal/training loop, quality bar, and priority order. If older prompts, comments, or planning files conflict with `RALLY_NORTH_STAR.md`, the North Star wins. Detailed structural specs live in `RALLY_OVERHAUL_DIRECTIVE.md`; parallel-agent ownership lives in `CLAUDE_CODE_PARALLEL_PLAN.md`.

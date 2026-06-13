@@ -1,0 +1,80 @@
+# RALLY AGENT LOCK — collision-avoidance protocol
+
+Two agents (Claude Code = `[CC]`, Codex/Cursor = `[CX]`) work this repo in parallel.
+On **2026-06-13** both independently diagnosed and started editing the *same* avatar
+files at the same time (the "avatar identity" bug). That is the exact failure this
+file exists to prevent. Read this file **before touching any file**, every session.
+
+> Governing order: RALLY_NORTH_STAR.md > this file > CLAUDE_CODE_PARALLEL_PLAN.md > RALLY_OVERHAUL_DIRECTIVE.md.
+> `AGENTS.md` points here from its mandatory-first-action section.
+
+---
+
+## THE RULE (how collisions are avoided)
+
+A committed claim is the only thing the other agent can see — uncommitted edits are invisible
+to them. So locks live in git, not in your head:
+
+1. **Session start — ALWAYS:** `git fetch` / `git pull`, then read the **ACTIVE LOCKS** table below.
+2. **Before editing a file:** if it is in **SHARED HOT ZONES** *or* already in ACTIVE LOCKS held by
+   the other agent → **STOP. Do not edit it.** Surface it to the user; do not "just take it."
+3. **To claim work:** add a row to ACTIVE LOCKS, commit *only* this file with
+   `[lock] <agent> claims <area>`, and push **before** you start editing the locked files.
+   Now the other agent can see your claim.
+4. **To release:** when your change is committed, delete your row (or mark it `RELEASED`) in the
+   same commit as the work, or a follow-up `[lock] release` commit.
+5. **If you see the other agent already holds a lock you need:** do not wait silently and do not
+   work around it. Tell the user, quote the lock row, and let them re-cut the boundary.
+
+A lock is cooperative — it only works if both agents check it first. That check is non-negotiable.
+
+---
+
+## ACTIVE LOCKS (live — edit this table)
+
+| Since (UTC date) | Agent | Area / files | Status | Notes |
+|------------------|-------|--------------|--------|-------|
+| 2026-06-13 | [CC] | Avatar identity render — `RallyAvatarView.swift`, `RallyAvatarGeometry.swift`, `Rally/Game/GameScene.swift` (head/hair block) | **HELD** | Identity-lock fix complete + Home-verified on iPhone 16 Pro sim. Hair now co-anchors to head + shared `RallyAvatarGeometry.hairFringeLift`. Uncommitted pending user OK. **[CX]: do not edit these files until released.** |
+
+---
+
+## SHARED HOT ZONES (always require a lock before editing — no exceptions)
+
+These files are touched by both agents' concerns and have already caused a collision:
+
+- `Rally/Features/Avatar/RallyAvatarView.swift`
+- `Rally/Features/Avatar/RallyAvatarGeometry.swift`
+- `Rally/Features/Avatar/RallyAvatarAppearance.swift`
+- `Rally/Features/Avatar/RallyAvatarPartRenderer.swift`
+- `Rally/Game/GameScene.swift` (avatar-assembly block specifically)
+- `RALLY_PROGRESS.md` (append-only; never rewrite another agent's rows)
+
+Default lane ownership (when NOT in a hot zone) still follows `AGENTS.md`:
+`[CX]` owns Home / Avatar / Shop SwiftUI; `[CC]` owns Game / Journal / Courts / audio-haptics.
+
+---
+
+## STANDING REQUEST — avatar identity contract (kept, do not lose)
+
+The durable agreement behind the current fix, so it is not re-litigated or re-diverged:
+
+- There is **one** composition rule for the head: every head part (head, hair, back-hair,
+  highlight, headwear, eyes, brows, nose, ears) is drawn at the **same anchor and the same
+  scale** in *both* renderers. The part geometry already encodes the correct relative offsets;
+  any per-part Y nudge or scale split re-opens the "disconnected hair / black-over-face /
+  different-person-after-PLAY" bug.
+- The only intentional vertical offset is the front-fringe clearance, and it is a **single
+  shared constant**: `RallyAvatarGeometry.hairFringeLift(scale:)`. Both `RallyAvatarView` and
+  `GameScene` call it. Tune the avatar by changing that one number — never by hardcoding a new
+  offset in one renderer.
+- If a future change needs a head offset, add it to `RallyAvatarGeometry` as a shared value both
+  renderers read. Do **not** introduce a literal like `headY + 4.6*scale` in a single renderer.
+
+---
+
+## INCIDENT LOG
+
+- **2026-06-13** — Double-diagnosis collision. `[CC]` fixed the avatar identity (co-anchor +
+  shared `hairFringeLift`) and verified Home on-device; in parallel `[CX]`, handed a collaboration
+  prompt, began implementing the same fix (its own `AvatarHeadComposition`) in the same files.
+  No data lost (caught before `[CX]` wrote to the tree). This file created in response.
