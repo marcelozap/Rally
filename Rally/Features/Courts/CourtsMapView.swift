@@ -796,7 +796,7 @@ struct CourtsMapView: View {
                     }
 
                     HStack(spacing: 6) {
-                        Text(court.kind == .venue ? "Open official destination" : "Open official camp")
+                        Text("View details →")
                             .font(RallyUIKit.Typography.label(.caption, weight: .bold))
                         Spacer(minLength: 0)
                         Image(systemName: "arrow.right.circle.fill")
