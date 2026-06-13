@@ -397,15 +397,23 @@ struct HomeView: View {
 
             Spacer(minLength: 8)
 
-            HStack(spacing: 6) {
-                Image(systemName: gamePreferences.dominantHand == .right ? "hand.raised.fill" : "hand.raised")
-                Text(gamePreferences.dominantHand.title)
+            Button {
+                withAnimation(.spring(response: 0.20, dampingFraction: 0.80)) {
+                    gamePreferences.dominantHand = gamePreferences.dominantHand == .right ? .left : .right
+                }
+            } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: gamePreferences.dominantHand == .right ? "hand.raised.fill" : "hand.raised")
+                    Text(gamePreferences.dominantHand.title)
+                }
+                .font(RallyUIKit.Typography.label(.caption2, weight: .black))
+                .foregroundStyle(RallyUIKit.Palette.obsidian)
+                .padding(.horizontal, 11)
+                .padding(.vertical, 7)
+                .background(Capsule(style: .continuous).fill(RallyUIKit.Palette.champagne.opacity(0.92)))
             }
-            .font(RallyUIKit.Typography.label(.caption2, weight: .black))
-            .foregroundStyle(RallyUIKit.Palette.obsidian)
-            .padding(.horizontal, 11)
-            .padding(.vertical, 7)
-            .background(Capsule(style: .continuous).fill(RallyUIKit.Palette.champagne.opacity(0.92)))
+            .buttonStyle(LoadoutPlayButtonStyle())
+            .accessibilityLabel("Switch dominant hand")
         }
         .padding(12)
         .background(
@@ -572,39 +580,40 @@ struct HomeView: View {
                         .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.48))
                         .lineLimit(1)
                 }
-
-                Spacer(minLength: 8)
-
-                HStack(spacing: 7) {
-                    compactCycleButton(systemName: "chevron.left") {
-                        cycleLoadout(-1)
-                    }
-                    compactCycleButton(systemName: "chevron.right") {
-                        cycleLoadout(1)
-                    }
-                }
+                Spacer(minLength: 0)
             }
 
-            HStack(spacing: 9) {
-                ForEach(editableLoadoutCategories, id: \.self) { category in
-                    let item = equippedItem(for: category)
-                    Button {
-                        if selectedLoadoutCategory == category {
-                            cycleLoadout(1)
-                        } else {
-                            withAnimation(.spring(response: 0.22, dampingFraction: 0.82)) {
-                                selectedLoadoutCategory = category
+            HStack(spacing: 7) {
+                compactCycleButton(systemName: "chevron.left") {
+                    cycleLoadout(-1)
+                }
+
+                HStack(spacing: 7) {
+                    ForEach(editableLoadoutCategories, id: \.self) { category in
+                        let item = equippedItem(for: category)
+                        Button {
+                            if selectedLoadoutCategory == category {
+                                cycleLoadout(1)
+                            } else {
+                                withAnimation(.spring(response: 0.22, dampingFraction: 0.82)) {
+                                    selectedLoadoutCategory = category
+                                }
                             }
+                        } label: {
+                            loadoutSlotTile(
+                                category: category,
+                                item: item,
+                                isSelected: selectedLoadoutCategory == category
+                            )
                         }
-                    } label: {
-                        loadoutSlotTile(
-                            category: category,
-                            item: item,
-                            isSelected: selectedLoadoutCategory == category
-                        )
+                        .buttonStyle(LoadoutPlayButtonStyle())
+                        .accessibilityLabel("\(shortLabel(for: category)) \(item?.name ?? "empty")")
                     }
-                    .buttonStyle(LoadoutPlayButtonStyle())
-                    .accessibilityLabel("\(shortLabel(for: category)) \(item?.name ?? "empty")")
+                }
+                .frame(maxWidth: .infinity)
+
+                compactCycleButton(systemName: "chevron.right") {
+                    cycleLoadout(1)
                 }
             }
         }
@@ -635,7 +644,7 @@ struct HomeView: View {
             Image(systemName: systemName)
                 .font(.system(size: 13, weight: .black))
                 .foregroundStyle(RallyUIKit.Palette.frost)
-                .frame(width: 40, height: 34)
+                .frame(width: 34, height: HomeCraft.loadoutTileHeight)
                 .background(
                     Capsule(style: .continuous)
                         .fill(Color.white.opacity(0.11))
@@ -1274,25 +1283,42 @@ private struct LoadoutShortsGlyph: View {
         Canvas { context, size in
             let w = size.width
             let h = size.height
-            let waistband = CGRect(x: w * 0.18, y: h * 0.10, width: w * 0.64, height: h * 0.16)
-            let leftLeg = CGRect(x: w * 0.18, y: h * 0.22, width: w * 0.29, height: h * 0.58)
-            let rightLeg = CGRect(x: w * 0.53, y: h * 0.22, width: w * 0.29, height: h * 0.58)
 
-            context.fill(Path(roundedRect: waistband, cornerRadius: h * 0.07), with: .color(primary))
-            context.fill(Path(roundedRect: leftLeg, cornerRadius: h * 0.10), with: .color(primary))
-            context.fill(Path(roundedRect: rightLeg, cornerRadius: h * 0.10), with: .color(primary))
+            var shorts = Path()
+            shorts.move(to: CGPoint(x: w * 0.20, y: h * 0.16))
+            shorts.addQuadCurve(to: CGPoint(x: w * 0.80, y: h * 0.16), control: CGPoint(x: w * 0.50, y: h * 0.10))
+            shorts.addLine(to: CGPoint(x: w * 0.86, y: h * 0.58))
+            shorts.addQuadCurve(to: CGPoint(x: w * 0.64, y: h * 0.72), control: CGPoint(x: w * 0.76, y: h * 0.72))
+            shorts.addLine(to: CGPoint(x: w * 0.53, y: h * 0.48))
+            shorts.addQuadCurve(to: CGPoint(x: w * 0.47, y: h * 0.48), control: CGPoint(x: w * 0.50, y: h * 0.42))
+            shorts.addLine(to: CGPoint(x: w * 0.36, y: h * 0.72))
+            shorts.addQuadCurve(to: CGPoint(x: w * 0.14, y: h * 0.58), control: CGPoint(x: w * 0.24, y: h * 0.72))
+            shorts.closeSubpath()
+            context.fill(shorts, with: .color(primary))
+
+            var waistband = Path()
+            waistband.move(to: CGPoint(x: w * 0.22, y: h * 0.22))
+            waistband.addQuadCurve(to: CGPoint(x: w * 0.78, y: h * 0.22), control: CGPoint(x: w * 0.50, y: h * 0.17))
+            context.stroke(waistband, with: .color(accent.opacity(0.80)), lineWidth: max(1.4, w * 0.045))
 
             var centerSeam = Path()
-            centerSeam.move(to: CGPoint(x: w * 0.50, y: h * 0.28))
-            centerSeam.addLine(to: CGPoint(x: w * 0.50, y: h * 0.74))
-            context.stroke(centerSeam, with: .color(accent), lineWidth: max(1.2, w * 0.045))
+            centerSeam.move(to: CGPoint(x: w * 0.50, y: h * 0.24))
+            centerSeam.addQuadCurve(to: CGPoint(x: w * 0.50, y: h * 0.54), control: CGPoint(x: w * 0.52, y: h * 0.40))
+            context.stroke(centerSeam, with: .color(accent.opacity(0.72)), lineWidth: max(1.0, w * 0.030))
 
-            var hem = Path()
-            hem.move(to: CGPoint(x: w * 0.22, y: h * 0.74))
-            hem.addLine(to: CGPoint(x: w * 0.45, y: h * 0.74))
-            hem.move(to: CGPoint(x: w * 0.55, y: h * 0.74))
-            hem.addLine(to: CGPoint(x: w * 0.78, y: h * 0.74))
-            context.stroke(hem, with: .color(accent.opacity(0.72)), lineWidth: max(1.0, w * 0.035))
+            var hems = Path()
+            hems.move(to: CGPoint(x: w * 0.20, y: h * 0.57))
+            hems.addQuadCurve(to: CGPoint(x: w * 0.38, y: h * 0.66), control: CGPoint(x: w * 0.28, y: h * 0.66))
+            hems.move(to: CGPoint(x: w * 0.62, y: h * 0.66))
+            hems.addQuadCurve(to: CGPoint(x: w * 0.80, y: h * 0.57), control: CGPoint(x: w * 0.72, y: h * 0.66))
+            context.stroke(hems, with: .color(accent.opacity(0.64)), lineWidth: max(1.1, w * 0.032))
+
+            var sideHighlight = Path()
+            sideHighlight.move(to: CGPoint(x: w * 0.26, y: h * 0.27))
+            sideHighlight.addLine(to: CGPoint(x: w * 0.21, y: h * 0.55))
+            sideHighlight.move(to: CGPoint(x: w * 0.74, y: h * 0.27))
+            sideHighlight.addLine(to: CGPoint(x: w * 0.79, y: h * 0.55))
+            context.stroke(sideHighlight, with: .color(.white.opacity(0.22)), lineWidth: max(1, w * 0.024))
         }
     }
 }
@@ -1307,30 +1333,49 @@ private struct LoadoutTennisShoeGlyph: View {
             let h = size.height
 
             var upper = Path()
-            upper.move(to: CGPoint(x: w * 0.18, y: h * 0.62))
-            upper.addQuadCurve(to: CGPoint(x: w * 0.43, y: h * 0.30), control: CGPoint(x: w * 0.28, y: h * 0.30))
-            upper.addQuadCurve(to: CGPoint(x: w * 0.78, y: h * 0.45), control: CGPoint(x: w * 0.60, y: h * 0.24))
-            upper.addQuadCurve(to: CGPoint(x: w * 0.90, y: h * 0.64), control: CGPoint(x: w * 0.90, y: h * 0.52))
-            upper.addQuadCurve(to: CGPoint(x: w * 0.20, y: h * 0.72), control: CGPoint(x: w * 0.58, y: h * 0.78))
+            upper.move(to: CGPoint(x: w * 0.12, y: h * 0.63))
+            upper.addQuadCurve(to: CGPoint(x: w * 0.33, y: h * 0.40), control: CGPoint(x: w * 0.20, y: h * 0.42))
+            upper.addQuadCurve(to: CGPoint(x: w * 0.58, y: h * 0.34), control: CGPoint(x: w * 0.44, y: h * 0.32))
+            upper.addQuadCurve(to: CGPoint(x: w * 0.86, y: h * 0.51), control: CGPoint(x: w * 0.77, y: h * 0.36))
+            upper.addQuadCurve(to: CGPoint(x: w * 0.94, y: h * 0.66), control: CGPoint(x: w * 0.94, y: h * 0.58))
+            upper.addQuadCurve(to: CGPoint(x: w * 0.15, y: h * 0.72), control: CGPoint(x: w * 0.56, y: h * 0.80))
             upper.closeSubpath()
             context.fill(upper, with: .color(primary))
 
             var sole = Path()
-            sole.move(to: CGPoint(x: w * 0.12, y: h * 0.72))
-            sole.addQuadCurve(to: CGPoint(x: w * 0.92, y: h * 0.70), control: CGPoint(x: w * 0.48, y: h * 0.86))
-            context.stroke(sole, with: .color(accent.opacity(0.86)), lineWidth: max(2, h * 0.11))
+            sole.move(to: CGPoint(x: w * 0.08, y: h * 0.71))
+            sole.addQuadCurve(to: CGPoint(x: w * 0.95, y: h * 0.69), control: CGPoint(x: w * 0.46, y: h * 0.84))
+            context.stroke(sole, with: .color(accent.opacity(0.90)), lineWidth: max(2, h * 0.105))
+
+            var outsole = Path()
+            outsole.move(to: CGPoint(x: w * 0.10, y: h * 0.80))
+            outsole.addQuadCurve(to: CGPoint(x: w * 0.88, y: h * 0.77), control: CGPoint(x: w * 0.48, y: h * 0.88))
+            context.stroke(outsole, with: .color(accent.opacity(0.44)), lineWidth: max(1, h * 0.030))
+
+            var heelCup = Path()
+            heelCup.move(to: CGPoint(x: w * 0.18, y: h * 0.61))
+            heelCup.addQuadCurve(to: CGPoint(x: w * 0.31, y: h * 0.45), control: CGPoint(x: w * 0.20, y: h * 0.48))
+            heelCup.addLine(to: CGPoint(x: w * 0.36, y: h * 0.68))
+            context.stroke(heelCup, with: .color(accent.opacity(0.70)), lineWidth: max(1.2, w * 0.035))
 
             var laces = Path()
-            laces.move(to: CGPoint(x: w * 0.48, y: h * 0.42))
-            laces.addLine(to: CGPoint(x: w * 0.58, y: h * 0.53))
-            laces.move(to: CGPoint(x: w * 0.58, y: h * 0.40))
-            laces.addLine(to: CGPoint(x: w * 0.68, y: h * 0.52))
-            context.stroke(laces, with: .color(accent), lineWidth: max(1.1, w * 0.035))
+            laces.move(to: CGPoint(x: w * 0.45, y: h * 0.42))
+            laces.addLine(to: CGPoint(x: w * 0.55, y: h * 0.54))
+            laces.move(to: CGPoint(x: w * 0.54, y: h * 0.40))
+            laces.addLine(to: CGPoint(x: w * 0.66, y: h * 0.53))
+            laces.move(to: CGPoint(x: w * 0.62, y: h * 0.43))
+            laces.addLine(to: CGPoint(x: w * 0.73, y: h * 0.55))
+            context.stroke(laces, with: .color(accent), lineWidth: max(1.1, w * 0.030))
+
+            var speedStripe = Path()
+            speedStripe.move(to: CGPoint(x: w * 0.35, y: h * 0.62))
+            speedStripe.addQuadCurve(to: CGPoint(x: w * 0.75, y: h * 0.57), control: CGPoint(x: w * 0.56, y: h * 0.45))
+            context.stroke(speedStripe, with: .color(accent.opacity(0.78)), lineWidth: max(1.4, w * 0.040))
 
             var toe = Path()
-            toe.move(to: CGPoint(x: w * 0.75, y: h * 0.47))
-            toe.addQuadCurve(to: CGPoint(x: w * 0.87, y: h * 0.61), control: CGPoint(x: w * 0.88, y: h * 0.50))
-            context.stroke(toe, with: .color(accent.opacity(0.60)), lineWidth: max(1, w * 0.03))
+            toe.move(to: CGPoint(x: w * 0.78, y: h * 0.50))
+            toe.addQuadCurve(to: CGPoint(x: w * 0.90, y: h * 0.65), control: CGPoint(x: w * 0.94, y: h * 0.54))
+            context.stroke(toe, with: .color(accent.opacity(0.62)), lineWidth: max(1, w * 0.028))
         }
     }
 }
