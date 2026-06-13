@@ -221,6 +221,64 @@ enum RallyAvatarGeometry {
         return path.copy(strokingWithWidth: max(1.0, 1.2 * scale), lineCap: .round, lineJoin: .round, miterLimit: 2)
     }
 
+    static func tiedHeadbandPath(scale: CGFloat) -> CGPath {
+        let path = CGMutablePath()
+        let halfWidth = headHalfWidth(scale: scale)
+        let bandY = browCenterY(scale: scale) + 3.8 * scale
+        let height = 5.4 * scale
+        path.move(to: CGPoint(x: -halfWidth - 1.6 * scale, y: bandY + height * 0.45))
+        path.addQuadCurve(
+            to: CGPoint(x: halfWidth + 1.8 * scale, y: bandY + height * 0.32),
+            control: CGPoint(x: 0, y: bandY + height * 0.92)
+        )
+        path.addLine(to: CGPoint(x: halfWidth + 1.1 * scale, y: bandY - height * 0.48))
+        path.addQuadCurve(
+            to: CGPoint(x: -halfWidth - 1.5 * scale, y: bandY - height * 0.34),
+            control: CGPoint(x: 0, y: bandY - height * 0.86)
+        )
+        path.closeSubpath()
+        return path
+    }
+
+    static func tiedHeadbandTailsPath(scale: CGFloat) -> CGPath {
+        let path = CGMutablePath()
+        let halfWidth = headHalfWidth(scale: scale)
+        let knotX = halfWidth + 1.0 * scale
+        let knotY = browCenterY(scale: scale) + 3.2 * scale
+        path.addEllipse(in: CGRect(x: knotX - 1.7 * scale, y: knotY - 1.7 * scale, width: 3.4 * scale, height: 3.4 * scale))
+        path.move(to: CGPoint(x: knotX + 1.2 * scale, y: knotY - 1.2 * scale))
+        path.addQuadCurve(to: CGPoint(x: knotX + 9.5 * scale, y: knotY - 8.8 * scale), control: CGPoint(x: knotX + 6.0 * scale, y: knotY - 2.8 * scale))
+        path.addQuadCurve(to: CGPoint(x: knotX + 4.8 * scale, y: knotY - 13.2 * scale), control: CGPoint(x: knotX + 8.4 * scale, y: knotY - 13.2 * scale))
+        path.addQuadCurve(to: CGPoint(x: knotX + 0.6 * scale, y: knotY - 2.2 * scale), control: CGPoint(x: knotX + 2.0 * scale, y: knotY - 8.0 * scale))
+        path.closeSubpath()
+        return path
+    }
+
+    static func courtCapCrownPath(scale: CGFloat) -> CGPath {
+        let path = CGMutablePath()
+        let top = headTop(scale: scale)
+        let halfWidth = headHalfWidth(scale: scale)
+        let browY = browCenterY(scale: scale)
+        path.move(to: CGPoint(x: -halfWidth - 1.6 * scale, y: browY + 2.0 * scale))
+        path.addQuadCurve(to: CGPoint(x: -halfWidth * 0.62, y: top + 2.4 * scale), control: CGPoint(x: -halfWidth - 1.2 * scale, y: top - 5.5 * scale))
+        path.addQuadCurve(to: CGPoint(x: halfWidth * 0.78, y: top + 0.4 * scale), control: CGPoint(x: -1.0 * scale, y: top + 8.0 * scale))
+        path.addQuadCurve(to: CGPoint(x: halfWidth + 1.4 * scale, y: browY + 2.4 * scale), control: CGPoint(x: halfWidth + 3.0 * scale, y: top - 4.0 * scale))
+        path.addQuadCurve(to: CGPoint(x: -halfWidth - 1.6 * scale, y: browY + 2.0 * scale), control: CGPoint(x: 0, y: browY - 0.6 * scale))
+        path.closeSubpath()
+        return path
+    }
+
+    static func courtCapBrimPath(scale: CGFloat) -> CGPath {
+        let path = CGMutablePath()
+        let browY = browCenterY(scale: scale) + 1.0 * scale
+        path.move(to: CGPoint(x: -4.5 * scale, y: browY))
+        path.addQuadCurve(to: CGPoint(x: 23.5 * scale, y: browY + 1.2 * scale), control: CGPoint(x: 9.0 * scale, y: browY + 5.6 * scale))
+        path.addQuadCurve(to: CGPoint(x: 10.0 * scale, y: browY - 5.0 * scale), control: CGPoint(x: 22.0 * scale, y: browY - 4.8 * scale))
+        path.addQuadCurve(to: CGPoint(x: -4.5 * scale, y: browY), control: CGPoint(x: 1.2 * scale, y: browY - 4.2 * scale))
+        path.closeSubpath()
+        return path
+    }
+
     static func premiumBackHairPath(scale: CGFloat) -> CGPath {
         let path = CGMutablePath()
 

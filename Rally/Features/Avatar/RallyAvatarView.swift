@@ -240,39 +240,7 @@ struct RallyAvatarView: View {
             stroke: Color.black.opacity(0.10),
             lineWidth: 0.55 * scale
         )
-        drawPath(
-            RallyAvatarGeometry.premiumBackHairPath(scale: layout.headPathScale * 0.98),
-            in: &context,
-            centerX: centerX,
-            baseline: baseline,
-            x: 0,
-            y: layout.headY + idleLift * 0.42 + 3.8 * scale,
-            fill: Color(uiColor: appearance.hairUIColor.rallyBlended(withFraction: 0.08, of: .white)),
-            stroke: .clear,
-            lineWidth: 0
-        )
-        drawPath(
-            RallyAvatarGeometry.premiumHairPath(scale: layout.headPathScale * 0.98),
-            in: &context,
-            centerX: centerX,
-            baseline: baseline,
-            x: 0,
-            y: layout.headY + 7.8 * scale + idleLift * 0.55,
-            fill: appearance.hairColor,
-            stroke: Color.white.opacity(0.06),
-            lineWidth: 0.5 * scale
-        )
-        drawPath(
-            RallyAvatarGeometry.hairHighlightPath(scale: layout.headPathScale * 0.98),
-            in: &context,
-            centerX: centerX,
-            baseline: baseline,
-            x: 0,
-            y: layout.headY + 7.8 * scale + idleLift * 0.55,
-            fill: .clear,
-            stroke: Color(red: 0.22, green: 0.22, blue: 0.25).opacity(0.58),
-            lineWidth: 1.25 * scale
-        )
+        drawHairAndHeadwear(in: &context, centerX: centerX, baseline: baseline, layout: layout, scale: scale, idleLift: idleLift)
         drawFace(in: &context, centerX: centerX, baseline: baseline, headY: layout.headY + idleLift, scale: faceScale)
 
         if showsRacket {
@@ -419,6 +387,118 @@ struct RallyAvatarView: View {
 
         let accent = CGRect(x: centerX - 14 * scale, y: baseline - y - 28 * scale, width: 28 * scale, height: 4 * scale)
         context.fill(Path(roundedRect: accent, cornerRadius: 2 * scale), with: .color(appearance.racketAccentColor.opacity(0.90)))
+    }
+
+    private func drawHairAndHeadwear(
+        in context: inout GraphicsContext,
+        centerX: CGFloat,
+        baseline: CGFloat,
+        layout: RallyAvatarRebuildDefaults.CourtLayout,
+        scale: CGFloat,
+        idleLift: CGFloat
+    ) {
+        let hairScale = layout.headPathScale * 0.98
+        let headY = layout.headY + idleLift
+        let hairY = layout.headY + 7.8 * scale + idleLift * 0.55
+        let shouldDrawHair = appearance.hairStyle != .bald && appearance.hairStyle != .cap
+
+        if shouldDrawHair {
+            drawPath(
+                RallyAvatarGeometry.premiumBackHairPath(scale: hairScale),
+                in: &context,
+                centerX: centerX,
+                baseline: baseline,
+                x: 0,
+                y: layout.headY + idleLift * 0.42 + 3.8 * scale,
+                fill: Color(uiColor: appearance.hairUIColor.rallyBlended(withFraction: 0.08, of: .white)),
+                stroke: .clear,
+                lineWidth: 0
+            )
+            drawPath(
+                RallyAvatarGeometry.premiumHairPath(scale: hairScale),
+                in: &context,
+                centerX: centerX,
+                baseline: baseline,
+                x: 0,
+                y: hairY,
+                fill: appearance.hairColor,
+                stroke: Color.white.opacity(0.06),
+                lineWidth: 0.5 * scale
+            )
+            drawPath(
+                RallyAvatarGeometry.hairHighlightPath(scale: hairScale),
+                in: &context,
+                centerX: centerX,
+                baseline: baseline,
+                x: 0,
+                y: hairY,
+                fill: .clear,
+                stroke: Color(red: 0.22, green: 0.22, blue: 0.25).opacity(0.58),
+                lineWidth: 1.25 * scale
+            )
+        }
+
+        switch appearance.hairStyle {
+        case .headband:
+            drawPath(
+                RallyAvatarGeometry.tiedHeadbandPath(scale: hairScale),
+                in: &context,
+                centerX: centerX,
+                baseline: baseline,
+                x: 0,
+                y: headY + 1.5 * scale,
+                fill: appearance.headbandColor,
+                stroke: Color.black.opacity(0.10),
+                lineWidth: 0.45 * scale
+            )
+            drawPath(
+                RallyAvatarGeometry.tiedHeadbandTailsPath(scale: hairScale),
+                in: &context,
+                centerX: centerX,
+                baseline: baseline,
+                x: 0,
+                y: headY + 1.5 * scale,
+                fill: appearance.headbandColor.opacity(0.95),
+                stroke: Color.black.opacity(0.08),
+                lineWidth: 0.35 * scale
+            )
+        case .cap:
+            drawPath(
+                RallyAvatarGeometry.premiumBackHairPath(scale: hairScale * 0.76),
+                in: &context,
+                centerX: centerX,
+                baseline: baseline,
+                x: 0,
+                y: layout.headY + idleLift * 0.42 - 1.0 * scale,
+                fill: appearance.hairColor.opacity(0.92),
+                stroke: .clear,
+                lineWidth: 0
+            )
+            drawPath(
+                RallyAvatarGeometry.courtCapCrownPath(scale: hairScale),
+                in: &context,
+                centerX: centerX,
+                baseline: baseline,
+                x: 0,
+                y: headY + 1.2 * scale,
+                fill: appearance.headbandColor,
+                stroke: Color.white.opacity(0.16),
+                lineWidth: 0.55 * scale
+            )
+            drawPath(
+                RallyAvatarGeometry.courtCapBrimPath(scale: hairScale),
+                in: &context,
+                centerX: centerX,
+                baseline: baseline,
+                x: 0,
+                y: headY + 1.2 * scale,
+                fill: Color(uiColor: appearance.headbandUIColor.rallyMixed(with: .black, ratio: 0.10)),
+                stroke: Color.black.opacity(0.12),
+                lineWidth: 0.42 * scale
+            )
+        default:
+            break
+        }
     }
 
     private func drawFace(in context: inout GraphicsContext, centerX: CGFloat, baseline: CGFloat, headY: CGFloat, scale: CGFloat) {

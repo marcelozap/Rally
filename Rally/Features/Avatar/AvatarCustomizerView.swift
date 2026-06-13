@@ -159,6 +159,15 @@ struct AvatarCustomizerView: View {
             StatPill(label: config.bodyType.displayName, tint: RallyUIKit.Palette.cyan)
             StatPill(label: config.hairStyle.displayName, tint: RallyUIKit.Palette.rose)
             StatPill(label: config.skinTone.displayName, tint: RallyUIKit.Palette.champagne)
+            Button {
+                withAnimation(.spring(response: 0.20, dampingFraction: 0.80)) {
+                    gamePreferences.dominantHand = gamePreferences.dominantHand == .right ? .left : .right
+                }
+            } label: {
+                StatPill(label: gamePreferences.dominantHand == .left ? "Lefty" : "Righty", tint: RallyUIKit.Palette.cyan)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Switch dominant hand")
         }
     }
 

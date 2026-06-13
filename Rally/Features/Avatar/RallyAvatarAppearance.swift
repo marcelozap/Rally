@@ -27,10 +27,20 @@ enum RallyAvatarHairProfile: String, Codable, Equatable {
     case long
     case ponytail
     case bun
+    case headband
+    case cap
     case zukoJetBlack
 
     init(hairStyle: AvatarHairStyle, hairColorHex: String) {
         let isJetBlack = UIColor(rallyAvatarHex: hairColorHex)?.isNearBlack ?? false
+        if hairStyle == .headband {
+            self = .headband
+            return
+        }
+        if hairStyle == .cap {
+            self = .cap
+            return
+        }
         if isJetBlack, hairStyle == .medium {
             self = .zukoJetBlack
             return
@@ -49,6 +59,10 @@ enum RallyAvatarHairProfile: String, Codable, Equatable {
             self = .ponytail
         case .bun:
             self = .bun
+        case .headband:
+            self = .headband
+        case .cap:
+            self = .cap
         }
     }
 }
@@ -199,6 +213,7 @@ struct RallyAvatarAppearance: Codable, Equatable {
     var shoesAccentUIColor: UIColor { UIColor(rallyAvatarHex: shoes?.accentHex ?? RallyAvatarRebuildDefaults.Identity.shoesAccentHex) ?? UIColor(red: 0.0, green: 0.84, blue: 0.94, alpha: 1) }
     var racketUIColor: UIColor { UIColor(rallyAvatarHex: racket?.colorwayHex ?? RallyAvatarRebuildDefaults.Identity.racketColorHex) ?? UIColor(white: 0.78, alpha: 1) }
     var racketAccentUIColor: UIColor { UIColor(rallyAvatarHex: racket?.accentHex ?? RallyAvatarRebuildDefaults.Identity.racketAccentHex) ?? UIColor(red: 0, green: 0.9, blue: 1, alpha: 1) }
+    var headbandUIColor: UIColor { UIColor(rallyAvatarHex: headband?.colorwayHex ?? "#F5EFE0") ?? UIColor(red: 0.96, green: 0.92, blue: 0.84, alpha: 1) }
 
     var skinColor: Color { Color(uiColor: skinUIColor) }
     var hairColor: Color { Color(uiColor: hairUIColor) }
@@ -208,6 +223,7 @@ struct RallyAvatarAppearance: Codable, Equatable {
     var shoesAccentColor: Color { Color(uiColor: shoesAccentUIColor) }
     var racketColor: Color { Color(uiColor: racketUIColor) }
     var racketAccentColor: Color { Color(uiColor: racketAccentUIColor) }
+    var headbandColor: Color { Color(uiColor: headbandUIColor) }
 
     mutating func set(_ gear: RallyGearReference?, for slot: RallyGearSlot) {
         switch slot {

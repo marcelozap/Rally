@@ -87,9 +87,20 @@ enum AvatarSkinTone: String, CaseIterable, Identifiable {
 }
 
 enum AvatarHairStyle: String, CaseIterable, Identifiable {
-    case bald, short, medium, long, ponytail, bun
+    case bald, short, medium, long, ponytail, bun, headband, cap
     var id: String { rawValue }
-    var displayName: String { rawValue.capitalized }
+    var displayName: String {
+        switch self {
+        case .bald: return "Bald"
+        case .short: return "Short"
+        case .medium: return "Medium"
+        case .long: return "Long"
+        case .ponytail: return "Ponytail"
+        case .bun: return "Bun"
+        case .headband: return "Tie band"
+        case .cap: return "Court cap"
+        }
+    }
 }
 
 enum AvatarBodyType: String, CaseIterable, Identifiable {
