@@ -10,7 +10,10 @@ Governing priority: RALLY_NORTH_STAR.md > CLAUDE_CODE_PARALLEL_PLAN.md > RALLY_O
 
 | Date       | Commit     | Lane | Work                              | Notes                                           |
 |------------|------------|------|-----------------------------------|-------------------------------------------------|
-| 2026-06-12 | (pending)  | [CC] | Shop/avatar sync fixes (CX override) | equip() → appearanceStore.sync (A-4/S-4); ShopView cards render catalog imagery (S-3). User-instructed override of CX lane. BUILD NOT RUN |
+| 2026-06-13 | aac00cc    | [CC] | T4: contact payoff + miss clarity | Perfect banners live (combo ≤3, every 5th); miss popup red/amber; wallMissCue coaching text |
+| 2026-06-13 | 2649794    | [CC] | Courts label fix                  | "Open official camp/destination" → "View details →" |
+| 2026-06-13 | b979f01    | [CC] | Journal T2: auto-log source protocol | JournalEntrySources.swift, JournalAutoLogger, wired into GameSessionView. BUILD NOT RUN |
+| 2026-06-12 | 5c122a8    | [CC] | Shop/avatar sync fixes (CX override) | equip() → appearanceStore.sync (A-4/S-4); ShopView cards render catalog imagery (S-3). BUILD NOT RUN |
 | 2026-06-12 | 11f8eba    | [CC] | T4: rally-loop depth + return urgency | Outbound depth shrink 0.58, return accel 2.9×, speed tail. BUILD NOT RUN — verify locally |
 | 2026-06-11 | dd3d701    | sync | Avatar overhaul + pro body mech   | torso uncoil 5.2×, sleeve gaps, scale 1.14      |
 | 2026-06-11 | 39fb976    | [CC] | Gameplay player credibility pass  | Trail shoe mirror (xFlip), hair scale 0.82/0.92 |
@@ -50,10 +53,13 @@ Commit: `[CC] World marketplace: listings, live referral links, declutter, safe 
 **Lane:** [CX]
 **Spec source:** RALLY_NORTH_STAR.md §Journal
 
-- auto-log rally sessions
-- calendar-style weekly/monthly history
-- manual training notes
-- Garmin-ready source protocol (stubs OK)
+- [x] auto-log rally sessions — JournalAutoLogger wired into GameSessionView (b979f01)
+- [x] Garmin-ready source protocol — JournalEntrySources.swift: JournalEntrySource protocol,
+      RallySessionJournalSource, GarminJournalSource stub (b979f01)
+- [x] JournalEntry.sourceRaw / sourceKind — provenance persisted on model (b979f01)
+- [ ] calendar-style weekly/monthly history (CX surface work)
+- [ ] manual training notes UI (CX surface work)
+- [ ] VERIFY: b979f01 build not run; xcodebuild check that JournalEntrySources compiles
 
 ---
 
@@ -71,10 +77,10 @@ Commit: `[CC] World marketplace: listings, live referral links, declutter, safe 
       (was full-size to the wall); reentry inherits far handoff scale and grows back (2026-06-12)
 - [x] return acceleration urgency: exit 0.70 / gain 0.65 (~2.9× terminal vs exit speed,
       was ~1.19×); return travel 0.62→0.56 s; speed-driven tail alpha/length (2026-06-12)
-- [ ] contact payoff: hit-stop, flash, sparks, haptic, timing text — already strong; re-audit on device
-- [ ] miss clarity — wallMissCue/popup system in place; re-audit on device
-- [ ] VERIFY: xcodebuild not run for 2026-06-12 changes (agent had no Xcode); build + simulator
-      check that wall ball reads far at wall plane and return feels urgent, not teleported
+- [x] contact payoff: perfect banners now live (combo ≤3 + every 5th); stroke-aware label text (aac00cc)
+- [x] miss clarity: popup red/amber by reason; wallMissCue coaching text filled in (aac00cc)
+- [ ] VERIFY: xcodebuild not run for 2026-06-12/13 [CC] changes; build + device check
+      — depth shrink at wall, return urgency, colored miss popups, perfect banners
 
 ---
 
