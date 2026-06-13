@@ -12,6 +12,9 @@ Governing priority: RALLY_NORTH_STAR.md > CLAUDE_CODE_PARALLEL_PLAN.md > RALLY_O
 |------------|------------|------|-----------------------------------|-------------------------------------------------|
 | 2026-06-13 | aac00cc    | [CC] | T4: contact payoff + miss clarity | Perfect banners live (combo ≤3, every 5th); miss popup red/amber; wallMissCue coaching text |
 | 2026-06-13 | 2649794    | [CC] | Courts label fix                  | "Open official camp/destination" → "View details →" |
+| 2026-06-13 | c3a664d    | [CC] | Journal: venue + gear worn in session | courtName, gearCSV on JournalEntry; auto-logger reads CourtVenue + appearance store |
+| 2026-06-13 | a5cb5b4    | [CC] | Journal: narrativeHeadline + matchStoryHighlights in body | canonical game engine narrative in auto-log |
+| 2026-06-13 | 88b622a    | [CC] | Journal T2+: structured rally metrics | rallyScore/rallyMaxCombo/rallyAccuracyPct on model; JournalInsights week aggregates |
 | 2026-06-13 | b979f01    | [CC] | Journal T2: auto-log source protocol | JournalEntrySources.swift, JournalAutoLogger, wired into GameSessionView. BUILD NOT RUN |
 | 2026-06-12 | 5c122a8    | [CC] | Shop/avatar sync fixes (CX override) | equip() → appearanceStore.sync (A-4/S-4); ShopView cards render catalog imagery (S-3). BUILD NOT RUN |
 | 2026-06-12 | 11f8eba    | [CC] | T4: rally-loop depth + return urgency | Outbound depth shrink 0.58, return accel 2.9×, speed tail. BUILD NOT RUN — verify locally |
@@ -57,9 +60,15 @@ Commit: `[CC] World marketplace: listings, live referral links, declutter, safe 
 - [x] Garmin-ready source protocol — JournalEntrySources.swift: JournalEntrySource protocol,
       RallySessionJournalSource, GarminJournalSource stub (b979f01)
 - [x] JournalEntry.sourceRaw / sourceKind — provenance persisted on model (b979f01)
+- [x] Structured rally metrics — rallyScore, rallyMaxCombo, rallyAccuracyPct on model (88b622a)
+- [x] JournalInsights: this-week rally aggregates (sessions, bestScore, bestCombo, avgAcc) (88b622a)
+- [x] Richer auto-log body: segment breakdown (Early/Mid/Late), narrativeHeadline,
+      matchStoryHighlights (clean returns, changeup winners, pressure holds) (a5cb5b4/6766cfe)
+- [x] venue/court association — courtName persisted on JournalEntry; reads CourtVenue.current (c3a664d)
+- [x] gear worn in session — gearCSV from equipped appearance slots via RallyReferralCatalog (c3a664d)
 - [ ] calendar-style weekly/monthly history (CX surface work)
 - [ ] manual training notes UI (CX surface work)
-- [ ] VERIFY: b979f01 build not run; xcodebuild check that JournalEntrySources compiles
+- [ ] VERIFY: b979f01–c3a664d build not run; xcodebuild check that all Journal changes compile
 
 ---
 
