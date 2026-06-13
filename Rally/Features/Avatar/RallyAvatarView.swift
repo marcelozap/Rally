@@ -82,7 +82,8 @@ struct RallyAvatarView: View {
             x: -21 * scale,
             y: layout.legY - trailLegVisualHeight * 0.51,
             scale: scale,
-            upperUIColorOverride: appearance.shoesUIColor.rallyMixed(with: .black, ratio: 0.06)
+            upperUIColorOverride: appearance.shoesUIColor.rallyMixed(with: .black, ratio: 0.06),
+            xFlip: true
         )
 
         let pelvisY = layout.torsoY - 43 * scale
@@ -312,7 +313,8 @@ struct RallyAvatarView: View {
         x: CGFloat,
         y: CGFloat,
         scale: CGFloat,
-        upperUIColorOverride: UIColor? = nil
+        upperUIColorOverride: UIColor? = nil,
+        xFlip: Bool = false
     ) {
         let upperUIColor = upperUIColorOverride ?? appearance.shoesUIColor
         let upper = Color(uiColor: upperUIColor)
@@ -329,50 +331,76 @@ struct RallyAvatarView: View {
             stroke: .clear,
             lineWidth: 0
         )
-        drawPath(
+        drawMirroredPath(
             RallyAvatarGeometry.shoeBodyPath(scale: scale),
             in: &context,
             centerX: centerX,
             baseline: baseline,
             x: x,
             y: y,
+            xFlip: xFlip,
             fill: upper,
             stroke: accent.opacity(0.55),
             lineWidth: 1.2 * scale
         )
-        drawPath(
+        drawMirroredPath(
             RallyAvatarGeometry.shoeStripePath(scale: scale),
             in: &context,
             centerX: centerX,
             baseline: baseline,
             x: x,
             y: y,
+            xFlip: xFlip,
             fill: accent.opacity(0.82),
             stroke: .clear,
             lineWidth: 0
         )
-        drawPath(
+        drawMirroredPath(
             RallyAvatarGeometry.shoeTonguePath(scale: scale),
             in: &context,
             centerX: centerX,
             baseline: baseline,
             x: x,
             y: y,
+            xFlip: xFlip,
             fill: Color(uiColor: upperUIColor.rallyBlended(withFraction: 0.20, of: .white)),
             stroke: .clear,
             lineWidth: 0
         )
-        drawPath(
+        drawMirroredPath(
             RallyAvatarGeometry.shoeLacePath(scale: scale),
             in: &context,
             centerX: centerX,
             baseline: baseline,
             x: x,
             y: y,
+            xFlip: xFlip,
             fill: .white.opacity(0.72),
             stroke: .clear,
             lineWidth: 0
         )
+    }
+
+    private func drawMirroredPath(
+        _ cgPath: CGPath,
+        in context: inout GraphicsContext,
+        centerX: CGFloat,
+        baseline: CGFloat,
+        x: CGFloat,
+        y: CGFloat,
+        xFlip: Bool,
+        fill: Color,
+        stroke: Color,
+        lineWidth: CGFloat
+    ) {
+        var transform = CGAffineTransform(translationX: centerX + x, y: baseline - y)
+            .scaledBy(x: xFlip ? -1 : 1, y: -1)
+        guard let transformedPath = cgPath.copy(using: &transform) else { return }
+        let path = Path(transformedPath)
+        context.fill(path, with: .color(fill))
+        if lineWidth > 0 {
+            context.stroke(path, with: .color(stroke), lineWidth: lineWidth)
+        }
     }
 
     private func drawNeck(in context: inout GraphicsContext, centerX: CGFloat, baseline: CGFloat, y: CGFloat, scale: CGFloat) {
