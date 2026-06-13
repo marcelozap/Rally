@@ -4041,7 +4041,13 @@ final class GameScene: SKScene {
     }
 
     private func wallMissCue(for reason: WallMissReason, comboWasLive: Bool) -> String {
-        ""
+        switch reason {
+        case .early:  return "EARLY — WAIT FOR IT"
+        case .late:   return "TOO LATE"
+        case .side:   return "WRONG SIDE"
+        case .reach:  return "TOO FAR"
+        case .generic: return comboWasLive ? "COMBO RESET" : "MISS"
+        }
     }
 
     private func showWallMissInstruction(_ text: String, comboWasLive: Bool) {
@@ -4695,16 +4701,23 @@ final class GameScene: SKScene {
 
     private func stageMissTimingPopup(at point: CGPoint, reason: WallMissReason) {
         let text: String
+        let color: UIColor
         switch reason {
-        case .early: text = "EARLY"
-        case .late: text = "LATE"
-        default: text = "MISS"
+        case .early:
+            text = "EARLY"
+            color = UIColor(red: 1.0, green: 0.72, blue: 0.28, alpha: 0.95) // amber
+        case .late:
+            text = "LATE"
+            color = UIColor(red: 1.0, green: 0.72, blue: 0.28, alpha: 0.95) // amber
+        default:
+            text = "MISS"
+            color = UIColor(red: 0.98, green: 0.38, blue: 0.38, alpha: 0.95) // red
         }
 
         let label = SKLabelNode(fontNamed: "AvenirNext-Heavy")
         label.text = text
-        label.fontSize = text == "MISS" ? 18 : 16
-        label.fontColor = UIColor(white: 0.86, alpha: 0.86)
+        label.fontSize = text == "MISS" ? 20 : 17
+        label.fontColor = color
         label.position = CGPoint(x: point.x, y: point.y + 16)
         label.zPosition = 68
         label.alpha = 0
@@ -4768,11 +4781,32 @@ final class GameScene: SKScene {
     }
 
     private func wallShouldShowPerfectBanner(for combo: Int) -> Bool {
-        false
+        // Always show on the first few perfects so players learn the grade.
+        // After that, fire at every 5th combo hit to celebrate streaks without
+        // flooding the screen.
+        if combo <= 3 { return true }
+        return combo % 5 == 0
     }
 
     private func wallPerfectMomentText(for combo: Int, strokeSide: StrokeSide) -> String {
-        ""
+        // Stroke-specific opening labels keep early banners readable.
+        // After the first few, shift to combo-aware praise.
+        switch combo {
+        case 1:
+            return strokeSide == .forehand ? "CLEAN FH" : "CLEAN BH"
+        case 2:
+            return "KEEP IT GOING"
+        case 3:
+            return "LOCKED IN"
+        case 5, 10:
+            return "PERFECT ×\(combo)"
+        case 15, 20:
+            return "ON FIRE ×\(combo)"
+        case 25, 30:
+            return "UNSTOPPABLE ×\(combo)"
+        default:
+            return combo >= 20 ? "MACHINE ×\(combo)" : "PERFECT ×\(combo)"
+        }
     }
 
     private func wallStrokeAccentColor(for strokeSide: StrokeSide, quality: HitQuality) -> UIColor {
