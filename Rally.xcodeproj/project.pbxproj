@@ -72,6 +72,7 @@
 		7D9763E612E97F9FDF990293 /* Achievement.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13EC070EAEAE22952B92CB9E /* Achievement.swift */; };
 		7F9ADA9B5994171DF66D1A49 /* NotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC50EAB42315FB826B903686 /* NotificationManager.swift */; };
 		82C67C56F779D0AC0010AA26 /* JournalEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CFD3B25EF14785E4C2963B4 /* JournalEditorView.swift */; };
+		489D7C90D021459EA9A8C282 /* JournalEntrySources.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5B00F75CCFC4D41B2835BFE /* JournalEntrySources.swift */; };
 		845079EA54148E89DC5887B6 /* CourtUnlocks.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1449DD6A4ED30E2180181485 /* CourtUnlocks.swift */; };
 		8852C13862BFBDABFCABA8DE /* GameEventBus.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF925085C27A6B0342C490D9 /* GameEventBus.swift */; };
 		8C172C3912A676FF96D3B959 /* GameOverView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 628611C9410B1556FD645FEB /* GameOverView.swift */; };
@@ -149,6 +150,7 @@
 		22068F277EDC6210C0336E91 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
 		2B7B0A4F703FB2055D568AC2 /* RhythmSpawner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RhythmSpawner.swift; sourceTree = "<group>"; };
 		2CFD3B25EF14785E4C2963B4 /* JournalEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JournalEditorView.swift; sourceTree = "<group>"; };
+		F5B00F75CCFC4D41B2835BFE /* JournalEntrySources.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JournalEntrySources.swift; sourceTree = "<group>"; };
 		379DA97B8C58687215605C0B /* LogsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogsView.swift; sourceTree = "<group>"; };
 		3F8DC4F6380B63E3BC7E6652 /* CompetitionViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompetitionViews.swift; sourceTree = "<group>"; };
 		446B15BB8FE53901E8CCAC3D /* RallyTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = RallyTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -437,6 +439,7 @@
 			isa = PBXGroup;
 			children = (
 				2CFD3B25EF14785E4C2963B4 /* JournalEditorView.swift */,
+				F5B00F75CCFC4D41B2835BFE /* JournalEntrySources.swift */,
 				E0835A476258CF5AA3F6BC53 /* JournalView.swift */,
 			);
 			path = Journal;
@@ -738,6 +741,7 @@
 				23291AC23C63715A3E5E98F1 /* HomeView.swift in Sources */,
 				B2F8207D8355E282E620DE21 /* IconicCourtsCatalog.swift in Sources */,
 				82C67C56F779D0AC0010AA26 /* JournalEditorView.swift in Sources */,
+				489D7C90D021459EA9A8C282 /* JournalEntrySources.swift in Sources */,
 				AC6FF132662B27EE9AEEFAA8 /* JournalModels.swift in Sources */,
 				3C76C0D63513653412C379FA /* JournalPromptLibrary.swift in Sources */,
 				B4C755E779DFB84262C0CF13 /* JournalView.swift in Sources */,

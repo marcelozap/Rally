@@ -48,6 +48,9 @@ final class JournalEntry {
     var tagsCSV: String = ""
     var focusRaw: String = JournalFocus.general.rawValue
     var promptId: String = ""
+    /// Entry provenance — see `JournalEntrySourceKind`. Defaults to manual
+    /// so existing rows migrate cleanly.
+    var sourceRaw: String = JournalEntrySourceKind.manual.rawValue
 
     init(
         date: Date = Date(),
@@ -83,5 +86,10 @@ final class JournalEntry {
     var focus: JournalFocus {
         get { JournalFocus(rawValue: focusRaw) ?? .general }
         set { focusRaw = newValue.rawValue }
+    }
+
+    var sourceKind: JournalEntrySourceKind {
+        get { JournalEntrySourceKind(rawValue: sourceRaw) ?? .manual }
+        set { sourceRaw = newValue.rawValue }
     }
 }
