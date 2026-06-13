@@ -473,8 +473,8 @@ struct ShopView: View {
 
             if let heroItem {
                 // Same S-3 rule as apparelSwatch: real imagery first,
-                // category icon only while loading or with no catalog entry.
-                if let imageURL = RallyReferralCatalog.referralItem(matchingShopItemID: heroItem.id)?.productImageURL {
+                // custom court-gear silhouette only while loading/failing.
+                if let imageURL = RallyMerchImageResolver.referralItem(for: heroItem)?.productImageURL {
                     AsyncImage(url: imageURL) { phase in
                         switch phase {
                         case .success(let image):
@@ -483,15 +483,21 @@ struct ShopView: View {
                                 .scaledToFit()
                                 .padding(10)
                         default:
-                            Image(systemName: heroItem.category.iconSystemName)
-                                .font(.system(size: 26, weight: .bold))
-                                .foregroundStyle(.white)
+                            RallyMerchFallbackGlyph(
+                                category: heroItem.category,
+                                primary: RallyUIKit.Palette.frost,
+                                accent: tint
+                            )
+                            .padding(18)
                         }
                     }
                 } else {
-                    Image(systemName: heroItem.category.iconSystemName)
-                        .font(.system(size: 26, weight: .bold))
-                        .foregroundStyle(.white)
+                    RallyMerchFallbackGlyph(
+                        category: heroItem.category,
+                        primary: RallyUIKit.Palette.frost,
+                        accent: tint
+                    )
+                    .padding(18)
                 }
             }
         }
@@ -671,17 +677,19 @@ struct ShopView: View {
 
     private func apparelSwatch(_ item: ShopItem, width: CGFloat, height: CGFloat) -> some View {
         let accent = item.accentColor ?? categoryTint(item.category)
-        // S-3 audit gate: when the referral catalog carries real product
-        // imagery, render it — the SF Symbol is only a loading/failure
-        // fallback, never the terminal state for catalog-backed items.
-        let productImageURL = RallyReferralCatalog.referralItem(matchingShopItemID: item.id)?.productImageURL
+        // S-3 audit gate: product imagery first. `ShopItem` IDs and the
+        // referral feed are not always 1:1 yet, so fall back by slot/brand
+        // before using the custom drawn tennis-gear silhouette.
+        let referralItem = RallyMerchImageResolver.referralItem(for: item)
+        let productImageURL = referralItem?.productImageURL
+        let productAccent = referralItem.flatMap { Color(hex: $0.accentColorHex) } ?? accent
         return ZStack {
             RoundedRectangle(cornerRadius: 24)
                 .fill(
                     LinearGradient(
                         colors: [
                             item.color.opacity(0.96),
-                            accent.opacity(0.5),
+                            productAccent.opacity(0.5),
                             RallyUIKit.Palette.obsidian.opacity(0.9)
                         ],
                         startPoint: .topLeading,
@@ -700,25 +708,28 @@ struct ShopView: View {
                             .scaledToFit()
                             .padding(min(width, height) * 0.10)
                     default:
-                        swatchCategoryIcon(item, width: width, height: height)
+                        swatchCategoryIcon(item, accent: productAccent, width: width, height: height)
                     }
                 }
             } else {
-                swatchCategoryIcon(item, width: width, height: height)
+                swatchCategoryIcon(item, accent: productAccent, width: width, height: height)
             }
         }
         .frame(width: width, height: height)
         .clipShape(RoundedRectangle(cornerRadius: 24))
-        .shadow(color: accent.opacity(0.14), radius: 16, x: 0, y: 10)
+        .shadow(color: productAccent.opacity(0.14), radius: 16, x: 0, y: 10)
     }
 
-    /// Branded category icon used as the swatch's loading state and as the
-    /// terminal state only for items with no catalog imagery.
-    private func swatchCategoryIcon(_ item: ShopItem, width: CGFloat, height: CGFloat) -> some View {
-        Image(systemName: item.category.iconSystemName)
-            .font(.system(size: min(width, height) * 0.28, weight: .bold))
-            .foregroundStyle(.white)
-            .shadow(color: Color.black.opacity(0.25), radius: 8, y: 5)
+    /// Custom tennis-gear silhouette used as the swatch's loading/failure
+    /// state. No terminal SF Symbol fallbacks on product cards.
+    private func swatchCategoryIcon(_ item: ShopItem, accent: Color, width: CGFloat, height: CGFloat) -> some View {
+        RallyMerchFallbackGlyph(
+            category: item.category,
+            primary: RallyUIKit.Palette.frost,
+            accent: accent
+        )
+        .padding(min(width, height) * 0.20)
+        .shadow(color: Color.black.opacity(0.25), radius: 8, y: 5)
     }
 
     private func shopTileGradient(accent: Color, itemColor: Color) -> LinearGradient {
@@ -934,6 +945,336 @@ private struct FloatingKitFigure: View {
             }
             .shadow(color: Color.white.opacity(0.16), radius: 18, y: 6)
         }
+    }
+}
+
+enum RallyMerchImageResolver {
+    static func referralItem(for item: ShopItem) -> RallyGearItem? {
+        if let exact = RallyReferralCatalog.referralItem(matchingShopItemID: item.id) {
+            return exact
+        }
+
+        guard let slot = referralSlot(for: item.category) else { return nil }
+        let candidates = RallyReferralCatalog.items(in: slot)
+        guard !candidates.isEmpty else { return nil }
+
+        let itemBrand = normalized(item.brand)
+        if let brandMatch = candidates.first(where: { normalized($0.brand) == itemBrand }) {
+            return brandMatch
+        }
+
+        let nameTokens = tokenSet(item.name)
+        if let nameMatch = candidates.first(where: { !tokenSet($0.name).isDisjoint(with: nameTokens) }) {
+            return nameMatch
+        }
+
+        return candidates.first
+    }
+
+    static func referralSlot(for category: ShopItem.Category) -> ReferralGearSlot? {
+        switch category {
+        case .top: return .top
+        case .bottom: return .shorts
+        case .shoes: return .shoes
+        case .racket: return .racket
+        case .accessory: return .headband
+        case .bag: return nil
+        }
+    }
+
+    private static func normalized(_ value: String) -> String {
+        value
+            .lowercased()
+            .filter { $0.isLetter || $0.isNumber }
+    }
+
+    private static func tokenSet(_ value: String) -> Set<String> {
+        let separators = CharacterSet.alphanumerics.inverted
+        return Set(
+            value
+                .lowercased()
+                .components(separatedBy: separators)
+                .filter { $0.count >= 4 }
+        )
+    }
+}
+
+struct RallyMerchFallbackGlyph: View {
+    let category: ShopItem.Category
+    let primary: Color
+    let accent: Color
+
+    var body: some View {
+        GeometryReader { proxy in
+            let size = proxy.size
+            ZStack {
+                switch category {
+                case .top:
+                    RallyTopGlyphShape()
+                        .fill(glyphGradient(size: size))
+                    RallyTopCollarShape()
+                        .stroke(accent.opacity(0.92), lineWidth: max(1.2, size.width * 0.035))
+                    RallyTopHemShape()
+                        .stroke(Color.black.opacity(0.22), lineWidth: max(1, size.width * 0.025))
+
+                case .bottom:
+                    RallyShortsGlyphShape()
+                        .fill(glyphGradient(size: size))
+                    RallyShortsWaistShape()
+                        .fill(Color.black.opacity(0.26))
+                    RallyShortsCreaseShape()
+                        .stroke(Color.white.opacity(0.30), lineWidth: max(1, size.width * 0.018))
+
+                case .shoes:
+                    RallyTennisShoeGlyphShape()
+                        .fill(glyphGradient(size: size))
+                    RallyShoeSoleShape()
+                        .fill(primary.opacity(0.92))
+                    RallyShoeLaceShape()
+                        .stroke(accent.opacity(0.92), lineWidth: max(1.2, size.width * 0.030))
+                    RallyShoeToeCapShape()
+                        .stroke(Color.white.opacity(0.58), lineWidth: max(1, size.width * 0.022))
+
+                case .racket:
+                    RallyRacketFallbackGlyph(primary: primary, accent: accent)
+
+                case .bag:
+                    RallyBagGlyphShape()
+                        .fill(glyphGradient(size: size))
+                    RallyBagHandleShape()
+                        .stroke(primary.opacity(0.75), lineWidth: max(1.4, size.width * 0.040))
+
+                case .accessory:
+                    RallyHeadbandGlyphShape()
+                        .fill(glyphGradient(size: size))
+                    RallyHeadbandStripeShape()
+                        .stroke(primary.opacity(0.82), lineWidth: max(1.2, size.width * 0.030))
+                }
+            }
+            .frame(width: size.width, height: size.height)
+        }
+        .aspectRatio(1, contentMode: .fit)
+    }
+
+    private func glyphGradient(size: CGSize) -> LinearGradient {
+        LinearGradient(
+            colors: [
+                primary.opacity(0.98),
+                primary.opacity(0.78),
+                accent.opacity(0.88)
+            ],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
+    }
+}
+
+private struct RallyRacketFallbackGlyph: View {
+    let primary: Color
+    let accent: Color
+
+    var body: some View {
+        GeometryReader { proxy in
+            let w = proxy.size.width
+            let h = proxy.size.height
+
+            ZStack {
+                Ellipse()
+                    .stroke(primary.opacity(0.95), lineWidth: max(2, w * 0.08))
+                    .frame(width: w * 0.48, height: h * 0.62)
+                    .offset(x: w * 0.08, y: -h * 0.13)
+                Ellipse()
+                    .stroke(accent.opacity(0.38), lineWidth: max(1, w * 0.025))
+                    .frame(width: w * 0.35, height: h * 0.47)
+                    .offset(x: w * 0.08, y: -h * 0.13)
+
+                Capsule()
+                    .fill(primary.opacity(0.94))
+                    .frame(width: w * 0.12, height: h * 0.48)
+                    .rotationEffect(.degrees(33))
+                    .offset(x: -w * 0.15, y: h * 0.21)
+                Capsule()
+                    .fill(accent.opacity(0.72))
+                    .frame(width: w * 0.07, height: h * 0.22)
+                    .rotationEffect(.degrees(33))
+                    .offset(x: -w * 0.27, y: h * 0.35)
+            }
+        }
+    }
+}
+
+private struct RallyTopGlyphShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        var p = Path()
+        let w = rect.width
+        let h = rect.height
+        p.move(to: CGPoint(x: rect.minX + w * 0.30, y: rect.minY + h * 0.18))
+        p.addLine(to: CGPoint(x: rect.minX + w * 0.43, y: rect.minY + h * 0.11))
+        p.addQuadCurve(to: CGPoint(x: rect.minX + w * 0.57, y: rect.minY + h * 0.11), control: CGPoint(x: rect.midX, y: rect.minY + h * 0.22))
+        p.addLine(to: CGPoint(x: rect.minX + w * 0.70, y: rect.minY + h * 0.18))
+        p.addLine(to: CGPoint(x: rect.minX + w * 0.91, y: rect.minY + h * 0.36))
+        p.addLine(to: CGPoint(x: rect.minX + w * 0.77, y: rect.minY + h * 0.55))
+        p.addLine(to: CGPoint(x: rect.minX + w * 0.69, y: rect.minY + h * 0.44))
+        p.addLine(to: CGPoint(x: rect.minX + w * 0.68, y: rect.minY + h * 0.88))
+        p.addLine(to: CGPoint(x: rect.minX + w * 0.32, y: rect.minY + h * 0.88))
+        p.addLine(to: CGPoint(x: rect.minX + w * 0.31, y: rect.minY + h * 0.44))
+        p.addLine(to: CGPoint(x: rect.minX + w * 0.23, y: rect.minY + h * 0.55))
+        p.addLine(to: CGPoint(x: rect.minX + w * 0.09, y: rect.minY + h * 0.36))
+        p.closeSubpath()
+        return p
+    }
+}
+
+private struct RallyTopCollarShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        var p = Path()
+        let w = rect.width
+        let h = rect.height
+        p.move(to: CGPoint(x: rect.minX + w * 0.42, y: rect.minY + h * 0.15))
+        p.addLine(to: CGPoint(x: rect.midX, y: rect.minY + h * 0.31))
+        p.addLine(to: CGPoint(x: rect.minX + w * 0.58, y: rect.minY + h * 0.15))
+        return p
+    }
+}
+
+private struct RallyTopHemShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        var p = Path()
+        p.move(to: CGPoint(x: rect.minX + rect.width * 0.35, y: rect.minY + rect.height * 0.80))
+        p.addLine(to: CGPoint(x: rect.minX + rect.width * 0.65, y: rect.minY + rect.height * 0.80))
+        return p
+    }
+}
+
+private struct RallyShortsGlyphShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        var p = Path()
+        let w = rect.width
+        let h = rect.height
+        p.move(to: CGPoint(x: rect.minX + w * 0.18, y: rect.minY + h * 0.18))
+        p.addQuadCurve(to: CGPoint(x: rect.minX + w * 0.82, y: rect.minY + h * 0.18), control: CGPoint(x: rect.midX, y: rect.minY + h * 0.11))
+        p.addLine(to: CGPoint(x: rect.minX + w * 0.74, y: rect.minY + h * 0.86))
+        p.addQuadCurve(to: CGPoint(x: rect.minX + w * 0.54, y: rect.minY + h * 0.84), control: CGPoint(x: rect.minX + w * 0.64, y: rect.minY + h * 0.94))
+        p.addLine(to: CGPoint(x: rect.midX, y: rect.minY + h * 0.54))
+        p.addLine(to: CGPoint(x: rect.minX + w * 0.46, y: rect.minY + h * 0.84))
+        p.addQuadCurve(to: CGPoint(x: rect.minX + w * 0.26, y: rect.minY + h * 0.86), control: CGPoint(x: rect.minX + w * 0.36, y: rect.minY + h * 0.94))
+        p.closeSubpath()
+        return p
+    }
+}
+
+private struct RallyShortsWaistShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        Path(roundedRect: CGRect(
+            x: rect.minX + rect.width * 0.20,
+            y: rect.minY + rect.height * 0.14,
+            width: rect.width * 0.60,
+            height: rect.height * 0.13
+        ), cornerRadius: rect.height * 0.06)
+    }
+}
+
+private struct RallyShortsCreaseShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        var p = Path()
+        p.move(to: CGPoint(x: rect.midX, y: rect.minY + rect.height * 0.30))
+        p.addLine(to: CGPoint(x: rect.midX, y: rect.minY + rect.height * 0.78))
+        return p
+    }
+}
+
+private struct RallyTennisShoeGlyphShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        var p = Path()
+        let w = rect.width
+        let h = rect.height
+        p.move(to: CGPoint(x: rect.minX + w * 0.16, y: rect.minY + h * 0.55))
+        p.addQuadCurve(to: CGPoint(x: rect.minX + w * 0.42, y: rect.minY + h * 0.30), control: CGPoint(x: rect.minX + w * 0.25, y: rect.minY + h * 0.32))
+        p.addQuadCurve(to: CGPoint(x: rect.minX + w * 0.80, y: rect.minY + h * 0.46), control: CGPoint(x: rect.minX + w * 0.63, y: rect.minY + h * 0.28))
+        p.addQuadCurve(to: CGPoint(x: rect.minX + w * 0.93, y: rect.minY + h * 0.65), control: CGPoint(x: rect.minX + w * 0.93, y: rect.minY + h * 0.49))
+        p.addLine(to: CGPoint(x: rect.minX + w * 0.91, y: rect.minY + h * 0.76))
+        p.addLine(to: CGPoint(x: rect.minX + w * 0.17, y: rect.minY + h * 0.76))
+        p.addQuadCurve(to: CGPoint(x: rect.minX + w * 0.16, y: rect.minY + h * 0.55), control: CGPoint(x: rect.minX + w * 0.08, y: rect.minY + h * 0.67))
+        return p
+    }
+}
+
+private struct RallyShoeSoleShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        Path(roundedRect: CGRect(
+            x: rect.minX + rect.width * 0.12,
+            y: rect.minY + rect.height * 0.72,
+            width: rect.width * 0.82,
+            height: rect.height * 0.12
+        ), cornerRadius: rect.height * 0.06)
+    }
+}
+
+private struct RallyShoeLaceShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        var p = Path()
+        let w = rect.width
+        let h = rect.height
+        for i in 0..<3 {
+            let x = rect.minX + w * (0.43 + CGFloat(i) * 0.09)
+            p.move(to: CGPoint(x: x, y: rect.minY + h * 0.48))
+            p.addLine(to: CGPoint(x: x + w * 0.08, y: rect.minY + h * 0.59))
+        }
+        return p
+    }
+}
+
+private struct RallyShoeToeCapShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        var p = Path()
+        let w = rect.width
+        let h = rect.height
+        p.move(to: CGPoint(x: rect.minX + w * 0.73, y: rect.minY + h * 0.49))
+        p.addQuadCurve(to: CGPoint(x: rect.minX + w * 0.90, y: rect.minY + h * 0.65), control: CGPoint(x: rect.minX + w * 0.91, y: rect.minY + h * 0.49))
+        return p
+    }
+}
+
+private struct RallyBagGlyphShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        Path(roundedRect: CGRect(
+            x: rect.minX + rect.width * 0.18,
+            y: rect.minY + rect.height * 0.30,
+            width: rect.width * 0.64,
+            height: rect.height * 0.52
+        ), cornerRadius: rect.width * 0.12)
+    }
+}
+
+private struct RallyBagHandleShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        var p = Path()
+        p.move(to: CGPoint(x: rect.minX + rect.width * 0.34, y: rect.minY + rect.height * 0.35))
+        p.addQuadCurve(
+            to: CGPoint(x: rect.minX + rect.width * 0.66, y: rect.minY + rect.height * 0.35),
+            control: CGPoint(x: rect.midX, y: rect.minY + rect.height * 0.12)
+        )
+        return p
+    }
+}
+
+private struct RallyHeadbandGlyphShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        Path(roundedRect: CGRect(
+            x: rect.minX + rect.width * 0.13,
+            y: rect.minY + rect.height * 0.42,
+            width: rect.width * 0.74,
+            height: rect.height * 0.20
+        ), cornerRadius: rect.height * 0.10)
+    }
+}
+
+private struct RallyHeadbandStripeShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        var p = Path()
+        p.move(to: CGPoint(x: rect.minX + rect.width * 0.25, y: rect.midY))
+        p.addLine(to: CGPoint(x: rect.minX + rect.width * 0.75, y: rect.midY))
+        return p
     }
 }
 

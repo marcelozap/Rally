@@ -347,16 +347,8 @@ struct LockerHubView: View {
                     .blur(radius: 32)
                     .offset(x: -16, y: -8)
 
-                Image(systemName: item.category.iconSystemName)
-                    .font(.system(size: item.category == .racket ? 76 : 64, weight: .bold))
-                    .foregroundStyle(
-                        LinearGradient(
-                            colors: [.white, .white.opacity(0.90)],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-                    )
-                    .shadow(color: accent.opacity(0.32), radius: 14, y: 7)
+                lockerApparelSwatch(item, tint: accent, width: 156, height: 172)
+                    .scaleEffect(item.category == .racket ? 1.02 : 1.08)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
 
                 if isEquipped(item) {
@@ -474,29 +466,55 @@ struct LockerHubView: View {
         }
     }
 
-    private func lockerApparelSwatch(_ item: ShopItem, tint: Color) -> some View {
+    private func lockerApparelSwatch(_ item: ShopItem, tint: Color, width: CGFloat? = nil, height: CGFloat? = nil) -> some View {
         let accent = item.accentColor ?? tint
+        let referralItem = RallyMerchImageResolver.referralItem(for: item)
+        let productImageURL = referralItem?.productImageURL
+        let productAccent = referralItem.flatMap { Color(hex: $0.accentColorHex) } ?? accent
+        let resolvedWidth = width ?? (item.category == .racket ? 220 : 72)
+        let resolvedHeight = height ?? (item.category == .racket ? 100 : (item.category == .shoes ? 56 : 84))
+
         return ZStack {
             RoundedRectangle(cornerRadius: 20)
                 .fill(
                     LinearGradient(
                         colors: [
                             item.color.opacity(0.96),
-                            accent.opacity(0.65),
+                            productAccent.opacity(0.65),
                             RallyUIKit.Palette.obsidian.opacity(0.9)
                         ],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     )
                 )
-            Image(systemName: item.category.iconSystemName)
-                .font(.system(size: item.category == .racket ? 28 : 20, weight: .bold))
-                .foregroundStyle(.white)
+
+            if let productImageURL {
+                AsyncImage(url: productImageURL) { phase in
+                    switch phase {
+                    case .success(let image):
+                        image
+                            .resizable()
+                            .scaledToFit()
+                            .padding(min(resolvedWidth, resolvedHeight) * 0.10)
+                    default:
+                        RallyMerchFallbackGlyph(
+                            category: item.category,
+                            primary: RallyUIKit.Palette.frost,
+                            accent: productAccent
+                        )
+                        .padding(min(resolvedWidth, resolvedHeight) * 0.20)
+                    }
+                }
+            } else {
+                RallyMerchFallbackGlyph(
+                    category: item.category,
+                    primary: RallyUIKit.Palette.frost,
+                    accent: productAccent
+                )
+                .padding(min(resolvedWidth, resolvedHeight) * 0.20)
+            }
         }
-        .frame(
-            width: item.category == .racket ? 220 : 72,
-            height: item.category == .racket ? 100 : (item.category == .shoes ? 56 : 84)
-        )
+        .frame(width: resolvedWidth, height: resolvedHeight)
         .overlay(RoundedRectangle(cornerRadius: 20).stroke(Color.white.opacity(0.12), lineWidth: 1))
     }
 
