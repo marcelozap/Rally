@@ -52,6 +52,19 @@ final class JournalEntry {
     /// so existing rows migrate cleanly.
     var sourceRaw: String = JournalEntrySourceKind.manual.rawValue
 
+    // MARK: Rally session metrics (nil for manual entries)
+    //
+    // Stored directly so JournalInsights and the "This Week" strip can surface
+    // real aggregates (best score, best combo, avg accuracy) without scraping
+    // the entry body. SwiftData migrates nil for existing rows cleanly.
+
+    /// Final score of the auto-logged rally session.
+    var rallyScore: Int? = nil
+    /// Best combo reached in the auto-logged rally session.
+    var rallyMaxCombo: Int? = nil
+    /// Accuracy as a percentage 0–100 of the auto-logged rally session.
+    var rallyAccuracyPct: Int? = nil
+
     init(
         date: Date = Date(),
         title: String = "",

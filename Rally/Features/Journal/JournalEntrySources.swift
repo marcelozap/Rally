@@ -36,6 +36,10 @@ struct JournalEntryDraft {
     var tags: [String]
     var focus: JournalFocus
     var source: JournalEntrySourceKind
+    // Structured rally metrics — nil for manual/Garmin drafts
+    var rallyScore: Int? = nil
+    var rallyMaxCombo: Int? = nil
+    var rallyAccuracyPct: Int? = nil
 }
 
 // MARK: - Source protocol
@@ -79,7 +83,10 @@ struct RallySessionJournalSource: JournalEntrySource {
             mood: Self.mood(for: result),
             tags: ["auto", "wall-rally"],
             focus: .rallyGame,
-            source: .rallySession
+            source: .rallySession,
+            rallyScore: result.finalScore,
+            rallyMaxCombo: result.maxCombo,
+            rallyAccuracyPct: Int((result.accuracy * 100).rounded())
         )]
     }
 
@@ -136,6 +143,9 @@ enum JournalAutoLogger {
                 focus: draft.focus
             )
             entry.sourceRaw = draft.source.rawValue
+            entry.rallyScore = draft.rallyScore
+            entry.rallyMaxCombo = draft.rallyMaxCombo
+            entry.rallyAccuracyPct = draft.rallyAccuracyPct
             modelContext.insert(entry)
         }
         try? modelContext.save()

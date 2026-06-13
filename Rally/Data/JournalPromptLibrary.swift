@@ -125,10 +125,22 @@ struct JournalInsights: Equatable {
     var entriesThisMonth: Int
     var totalEntries: Int
 
+    // Rally-session aggregates for the "This Week" strip
+    var rallySessionsThisWeek: Int
+    var bestScoreThisWeek: Int?
+    var bestComboThisWeek: Int?
+    /// Average accuracy this week as a percentage 0–100, nil if no sessions.
+    var avgAccuracyPctThisWeek: Int?
+
     static func compute(entries: [JournalEntry], now: Date = Date(), calendar: Calendar = .current) -> JournalInsights {
         let total = entries.count
         guard total > 0 else {
-            return JournalInsights(journalingStreakDays: 0, entriesThisWeek: 0, entriesThisMonth: 0, totalEntries: 0)
+            return JournalInsights(
+                journalingStreakDays: 0, entriesThisWeek: 0,
+                entriesThisMonth: 0, totalEntries: 0,
+                rallySessionsThisWeek: 0,
+                bestScoreThisWeek: nil, bestComboThisWeek: nil, avgAccuracyPctThisWeek: nil
+            )
         }
 
         let days = Set(entries.map { calendar.startOfDay(for: $0.date) })
@@ -146,14 +158,24 @@ struct JournalInsights: Equatable {
         let startOfWeek = calendar.date(from: calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: now)) ?? now
         let startOfMonth = calendar.date(from: calendar.dateComponents([.year, .month], from: now)) ?? now
 
-        let weekCount = entries.filter { $0.date >= startOfWeek }.count
-        let monthCount = entries.filter { $0.date >= startOfMonth }.count
+        let weekEntries  = entries.filter { $0.date >= startOfWeek }
+        let monthEntries = entries.filter { $0.date >= startOfMonth }
+
+        let weekRallySessions = weekEntries.filter { $0.sourceKind == .rallySession }
+        let bestScore   = weekRallySessions.compactMap(\.rallyScore).max()
+        let bestCombo   = weekRallySessions.compactMap(\.rallyMaxCombo).max()
+        let accuracies  = weekRallySessions.compactMap(\.rallyAccuracyPct)
+        let avgAccuracy = accuracies.isEmpty ? nil : Int(accuracies.reduce(0, +) / accuracies.count)
 
         return JournalInsights(
             journalingStreakDays: streak,
-            entriesThisWeek: weekCount,
-            entriesThisMonth: monthCount,
-            totalEntries: total
+            entriesThisWeek: weekEntries.count,
+            entriesThisMonth: monthEntries.count,
+            totalEntries: total,
+            rallySessionsThisWeek: weekRallySessions.count,
+            bestScoreThisWeek: bestScore,
+            bestComboThisWeek: bestCombo,
+            avgAccuracyPctThisWeek: avgAccuracy
         )
     }
 }
