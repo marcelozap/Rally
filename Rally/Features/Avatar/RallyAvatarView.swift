@@ -427,7 +427,7 @@ struct RallyAvatarView: View {
     ) {
         let hairScale = layout.headPathScale * 0.98
         let headY = layout.headY + idleLift
-        let hairY = layout.headY + 7.8 * scale + idleLift * 0.55
+        let hairY = layout.headY + 4.6 * scale + idleLift * 0.55
         let shouldDrawHair = appearance.hairStyle != .bald && appearance.hairStyle != .cap
 
         if shouldDrawHair {
@@ -437,7 +437,7 @@ struct RallyAvatarView: View {
                 centerX: centerX,
                 baseline: baseline,
                 x: 0,
-                y: layout.headY + idleLift * 0.42 + 3.8 * scale,
+                y: layout.headY + idleLift * 0.42 + 1.4 * scale,
                 fill: Color(uiColor: appearance.hairUIColor.rallyBlended(withFraction: 0.08, of: .white)),
                 stroke: .clear,
                 lineWidth: 0

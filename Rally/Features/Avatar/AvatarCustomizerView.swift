@@ -64,8 +64,8 @@ struct AvatarCustomizerView: View {
                 .padding(.horizontal, 20)
 
                 VStack(alignment: .leading, spacing: 18) {
-                    namingSection
                     handednessSection
+                    namingSection
                     skinSection
                     hairStyleSection
                     hairColorSection
@@ -155,19 +155,43 @@ struct AvatarCustomizerView: View {
     }
 
     private var customizationReadout: some View {
-        HStack(spacing: 8) {
-            StatPill(label: config.bodyType.displayName, tint: RallyUIKit.Palette.cyan)
-            StatPill(label: config.hairStyle.displayName, tint: RallyUIKit.Palette.rose)
-            StatPill(label: config.skinTone.displayName, tint: RallyUIKit.Palette.champagne)
-            Button {
-                withAnimation(.spring(response: 0.20, dampingFraction: 0.80)) {
-                    gamePreferences.dominantHand = gamePreferences.dominantHand == .right ? .left : .right
-                }
-            } label: {
-                StatPill(label: gamePreferences.dominantHand == .left ? "Lefty" : "Righty", tint: RallyUIKit.Palette.cyan)
+        VStack(spacing: 10) {
+            HStack(spacing: 8) {
+                StatPill(label: config.bodyType.displayName, tint: RallyUIKit.Palette.cyan)
+                StatPill(label: config.hairStyle.displayName, tint: RallyUIKit.Palette.rose)
+                StatPill(label: config.skinTone.displayName, tint: RallyUIKit.Palette.champagne)
             }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Switch dominant hand")
+
+            HStack(spacing: 8) {
+                Text("Racket hand")
+                    .font(RallyUIKit.Typography.label(.caption2, weight: .bold))
+                    .tracking(1.4)
+                    .foregroundStyle(.white.opacity(0.72))
+                    .textCase(.uppercase)
+
+                Spacer(minLength: 8)
+
+                ForEach(GamePreferences.DominantHand.allCases) { hand in
+                    HandednessPreviewChip(
+                        title: hand == .left ? "Lefty" : "Righty",
+                        selected: gamePreferences.dominantHand == hand
+                    ) {
+                        withAnimation(.spring(response: 0.20, dampingFraction: 0.80)) {
+                            gamePreferences.dominantHand = hand
+                        }
+                    }
+                }
+            }
+            .padding(.vertical, 7)
+            .padding(.horizontal, 10)
+            .background(
+                Capsule()
+                    .fill(Color.black.opacity(0.42))
+            )
+            .overlay(
+                Capsule()
+                    .stroke(RallyUIKit.Palette.cyan.opacity(0.24), lineWidth: 1)
+            )
         }
     }
 
@@ -223,7 +247,7 @@ struct AvatarCustomizerView: View {
         sectionCard(title: "Hair style") {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 10) {
-                    ForEach(AvatarHairStyle.allCases) { style in
+                    ForEach(AvatarHairStyle.customizerCases) { style in
                         Chip(
                             label: style.displayName,
                             selected: config.hairStyle == style
@@ -346,6 +370,32 @@ private struct StatPill: View {
                 Capsule()
                     .stroke(tint.opacity(0.45), lineWidth: 1)
             )
+    }
+}
+
+private struct HandednessPreviewChip: View {
+    let title: String
+    let selected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Text(title)
+                .font(RallyUIKit.Typography.label(.caption, weight: .black))
+                .foregroundStyle(selected ? Color.black : Color.white.opacity(0.78))
+                .padding(.vertical, 7)
+                .padding(.horizontal, 12)
+                .background(
+                    Capsule()
+                        .fill(selected ? RallyUIKit.Palette.cyan : Color.white.opacity(0.10))
+                )
+                .overlay(
+                    Capsule()
+                        .stroke(selected ? Color.white.opacity(0.22) : Color.white.opacity(0.08), lineWidth: 1)
+                )
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(title)
     }
 }
 

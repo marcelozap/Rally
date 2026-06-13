@@ -61,6 +61,9 @@ final class AvatarConfig {
         if hairColorHex == "#3A2A1A" || hairColorHex == "#2C221D" || hairColorHex == "#101114" || isStarterIdentity {
             hairColorHex = "#050507"
         }
+        if hairStyle == .bald {
+            hairStyle = .medium
+        }
 
         guard isStarterIdentity || !hasCompletedSetup || isUsingStarterLoadout else { return }
 
@@ -89,6 +92,9 @@ enum AvatarSkinTone: String, CaseIterable, Identifiable {
 enum AvatarHairStyle: String, CaseIterable, Identifiable {
     case bald, short, medium, long, ponytail, bun, headband, cap
     var id: String { rawValue }
+    static var customizerCases: [AvatarHairStyle] {
+        [.short, .medium, .long, .headband, .cap, .ponytail, .bun]
+    }
     var displayName: String {
         switch self {
         case .bald: return "Bald"
