@@ -380,7 +380,11 @@ struct GameSessionView: View {
 
         try? modelContext.save()
         // North Star §Journal: "A played session creates a useful entry."
-        JournalAutoLogger.logRallySession(result: result, modelContext: modelContext)
+        JournalAutoLogger.logRallySession(
+            result: result,
+            modelContext: modelContext,
+            appearance: avatarAppearanceStore.appearance
+        )
         RallySyncTriggers.pushAfterLocalSave(modelContext: modelContext)
         viewModel.present(result: result, outcome: outcome)
     }

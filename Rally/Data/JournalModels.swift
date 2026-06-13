@@ -65,6 +65,19 @@ final class JournalEntry {
     /// Accuracy as a percentage 0–100 of the auto-logged rally session.
     var rallyAccuracyPct: Int? = nil
 
+    // MARK: Session context (nil for manual entries)
+
+    /// Court/venue name at time of session (e.g. "Wimbledon Grass").
+    var courtName: String? = nil
+    /// Comma-separated gear names worn during the session (top, shorts, shoes).
+    var gearCSV: String? = nil
+
+    /// Decoded gear list — empty for manual entries.
+    var gearWorn: [String] {
+        guard let csv = gearCSV, !csv.isEmpty else { return [] }
+        return csv.split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) }
+    }
+
     init(
         date: Date = Date(),
         title: String = "",

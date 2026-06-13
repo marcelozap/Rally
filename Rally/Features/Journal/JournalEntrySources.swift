@@ -40,6 +40,9 @@ struct JournalEntryDraft {
     var rallyScore: Int? = nil
     var rallyMaxCombo: Int? = nil
     var rallyAccuracyPct: Int? = nil
+    // Session context — nil for manual/Garmin drafts
+    var courtName: String? = nil
+    var gearCSV: String? = nil
 }
 
 // MARK: - Source protocol
@@ -61,6 +64,10 @@ protocol JournalEntrySource {
 struct RallySessionJournalSource: JournalEntrySource {
     let result: GameResult
     let endedAt: Date
+    /// Court name at session time (caller reads `CourtVenue.current.displayName`).
+    let courtName: String
+    /// Comma-separated equipped gear display names (top, shorts, shoes at minimum).
+    let gearCSV: String
 
     var kind: JournalEntrySourceKind { .rallySession }
 
@@ -112,7 +119,9 @@ struct RallySessionJournalSource: JournalEntrySource {
             source: .rallySession,
             rallyScore: result.finalScore,
             rallyMaxCombo: result.maxCombo,
-            rallyAccuracyPct: Int((result.accuracy * 100).rounded())
+            rallyAccuracyPct: Int((result.accuracy * 100).rounded()),
+            courtName: courtName.isEmpty ? nil : courtName,
+            gearCSV: gearCSV.isEmpty ? nil : gearCSV
         )]
     }
 
@@ -150,9 +159,35 @@ struct GarminJournalSource: JournalEntrySource {
 @MainActor
 enum JournalAutoLogger {
 
-    static func logRallySession(result: GameResult, modelContext: ModelContext) {
+    static func logRallySession(
+        result: GameResult,
+        modelContext: ModelContext,
+        appearance: RallyAvatarAppearance? = nil
+    ) {
+        let court = CourtVenue.current.displayName
+        // Build a short gear summary: look up equipped slot IDs in the
+        // referral catalog for human-readable names. Falls back gracefully.
+        let gear: String
+        if let a = appearance {
+            let slots: [RallyGearReference?] = [a.top, a.shorts, a.shoes, a.racket]
+            let names = slots.compactMap { ref -> String? in
+                guard let ref else { return nil }
+                if let item = RallyReferralCatalog.item(id: ref.id) {
+                    return "\(item.brand) \(item.name)"
+                }
+                return nil
+            }
+            gear = names.joined(separator: ", ")
+        } else {
+            gear = ""
+        }
         persist(
-            drafts: RallySessionJournalSource(result: result, endedAt: Date()).makeDrafts(),
+            drafts: RallySessionJournalSource(
+                result: result,
+                endedAt: Date(),
+                courtName: court,
+                gearCSV: gear
+            ).makeDrafts(),
             modelContext: modelContext
         )
     }
@@ -172,6 +207,8 @@ enum JournalAutoLogger {
             entry.rallyScore = draft.rallyScore
             entry.rallyMaxCombo = draft.rallyMaxCombo
             entry.rallyAccuracyPct = draft.rallyAccuracyPct
+            entry.courtName = draft.courtName
+            entry.gearCSV = draft.gearCSV
             modelContext.insert(entry)
         }
         try? modelContext.save()
