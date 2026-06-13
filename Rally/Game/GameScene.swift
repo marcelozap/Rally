@@ -1201,12 +1201,20 @@ final class GameScene: SKScene {
             zPos: 0
         )
 
-        let hairScale = layout.headPathScale * 0.98
+        // IDENTITY LOCK: hair shares the head's exact anchor + scale (see the head
+        // node above: y = headY + 2*bodyScale, scale = headPathScale * 0.96). The
+        // hair paths are authored in the head's local frame, so co-anchoring keeps
+        // the crown attached and the fringe off the eyes — and keeps gameplay
+        // matching Home, where RallyAvatarView uses the identical rule.
+        let headAnchorY = layout.headY + 2 * bodyScale
+        let hairScale = layout.headPathScale * 0.96
+        // Shared with RallyAvatarView: lifts the front fringe off the eyes only.
+        let hairFringeLift = RallyAvatarGeometry.hairFringeLift(scale: hairScale)
         let backHair = SKShapeNode(path: RallyAvatarGeometry.premiumBackHairPath(scale: hairScale))
         backHair.fillColor = appearance.hairUIColor
         backHair.strokeColor = .clear
         backHair.lineWidth = 0
-        backHair.position = CGPoint(x: 0, y: layout.headY + 3.8 * bodyScale)
+        backHair.position = CGPoint(x: 0, y: headAnchorY)
         backHair.zPosition = showsRearAvatar ? 6.55 : 5.7
         root.addChild(backHair)
         playerBackHair = backHair
@@ -1215,7 +1223,7 @@ final class GameScene: SKScene {
         hair.fillColor = appearance.hairUIColor
         hair.strokeColor = .clear
         hair.lineWidth = 0
-        hair.position = CGPoint(x: 0, y: layout.headY + 7.8 * bodyScale)
+        hair.position = CGPoint(x: 0, y: headAnchorY + hairFringeLift)
         hair.zPosition = 7
         hair.isHidden = showsRearAvatar
         root.addChild(hair)
@@ -1240,7 +1248,7 @@ final class GameScene: SKScene {
         let hairHighlight = SKShapeNode(path: RallyAvatarGeometry.hairHighlightPath(scale: hairScale))
         hairHighlight.fillColor = UIColor(red: 0.165, green: 0.165, blue: 0.188, alpha: 0.42)
         hairHighlight.strokeColor = .clear
-        hairHighlight.position = CGPoint(x: 0, y: layout.headY + 7.8 * bodyScale)
+        hairHighlight.position = CGPoint(x: 0, y: headAnchorY + hairFringeLift)
         hairHighlight.zPosition = 7.1
         hairHighlight.isHidden = showsRearAvatar
         root.addChild(hairHighlight)

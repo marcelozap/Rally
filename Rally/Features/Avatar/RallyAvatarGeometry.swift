@@ -56,6 +56,13 @@ enum RallyAvatarGeometry {
         CGSize(width: headWidth * 0.36 * scale, height: 17 * scale)
     }
 
+    /// Vertical lift applied to the FRONT hair so the authored fringe (which the
+    /// path draws down to eye level) clears the eyes, while the back hair stays
+    /// anchored to the head so the crown reads attached. Single source of truth:
+    /// both RallyAvatarView (Home/Shop) and GameScene must use this exact value
+    /// at the head's anchor + scale, or the two avatars drift apart again.
+    static func hairFringeLift(scale: CGFloat) -> CGFloat { 2.7 * scale }
+
     static func handRadius(scale: CGFloat, armThickness: CGFloat = 13.2) -> CGFloat {
         armThickness * 0.58 * scale
     }

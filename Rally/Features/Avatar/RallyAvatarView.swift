@@ -425,9 +425,19 @@ struct RallyAvatarView: View {
         scale: CGFloat,
         idleLift: CGFloat
     ) {
-        let hairScale = layout.headPathScale * 0.98
+        // IDENTITY LOCK: hair shares the head's exact anchor + scale. The head,
+        // ears, and face are drawn at (headY, faceScale = headPathScale * 0.96);
+        // the hair paths are authored in the same local frame (crown at headTop,
+        // fringe at browY), so co-anchoring is what keeps the crown attached and
+        // the fringe off the eyes. Any per-part Y nudge or scale split re-opens
+        // the "disconnected hair / black over the face" bug. Mirrors GameScene.
+        let hairScale = layout.headPathScale * 0.96
         let headY = layout.headY + idleLift
-        let hairY = layout.headY + 4.6 * scale + idleLift * 0.55
+        // Front hair gets a small lift (in head-scale units, so Home and GameScene
+        // match) to raise the authored fringe off the eyes without detaching the
+        // crown — the back hair stays at headY to keep the scalp filled behind it.
+        let hairFringeLift = RallyAvatarGeometry.hairFringeLift(scale: hairScale)
+        let hairY = headY + hairFringeLift
         let shouldDrawHair = appearance.hairStyle != .bald && appearance.hairStyle != .cap
 
         if shouldDrawHair {
@@ -437,7 +447,7 @@ struct RallyAvatarView: View {
                 centerX: centerX,
                 baseline: baseline,
                 x: 0,
-                y: layout.headY + idleLift * 0.42 + 1.4 * scale,
+                y: headY,
                 fill: Color(uiColor: appearance.hairUIColor.rallyBlended(withFraction: 0.08, of: .white)),
                 stroke: .clear,
                 lineWidth: 0
