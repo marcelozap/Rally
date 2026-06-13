@@ -71,10 +71,35 @@ struct RallySessionJournalSource: JournalEntrySource {
 
         let accuracyPct = Int((result.accuracy * 100).rounded())
         let title = "Wall Rally — \(result.finalScore) pts"
-        let body = [
+
+        var lines: [String] = [
             "Score \(result.finalScore) · Best combo ×\(result.maxCombo) · \(accuracyPct)% accuracy.",
             "Perfect \(result.perfectHits) · Great \(result.greatHits) · Good \(result.goodHits) · Miss \(result.misses)."
-        ].joined(separator: "\n")
+        ]
+
+        // Segment breakdown: early / mid / late third of the session
+        let labels = ["Early", "Mid", "Late"]
+        let segs = result.segments
+        if segs.count == 3 {
+            let breakdown = segs.enumerated().map { i, seg in
+                let pct = Int((seg.accuracy * 100).rounded())
+                return "\(labels[i]) \(pct)%"
+            }.joined(separator: " · ")
+            lines.append("Thirds: \(breakdown).")
+        }
+
+        // Narrative tag: clutch finish, strong start, or flat session
+        if segs.count == 3 {
+            let lateAcc  = segs[2].accuracy
+            let earlyAcc = segs[0].accuracy
+            if lateAcc >= 0.85 && lateAcc > earlyAcc + 0.15 {
+                lines.append("Clutch finish — best in the final third.")
+            } else if earlyAcc >= 0.85 && earlyAcc > lateAcc + 0.15 {
+                lines.append("Strong opener, faded late — work on sustaining focus.")
+            }
+        }
+
+        let body = lines.joined(separator: "\n")
 
         return [JournalEntryDraft(
             date: endedAt,
