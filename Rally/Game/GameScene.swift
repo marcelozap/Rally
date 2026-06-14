@@ -220,8 +220,12 @@ final class GameScene: SKScene {
     private var playerHead: SKShapeNode!
     private var playerBackHair: SKShapeNode!
     private var playerHair: SKShapeNode!
+    private var playerHairHighlight: SKShapeNode!
+    private var playerLeftEar: SKShapeNode!
+    private var playerRightEar: SKShapeNode!
     private var playerLeftEye: SKShapeNode!
     private var playerRightEye: SKShapeNode!
+    private var playerEyeSpeculars: [SKShapeNode] = []
     private var playerLeftBrow: SKShapeNode!
     private var playerRightBrow: SKShapeNode!
     private var playerNose: SKShapeNode!
@@ -1043,6 +1047,7 @@ final class GameScene: SKScene {
         let layout = RallyAvatarRebuildDefaults.CourtLayout.make(profile: profile, scale: bodyScale)
         courtAvatarLayout = layout
         courtAvatarScale = bodyScale
+        playerEyeSpeculars.removeAll(keepingCapacity: true)
         // Gameplay must match the Home/Locker identity. Do not hardcode a second
         // player look here; that is how the in-game avatar drifted into "catfish".
         let skin = appearance.skinUIColor
@@ -1236,6 +1241,7 @@ final class GameScene: SKScene {
         leftEar.position = CGPoint(x: 0, y: layout.headY + 2 * bodyScale)
         leftEar.zPosition = 5.85
         root.addChild(leftEar)
+        playerLeftEar = leftEar
 
         let rightEar = SKShapeNode(path: RallyAvatarGeometry.earPath(side: 1, scale: faceScale))
         rightEar.fillColor = skin
@@ -1244,6 +1250,7 @@ final class GameScene: SKScene {
         rightEar.position = CGPoint(x: 0, y: layout.headY + 2 * bodyScale)
         rightEar.zPosition = 5.85
         root.addChild(rightEar)
+        playerRightEar = rightEar
 
         let hairHighlight = SKShapeNode(path: RallyAvatarGeometry.hairHighlightPath(scale: hairScale))
         hairHighlight.fillColor = UIColor(red: 0.165, green: 0.165, blue: 0.188, alpha: 0.42)
@@ -1252,6 +1259,7 @@ final class GameScene: SKScene {
         hairHighlight.zPosition = 7.1
         hairHighlight.isHidden = showsRearAvatar
         root.addChild(hairHighlight)
+        playerHairHighlight = hairHighlight
 
         let eyeFill = UIColor(red: 0.11, green: 0.11, blue: 0.118, alpha: 1)
         let showsFrontFace = !showsRearAvatar
@@ -1283,6 +1291,7 @@ final class GameScene: SKScene {
             spec.zPosition = 8.1
             spec.isHidden = !showsFrontFace
             root.addChild(spec)
+            playerEyeSpeculars.append(spec)
         }
 
         let browColor = appearance.hairUIColor.withAlphaComponent(0.94)
@@ -1370,14 +1379,14 @@ final class GameScene: SKScene {
         playerRightTemple = rightTemple
 
         let mouth = SKShapeNode(path: RallyAvatarGeometry.friendlyMouthPath(scale: faceScale))
-        mouth.strokeColor = UIColor(red: 0.62, green: 0.42, blue: 0.36, alpha: 0.32)
+        mouth.strokeColor = skin.mixed(with: .black, ratio: 0.32).withAlphaComponent(0.82)
         mouth.fillColor = .clear
-        mouth.lineWidth = 1.2 * bodyScale
+        mouth.lineWidth = max(1.4 * bodyScale, 1.0)
         mouth.lineCap = .round
         mouth.position = CGPoint(x: 0, y: layout.headY + 2 * bodyScale + RallyAvatarGeometry.mouthCenterY(scale: faceScale))
         mouth.zRotation = RallyAvatarRebuildDefaults.Face.smileRotationDegrees * .pi / 180
         mouth.zPosition = 8
-        mouth.alpha = showsFrontFace ? 0.60 : 0
+        mouth.alpha = showsFrontFace ? 0.85 : 0
         mouth.isHidden = !showsFrontFace
         root.addChild(mouth)
         playerMouth = mouth
@@ -2063,42 +2072,49 @@ final class GameScene: SKScene {
         playerHead.zRotation += (targets.headRotation - playerHead.zRotation) * 0.18
         playerHead.position.x += (targets.headX - playerHead.position.x) * 0.14
         let gameplayScale: CGFloat = courtAvatarScale
-        let baseHeadY = (courtAvatarLayout?.headY ?? 186) + 2 * gameplayScale + idleHeadLift
-        let baseBackHairY = (courtAvatarLayout?.headY ?? 186) + 1 * gameplayScale + idleHeadLift * 0.42
-        let baseHairY = (courtAvatarLayout?.hairY ?? 198) + 12 * gameplayScale + idleHeadLift * 0.55
-        playerHead.position.y += (baseHeadY - playerHead.position.y) * 0.12
+        let faceScale = (courtAvatarLayout?.headPathScale ?? gameplayScale) * 0.96
+        let headAnchorX = targets.headX
+        let headAnchorY = (courtAvatarLayout?.headY ?? 186) + 2 * gameplayScale + idleHeadLift
+        let hairFringeLift = RallyAvatarGeometry.hairFringeLift(scale: faceScale)
+        playerHead.position.y += (headAnchorY - playerHead.position.y) * 0.12
         playerNeck.zRotation += (targets.headRotation * 0.6 - playerNeck.zRotation) * 0.16
         playerBackHair.zRotation += (targets.headRotation * 0.50 - playerBackHair.zRotation) * 0.12
-        playerBackHair.position.x += ((targets.headX * 0.42) - playerBackHair.position.x) * 0.10
-        playerBackHair.position.y += (baseBackHairY - playerBackHair.position.y) * 0.10
+        playerBackHair.position.x += (headAnchorX - playerBackHair.position.x) * 0.12
+        playerBackHair.position.y += (headAnchorY - playerBackHair.position.y) * 0.12
         playerHair.zRotation += (targets.headRotation * 0.72 - playerHair.zRotation) * 0.14
-        playerHair.position.x += ((targets.headX * 0.65) - playerHair.position.x) * 0.12
-        playerHair.position.y += (baseHairY - playerHair.position.y) * 0.1
-
-        let faceY = baseHeadY - 3 * gameplayScale
-        let eyeY = baseHeadY + 2.2 * gameplayScale
-        let browY = baseHeadY + 8.2 * gameplayScale
-        playerLeftEye.position.x += ((targets.headX - 8.2 * gameplayScale) - playerLeftEye.position.x) * 0.14
-        playerLeftEye.position.y += (eyeY - playerLeftEye.position.y) * 0.14
-        playerRightEye.position.x += ((targets.headX + 8.2 * gameplayScale) - playerRightEye.position.x) * 0.14
-        playerRightEye.position.y += (eyeY - playerRightEye.position.y) * 0.14
-        playerLeftBrow.position.x += ((targets.headX - 8.5 * gameplayScale) - playerLeftBrow.position.x) * 0.14
-        playerLeftBrow.position.y += (browY - playerLeftBrow.position.y) * 0.14
-        playerRightBrow.position.x += ((targets.headX + 8.5 * gameplayScale) - playerRightBrow.position.x) * 0.14
-        playerRightBrow.position.y += (browY - playerRightBrow.position.y) * 0.14
+        playerHair.position.x += (headAnchorX - playerHair.position.x) * 0.14
+        playerHair.position.y += ((headAnchorY + hairFringeLift) - playerHair.position.y) * 0.14
+        playerHairHighlight.position.x += (headAnchorX - playerHairHighlight.position.x) * 0.14
+        playerHairHighlight.position.y += ((headAnchorY + hairFringeLift) - playerHairHighlight.position.y) * 0.14
+        playerLeftEar.position.x += (headAnchorX - playerLeftEar.position.x) * 0.14
+        playerLeftEar.position.y += (headAnchorY - playerLeftEar.position.y) * 0.14
+        playerRightEar.position.x += (headAnchorX - playerRightEar.position.x) * 0.14
+        playerRightEar.position.y += (headAnchorY - playerRightEar.position.y) * 0.14
+        playerLeftEye.position.x += (headAnchorX - playerLeftEye.position.x) * 0.14
+        playerLeftEye.position.y += (headAnchorY - playerLeftEye.position.y) * 0.14
+        playerRightEye.position.x += (headAnchorX - playerRightEye.position.x) * 0.14
+        playerRightEye.position.y += (headAnchorY - playerRightEye.position.y) * 0.14
+        for specular in playerEyeSpeculars {
+            specular.position.x += (headAnchorX - specular.position.x) * 0.14
+            specular.position.y += (headAnchorY - specular.position.y) * 0.14
+        }
+        playerLeftBrow.position.x += (headAnchorX - playerLeftBrow.position.x) * 0.14
+        playerLeftBrow.position.y += (headAnchorY - playerLeftBrow.position.y) * 0.14
+        playerRightBrow.position.x += (headAnchorX - playerRightBrow.position.x) * 0.14
+        playerRightBrow.position.y += (headAnchorY - playerRightBrow.position.y) * 0.14
         playerLeftBrow.zRotation += ((targets.headRotation * 0.08) - playerLeftBrow.zRotation) * 0.12
         playerRightBrow.zRotation += ((targets.headRotation * 0.08) - playerRightBrow.zRotation) * 0.12
-        playerNose.position.x += ((targets.headX * 0.55) - playerNose.position.x) * 0.14
-        playerNose.position.y += ((baseHeadY - 2.2 * gameplayScale) - playerNose.position.y) * 0.14
-        playerMouth?.position.x += (targets.headX * 0.35 - (playerMouth?.position.x ?? 0)) * 0.14
-        playerMouth?.position.y += (faceY - (playerMouth?.position.y ?? 0)) * 0.14
+        playerNose.position.x += (headAnchorX - playerNose.position.x) * 0.14
+        playerNose.position.y += (headAnchorY - playerNose.position.y) * 0.14
+        playerMouth?.position.x += (headAnchorX - (playerMouth?.position.x ?? 0)) * 0.14
+        playerMouth?.position.y += ((headAnchorY + RallyAvatarGeometry.mouthCenterY(scale: faceScale)) - (playerMouth?.position.y ?? 0)) * 0.14
         playerMouth?.zRotation += ((RallyAvatarRebuildDefaults.Face.smileRotationDegrees * .pi / 180) + targets.headRotation * 0.2 - (playerMouth?.zRotation ?? 0)) * 0.12
         playerLeftLens?.position.x += (targets.headX - (playerLeftLens?.position.x ?? 0)) * 0.14
-        playerLeftLens?.position.y += (baseHeadY - (playerLeftLens?.position.y ?? 0)) * 0.12
+        playerLeftLens?.position.y += (headAnchorY - (playerLeftLens?.position.y ?? 0)) * 0.12
         playerRightLens?.position.x += (targets.headX - (playerRightLens?.position.x ?? 0)) * 0.14
-        playerRightLens?.position.y += (baseHeadY - (playerRightLens?.position.y ?? 0)) * 0.12
+        playerRightLens?.position.y += (headAnchorY - (playerRightLens?.position.y ?? 0)) * 0.12
         playerGlassesBridge?.position.x += (targets.headX * 0.5 - (playerGlassesBridge?.position.x ?? 0)) * 0.14
-        playerGlassesBridge?.position.y += (baseHeadY - (playerGlassesBridge?.position.y ?? 0)) * 0.12
+        playerGlassesBridge?.position.y += (headAnchorY - (playerGlassesBridge?.position.y ?? 0)) * 0.12
         if let leftLens = playerLeftLens, let leftTemple = playerLeftTemple {
             leftTemple.position = CGPoint(x: leftLens.position.x - 11 * (avatarAppearance?.bodyScale ?? 1), y: leftLens.position.y)
         }
@@ -2148,8 +2164,15 @@ final class GameScene: SKScene {
         playerLeadShoe.position.y += ((leadShoeTarget.y + leadFootY) - playerLeadShoe.position.y) * 0.18
         playerTrailShoe.position.x += (trailShoeTarget.x - playerTrailShoe.position.x) * 0.18
         playerTrailShoe.position.y += ((trailShoeTarget.y + trailFootY) - playerTrailShoe.position.y) * 0.18
-        playerLeadShoe.zRotation += ((targets.leadLegRotation * 0.12 + leadPlantRotation) - playerLeadShoe.zRotation) * 0.20
-        playerTrailShoe.zRotation += ((targets.trailLegRotation * 0.12 + trailPlantRotation) - playerTrailShoe.zRotation) * 0.20
+        let readyToeOut = Tunables.footworkReadyToeOutRadians
+        let leadShoeRotationTarget = readyToeOut
+            + max(0, leadPlantRotation) * 0.62
+            + targets.leadLegRotation * 0.035
+        let trailShoeRotationTarget = -readyToeOut
+            + min(0, trailPlantRotation) * 0.62
+            + targets.trailLegRotation * 0.035
+        playerLeadShoe.zRotation += (leadShoeRotationTarget - playerLeadShoe.zRotation) * 0.24
+        playerTrailShoe.zRotation += (trailShoeRotationTarget - playerTrailShoe.zRotation) * 0.24
 
         // Kinetic chain: arm blends SLOWER during load (torso coils first), faster at contact/follow
         // isLoadPhase / isContactPhase already computed above
