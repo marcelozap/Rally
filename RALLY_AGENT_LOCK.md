@@ -38,6 +38,7 @@ A lock is cooperative — it only works if both agents check it first. That chec
 | 2026-06-14 | [CX] | Avatar runtime identity repair — `Rally/Game/GameScene.swift` head/hair/face/feet update block | RELEASED | Runtime repair built successfully; re-claim before any further avatar render edits. Visual QA still decides whether another pass is needed. |
 | 2026-06-14 | [CX] | Home/Loadout + Shop controls — `Rally/Features/Home/HomeView.swift`, `Rally/Features/Shop/LockerHubView.swift`, `Rally/Features/Shop/ShopView.swift`, `Rally/Features/Shop/ShopItemDetailView.swift` | RELEASED | Checkpoint committed; visual QA still pending. |
 | 2026-06-14 | [CX] | Avatar readability pass — `Rally/Features/Avatar/RallyAvatarGeometry.swift`, `Rally/Features/Avatar/RallyAvatarView.swift`, `Rally/Game/GameScene.swift` | RELEASED | Gameplay camera/readability pass built: stronger POV, larger runtime avatar, exposed ears/features, reduced inward shoe rotation. |
+| 2026-06-14 | [CX] | Avatar face/feet readability — `Rally/Features/Avatar/RallyAvatarGeometry.swift`, `Rally/Game/GameScene.swift`, `Rally/Game/Tunables.swift` | ACTIVE | Fix gameplay-scale face collapsing into a mask, reconnect hair read, expose ears/mouth, and correct foot/toe stance. |
 
 ---
 
