@@ -1195,16 +1195,13 @@ final class GameScene: SKScene {
         let showsRearAvatar = false
 
         let head = SKShapeNode(path: RallyAvatarGeometry.premiumHeadPath(scale: layout.headPathScale * 0.96))
+        head.fillColor = skin
         head.strokeColor = .clear
         head.lineWidth = 0
         head.position = CGPoint(x: 0, y: layout.headY + 2 * bodyScale)
         head.zPosition = 6
         root.addChild(head)
         playerHead = head
-        head.attachRenderedSprite(
-            RallyAvatarPartRenderer.headTexture(skinColor: skin, scale: layout.headPathScale * 0.96),
-            zPos: 0
-        )
 
         // IDENTITY LOCK: hair shares the head's exact anchor + scale (see the head
         // node above: y = headY + 2*bodyScale, scale = headPathScale * 0.96). The
@@ -1379,14 +1376,14 @@ final class GameScene: SKScene {
         playerRightTemple = rightTemple
 
         let mouth = SKShapeNode(path: RallyAvatarGeometry.friendlyMouthPath(scale: faceScale))
-        mouth.strokeColor = skin.mixed(with: .black, ratio: 0.32).withAlphaComponent(0.82)
+        mouth.strokeColor = skin.mixed(with: .black, ratio: 0.38).withAlphaComponent(0.92)
         mouth.fillColor = .clear
-        mouth.lineWidth = max(1.4 * bodyScale, 1.0)
+        mouth.lineWidth = max(1.65 * bodyScale, 1.05)
         mouth.lineCap = .round
         mouth.position = CGPoint(x: 0, y: layout.headY + 2 * bodyScale + RallyAvatarGeometry.mouthCenterY(scale: faceScale))
         mouth.zRotation = RallyAvatarRebuildDefaults.Face.smileRotationDegrees * .pi / 180
         mouth.zPosition = 8
-        mouth.alpha = showsFrontFace ? 0.85 : 0
+        mouth.alpha = showsFrontFace ? 0.95 : 0
         mouth.isHidden = !showsFrontFace
         root.addChild(mouth)
         playerMouth = mouth
@@ -2167,10 +2164,10 @@ final class GameScene: SKScene {
         let readyToeOut = Tunables.footworkReadyToeOutRadians
         let leadShoeRotationTarget = readyToeOut
             + max(0, leadPlantRotation) * 0.62
-            + targets.leadLegRotation * 0.035
+            + targets.leadLegRotation * 0.012
         let trailShoeRotationTarget = -readyToeOut
             + min(0, trailPlantRotation) * 0.62
-            + targets.trailLegRotation * 0.035
+            + targets.trailLegRotation * 0.012
         playerLeadShoe.zRotation += (leadShoeRotationTarget - playerLeadShoe.zRotation) * 0.24
         playerTrailShoe.zRotation += (trailShoeRotationTarget - playerTrailShoe.zRotation) * 0.24
 

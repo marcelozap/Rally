@@ -256,8 +256,8 @@ enum Tunables {
     /// In wall rally, lane intent comes from the side of the court the swipe
     /// begins on, not from crossing the center line. This preserves the
     /// "swipe up on left / swipe up on right" mental model.
-    static let swingLaneSideStartWeight: CGFloat = 0.72
-    static let swingLaneCenterDeadZoneRatio: CGFloat = 0.055
+    static let swingLaneSideStartWeight: CGFloat = 0.92
+    static let swingLaneCenterDeadZoneRatio: CGFloat = 0.075
     static let swingWallMinUpwardRisePoints: CGFloat = 10
 
     /// Extra grace added on top of the `.good` timing window when deciding
@@ -411,7 +411,7 @@ enum Tunables {
     /// Toe-out angle for the planted outside shoe.
     static let footworkOutsideToeOutRadians: CGFloat = 0.20
     /// Neutral ready-stance toe-out so both shoes angle away from centre.
-    static let footworkReadyToeOutRadians: CGFloat = 0.08
+    static let footworkReadyToeOutRadians: CGFloat = 0.16
     /// Trail-foot drag/toe angle during recovery.
     static let footworkRecoveryToeDragRadians: CGFloat = 0.14
     /// Blend speed for side-to-side weight transfer.

@@ -597,8 +597,8 @@ struct RallyAvatarView: View {
             x: 0,
             y: headY + RallyAvatarGeometry.mouthCenterY(scale: scale),
             fill: .clear,
-            stroke: Color.black.opacity(0.32),
-            lineWidth: 1.2 * scale
+            stroke: Color.black.opacity(0.55),
+            lineWidth: max(1.25 * scale, 0.9)
         )
     }
 
