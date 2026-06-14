@@ -1042,7 +1042,7 @@ final class GameScene: SKScene {
 
     private func setupCourtAvatar() {
         let appearance = avatarAppearance ?? RallyAvatarAppearance()
-        let bodyScale: CGFloat = min(1.14, max(1.00, appearance.bodyScale * 1.08))
+        let bodyScale: CGFloat = min(1.22, max(1.06, appearance.bodyScale * 1.14))
         let profile = appearance.bodyProfile
         let layout = RallyAvatarRebuildDefaults.CourtLayout.make(profile: profile, scale: bodyScale)
         courtAvatarLayout = layout
@@ -1232,20 +1232,20 @@ final class GameScene: SKScene {
         playerHair = hair
 
         let leftEar = SKShapeNode(path: RallyAvatarGeometry.earPath(side: -1, scale: faceScale))
-        leftEar.fillColor = skin
+        leftEar.fillColor = skin.mixed(with: .black, ratio: 0.015)
         leftEar.strokeColor = UIColor.black.withAlphaComponent(0.06)
-        leftEar.lineWidth = 0.35 * bodyScale
+        leftEar.lineWidth = 0.45 * bodyScale
         leftEar.position = CGPoint(x: 0, y: layout.headY + 2 * bodyScale)
-        leftEar.zPosition = 5.85
+        leftEar.zPosition = 6.18
         root.addChild(leftEar)
         playerLeftEar = leftEar
 
         let rightEar = SKShapeNode(path: RallyAvatarGeometry.earPath(side: 1, scale: faceScale))
-        rightEar.fillColor = skin
+        rightEar.fillColor = skin.mixed(with: .black, ratio: 0.015)
         rightEar.strokeColor = UIColor.black.withAlphaComponent(0.06)
-        rightEar.lineWidth = 0.35 * bodyScale
+        rightEar.lineWidth = 0.45 * bodyScale
         rightEar.position = CGPoint(x: 0, y: layout.headY + 2 * bodyScale)
-        rightEar.zPosition = 5.85
+        rightEar.zPosition = 6.18
         root.addChild(rightEar)
         playerRightEar = rightEar
 
@@ -2163,11 +2163,11 @@ final class GameScene: SKScene {
         playerTrailShoe.position.y += ((trailShoeTarget.y + trailFootY) - playerTrailShoe.position.y) * 0.18
         let readyToeOut = Tunables.footworkReadyToeOutRadians
         let leadShoeRotationTarget = readyToeOut
-            + max(0, leadPlantRotation) * 0.62
-            + targets.leadLegRotation * 0.012
+            + max(0, leadPlantRotation) * 0.35
+            + max(0, targets.leadLegRotation) * 0.006
         let trailShoeRotationTarget = -readyToeOut
-            + min(0, trailPlantRotation) * 0.62
-            + targets.trailLegRotation * 0.012
+            + min(0, trailPlantRotation) * 0.35
+            + min(0, targets.trailLegRotation) * 0.006
         playerLeadShoe.zRotation += (leadShoeRotationTarget - playerLeadShoe.zRotation) * 0.24
         playerTrailShoe.zRotation += (trailShoeRotationTarget - playerTrailShoe.zRotation) * 0.24
 

@@ -27,6 +27,11 @@ enum RallyAvatarGeometry {
     static let mouthWidthRatio: CGFloat = 0.24
     static let shoulderWidening: CGFloat = 1.30
     static let jawNarrowing: CGFloat = 0.12
+    static let minGameplayEyeWidth: CGFloat = 3.2
+    static let minGameplayEyeHeight: CGFloat = 3.4
+    static let minGameplayBrowWidth: CGFloat = 5.6
+    static let minGameplayMouthHalfWidth: CGFloat = 4.5
+    static let minGameplayMouthCurve: CGFloat = 1.2
 
     static func headTop(scale: CGFloat) -> CGFloat { headHeight * 0.5 * scale }
     static func headBottom(scale: CGFloat) -> CGFloat { -headHeight * 0.5 * scale }
@@ -56,12 +61,10 @@ enum RallyAvatarGeometry {
         CGSize(width: headWidth * 0.36 * scale, height: 17 * scale)
     }
 
-    /// Vertical lift applied to the FRONT hair so the authored fringe (which the
-    /// path draws down to eye level) clears the eyes, while the back hair stays
-    /// anchored to the head so the crown reads attached. Single source of truth:
-    /// both RallyAvatarView (Home/Shop) and GameScene must use this exact value
-    /// at the head's anchor + scale, or the two avatars drift apart again.
-    static func hairFringeLift(scale: CGFloat) -> CGFloat { 3.8 * scale }
+    /// Small vertical lift applied to the FRONT hair. The hair path is authored
+    /// around the head ellipse, so this must stay subtle: too high reads bald /
+    /// disconnected, too low covers the face. Both renderers call this value.
+    static func hairFringeLift(scale: CGFloat) -> CGFloat { 1.15 * scale }
 
     static func handRadius(scale: CGFloat, armThickness: CGFloat = 13.2) -> CGFloat {
         armThickness * 0.58 * scale
@@ -111,9 +114,9 @@ enum RallyAvatarGeometry {
 
     static func friendlyMouthPath(scale: CGFloat) -> CGPath {
         let path = CGMutablePath()
-        let halfWidth = headWidth * mouthWidthRatio * 0.5 * scale
+        let halfWidth = max(headWidth * mouthWidthRatio * 0.5 * scale, minGameplayMouthHalfWidth)
         let baseline: CGFloat = 0
-        let controlY = baseline - headHeight * 0.04 * scale
+        let controlY = baseline - max(headHeight * 0.04 * scale, minGameplayMouthCurve)
         path.move(to: CGPoint(x: -halfWidth, y: baseline))
         path.addQuadCurve(
             to: CGPoint(x: halfWidth, y: baseline),
@@ -123,8 +126,8 @@ enum RallyAvatarGeometry {
     }
 
     static func eyePath(side: CGFloat, scale: CGFloat) -> CGPath {
-        let width = headWidth * 0.105 * scale
-        let height = headWidth * 0.120 * scale
+        let width = max(headWidth * 0.145 * scale, minGameplayEyeWidth)
+        let height = max(headWidth * 0.155 * scale, minGameplayEyeHeight)
         let rect = CGRect(
             x: eyeCenterX(side: side, scale: scale) - width * 0.5,
             y: eyeCenterY(scale: scale) - height * 0.5,
@@ -137,7 +140,7 @@ enum RallyAvatarGeometry {
     }
 
     static func eyeSpecularPath(side: CGFloat, scale: CGFloat) -> CGPath {
-        let dot = max(1, 1.2 * scale)
+        let dot = max(1.15, 1.55 * scale)
         let rect = CGRect(
             x: eyeCenterX(side: side, scale: scale) - headWidth * 0.026 * scale,
             y: eyeCenterY(scale: scale) + headWidth * 0.020 * scale,
@@ -150,8 +153,8 @@ enum RallyAvatarGeometry {
     }
 
     static func browPath(side: CGFloat, scale: CGFloat) -> CGPath {
-        let length = headWidth * 0.16 * scale
-        let thickness = max(1.15 * scale, 1)
+        let length = max(headWidth * 0.19 * scale, minGameplayBrowWidth)
+        let thickness = max(1.45 * scale, 1.2)
         let centerX = eyeCenterX(side: side, scale: scale)
         let centerY = browCenterY(scale: scale)
         let lift = tan(2 * .pi / 180) * length
@@ -174,11 +177,11 @@ enum RallyAvatarGeometry {
     }
 
     static func earPath(side: CGFloat, scale: CGFloat) -> CGPath {
-        let width = headWidth * 0.13 * scale
-        let height = headHeight * 0.22 * scale
+        let width = headWidth * 0.19 * scale
+        let height = headHeight * 0.29 * scale
         let rect = CGRect(
-            x: side * headHalfWidth(scale: scale) - (side > 0 ? 0 : width),
-            y: eyeCenterY(scale: scale) - height * 0.46,
+            x: side * headHalfWidth(scale: scale) - (side > 0 ? width * 0.10 : width * 0.90),
+            y: eyeCenterY(scale: scale) - height * 0.50,
             width: width,
             height: height
         )
@@ -192,29 +195,44 @@ enum RallyAvatarGeometry {
 
         let top = headTop(scale: scale)
         let halfWidth = headHalfWidth(scale: scale)
-        let eyeY = eyeCenterY(scale: scale)
         let browY = browCenterY(scale: scale)
-        let fringeBaseY = browY + 1.5 * scale
-        let fringeTipY = eyeY + 1.2 * scale
-        path.move(to: CGPoint(x: -halfWidth - 3.4 * scale, y: fringeBaseY - 2.0 * scale))
-        path.addQuadCurve(to: CGPoint(x: -halfWidth - 2.8 * scale, y: top - 3.2 * scale), control: CGPoint(x: -halfWidth - 6.2 * scale, y: eyeY + 7.2 * scale))
-        path.addQuadCurve(to: CGPoint(x: -5.5 * scale, y: top + 8.8 * scale), control: CGPoint(x: -halfWidth * 0.82, y: top + 9.4 * scale))
-        path.addQuadCurve(to: CGPoint(x: halfWidth + 3.0 * scale, y: top - 5.2 * scale), control: CGPoint(x: halfWidth * 0.86, y: top + 8.2 * scale))
-        path.addQuadCurve(to: CGPoint(x: halfWidth + 0.5 * scale, y: fringeBaseY - 1.7 * scale), control: CGPoint(x: halfWidth + 6.2 * scale, y: eyeY + 6.0 * scale))
+        let eyeY = eyeCenterY(scale: scale)
+        let templeY = eyeY + 1.5 * scale
+        let fringeBaseY = browY + 3.4 * scale
+        let fringeTipY = browY - 0.8 * scale
+
+        // Crown and temples are deliberately anchored around the head ellipse.
+        path.move(to: CGPoint(x: -halfWidth - 3.8 * scale, y: templeY))
+        path.addQuadCurve(
+            to: CGPoint(x: -halfWidth - 1.6 * scale, y: top - 2.2 * scale),
+            control: CGPoint(x: -halfWidth - 6.0 * scale, y: browY + 7.0 * scale)
+        )
+        path.addQuadCurve(
+            to: CGPoint(x: -4.0 * scale, y: top + 8.5 * scale),
+            control: CGPoint(x: -halfWidth * 0.82, y: top + 8.6 * scale)
+        )
+        path.addQuadCurve(
+            to: CGPoint(x: halfWidth + 2.0 * scale, y: top - 3.0 * scale),
+            control: CGPoint(x: halfWidth * 0.80, y: top + 8.0 * scale)
+        )
+        path.addQuadCurve(
+            to: CGPoint(x: halfWidth + 1.4 * scale, y: templeY - 1.0 * scale),
+            control: CGPoint(x: halfWidth + 5.2 * scale, y: browY + 5.6 * scale)
+        )
 
         // Angular Zuko-style fringe: asymmetric points that prove this is hair,
         // not a cap, helmet, or bald stripe.
-        path.addLine(to: CGPoint(x: 10.8 * scale, y: fringeBaseY + 1.0 * scale))
-        path.addLine(to: CGPoint(x: 5.3 * scale, y: fringeTipY + 0.8 * scale))
-        path.addLine(to: CGPoint(x: 0.6 * scale, y: fringeBaseY - 0.7 * scale))
-        path.addLine(to: CGPoint(x: -4.7 * scale, y: fringeTipY))
-        path.addLine(to: CGPoint(x: -9.6 * scale, y: fringeBaseY + 0.5 * scale))
-        path.addLine(to: CGPoint(x: -13.5 * scale, y: fringeTipY + 0.8 * scale))
-        path.addLine(to: CGPoint(x: -halfWidth - 1.2 * scale, y: fringeBaseY - 2.0 * scale))
+        path.addLine(to: CGPoint(x: 10.8 * scale, y: fringeBaseY + 0.4 * scale))
+        path.addLine(to: CGPoint(x: 5.0 * scale, y: fringeTipY + 0.5 * scale))
+        path.addLine(to: CGPoint(x: 0.4 * scale, y: fringeBaseY - 1.0 * scale))
+        path.addLine(to: CGPoint(x: -4.8 * scale, y: fringeTipY))
+        path.addLine(to: CGPoint(x: -9.4 * scale, y: fringeBaseY + 0.2 * scale))
+        path.addLine(to: CGPoint(x: -13.4 * scale, y: fringeTipY + 0.6 * scale))
+        path.addLine(to: CGPoint(x: -halfWidth - 2.0 * scale, y: templeY - 1.2 * scale))
         path.closeSubpath()
 
-        path.addSafeRoundedRect(in: CGRect(x: -halfWidth - 4.0 * scale, y: -8.7 * scale, width: 6.2 * scale, height: 15.0 * scale), cornerWidth: 3.0 * scale, cornerHeight: 3.0 * scale)
-        path.addSafeRoundedRect(in: CGRect(x: halfWidth - 1.0 * scale, y: -7.6 * scale, width: 4.8 * scale, height: 12.0 * scale), cornerWidth: 2.4 * scale, cornerHeight: 2.4 * scale)
+        path.addSafeRoundedRect(in: CGRect(x: -halfWidth - 4.0 * scale, y: -8.0 * scale, width: 6.8 * scale, height: 17.0 * scale), cornerWidth: 3.1 * scale, cornerHeight: 3.1 * scale)
+        path.addSafeRoundedRect(in: CGRect(x: halfWidth - 1.2 * scale, y: -7.4 * scale, width: 5.2 * scale, height: 13.0 * scale), cornerWidth: 2.5 * scale, cornerHeight: 2.5 * scale)
         return path
     }
 
@@ -292,16 +310,17 @@ enum RallyAvatarGeometry {
 
         let top = headTop(scale: scale)
         let halfWidth = headHalfWidth(scale: scale)
-        path.move(to: CGPoint(x: -halfWidth - 2.0 * scale, y: -4 * scale))
-        path.addQuadCurve(to: CGPoint(x: -5.0 * scale, y: top + 7.0 * scale), control: CGPoint(x: -halfWidth - 3.8 * scale, y: top + 3.0 * scale))
-        path.addQuadCurve(to: CGPoint(x: halfWidth + 1.6 * scale, y: top - 4.5 * scale), control: CGPoint(x: halfWidth * 0.76, y: top + 7.8 * scale))
-        path.addQuadCurve(to: CGPoint(x: 8 * scale, y: -7.0 * scale), control: CGPoint(x: halfWidth + 3.2 * scale, y: 0))
-        path.addQuadCurve(to: CGPoint(x: -8 * scale, y: -7.8 * scale), control: CGPoint(x: 0, y: -3.0 * scale))
-        path.addQuadCurve(to: CGPoint(x: -halfWidth - 2.0 * scale, y: -4 * scale), control: CGPoint(x: -halfWidth - 1.0 * scale, y: -10.0 * scale))
+        let eyeY = eyeCenterY(scale: scale)
+        path.move(to: CGPoint(x: -halfWidth - 2.8 * scale, y: eyeY - 2.5 * scale))
+        path.addQuadCurve(to: CGPoint(x: -5.0 * scale, y: top + 7.2 * scale), control: CGPoint(x: -halfWidth - 5.2 * scale, y: top + 2.8 * scale))
+        path.addQuadCurve(to: CGPoint(x: halfWidth + 2.2 * scale, y: top - 4.2 * scale), control: CGPoint(x: halfWidth * 0.76, y: top + 8.0 * scale))
+        path.addQuadCurve(to: CGPoint(x: 8.5 * scale, y: eyeY - 6.2 * scale), control: CGPoint(x: halfWidth + 4.0 * scale, y: 1.0 * scale))
+        path.addQuadCurve(to: CGPoint(x: -8.0 * scale, y: eyeY - 7.0 * scale), control: CGPoint(x: 0, y: eyeY - 1.5 * scale))
+        path.addQuadCurve(to: CGPoint(x: -halfWidth - 2.8 * scale, y: eyeY - 2.5 * scale), control: CGPoint(x: -halfWidth - 2.0 * scale, y: eyeY - 10.0 * scale))
         path.closeSubpath()
 
-        path.addSafeRoundedRect(in: CGRect(x: -halfWidth - 3.1 * scale, y: -12.2 * scale, width: 5.8 * scale, height: 18 * scale), cornerWidth: 2.9 * scale, cornerHeight: 2.9 * scale)
-        path.addSafeRoundedRect(in: CGRect(x: halfWidth - 1.9 * scale, y: -10.8 * scale, width: 5.0 * scale, height: 15 * scale), cornerWidth: 2.5 * scale, cornerHeight: 2.5 * scale)
+        path.addSafeRoundedRect(in: CGRect(x: -halfWidth - 3.6 * scale, y: -12.2 * scale, width: 6.6 * scale, height: 19 * scale), cornerWidth: 3.0 * scale, cornerHeight: 3.0 * scale)
+        path.addSafeRoundedRect(in: CGRect(x: halfWidth - 2.0 * scale, y: -10.8 * scale, width: 5.7 * scale, height: 16 * scale), cornerWidth: 2.7 * scale, cornerHeight: 2.7 * scale)
         return path
     }
 
