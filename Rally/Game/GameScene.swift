@@ -1063,6 +1063,7 @@ final class GameScene: SKScene {
         let root = SKNode()
         root.zPosition = 14
         root.position = CGPoint(x: size.width / 2, y: size.height * Tunables.gameplayPlayerRootYRatio)
+        root.setScale(Tunables.gameplayPlayerVisualScale)
         addChild(root)
         playerRoot = root
 
@@ -1232,20 +1233,22 @@ final class GameScene: SKScene {
         playerHair = hair
 
         let leftEar = SKShapeNode(path: RallyAvatarGeometry.earPath(side: -1, scale: faceScale))
-        leftEar.fillColor = skin.mixed(with: .black, ratio: 0.015)
-        leftEar.strokeColor = UIColor.black.withAlphaComponent(0.06)
-        leftEar.lineWidth = 0.45 * bodyScale
+        leftEar.fillColor = skin.mixed(with: .black, ratio: 0.035)
+        leftEar.strokeColor = .clear
+        leftEar.lineWidth = 0
         leftEar.position = CGPoint(x: 0, y: layout.headY + 2 * bodyScale)
-        leftEar.zPosition = 6.18
+        leftEar.zPosition = 5.55
+        leftEar.alpha = 0.36
         root.addChild(leftEar)
         playerLeftEar = leftEar
 
         let rightEar = SKShapeNode(path: RallyAvatarGeometry.earPath(side: 1, scale: faceScale))
-        rightEar.fillColor = skin.mixed(with: .black, ratio: 0.015)
-        rightEar.strokeColor = UIColor.black.withAlphaComponent(0.06)
-        rightEar.lineWidth = 0.45 * bodyScale
+        rightEar.fillColor = skin.mixed(with: .black, ratio: 0.035)
+        rightEar.strokeColor = .clear
+        rightEar.lineWidth = 0
         rightEar.position = CGPoint(x: 0, y: layout.headY + 2 * bodyScale)
-        rightEar.zPosition = 6.18
+        rightEar.zPosition = 5.55
+        rightEar.alpha = 0.36
         root.addChild(rightEar)
         playerRightEar = rightEar
 
@@ -1258,12 +1261,12 @@ final class GameScene: SKScene {
         root.addChild(hairHighlight)
         playerHairHighlight = hairHighlight
 
-        let eyeFill = UIColor(red: 0.11, green: 0.11, blue: 0.118, alpha: 1)
+        let eyeFill = UIColor(red: 0.055, green: 0.047, blue: 0.043, alpha: 0.86)
         let showsFrontFace = !showsRearAvatar
         let leftEye = SKShapeNode(path: RallyAvatarGeometry.eyePath(side: -1, scale: faceScale))
         leftEye.fillColor = eyeFill
-        leftEye.strokeColor = UIColor.white.withAlphaComponent(0.10)
-        leftEye.lineWidth = 0.35 * bodyScale
+        leftEye.strokeColor = UIColor.white.withAlphaComponent(0.04)
+        leftEye.lineWidth = 0.22 * bodyScale
         leftEye.position = CGPoint(x: 0, y: layout.headY + 2 * bodyScale)
         leftEye.zPosition = 8
         leftEye.isHidden = !showsFrontFace
@@ -1272,8 +1275,8 @@ final class GameScene: SKScene {
 
         let rightEye = SKShapeNode(path: RallyAvatarGeometry.eyePath(side: 1, scale: faceScale))
         rightEye.fillColor = eyeFill
-        rightEye.strokeColor = UIColor.white.withAlphaComponent(0.10)
-        rightEye.lineWidth = 0.35 * bodyScale
+        rightEye.strokeColor = UIColor.white.withAlphaComponent(0.04)
+        rightEye.lineWidth = 0.22 * bodyScale
         rightEye.position = CGPoint(x: 0, y: layout.headY + 2 * bodyScale)
         rightEye.zPosition = 8
         rightEye.isHidden = !showsFrontFace
@@ -1282,7 +1285,7 @@ final class GameScene: SKScene {
 
         for side in [-1.0, 1.0] {
             let spec = SKShapeNode(path: RallyAvatarGeometry.eyeSpecularPath(side: side, scale: faceScale))
-            spec.fillColor = UIColor.white.withAlphaComponent(0.76)
+            spec.fillColor = UIColor.white.withAlphaComponent(0.34)
             spec.strokeColor = .clear
             spec.position = CGPoint(x: 0, y: layout.headY + 2 * bodyScale)
             spec.zPosition = 8.1
@@ -1291,7 +1294,7 @@ final class GameScene: SKScene {
             playerEyeSpeculars.append(spec)
         }
 
-        let browColor = appearance.hairUIColor.withAlphaComponent(0.94)
+        let browColor = appearance.hairUIColor.withAlphaComponent(0.72)
         let leftBrow = SKShapeNode(path: RallyAvatarGeometry.browPath(side: -1, scale: faceScale))
         leftBrow.fillColor = browColor
         leftBrow.strokeColor = .clear
@@ -1314,8 +1317,8 @@ final class GameScene: SKScene {
 
         let nose = SKShapeNode(path: RallyAvatarGeometry.nosePath(scale: faceScale))
         nose.fillColor = .clear
-        nose.strokeColor = skin.mixed(with: .black, ratio: 0.08).withAlphaComponent(0.42)
-        nose.lineWidth = 0.85 * bodyScale
+        nose.strokeColor = skin.mixed(with: .black, ratio: 0.08).withAlphaComponent(0.24)
+        nose.lineWidth = 0.62 * bodyScale
         nose.lineCap = .round
         nose.position = CGPoint(x: 0, y: layout.headY + 2 * bodyScale)
         nose.zPosition = 8
@@ -1376,13 +1379,13 @@ final class GameScene: SKScene {
         playerRightTemple = rightTemple
 
         let mouth = SKShapeNode(path: RallyAvatarGeometry.friendlyMouthPath(scale: faceScale))
-        mouth.strokeColor = skin.mixed(with: .black, ratio: 0.38).withAlphaComponent(0.92)
+        mouth.strokeColor = skin.mixed(with: .black, ratio: 0.48).withAlphaComponent(0.82)
         mouth.fillColor = .clear
-        mouth.lineWidth = max(1.65 * bodyScale, 1.05)
+        mouth.lineWidth = max(1.55 * bodyScale, 1.15)
         mouth.lineCap = .round
         mouth.position = CGPoint(x: 0, y: layout.headY + 2 * bodyScale + RallyAvatarGeometry.mouthCenterY(scale: faceScale))
         mouth.zRotation = RallyAvatarRebuildDefaults.Face.smileRotationDegrees * .pi / 180
-        mouth.zPosition = 8
+        mouth.zPosition = 8.35
         mouth.alpha = showsFrontFace ? 0.95 : 0
         mouth.isHidden = !showsFrontFace
         root.addChild(mouth)
@@ -1968,7 +1971,10 @@ final class GameScene: SKScene {
             CGPoint(x: $0.x + playerRoot.position.x, y: $0.y + playerRoot.position.y)
         }
         let localRacketContactTarget = liveContactTarget.map {
-            CGPoint(x: $0.x - playerRoot.position.x, y: $0.y - playerRoot.position.y)
+            CGPoint(
+                x: ($0.x - playerRoot.position.x) / max(0.001, abs(playerRoot.xScale)),
+                y: ($0.y - playerRoot.position.y) / max(0.001, abs(playerRoot.yScale))
+            )
         }
         let targets = poseTargets(
             for: pose,
@@ -2021,7 +2027,9 @@ final class GameScene: SKScene {
         let loadCrouch = Tunables.footworkLoadCrouchScale * abs(weightSide) * footLoad
         let contactCrouch = Tunables.footworkContactCompressionScale * footContact
         let landingCrouch = Tunables.footworkSplitLandCompression * splitStepLanding
-        playerRoot.yScale += ((1 - splitCompression - loadCrouch - contactCrouch - landingCrouch) - playerRoot.yScale) * 0.12
+        let playerVisualScale = Tunables.gameplayPlayerVisualScale
+        let yScaleTarget = playerVisualScale * (1 - splitCompression - loadCrouch - contactCrouch - landingCrouch)
+        playerRoot.yScale += (yScaleTarget - playerRoot.yScale) * 0.12
 
         // ── Torso velocity accumulation (load) → release (contact) ──
         let isLoadPhase    = swingPhase < Tunables.swingLoadPhaseEnd && impactProgress > 0.02
@@ -2120,11 +2128,11 @@ final class GameScene: SKScene {
         }
 
         let presentationIdle = impactProgress < 0.04 && pose == .ready
-        let depthTarget: CGFloat = presentationIdle ? 0.98 : 1.0
+        let depthTarget: CGFloat = playerVisualScale * (presentationIdle ? 0.985 : 1.0)
         let yawTarget: CGFloat = 0
         let isBackhandPose = pose == .backhandClean || pose == .stretchBackhand
         playerRoot.zRotation += (yawTarget + effectiveTorsoRotation * 0.16 - playerRoot.zRotation) * 0.1
-        playerRoot.xScale += (depthTarget + splitCompression * 0.7 - playerRoot.xScale) * 0.12
+        playerRoot.xScale += (depthTarget + splitCompression * 0.7 * playerVisualScale - playerRoot.xScale) * 0.12
 
         let stanceWiden = Tunables.footworkStanceWidenPoints * max(sideCommit, footLoad * 0.72)
         let outsidePlant = Tunables.footworkOutsidePlantPoints * abs(weightSide) * max(footLoad * 0.7, footContact)
@@ -4443,12 +4451,12 @@ final class GameScene: SKScene {
         let r = Tunables.contactRacketBurstRadius
         let burst = SKShapeNode(circleOfRadius: r)
         burst.position = origin
-        burst.fillColor = UIColor.white.withAlphaComponent(quality == .perfect ? 0.80 : 0.58)
+        burst.fillColor = UIColor.white.withAlphaComponent(quality == .perfect ? 0.58 : 0.42)
         burst.strokeColor = .clear
-        burst.glowWidth = quality == .perfect ? 12 : 7
-        burst.zPosition = 66
+        burst.glowWidth = quality == .perfect ? 6 : 4
+        burst.zPosition = 13.45
         addChild(burst)
-        let toScale: CGFloat = quality == .perfect ? 3.0 : 2.4
+        let toScale: CGFloat = quality == .perfect ? 2.05 : 1.68
         burst.run(.sequence([
             .group([
                 .scale(to: toScale, duration: 0.07),
@@ -4461,11 +4469,11 @@ final class GameScene: SKScene {
         let ring = SKShapeNode(circleOfRadius: r * 0.72)
         ring.position = origin
         let palette = swingTrailPalette(intent: swingVisualIntent, lane: swingVisualLane)
-        ring.strokeColor = palette.glow.withAlphaComponent(0.90)
+        ring.strokeColor = palette.glow.withAlphaComponent(0.62)
         ring.fillColor = .clear
-        ring.lineWidth = quality == .perfect ? 3.0 : 2.0
-        ring.glowWidth = quality == .perfect ? 10 : 6
-        ring.zPosition = 65
+        ring.lineWidth = quality == .perfect ? 2.0 : 1.4
+        ring.glowWidth = quality == .perfect ? 5 : 3
+        ring.zPosition = 13.4
         addChild(ring)
         ring.run(.sequence([
             .group([
@@ -4669,12 +4677,13 @@ final class GameScene: SKScene {
 
         let label = SKLabelNode(fontNamed: "AvenirNext-Heavy")
         label.text = burstText
-        label.fontSize = quality == .perfect ? 28 : 20
+        label.fontSize = quality == .perfect ? 22 : 16
         label.fontColor = quality == .perfect
             ? UIColor(red: 1.0, green: 0.84, blue: 0.18, alpha: 1)
             : UIColor.white.withAlphaComponent(0.92)
-        label.position = CGPoint(x: point.x, y: point.y + 10)
-        label.zPosition = 67
+        let sideOffset: CGFloat = strokeSide == .backhand ? -20 : 20
+        label.position = CGPoint(x: point.x + sideOffset, y: point.y + 18)
+        label.zPosition = 20
         label.alpha = 0
         addChild(label)
 
@@ -4682,13 +4691,13 @@ final class GameScene: SKScene {
         shadow.text = label.text
         shadow.fontSize = label.fontSize
         shadow.fontColor = UIColor.black.withAlphaComponent(0.3)
-        shadow.position = CGPoint(x: point.x, y: point.y + 8)
-        shadow.zPosition = 66
+        shadow.position = CGPoint(x: point.x + sideOffset, y: point.y + 16)
+        shadow.zPosition = 19
         shadow.alpha = 0
         addChild(shadow)
 
         let rise = Tunables.timingPopupRise
-        let peakScale: CGFloat = quality == .perfect ? 1.28 : 1.08
+        let peakScale: CGFloat = quality == .perfect ? 1.18 : 1.04
         let fadeDuration = max(0.08, Tunables.timingPopupDuration - 0.08)
         label.run(.sequence([
             .group([
@@ -5944,23 +5953,23 @@ final class GameScene: SKScene {
         quality: HitQuality
     ) {
         let palette = swingTrailPalette(intent: intent, lane: lane)
-        let ringRadius: CGFloat = quality == .perfect ? 19 : (quality == .great ? 15 : 12)
+        let ringRadius: CGFloat = quality == .perfect ? 13 : (quality == .great ? 11 : 9)
         let ring = SKShapeNode(circleOfRadius: ringRadius)
         ring.position = point
         ring.fillColor = .clear
-        ring.strokeColor = palette.glow.withAlphaComponent(quality == .good ? 0.46 : 0.78)
-        ring.lineWidth = quality == .perfect ? 2.4 : 1.7
-        ring.glowWidth = quality == .perfect ? 12 : 7
-        ring.zPosition = 64
+        ring.strokeColor = palette.glow.withAlphaComponent(quality == .good ? 0.34 : 0.52)
+        ring.lineWidth = quality == .perfect ? 1.8 : 1.2
+        ring.glowWidth = quality == .perfect ? 6 : 4
+        ring.zPosition = 13.18
         addChild(ring)
 
         let innerRing = SKShapeNode(circleOfRadius: ringRadius * 0.62)
         innerRing.position = point
-        innerRing.fillColor = palette.tip.withAlphaComponent(quality == .perfect ? 0.16 : 0.1)
-        innerRing.strokeColor = .white.withAlphaComponent(quality == .perfect ? 0.54 : 0.28)
+        innerRing.fillColor = palette.tip.withAlphaComponent(quality == .perfect ? 0.09 : 0.06)
+        innerRing.strokeColor = .white.withAlphaComponent(quality == .perfect ? 0.30 : 0.18)
         innerRing.lineWidth = 1
-        innerRing.glowWidth = 8
-        innerRing.zPosition = 63
+        innerRing.glowWidth = 4
+        innerRing.zPosition = 13.16
         addChild(innerRing)
 
         let slash = SKShapeNode(
@@ -5968,11 +5977,11 @@ final class GameScene: SKScene {
             cornerRadius: 1.5
         )
         slash.position = point
-        slash.fillColor = palette.core.withAlphaComponent(0.84)
+        slash.fillColor = palette.core.withAlphaComponent(0.58)
         slash.strokeColor = .clear
-        slash.glowWidth = 6
+        slash.glowWidth = 3
         slash.zRotation = contactImprintRotation(intent: intent, lane: lane)
-        slash.zPosition = 65
+        slash.zPosition = 13.22
         addChild(slash)
 
         let direction: CGFloat = lane == .right ? 1 : -1
@@ -5981,11 +5990,11 @@ final class GameScene: SKScene {
             cornerRadius: 1.2
         )
         sparkLead.position = point
-        sparkLead.fillColor = palette.tip.withAlphaComponent(0.9)
+        sparkLead.fillColor = palette.tip.withAlphaComponent(0.62)
         sparkLead.strokeColor = .clear
-        sparkLead.glowWidth = 8
+        sparkLead.glowWidth = 4
         sparkLead.zRotation = contactImprintRotation(intent: intent, lane: lane) + direction * 0.08
-        sparkLead.zPosition = 66
+        sparkLead.zPosition = 13.24
         addChild(sparkLead)
 
         let sparkTrail = SKShapeNode(
@@ -5993,23 +6002,23 @@ final class GameScene: SKScene {
             cornerRadius: 1
         )
         sparkTrail.position = point
-        sparkTrail.fillColor = palette.core.withAlphaComponent(0.76)
+        sparkTrail.fillColor = palette.core.withAlphaComponent(0.50)
         sparkTrail.strokeColor = .clear
-        sparkTrail.glowWidth = 6
+        sparkTrail.glowWidth = 3
         sparkTrail.zRotation = contactImprintRotation(intent: intent, lane: lane) - direction * 0.05
-        sparkTrail.zPosition = 65
+        sparkTrail.zPosition = 13.2
         addChild(sparkTrail)
 
         ring.run(.sequence([
             .group([
-                .scale(to: quality == .perfect ? 2.02 : 1.64, duration: 0.2),
+                .scale(to: quality == .perfect ? 1.55 : 1.34, duration: 0.2),
                 .fadeOut(withDuration: 0.2)
             ]),
             .removeFromParent()
         ]))
         innerRing.run(.sequence([
             .group([
-                .scale(to: quality == .perfect ? 1.36 : 1.24, duration: 0.16),
+                .scale(to: quality == .perfect ? 1.18 : 1.12, duration: 0.16),
                 .fadeOut(withDuration: 0.16)
             ]),
             .removeFromParent()
