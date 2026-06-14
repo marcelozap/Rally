@@ -35,6 +35,7 @@ A lock is cooperative — it only works if both agents check it first. That chec
 | Since (UTC date) | Agent | Area / files | Status | Notes |
 |------------------|-------|--------------|--------|-------|
 | 2026-06-13 | [CC] | Avatar identity render — `RallyAvatarView.swift`, `RallyAvatarGeometry.swift`, `Rally/Game/GameScene.swift` (head/hair block) | **HELD** | Identity-lock fix complete + Home-verified on iPhone 16 Pro sim. Hair now co-anchors to head + shared `RallyAvatarGeometry.hairFringeLift`. Uncommitted pending user OK. **[CX]: do not edit these files until released.** |
+| 2026-06-14 | [CX] | Home/Loadout + Shop controls — `Rally/Features/Home/HomeView.swift`, `Rally/Features/Shop/LockerHubView.swift`, `Rally/Features/Shop/ShopView.swift`, `Rally/Features/Shop/ShopItemDetailView.swift` | **HELD** | Fix cheap/overlapping controls, slot cycling UX, shoe/short icons, and button craft. **[CC]: do not edit these UI-control files until released.** |
 
 ---
 
