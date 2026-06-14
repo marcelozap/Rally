@@ -53,19 +53,23 @@ final class AvatarConfig {
 
         let trimmedName = playerName.trimmingCharacters(in: .whitespacesAndNewlines)
         let staleStarterNames = ["player", "sam", "marcy"]
-        let isStarterIdentity = trimmedName.isEmpty || staleStarterNames.contains(trimmedName.lowercased())
-        if isStarterIdentity {
+        let isBlankName = trimmedName.isEmpty
+        let isLegacyStarterName = staleStarterNames.contains(trimmedName.lowercased())
+        let shouldApplyStarterIdentity = !hasCompletedSetup
+
+        if isBlankName || (shouldApplyStarterIdentity && isLegacyStarterName) {
             playerName = "Player"
         }
 
-        if hairColorHex == "#3A2A1A" || hairColorHex == "#2C221D" || hairColorHex == "#101114" || isStarterIdentity {
+        if shouldApplyStarterIdentity &&
+            (hairColorHex == "#3A2A1A" || hairColorHex == "#2C221D" || hairColorHex == "#101114" || isLegacyStarterName) {
             hairColorHex = "#050507"
         }
-        if hairStyle == .bald {
+        if shouldApplyStarterIdentity && hairStyle == .bald {
             hairStyle = .medium
         }
 
-        guard isStarterIdentity || !hasCompletedSetup || isUsingStarterLoadout else { return }
+        guard shouldApplyStarterIdentity else { return }
 
         skinTone = .light
         bodyType = .athletic

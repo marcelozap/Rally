@@ -285,10 +285,9 @@ struct GameSessionView: View {
         let s = GameScene(size: size)
         s.scaleMode = .resizeFill
         if let avatar = avatarConfigs.first {
-            avatar.refreshForCurrentVisualSystem()
-            try? modelContext.save()
-            avatarAppearanceStore.sync(from: avatar)
-            s.avatarAppearance = avatarAppearanceStore.appearance
+            let appearance = RallyAvatarAppearance(config: avatar)
+            avatarAppearanceStore.appearance = appearance
+            s.avatarAppearance = appearance
         } else {
             s.avatarAppearance = avatarAppearanceStore.appearance
         }
