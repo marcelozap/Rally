@@ -3857,7 +3857,10 @@ final class GameScene: SKScene {
         guard !isDying, !isCountingDown, !sessionEnded else { return }
 
         if sessionMode == .wallRally {
-            guard let target = preferredWallSwingTarget(for: lane) else { return }
+            guard let target = preferredWallSwingTarget(for: lane) else {
+                showWallMissInstruction("WAIT FOR BALL", comboWasLive: combo > 0)
+                return
+            }
             let signedDelta = currentTrackTime - target.effectiveArrivalTime
             let delta = abs(signedDelta)
             let contactDistance = spatialContactDistance(to: target, lane: lane)
@@ -4275,7 +4278,7 @@ final class GameScene: SKScene {
                 stageWallSideMissFeedback(swungLane: lane, correctLane: correctLane)
             }
             showWallMissInstruction(
-                wallMissCue(for: wallReason, comboWasLive: previous > 0),
+                wallMissCue(for: wallReason, comboWasLive: previous > 0, correctLane: correctLane),
                 comboWasLive: previous > 0
             )
             scheduleWallBall(after: wallMissRestartSeconds(previousCombo: previous))
@@ -4293,11 +4296,19 @@ final class GameScene: SKScene {
         }
     }
 
-    private func wallMissCue(for reason: WallMissReason, comboWasLive: Bool) -> String {
+    private func wallMissCue(
+        for reason: WallMissReason,
+        comboWasLive: Bool,
+        correctLane: Lane? = nil
+    ) -> String {
         switch reason {
         case .early:  return "EARLY — WAIT FOR IT"
         case .late:   return "TOO LATE"
-        case .side:   return "WRONG SIDE"
+        case .side:
+            if let correctLane {
+                return correctLane == .left ? "LEFT SIDE" : "RIGHT SIDE"
+            }
+            return "WRONG SIDE"
         case .reach:  return "TOO FAR"
         case .generic: return comboWasLive ? "COMBO RESET" : "MISS"
         }
@@ -4306,7 +4317,7 @@ final class GameScene: SKScene {
     private func showWallMissInstruction(_ text: String, comboWasLive: Bool) {
         guard showCoachingCues else { return }
         guard let instructionLabel, let instructionPlate else { return }
-        guard !text.isEmpty, sessionMode != .wallRally else { return }
+        guard !text.isEmpty else { return }
         let fadeIn: TimeInterval = 0.07
         let hold: TimeInterval = comboWasLive ? 0.16 : 0.14
         let fadeOut: TimeInterval = comboWasLive ? 0.12 : 0.10
