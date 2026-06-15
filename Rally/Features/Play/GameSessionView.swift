@@ -23,6 +23,9 @@ struct GameSessionView: View {
     @State private var scene: GameScene? = nil
     @State private var sessionKey = UUID()
     @State private var reflectionPrompt: JournalPrompt? = nil
+    @State private var showExitConfirmation = false
+    /// When true, the session exits as soon as the reflection sheet dismisses.
+    @State private var exitAfterLog = false
     @State private var viewportSize: CGSize = .zero
     @State private var autoPlayEnabled = ProcessInfo.processInfo.arguments.contains("-RallyAutoPlay")
 
@@ -118,6 +121,26 @@ struct GameSessionView: View {
             NavigationStack {
                 JournalEditorView(entry: nil, seedPrompt: prompt)
             }
+        }
+        .onChange(of: reflectionPrompt) { _, newValue in
+            // After the reflection sheet dismisses, exit if the player chose
+            // "Log how it felt" from the exit confirmation dialog.
+            if newValue == nil && exitAfterLog {
+                exitAfterLog = false
+                onExit()
+            }
+        }
+        .confirmationDialog("End this run?", isPresented: $showExitConfirmation) {
+            Button("Keep Playing", role: .cancel) {}
+            Button("Log how it felt") {
+                exitAfterLog = true
+                reflectionPrompt = JournalPromptLibrary.dailyPrompt(
+                    for: Date(), focus: .rallyGame
+                )
+            }
+            Button("End Run", role: .destructive) { onExit() }
+        } message: {
+            Text("Your progress will be saved automatically.")
         }
         .animation(.easeOut(duration: 0.35), value: viewModel.lastResult != nil)
     }
@@ -232,7 +255,7 @@ struct GameSessionView: View {
     }
 
     private var exitButton: some View {
-        Button(action: onExit) {
+        Button(action: { showExitConfirmation = true }) {
             Image(systemName: "xmark")
                 .font(.system(size: 10, weight: .black))
                 .foregroundStyle(RallyUIKit.Palette.frost.opacity(0.82))

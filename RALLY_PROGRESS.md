@@ -10,7 +10,8 @@ Governing priority: RALLY_NORTH_STAR.md > CLAUDE_CODE_PARALLEL_PLAN.md > RALLY_O
 
 | Date       | Commit     | Lane | Work                              | Notes                                           |
 |------------|------------|------|-----------------------------------|-------------------------------------------------|
-| 2026-06-15 | (pending)  | [CC] | T4: combo-scaled recovery window  | registerComboBreak now scales 1–2× with previousCombo; GameScene passes combo; new MatchFlowTests case. BUILD NOT RUN |
+| 2026-06-15 | (pending)  | [CC] | Journal CTA in exit confirmation  | Exit button → confirmationDialog; "Log how it felt" opens journal then exits; exitAfterLog flag. BUILD NOT RUN |
+| 2026-06-15 | 2cf056a    | [CC] | T4: combo-scaled recovery window  | registerComboBreak scales 1–2× with previousCombo; GameScene passes combo; new MatchFlowTests case. |
 | 2026-06-13 | (verify)   | [CC] | BUILD VERIFY — whole tree         | xcodebuild iPhone 16 Pro sim, Debug: **BUILD SUCCEEDED**. Clears all BUILD NOT RUN flags (b979f01–c3a664d Journal, aac00cc T4, 5c122a8 shop). |
 | 2026-06-13 | aac00cc    | [CC] | T4: contact payoff + miss clarity | Perfect banners live (combo ≤3, every 5th); miss popup red/amber; wallMissCue coaching text |
 | 2026-06-13 | 329c0ff    | [CX] | Avatar creator hand/hair controls | Lefty/Righty made explicit; stale bald configs reset; accidental bald removed from picker; hair lowered |
