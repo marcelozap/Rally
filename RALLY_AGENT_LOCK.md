@@ -39,7 +39,7 @@ A lock is cooperative — it only works if both agents check it first. That chec
 | 2026-06-14 | [CX] | Home/Loadout + Shop controls — `Rally/Features/Home/HomeView.swift`, `Rally/Features/Shop/LockerHubView.swift`, `Rally/Features/Shop/ShopView.swift`, `Rally/Features/Shop/ShopItemDetailView.swift` | RELEASED | Checkpoint committed; visual QA still pending. |
 | 2026-06-14 | [CX] | Avatar readability pass — `Rally/Features/Avatar/RallyAvatarGeometry.swift`, `Rally/Features/Avatar/RallyAvatarView.swift`, `Rally/Game/GameScene.swift` | RELEASED | Gameplay camera/readability pass built: stronger POV, larger runtime avatar, exposed ears/features, reduced inward shoe rotation. |
 | 2026-06-14 | [CX] | Avatar face/feet readability — `Rally/Features/Avatar/RallyAvatarGeometry.swift`, `Rally/Game/GameScene.swift`, `Rally/Game/Tunables.swift` | RELEASED | Committed as `3617aee`: gameplay-scale face, softer ears/mouth, outward shoe stance, and stronger court POV. |
-| 2026-06-14 | [CX] | Avatar/gameplay readability follow-up — `Rally/Features/Avatar/RallyAvatarGeometry.swift`, `Rally/Game/GameScene.swift`, `Rally/Game/Tunables.swift` | ACTIVE | Follow-up from 2026-06-14 screenshots: face reads blank/bald, ears/mouth invisible, feet still not natural, camera POV still too flat. |
+| 2026-06-14 | [CX] | Avatar/gameplay readability follow-up — `Rally/Features/Avatar/RallyAvatarGeometry.swift`, `Rally/Game/GameScene.swift`, `Rally/Game/Tunables.swift` | RELEASED | Build passed after stronger gameplay-scale face, connected hair mass, exposed ears/mouth, wider shoes, toe-out stance, and stronger court POV. Visual QA still decides if another anatomy pass is needed. |
 
 ---
 

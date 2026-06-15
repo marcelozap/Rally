@@ -1227,46 +1227,46 @@ final class GameScene: SKScene {
         hair.strokeColor = .clear
         hair.lineWidth = 0
         hair.position = CGPoint(x: 0, y: headAnchorY + hairFringeLift)
-        hair.zPosition = 7
+        hair.zPosition = 7.25
         hair.isHidden = showsRearAvatar
         root.addChild(hair)
         playerHair = hair
 
         let leftEar = SKShapeNode(path: RallyAvatarGeometry.earPath(side: -1, scale: faceScale))
-        leftEar.fillColor = skin.mixed(with: .black, ratio: 0.035)
+        leftEar.fillColor = skin.mixed(with: .black, ratio: 0.025)
         leftEar.strokeColor = .clear
         leftEar.lineWidth = 0
         leftEar.position = CGPoint(x: 0, y: layout.headY + 2 * bodyScale)
-        leftEar.zPosition = 5.55
-        leftEar.alpha = 0.36
+        leftEar.zPosition = 6.05
+        leftEar.alpha = 0.76
         root.addChild(leftEar)
         playerLeftEar = leftEar
 
         let rightEar = SKShapeNode(path: RallyAvatarGeometry.earPath(side: 1, scale: faceScale))
-        rightEar.fillColor = skin.mixed(with: .black, ratio: 0.035)
+        rightEar.fillColor = skin.mixed(with: .black, ratio: 0.025)
         rightEar.strokeColor = .clear
         rightEar.lineWidth = 0
         rightEar.position = CGPoint(x: 0, y: layout.headY + 2 * bodyScale)
-        rightEar.zPosition = 5.55
-        rightEar.alpha = 0.36
+        rightEar.zPosition = 6.05
+        rightEar.alpha = 0.76
         root.addChild(rightEar)
         playerRightEar = rightEar
 
         let hairHighlight = SKShapeNode(path: RallyAvatarGeometry.hairHighlightPath(scale: hairScale))
-        hairHighlight.fillColor = UIColor(red: 0.165, green: 0.165, blue: 0.188, alpha: 0.42)
+        hairHighlight.fillColor = UIColor(red: 0.165, green: 0.165, blue: 0.188, alpha: 0.58)
         hairHighlight.strokeColor = .clear
         hairHighlight.position = CGPoint(x: 0, y: headAnchorY + hairFringeLift)
-        hairHighlight.zPosition = 7.1
+        hairHighlight.zPosition = 7.35
         hairHighlight.isHidden = showsRearAvatar
         root.addChild(hairHighlight)
         playerHairHighlight = hairHighlight
 
-        let eyeFill = UIColor(red: 0.055, green: 0.047, blue: 0.043, alpha: 0.86)
+        let eyeFill = UIColor(red: 0.025, green: 0.022, blue: 0.020, alpha: 0.98)
         let showsFrontFace = !showsRearAvatar
         let leftEye = SKShapeNode(path: RallyAvatarGeometry.eyePath(side: -1, scale: faceScale))
         leftEye.fillColor = eyeFill
-        leftEye.strokeColor = UIColor.white.withAlphaComponent(0.04)
-        leftEye.lineWidth = 0.22 * bodyScale
+        leftEye.strokeColor = UIColor.white.withAlphaComponent(0.10)
+        leftEye.lineWidth = max(0.36 * bodyScale, 0.28)
         leftEye.position = CGPoint(x: 0, y: layout.headY + 2 * bodyScale)
         leftEye.zPosition = 8
         leftEye.isHidden = !showsFrontFace
@@ -1275,8 +1275,8 @@ final class GameScene: SKScene {
 
         let rightEye = SKShapeNode(path: RallyAvatarGeometry.eyePath(side: 1, scale: faceScale))
         rightEye.fillColor = eyeFill
-        rightEye.strokeColor = UIColor.white.withAlphaComponent(0.04)
-        rightEye.lineWidth = 0.22 * bodyScale
+        rightEye.strokeColor = UIColor.white.withAlphaComponent(0.10)
+        rightEye.lineWidth = max(0.36 * bodyScale, 0.28)
         rightEye.position = CGPoint(x: 0, y: layout.headY + 2 * bodyScale)
         rightEye.zPosition = 8
         rightEye.isHidden = !showsFrontFace
@@ -1285,7 +1285,7 @@ final class GameScene: SKScene {
 
         for side in [-1.0, 1.0] {
             let spec = SKShapeNode(path: RallyAvatarGeometry.eyeSpecularPath(side: side, scale: faceScale))
-            spec.fillColor = UIColor.white.withAlphaComponent(0.34)
+            spec.fillColor = UIColor.white.withAlphaComponent(0.46)
             spec.strokeColor = .clear
             spec.position = CGPoint(x: 0, y: layout.headY + 2 * bodyScale)
             spec.zPosition = 8.1
@@ -1317,8 +1317,8 @@ final class GameScene: SKScene {
 
         let nose = SKShapeNode(path: RallyAvatarGeometry.nosePath(scale: faceScale))
         nose.fillColor = .clear
-        nose.strokeColor = skin.mixed(with: .black, ratio: 0.08).withAlphaComponent(0.24)
-        nose.lineWidth = 0.62 * bodyScale
+        nose.strokeColor = skin.mixed(with: .black, ratio: 0.10).withAlphaComponent(0.34)
+        nose.lineWidth = max(0.82 * bodyScale, 0.62)
         nose.lineCap = .round
         nose.position = CGPoint(x: 0, y: layout.headY + 2 * bodyScale)
         nose.zPosition = 8
@@ -1379,9 +1379,9 @@ final class GameScene: SKScene {
         playerRightTemple = rightTemple
 
         let mouth = SKShapeNode(path: RallyAvatarGeometry.friendlyMouthPath(scale: faceScale))
-        mouth.strokeColor = skin.mixed(with: .black, ratio: 0.48).withAlphaComponent(0.82)
+        mouth.strokeColor = skin.mixed(with: .black, ratio: 0.58).withAlphaComponent(0.96)
         mouth.fillColor = .clear
-        mouth.lineWidth = max(1.55 * bodyScale, 1.15)
+        mouth.lineWidth = max(2.05 * bodyScale, 1.45)
         mouth.lineCap = .round
         mouth.position = CGPoint(x: 0, y: layout.headY + 2 * bodyScale + RallyAvatarGeometry.mouthCenterY(scale: faceScale))
         mouth.zRotation = RallyAvatarRebuildDefaults.Face.smileRotationDegrees * .pi / 180

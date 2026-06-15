@@ -198,16 +198,16 @@ enum Tunables {
     static let ballRadiusPoints:      CGFloat = 22
     static let ballTravelSeconds:     Double  = 1.52
     static let strikeLineYRatio:      CGFloat = 0.315
-    static let gameplayCameraYOffsetRatio: CGFloat = -0.070
+    static let gameplayCameraYOffsetRatio: CGFloat = -0.105
     static let gameplayCourtNearOverscanRatio: CGFloat = 0.24
-    static let gameplayCourtFarYRatio: CGFloat = 0.82
-    static let gameplayCourtNearHalfWidthRatio: CGFloat = 0.88
-    static let gameplayCourtFarHalfWidthRatio: CGFloat = 0.115
+    static let gameplayCourtFarYRatio: CGFloat = 0.86
+    static let gameplayCourtNearHalfWidthRatio: CGFloat = 0.98
+    static let gameplayCourtFarHalfWidthRatio: CGFloat = 0.095
     static let gameplayCourtNetDepthRatio: CGFloat = 0.50
     static let gameplayCourtNetNearHalfScalar: CGFloat = 0.58
     static let gameplayCourtNetFarHalfScalar: CGFloat = 1.05
-    static let gameplayPlayerRootYRatio: CGFloat = 0.140
-    static let gameplayPlayerVisualScale: CGFloat = 0.54
+    static let gameplayPlayerRootYRatio: CGFloat = 0.124
+    static let gameplayPlayerVisualScale: CGFloat = 0.56
     static let spawnLineYRatio:       CGFloat = 1.05
     static let cullBelowStrikePoints: CGFloat = 40
     static let horizonLaneInsetRatio: CGFloat = 0.12
@@ -410,9 +410,9 @@ enum Tunables {
     /// Extra compression at the exact contact stomp.
     static let footworkContactCompressionScale: CGFloat = 0.050  // body squats at contact moment
     /// Toe-out angle for the planted outside shoe.
-    static let footworkOutsideToeOutRadians: CGFloat = 0.18
+    static let footworkOutsideToeOutRadians: CGFloat = 0.23
     /// Neutral ready-stance toe-out so both shoes angle away from centre.
-    static let footworkReadyToeOutRadians: CGFloat = 0.17
+    static let footworkReadyToeOutRadians: CGFloat = 0.23
     /// Trail-foot drag/toe angle during recovery.
     static let footworkRecoveryToeDragRadians: CGFloat = 0.08
     /// Blend speed for side-to-side weight transfer.
