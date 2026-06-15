@@ -230,6 +230,9 @@ enum Tunables {
     static let gameplayCourtNetFarHalfScalar: CGFloat = 1.05
     static let gameplayPlayerRootYRatio: CGFloat = 0.142
     static let gameplayPlayerVisualScale: CGFloat = 0.60
+    /// SpriteKit gameplay needs shoes smaller than the locker hero view because
+    /// the court camera compresses the feet near the bottom of the frame.
+    static let gameplayShoeVisualScale: CGFloat = 0.76
     static let spawnLineYRatio:       CGFloat = 1.05
     static let cullBelowStrikePoints: CGFloat = 40
     static let horizonLaneInsetRatio: CGFloat = 0.12

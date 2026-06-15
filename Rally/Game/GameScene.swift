@@ -266,8 +266,8 @@ final class GameScene: SKScene {
     private var playerPelvis: SKShapeNode!
     private var playerLeadLeg: SKShapeNode!
     private var playerTrailLeg: SKShapeNode!
-    private var playerLeadShoe: SKShapeNode!
-    private var playerTrailShoe: SKShapeNode!
+    private var playerLeadShoe: SKNode!
+    private var playerTrailShoe: SKNode!
     private var playerLeadArm: SKShapeNode!
     private var playerTrailArm: SKShapeNode!
     private var playerLeadSleeve: SKShapeNode!
@@ -1600,18 +1600,23 @@ final class GameScene: SKScene {
         upper: UIColor, accent: UIColor,
         zBase: CGFloat,
         xFlip: Bool = false,
-        primaryRef: inout SKShapeNode?
+        primaryRef: inout SKNode?
     ) {
         // Mirror factor: -1 for left foot so toe faces outward, not caved inward.
         let flip: CGFloat = xFlip ? -1 : 1
+        let shoeRoot = SKNode()
+        shoeRoot.position = CGPoint(x: x, y: y)
+        shoeRoot.zPosition = zBase
+        shoeRoot.setScale(Tunables.gameplayShoeVisualScale)
+        root.addChild(shoeRoot)
 
         // 1. Midsole/outsole — darkest layer, sits lowest (symmetric — no flip needed)
         let sole = SKShapeNode(path: RallyAvatarGeometry.shoeSolePath(scale: bodyScale))
-        sole.fillColor = upper.mixed(with: .black, ratio: 0.42) ?? UIColor(white: 0.1, alpha: 1)
+        sole.fillColor = upper.mixed(with: .black, ratio: 0.42)
         sole.strokeColor = .clear
-        sole.position = CGPoint(x: x, y: y - 4.8 * bodyScale)
-        sole.zPosition = zBase
-        root.addChild(sole)
+        sole.position = CGPoint(x: 0, y: -4.8 * bodyScale)
+        sole.zPosition = 0
+        shoeRoot.addChild(sole)
 
         // 2. Shoe upper — main body (asymmetric: toe at +x; flip for left foot)
         let body = SKShapeNode(path: RallyAvatarGeometry.shoeBodyPath(scale: bodyScale))
@@ -1619,35 +1624,35 @@ final class GameScene: SKScene {
         body.strokeColor = accent.withAlphaComponent(0.55)
         body.lineWidth = 1.2 * bodyScale
         body.xScale = flip
-        body.position = CGPoint(x: x, y: y)
-        body.zPosition = zBase + 0.05
-        root.addChild(body)
-        primaryRef = body
+        body.position = .zero
+        body.zPosition = 0.05
+        shoeRoot.addChild(body)
+        primaryRef = shoeRoot
 
         // 3. Side brand stripe (asymmetric: stripe on toe side; flip for left foot)
         let stripe = SKShapeNode(path: RallyAvatarGeometry.shoeStripePath(scale: bodyScale))
         stripe.fillColor = accent.withAlphaComponent(0.82)
         stripe.strokeColor = .clear
         stripe.xScale = flip
-        stripe.position = CGPoint(x: x, y: y)
-        stripe.zPosition = zBase + 0.06
-        root.addChild(stripe)
+        stripe.position = .zero
+        stripe.zPosition = 0.06
+        shoeRoot.addChild(stripe)
 
         // 4. Tongue — lighter patch at top centre
         let tongue = SKShapeNode(path: RallyAvatarGeometry.shoeTonguePath(scale: bodyScale))
         tongue.fillColor = upper.blended(withFraction: 0.20, of: .white) ?? upper
         tongue.strokeColor = .clear
-        tongue.position = CGPoint(x: x, y: y)
-        tongue.zPosition = zBase + 0.07
-        root.addChild(tongue)
+        tongue.position = .zero
+        tongue.zPosition = 0.07
+        shoeRoot.addChild(tongue)
 
         // 5. Lace bars
         let laces = SKShapeNode(path: RallyAvatarGeometry.shoeLacePath(scale: bodyScale))
         laces.fillColor = UIColor.white.withAlphaComponent(0.72)
         laces.strokeColor = .clear
-        laces.position = CGPoint(x: x, y: y)
-        laces.zPosition = zBase + 0.08
-        root.addChild(laces)
+        laces.position = .zero
+        laces.zPosition = 0.08
+        shoeRoot.addChild(laces)
     }
 
     private func addKneeBand(to leg: SKShapeNode, skin: UIColor, width: CGFloat, y: CGFloat) {
@@ -3137,7 +3142,24 @@ final class GameScene: SKScene {
         } else {
             cueColor = palette.core
         }
-        focusStrokeReadLabel?.alpha = 0
+        let laneRead = focusLane == .left ? "LEFT SIDE" : "RIGHT SIDE"
+        let timingRead: String
+        if moveWarning {
+            timingRead = laneRead
+        } else if absDelta <= greatWindow + nowCueLead {
+            timingRead = "SWIPE UP"
+        } else {
+            timingRead = laneRead
+        }
+        focusStrokeReadLabel?.text = timingRead
+        focusStrokeReadLabel?.position = CGPoint(
+            x: focusPoint.x,
+            y: focusPoint.y + Tunables.wallFocusReadLabelLift + 6
+        )
+        focusStrokeReadLabel?.fontColor = cueColor.withAlphaComponent(0.86)
+        focusStrokeReadLabel?.fontSize = absDelta <= greatWindow + nowCueLead ? 16 : 13
+        focusStrokeReadLabel?.setScale(1.0 + approach * 0.06)
+        focusStrokeReadLabel?.alpha = min(0.70, 0.10 + approach * 0.54)
 
         wallAnticipationBar?.position = CGPoint(x: focusPoint.x, y: focusPoint.y + Tunables.wallFocusReadLabelLift - 26)
         wallAnticipationBar?.alpha = min(0.38, 0.04 + approach * 0.34)
@@ -3158,6 +3180,8 @@ final class GameScene: SKScene {
         } else {
             anticipationProgress = max(0.78, 1 - CGFloat(timeToContact / peakLead) * 0.22)
         }
+        focusStrokeReadLabel?.setScale(1.0 + anticipationProgress * 0.08)
+        focusStrokeReadLabel?.alpha = min(0.82, 0.10 + approach * 0.46 + anticipationProgress * 0.26)
         let readabilityWindow = max(goodWindow * 3.0, 0.48)
         let timingFill = max(0, min(1, 1 - absDelta / readabilityWindow))
         let fillWidthProgress = max(0.14, anticipationProgress * 0.74 + timingFill * 0.26)
