@@ -10,7 +10,10 @@ Governing priority: RALLY_NORTH_STAR.md > CLAUDE_CODE_PARALLEL_PLAN.md > RALLY_O
 
 | Date       | Commit     | Lane | Work                              | Notes                                           |
 |------------|------------|------|-----------------------------------|-------------------------------------------------|
-| 2026-06-15 | (pending)  | [CC] | Journal CTA in exit confirmation  | Exit button → confirmationDialog; "Log how it felt" opens journal then exits; exitAfterLog flag. BUILD NOT RUN |
+| 2026-06-15 | 6025cb7    | [CX] | Shop tab badge + locker highlight | shopHasUnseenUnlock @AppStorage; badge clears on Shop .onAppear; equipped tile gold/champagne glow. BUILD NOT RUN |
+| 2026-06-15 | 85e3582    | [CC] | Ball shadow lerp + strict FH/BH   | Shadow xScale 0.30–0.90 lerp with depth+altitude; maxSameLaneRun 2→1 forces strict alternation. BUILD NOT RUN |
+| 2026-06-15 | 49d8a4e    | [CC] | Courts tier 2 unlocks             | Ashe/Laver/IndianWells wristband rewards in ShopCatalog; reward badge UI in CourtsMapView. BUILD NOT RUN |
+| 2026-06-15 | f994b40    | [CC] | Journal CTA in exit confirmation  | Exit button → confirmationDialog; "Log how it felt" opens journal then exits; exitAfterLog flag. BUILD NOT RUN |
 | 2026-06-15 | 2cf056a    | [CC] | T4: combo-scaled recovery window  | registerComboBreak scales 1–2× with previousCombo; GameScene passes combo; new MatchFlowTests case. |
 | 2026-06-13 | (verify)   | [CC] | BUILD VERIFY — whole tree         | xcodebuild iPhone 16 Pro sim, Debug: **BUILD SUCCEEDED**. Clears all BUILD NOT RUN flags (b979f01–c3a664d Journal, aac00cc T4, 5c122a8 shop). |
 | 2026-06-13 | aac00cc    | [CC] | T4: contact payoff + miss clarity | Perfect banners live (combo ≤3, every 5th); miss popup red/amber; wallMissCue coaching text |
