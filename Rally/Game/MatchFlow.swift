@@ -142,10 +142,15 @@ final class MatchFlowCoordinator {
         }
     }
 
-    /// Called by `GameScene` when a combo breaks. Schedules a short
-    /// `.recovery` window so the spawner thins out for a couple of seconds.
-    func registerComboBreak(at trackTime: TimeInterval) {
-        recoveryUntil = trackTime + Tunables.MatchFlow.recoverySeconds
+    /// Called by `GameScene` when a combo breaks. Schedules a recovery
+    /// window so the spawner thins out. The window scales with the height
+    /// of the combo that just broke — a 30+ combo break earns 2× the base
+    /// recovery time, a 0-combo break stays at 1×.
+    func registerComboBreak(at trackTime: TimeInterval, previousCombo: Int = 0) {
+        let base = Tunables.MatchFlow.recoverySeconds
+        // Scale: +1 second of recovery per 30 combo, capped at 2× base.
+        let scale = 1.0 + min(Double(previousCombo) / 30.0, 1.0)
+        recoveryUntil = trackTime + base * scale
     }
 
     /// Profile for the *current* phase. Spawner reads this when it authors

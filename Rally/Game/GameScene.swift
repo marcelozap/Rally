@@ -4142,7 +4142,7 @@ final class GameScene: SKScene {
         showWallMissInstruction("RESET", comboWasLive: false)
 
         frameStopUntil = currentTimeSnapshot + Tunables.frameStopDeathMs.seconds
-        flow?.registerComboBreak(at: currentTrackTime)
+        flow?.registerComboBreak(at: currentTrackTime, previousCombo: previousCombo)
         GameEventBus.shared.publish(.comboBreak(previous: previousCombo))
 
         // Clear in-flight balls so the player isn't immediately killed again

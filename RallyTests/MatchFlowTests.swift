@@ -40,13 +40,35 @@ final class MatchFlowTests: XCTestCase {
         c.update(trackTime: 90, combo: 20)
         XCTAssertEqual(c.currentPhase, .pressure)
 
+        // No previousCombo → scale 1.0 → base window only.
         c.registerComboBreak(at: 90)
         c.update(trackTime: 91, combo: 0)
         XCTAssertEqual(c.currentPhase, .recovery)
 
-        // After the recovery window, we should land back on the clock-driven phase.
+        // After the base recovery window, clock-driven phase resumes.
         c.update(trackTime: 90 + Tunables.MatchFlow.recoverySeconds + 0.1, combo: 0)
         XCTAssertNotEqual(c.currentPhase, .recovery)
+    }
+
+    func testComboBreakWindowScalesWithPreviousCombo() {
+        let base = Tunables.MatchFlow.recoverySeconds
+
+        // Combo 30 → scale 2.0 → window = 2 × base.
+        let c1 = MatchFlowCoordinator(sessionDurationSeconds: 180)
+        c1.registerComboBreak(at: 0, previousCombo: 30)
+        // Still inside the 2× window — must still be recovery.
+        c1.update(trackTime: base * 1.5, combo: 0)
+        XCTAssertEqual(c1.currentPhase, .recovery)
+        // Past the 2× window — recovery should be over.
+        c1.update(trackTime: base * 2.0 + 0.1, combo: 0)
+        XCTAssertNotEqual(c1.currentPhase, .recovery)
+
+        // Combo 0 → scale 1.0 → window = 1 × base.
+        let c2 = MatchFlowCoordinator(sessionDurationSeconds: 180)
+        c2.registerComboBreak(at: 0, previousCombo: 0)
+        // Past the 1× window — recovery should be over.
+        c2.update(trackTime: base + 0.1, combo: 0)
+        XCTAssertNotEqual(c2.currentPhase, .recovery)
     }
 
     func testPhaseChangeCallbackFires() {

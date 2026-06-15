@@ -10,6 +10,8 @@ Governing priority: RALLY_NORTH_STAR.md > CLAUDE_CODE_PARALLEL_PLAN.md > RALLY_O
 
 | Date       | Commit     | Lane | Work                              | Notes                                           |
 |------------|------------|------|-----------------------------------|-------------------------------------------------|
+| 2026-06-15 | (pending)  | [CC] | T4: combo-scaled recovery window  | registerComboBreak now scales 1–2× with previousCombo; GameScene passes combo; new MatchFlowTests case. BUILD NOT RUN |
+| 2026-06-13 | (verify)   | [CC] | BUILD VERIFY — whole tree         | xcodebuild iPhone 16 Pro sim, Debug: **BUILD SUCCEEDED**. Clears all BUILD NOT RUN flags (b979f01–c3a664d Journal, aac00cc T4, 5c122a8 shop). |
 | 2026-06-13 | aac00cc    | [CC] | T4: contact payoff + miss clarity | Perfect banners live (combo ≤3, every 5th); miss popup red/amber; wallMissCue coaching text |
 | 2026-06-13 | 329c0ff    | [CX] | Avatar creator hand/hair controls | Lefty/Righty made explicit; stale bald configs reset; accidental bald removed from picker; hair lowered |
 | 2026-06-13 | 662b4f5    | [CX] | Avatar hair/face/stance polish    | Hair lowered/tightened, eyes reduced, shoulders/neck stronger, SwiftUI shoe mirroring fixed |
@@ -70,7 +72,7 @@ Commit: `[CC] World marketplace: listings, live referral links, declutter, safe 
 - [x] gear worn in session — gearCSV from equipped appearance slots via RallyReferralCatalog (c3a664d)
 - [ ] calendar-style weekly/monthly history (CX surface work)
 - [ ] manual training notes UI (CX surface work)
-- [ ] VERIFY: b979f01–c3a664d build not run; xcodebuild check that all Journal changes compile
+- [x] VERIFY: b979f01–c3a664d compile — xcodebuild sim Debug BUILD SUCCEEDED (2026-06-13)
 
 ---
 
@@ -90,8 +92,9 @@ Commit: `[CC] World marketplace: listings, live referral links, declutter, safe 
       was ~1.19×); return travel 0.62→0.56 s; speed-driven tail alpha/length (2026-06-12)
 - [x] contact payoff: perfect banners now live (combo ≤3 + every 5th); stroke-aware label text (aac00cc)
 - [x] miss clarity: popup red/amber by reason; wallMissCue coaching text filled in (aac00cc)
-- [ ] VERIFY: xcodebuild not run for 2026-06-12/13 [CC] changes; build + device check
-      — depth shrink at wall, return urgency, colored miss popups, perfect banners
+- [x] VERIFY (compile): xcodebuild sim Debug BUILD SUCCEEDED for all 2026-06-12/13 [CC] changes (2026-06-13)
+- [ ] VERIFY (visual): boot sim, play a rally, screenshot — confirm depth shrink at wall,
+      return urgency, colored miss popups, perfect banners read on screen (North Star Law 10)
 
 ---
 
