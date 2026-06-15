@@ -83,7 +83,7 @@ enum Tunables {
     /// before wall contact (same 0.40–0.50 s swing-now window).
     static let wallAnticipationLeadMs: Double = 520
     static let wallReboundBandYRatio: CGFloat = 0.902
-    static let minimalHUDScoreYRatio: CGFloat = 0.824
+    static let minimalHUDScoreYRatio: CGFloat = 0.790
     static let wallReboundCueDurationMs: Double = 260
     static let wallContactRingRadius: CGFloat = 38
     static let wallApproachWindowRatio: CGFloat = 0.50
