@@ -524,7 +524,7 @@ final class GameScene: SKScene {
             )
             self.showInstruction(
                 self.sessionMode == .wallRally
-                    ? ""
+                    ? "Swipe up on the side the ball is arriving."
                     : "Meet the ball and release through contact.",
                 hold: Tunables.openingHintSeconds * 0.38
             )
@@ -1894,7 +1894,7 @@ final class GameScene: SKScene {
         }
 
         let instruction = SKLabelNode(fontNamed: "AvenirNext-DemiBold")
-        instruction.text = usesMinimalWallHUD ? "" : "Swipe up on the side the ball is arriving"
+        instruction.text = "Swipe up on the side the ball is arriving"
         instruction.fontSize = 15
         instruction.fontColor = UIColor(white: 1, alpha: 0.82)
         instruction.position = CGPoint(x: size.width / 2, y: size.height * 0.14)
@@ -1904,9 +1904,6 @@ final class GameScene: SKScene {
         instruction.alpha = 0
         addChild(instruction)
         instructionLabel = instruction
-        if usesMinimalWallHUD {
-            instruction.isHidden = true
-        }
 
         // MARK: Wall rally addictiveness HUD
         if usesMinimalWallHUD {
