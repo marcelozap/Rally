@@ -6,6 +6,7 @@ struct ShopView: View {
     @State private var selectedCategory: ShopItem.Category? = nil
     @State private var groupByVendor: Bool = false
     @ObservedObject private var unlocks = CourtUnlocks.shared
+    @AppStorage("shopHasUnseenUnlock") private var shopHasUnseenUnlock = false
 
     private var avatar: AvatarConfig? { avatarConfigs.first }
 
@@ -52,6 +53,7 @@ struct ShopView: View {
             }
             .background(RallyUIKit.screenBackground)
             .navigationTitle("Shop")
+            .onAppear { shopHasUnseenUnlock = false }
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {

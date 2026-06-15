@@ -388,9 +388,26 @@ struct LockerHubView: View {
         .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .stroke(accent.opacity(0.28), lineWidth: 1)
+                .stroke(
+                    isEquipped(item)
+                        ? AnyShapeStyle(
+                            LinearGradient(
+                                colors: [RallyUIKit.Palette.champagne, RallyUIKit.Palette.gold.opacity(0.72)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                          )
+                        : AnyShapeStyle(accent.opacity(0.28)),
+                    lineWidth: isEquipped(item) ? 2 : 1
+                )
         )
-        .shadow(color: Color.black.opacity(0.18), radius: 12, y: 6)
+        .shadow(
+            color: isEquipped(item)
+                ? RallyUIKit.Palette.champagne.opacity(0.22)
+                : Color.black.opacity(0.18),
+            radius: isEquipped(item) ? 18 : 12,
+            y: 6
+        )
     }
 
     private func lockerTileGradient(accent: Color, itemColor: Color) -> LinearGradient {

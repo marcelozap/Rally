@@ -407,6 +407,11 @@ struct GameSessionView: View {
             modelContext: modelContext,
             appearance: avatarAppearanceStore.appearance
         )
+        // Signal the Shop tab badge when a level-up grants a cosmetic unlock.
+        if outcome.didLevelUp {
+            UserDefaults.standard.set(true, forKey: "shopHasUnseenUnlock")
+        }
+
         RallySyncTriggers.pushAfterLocalSave(modelContext: modelContext)
         viewModel.present(result: result, outcome: outcome)
     }

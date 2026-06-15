@@ -18,6 +18,9 @@ struct ContentView: View {
     @State private var isPlaying = false
     @State private var hasAppeared = false
 
+    // Shop tab badge — set when a cosmetic unlock fires, cleared on Shop visit.
+    @AppStorage("shopHasUnseenUnlock") private var shopHasUnseenUnlock = false
+
     #if DEBUG
     private var shouldAutoStartGameplay: Bool {
         ProcessInfo.processInfo.arguments.contains("-RallyAutoPlay")
@@ -93,6 +96,7 @@ struct ContentView: View {
 
             ShopView()
                 .tabItem { Label("Shop", systemImage: "bag.fill") }
+                .badge(shopHasUnseenUnlock ? 1 : 0)
                 .tag(RallyTab.shop)
                 .transition(.asymmetric(insertion: .opacity.combined(with: .scale(scale: 0.95)), removal: .opacity))
         }
