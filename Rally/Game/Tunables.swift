@@ -505,6 +505,58 @@ enum Tunables {
     static let sessionPhaseExchangeCutoff: Double = 0.42
     static let sessionPhasePressureCutoff: Double = 0.72
 
+    // MARK: - Wall rally escalation (Flappy Bird speed ramp)
+    //
+    // The ball gets faster as combo grows — generous on-ramp, terrifying by 55.
+    // Travel time = ballTravelSeconds × matchPace.travelScalar × wallSpeedScalar(combo).
+    //
+    // Tier 0: combo 0–4    → 1.04× (forgiving on-ramp)
+    // Tier 1: combo 5–11   → 0.92× ("oh, it's a bit faster")
+    // Tier 2: combo 12–21  → 0.81× (noticeable)
+    // Tier 3: combo 22–34  → 0.71× (scary)
+    // Tier 4: combo 35–54  → 0.61× (hard)
+    // Tier 5: combo 55+    → 0.52× (absurd — Flappy end-game feel)
+
+    static let wallSpeedComboTier1: Int    = 5
+    static let wallSpeedComboTier2: Int    = 12
+    static let wallSpeedComboTier3: Int    = 22
+    static let wallSpeedComboTier4: Int    = 35
+    static let wallSpeedComboTier5: Int    = 55
+
+    static let wallSpeedScalarTier0: Double = 1.04
+    static let wallSpeedScalarTier1: Double = 0.92
+    static let wallSpeedScalarTier2: Double = 0.81
+    static let wallSpeedScalarTier3: Double = 0.71
+    static let wallSpeedScalarTier4: Double = 0.61
+    static let wallSpeedScalarTier5: Double = 0.52
+
+    /// Map a combo count to its 0…5 speed tier.
+    static func wallSpeedTier(forCombo combo: Int) -> Int {
+        switch combo {
+        case ..<wallSpeedComboTier1: return 0
+        case ..<wallSpeedComboTier2: return 1
+        case ..<wallSpeedComboTier3: return 2
+        case ..<wallSpeedComboTier4: return 3
+        case ..<wallSpeedComboTier5: return 4
+        default:                     return 5
+        }
+    }
+
+    /// Travel-time scalar for the current combo.
+    static func wallSpeedScalar(forCombo combo: Int) -> Double {
+        switch wallSpeedTier(forCombo: combo) {
+        case 0:  return wallSpeedScalarTier0
+        case 1:  return wallSpeedScalarTier1
+        case 2:  return wallSpeedScalarTier2
+        case 3:  return wallSpeedScalarTier3
+        case 4:  return wallSpeedScalarTier4
+        default: return wallSpeedScalarTier5
+        }
+    }
+
+    /// UserDefaults key for the all-time best wall rally combo.
+    static let wallHighComboKey = "rally.wallRally.highCombo"
+
     // MARK: - Scoring
 
     static let comboTier1: Int = 5

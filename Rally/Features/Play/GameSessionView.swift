@@ -358,6 +358,7 @@ struct GameSessionView: View {
             // isn't lost; just no rewards.
             viewModel.present(result: result, outcome: Rewards.Outcome(
                 coinsEarned: 0, xpEarned: 0,
+                previousBestScore: 0, previousBestCombo: 0,
                 isNewBestScore: false, isNewBestCombo: false,
                 didLevelUp: false, newLevel: 1,
                 newStreak: 0, streakIncreased: false

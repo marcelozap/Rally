@@ -31,6 +31,7 @@ struct GameOverView: View {
             ScrollView(showsIndicators: false) {
                 VStack(spacing: RallyUIKit.Spacing.xl - 2) {
                     heroPanel
+                    runbackStrip
                     matchIdentityStrip
                     segmentedNarrative
                     rewardsStrip
@@ -216,6 +217,88 @@ struct GameOverView: View {
                 .tracking(2.8)
                 .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.62))
         }
+    }
+
+    private var runbackStrip: some View {
+        let message = runbackMessage
+        let tint = runbackTint
+
+        return HStack(spacing: RallyUIKit.Spacing.sm) {
+            ZStack {
+                Circle()
+                    .fill(tint.opacity(0.16))
+                Image(systemName: runbackIcon)
+                    .font(.system(size: 17, weight: .black))
+                    .foregroundStyle(tint)
+            }
+            .frame(width: 42, height: 42)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(message.title)
+                    .font(RallyUIKit.Typography.label(.headline, weight: .heavy))
+                    .foregroundStyle(RallyUIKit.Palette.frost)
+                Text(message.copy)
+                    .font(RallyUIKit.Typography.body(.caption, weight: .medium))
+                    .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.70))
+                    .lineLimit(2)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, RallyUIKit.Spacing.md)
+        .padding(.vertical, RallyUIKit.Spacing.sm)
+        .background(
+            RoundedRectangle(cornerRadius: RallyUIKit.Radius.lg, style: .continuous)
+                .fill(tint.opacity(0.10))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: RallyUIKit.Radius.lg, style: .continuous)
+                .stroke(tint.opacity(0.36), lineWidth: 1)
+        )
+        .shadow(color: tint.opacity(0.12), radius: 18, y: 10)
+        .opacity(statsIn ? 1 : 0)
+        .offset(y: statsIn ? 0 : 14)
+    }
+
+    private var runbackMessage: (title: String, copy: String) {
+        if outcome.isNewBestScore {
+            let gain = result.finalScore - outcome.previousBestScore
+            let gainText = outcome.previousBestScore > 0 ? " by \(gain)" : ""
+            return ("You broke the ceiling", "New best\(gainText). Run it back while your timing is hot.")
+        }
+
+        if outcome.previousBestScore > 0 {
+            let gap = max(1, outcome.previousBestScore - result.finalScore)
+            if gap <= 50 {
+                return ("Almost had it", "\(gap) points from your best. One cleaner rally can flip it.")
+            }
+            if result.maxCombo >= outcome.previousBestCombo && outcome.previousBestCombo > 0 {
+                return ("Combo is improving", "Your rhythm is climbing. Keep the streak alive next run.")
+            }
+        }
+
+        if result.misses <= 2 && result.totalHits > 0 {
+            return ("Clean hands", "Low misses. Push for a longer combo next run.")
+        }
+        if result.maxCombo < Tunables.comboTier1 {
+            return ("Find the first streak", "Chase \(Tunables.comboTier1) clean hits. Small goal, instant momentum.")
+        }
+        return ("One more run", "Your next best is one cleaner read away.")
+    }
+
+    private var runbackIcon: String {
+        if outcome.isNewBestScore { return "crown.fill" }
+        if outcome.previousBestScore > 0 && max(1, outcome.previousBestScore - result.finalScore) <= 50 {
+            return "scope"
+        }
+        return "arrow.clockwise"
+    }
+
+    private var runbackTint: Color {
+        if outcome.isNewBestScore { return RallyUIKit.Palette.gold }
+        if outcome.previousBestScore > 0 && max(1, outcome.previousBestScore - result.finalScore) <= 50 {
+            return RallyUIKit.Palette.rose
+        }
+        return RallyUIKit.Palette.cyan
     }
 
     private var statsGrid: some View {
@@ -414,9 +497,19 @@ struct GameOverView: View {
         RallyUIKit.LuxePanel(tint: RallyUIKit.Palette.champagne) {
             VStack(spacing: RallyUIKit.Spacing.xs + 2) {
                 Button(action: onPlayAgain) {
-                    HStack(spacing: RallyUIKit.Spacing.xs + 2) {
+                    HStack(spacing: RallyUIKit.Spacing.sm) {
                         Image(systemName: "arrow.clockwise")
-                        Text("Play Again")
+                            .font(.system(size: 18, weight: .black))
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text("RUN IT BACK")
+                                .font(RallyUIKit.Typography.label(.headline, weight: .heavy))
+                                .tracking(1.2)
+                            Text(primaryActionSubtitle)
+                                .font(RallyUIKit.Typography.label(.caption2, weight: .bold))
+                                .tracking(1)
+                                .opacity(0.72)
+                        }
+                        Spacer(minLength: 0)
                     }
                 }
                 .buttonStyle(PrimaryButtonStyle(tint: RallyUIKit.Palette.cyan))
@@ -451,6 +544,14 @@ struct GameOverView: View {
         return ShareLink(item: shareText) {
             Label("Share", systemImage: "square.and.arrow.up")
         }
+    }
+
+    private var primaryActionSubtitle: String {
+        if outcome.isNewBestScore { return "Defend the new best" }
+        if outcome.previousBestScore > 0 {
+            return "\(max(1, outcome.previousBestScore - result.finalScore)) points to best"
+        }
+        return "Next rally starts now"
     }
 
     // MARK: - Entrance

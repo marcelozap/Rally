@@ -152,6 +152,13 @@ final class GameScene: SKScene {
     private var livesRemaining: Int = Tunables.Survival.lives
     private var livesLabel: SKLabelNode?
 
+    /// Persistent best score across runs — the other half of the Flappy hook.
+    /// Loaded at setup, shown in the HUD, written back when a run ends.
+    private var bestScore: Int = 0
+    private var beatBestThisRun = false
+    private var survivalBestLabel: SKLabelNode?
+    private static let bestScoreDefaultsKey = "rally.survival.bestScore"
+
     // Hit-quality histogram, accumulated across the whole session. Drives
     // the end-of-run accuracy %, perfect rate, and reward math.
     private var perfectHits: Int = 0
@@ -176,6 +183,19 @@ final class GameScene: SKScene {
     private var recentContactUntil: TimeInterval = 0
     private var recentHUDImpactUntil: TimeInterval = 0
     private var lastAutoPlaySpawnTime: Double = -1
+
+    // MARK: - Wall rally addictiveness state
+
+    /// All-time best combo in wall rally, persisted across sessions.
+    private var allTimeHighCombo: Int = 0
+    /// Speed tier at the last combo increment — drives "FASTER!" banner on tier change.
+    private var lastWallSpeedTier: Int = 0
+    /// Streak counter shown left-of-center in the wall HUD.
+    private var wallStreakLabel: SKLabelNode?
+    /// Personal-best nudge shown right-of-center in the wall HUD.
+    private var wallBestLabel: SKLabelNode?
+    /// Mid-screen moment banner for wall mode (replaces hidden phaseBannerLabel).
+    private var wallMomentLabel: SKLabelNode?
 
     /// Set to `true` for the first `countdownSeconds` after the scene
     /// appears. Spawner is paused and input is ignored during this window
@@ -402,6 +422,10 @@ final class GameScene: SKScene {
         lastBeatTime = startTime
         wallNextLane = dominantHand == .right ? .right : .left
         GameEventBus.shared.publish(.sessionStart)
+        if sessionMode == .wallRally {
+            allTimeHighCombo = UserDefaults.standard.integer(forKey: Tunables.wallHighComboKey)
+            wallBestLabel?.text = allTimeHighCombo > 0 ? "BEST \(allTimeHighCombo)" : ""
+        }
         runCountdown()
     }
 
@@ -894,6 +918,36 @@ final class GameScene: SKScene {
         hudMaxValueLabel?.position = CGPoint(x: size.width * 0.78, y: courtScoreY)
         comboLabel?.position = CGPoint(x: size.width / 2, y: courtScoreY - 30)
         livesLabel?.position = CGPoint(x: size.width / 2, y: courtScoreY - 22)
+        survivalBestLabel?.position = CGPoint(x: size.width / 2, y: courtScoreY + 26)
+        // Addictiveness HUD
+        wallStreakLabel?.position = CGPoint(x: size.width * 0.22, y: courtScoreY)
+        wallBestLabel?.position = CGPoint(x: size.width * 0.78, y: courtScoreY - 16)
+        wallMomentLabel?.position = CGPoint(x: size.width / 2, y: size.height * 0.68)
+    }
+
+    /// Shows the persistent best score when one exists. Hidden on a first-ever
+    /// run so the player isn't told "BEST 0".
+    private func updateBestHUD() {
+        guard let survivalBestLabel else { return }
+        guard Tunables.Survival.enabled, bestScore > 0 else {
+            survivalBestLabel.isHidden = true
+            return
+        }
+        survivalBestLabel.isHidden = false
+        survivalBestLabel.text = "BEST \(bestScore)"
+    }
+
+    /// Fires once per run the instant the live score passes the stored best —
+    /// the dopamine spike that powers the "one more try" chase.
+    private func checkBestProgress() {
+        guard Tunables.Survival.enabled, !beatBestThisRun, bestScore > 0, score > bestScore else { return }
+        beatBestThisRun = true
+        // Use wall banner (phaseBannerLabel is hidden in wall rally mode).
+        showWallBanner(
+            text: "NEW HIGH SCORE!",
+            color: UIColor(red: 0.96, green: 0.86, blue: 0.46, alpha: 1),
+            hold: 0.52
+        )
     }
 
     /// Renders the survival lives as tennis-ball pips: bright for remaining,
@@ -1741,6 +1795,25 @@ final class GameScene: SKScene {
         livesLabel = lives
         updateLivesHUD()
 
+        // Persistent best score, shown just above the live score so the player
+        // always has a target to beat.
+        bestScore = UserDefaults.standard.integer(forKey: Self.bestScoreDefaultsKey)
+        let best = SKLabelNode(fontNamed: "AvenirNext-DemiBold")
+        best.fontSize = usesMinimalWallHUD ? 11 : 12
+        best.fontColor = UIColor(red: 0.93, green: 0.85, blue: 0.56, alpha: 0.85)
+        best.zPosition = 50
+        best.horizontalAlignmentMode = .center
+        best.verticalAlignmentMode = .center
+        best.position = CGPoint(
+            x: size.width / 2,
+            y: (usesMinimalWallHUD
+                ? size.height * Tunables.minimalHUDScoreYRatio
+                : size.height * 0.875) + (usesMinimalWallHUD ? 26 : 34)
+        )
+        addChild(best)
+        survivalBestLabel = best
+        updateBestHUD()
+
         if usesMinimalWallHUD {
             caption.alpha = 0
             phaseLabel.alpha = 0
@@ -1828,6 +1901,44 @@ final class GameScene: SKScene {
         instructionLabel = instruction
         if usesMinimalWallHUD {
             instruction.isHidden = true
+        }
+
+        // MARK: Wall rally addictiveness HUD
+        if usesMinimalWallHUD {
+            // Streak counter — shown left-of-score when combo ≥ 2
+            let streak = SKLabelNode(fontNamed: "AvenirNext-Bold")
+            streak.text = ""
+            streak.fontSize = 18
+            streak.fontColor = UIColor(white: 1, alpha: 0.80)
+            streak.horizontalAlignmentMode = .center
+            streak.verticalAlignmentMode = .center
+            streak.zPosition = 50
+            streak.alpha = 0
+            addChild(streak)
+            wallStreakLabel = streak
+
+            // Personal-best nudge — gold tint, right of score
+            let best = SKLabelNode(fontNamed: "AvenirNext-DemiBold")
+            best.text = ""
+            best.fontSize = 11
+            best.fontColor = UIColor(red: 1.0, green: 0.86, blue: 0.42, alpha: 0.60)
+            best.horizontalAlignmentMode = .center
+            best.verticalAlignmentMode = .center
+            best.zPosition = 50
+            addChild(best)
+            wallBestLabel = best
+
+            // Mid-screen moment label (speed tier bumps, new bests)
+            let moment = SKLabelNode(fontNamed: "AvenirNext-DemiBold")
+            moment.text = ""
+            moment.fontSize = 22
+            moment.fontColor = .white
+            moment.position = CGPoint(x: size.width / 2, y: size.height * 0.68)
+            moment.zPosition = 55
+            moment.horizontalAlignmentMode = .center
+            moment.alpha = 0
+            addChild(moment)
+            wallMomentLabel = moment
         }
     }
 
@@ -3964,6 +4075,14 @@ final class GameScene: SKScene {
 
         combo += 1
         maxCombo = max(maxCombo, combo)
+        // Speed-tier escalation banner (wall rally only).
+        if sessionMode == .wallRally {
+            let newTier = Tunables.wallSpeedTier(forCombo: combo)
+            if newTier > lastWallSpeedTier {
+                lastWallSpeedTier = newTier
+                showWallSpeedUpBanner(tier: newTier)
+            }
+        }
         switch quality {
         case .perfect: perfectHits += 1
         case .great:   greatHits   += 1
@@ -4088,6 +4207,7 @@ final class GameScene: SKScene {
         recordInCurrentSegment(quality: quality)
         recentHUDImpactUntil = currentTimeSnapshot + wallHUDImpactDuration(for: quality)
         updateHUD()
+        checkBestProgress()
 
         let newTier = comboTier(for: combo)
         if newTier != lastComboTier {
@@ -4116,6 +4236,25 @@ final class GameScene: SKScene {
             lastComboTier = 0
             wallNextLane = correctLane ?? lane
             updateHUD()
+
+            // Personal best (combo): save immediately so it's recorded even if
+            // survival ends the run on this same miss.
+            if previous > allTimeHighCombo {
+                allTimeHighCombo = previous
+                UserDefaults.standard.set(allTimeHighCombo, forKey: Tunables.wallHighComboKey)
+                wallBestLabel?.text = "BEST \(allTimeHighCombo)"
+                showWallNewBestBanner(combo: allTimeHighCombo)
+            } else if previous >= 5 {
+                // RESET banner only on meaningful combo breaks.
+                showWallBanner(
+                    text: "RESET",
+                    color: UIColor(red: 0.98, green: 0.56, blue: 0.48, alpha: 1),
+                    hold: 0.18
+                )
+            }
+            // Reset speed tier for next run.
+            lastWallSpeedTier = 0
+
             // Survival: every miss costs a life. Out of lives ends the run.
             if Tunables.Survival.enabled {
                 livesRemaining -= 1
@@ -4139,15 +4278,6 @@ final class GameScene: SKScene {
                 wallMissCue(for: wallReason, comboWasLive: previous > 0),
                 comboWasLive: previous > 0
             )
-            if previous >= 10 {
-                showMomentBanner(
-                    text: "RESET",
-                    color: UIColor(red: 0.98, green: 0.56, blue: 0.48, alpha: 1),
-                    hold: 0.2,
-                    startScale: 0.94,
-                    peakScale: 1.0
-                )
-            }
             scheduleWallBall(after: wallMissRestartSeconds(previousCombo: previous))
             return
         }
@@ -4291,6 +4421,24 @@ final class GameScene: SKScene {
             comboLabel.alpha = usesMinimalWallHUD ? 0 : 1
         } else {
             comboLabel?.text = ""
+        }
+        // Addictiveness HUD (wall rally only)
+        if usesMinimalWallHUD {
+            if combo >= 2 {
+                wallStreakLabel?.text = "×\(combo)"
+                wallStreakLabel?.fontColor = comboAccentColor(for: combo)
+                wallStreakLabel?.run(.fadeAlpha(to: 1.0, duration: 0.06), withKey: "streakFade")
+            } else {
+                wallStreakLabel?.run(.fadeAlpha(to: 0.0, duration: 0.12), withKey: "streakFade")
+            }
+            let displayBest = max(allTimeHighCombo, maxCombo)
+            if displayBest > 0 {
+                let isNewBest = maxCombo > allTimeHighCombo && maxCombo > 0
+                wallBestLabel?.text = isNewBest ? "★ \(maxCombo)" : "BEST \(displayBest)"
+                wallBestLabel?.fontColor = isNewBest
+                    ? UIColor(red: 1.0, green: 0.88, blue: 0.42, alpha: 0.90)
+                    : UIColor(red: 1.0, green: 0.86, blue: 0.42, alpha: 0.55)
+            }
         }
         hudTopPlate?.strokeColor = combo > 1
             ? comboAccentColor(for: combo).withAlphaComponent(0.28)
@@ -5416,18 +5564,17 @@ final class GameScene: SKScene {
     }
 
     private func wallTravelSeconds() -> Double {
+        // First 3 balls get a slower on-ramp so the player can settle in.
         let openingScalar: Double
         switch spawnedBallCount {
-        case ..<2:
-            openingScalar = 1.06
-        case 2:
-            openingScalar = 1.01
-        case 3:
-            openingScalar = 0.98
-        default:
-            openingScalar = combo >= 6 ? 0.9 : (combo >= 3 ? 0.95 : 0.98)
+        case ..<2: openingScalar = 1.06
+        case 2:    openingScalar = 1.02
+        case 3:    openingScalar = 0.99
+        default:   openingScalar = 1.0
         }
-        return Tunables.ballTravelSeconds * 1.0 * matchPace.travelScalar * openingScalar
+        // Flappy-Bird-style escalation: speed climbs with combo via Tunables tiers.
+        let comboScalar = Tunables.wallSpeedScalar(forCombo: combo)
+        return Tunables.ballTravelSeconds * matchPace.travelScalar * openingScalar * comboScalar
     }
 
     #if DEBUG
@@ -5576,6 +5723,63 @@ final class GameScene: SKScene {
             return 0.24
         }
         return 0.26
+    }
+
+    // MARK: - Wall rally addictiveness banners
+
+    /// Generic mid-screen banner for wall rally moments.
+    private func showWallBanner(text: String, color: UIColor, hold: TimeInterval) {
+        guard let wallMomentLabel else { return }
+        wallMomentLabel.removeAllActions()
+        wallMomentLabel.text = text
+        wallMomentLabel.fontColor = color
+        wallMomentLabel.setScale(0.86)
+        wallMomentLabel.run(.sequence([
+            .group([
+                .fadeAlpha(to: 1.0, duration: 0.12),
+                .scale(to: 1.04, duration: 0.16)
+            ]),
+            .wait(forDuration: hold),
+            .group([
+                .fadeAlpha(to: 0.0, duration: 0.26),
+                .scale(to: 1.0, duration: 0.30)
+            ])
+        ]))
+    }
+
+    /// "FASTER!" tier banner — fires once per tier breakthrough.
+    private func showWallSpeedUpBanner(tier: Int) {
+        let texts = ["", "FASTER", "FASTER!", "BLAZING!", "INSANE!", "IMPOSSIBLE!"]
+        let colors: [UIColor] = [
+            .white,
+            UIColor(red: 0.72, green: 0.93, blue: 1.0, alpha: 1),  // cyan
+            UIColor(red: 0.44, green: 1.0, blue: 0.68, alpha: 1),  // green
+            UIColor(red: 1.0, green: 0.86, blue: 0.42, alpha: 1),  // gold
+            UIColor(red: 1.0, green: 0.56, blue: 0.42, alpha: 1),  // orange
+            UIColor(red: 1.0, green: 0.36, blue: 0.58, alpha: 1),  // hot pink
+        ]
+        guard tier > 0, tier < texts.count else { return }
+        showWallBanner(text: texts[tier], color: colors[tier], hold: 0.28)
+    }
+
+    /// "★ NEW BEST!" banner — fires when a new all-time combo record is set.
+    private func showWallNewBestBanner(combo: Int) {
+        guard let wallMomentLabel else { return }
+        wallMomentLabel.removeAllActions()
+        wallMomentLabel.text = "★ NEW BEST  \(combo)!"
+        wallMomentLabel.fontColor = UIColor(red: 1.0, green: 0.88, blue: 0.42, alpha: 1)
+        wallMomentLabel.setScale(0.80)
+        wallMomentLabel.run(.sequence([
+            .group([
+                .fadeAlpha(to: 1.0, duration: 0.18),
+                .scale(to: 1.10, duration: 0.24)
+            ]),
+            .wait(forDuration: 1.0),
+            .group([
+                .fadeAlpha(to: 0.0, duration: 0.36),
+                .scale(to: 1.0, duration: 0.40)
+            ])
+        ]))
     }
 
     private func wallReturnSnapScalar(for quality: HitQuality) -> Double {
@@ -6000,6 +6204,12 @@ final class GameScene: SKScene {
         sessionEnded = true
         pendingWallSpawnToken = nil
 
+        // Persist the run's score if it set a new best.
+        if score > bestScore {
+            bestScore = score
+            UserDefaults.standard.set(bestScore, forKey: Self.bestScoreDefaultsKey)
+        }
+
         // Clear everything in flight so the frozen frame reads as "over".
         strikeLinePulse?.cancelAll()
         for ball in activeBalls {
@@ -6022,13 +6232,8 @@ final class GameScene: SKScene {
         )
         background?.pulseHorizon(intensity: 1.18)
         background?.setMomentum(tier: 0, phase: "match-complete", breaking: true)
-        showMomentBanner(
-            text: "RUN OVER",
-            color: failColor,
-            hold: 0.6,
-            startScale: 0.9,
-            peakScale: 1.06
-        )
+        // Use wall banner — phaseBannerLabel is hidden in wall rally mode.
+        showWallBanner(text: "RUN OVER", color: failColor, hold: 0.6)
         stageStrikeTransition(color: failColor, intensity: 1.0, duration: 0.42)
         GameEventBus.shared.publish(.sessionEnd(buildResult()))
     }

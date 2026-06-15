@@ -29,6 +29,8 @@ enum Rewards {
     struct Outcome: Equatable {
         var coinsEarned: Int
         var xpEarned: Int
+        var previousBestScore: Int
+        var previousBestCombo: Int
         var isNewBestScore: Bool
         var isNewBestCombo: Bool
         var didLevelUp: Bool
@@ -46,6 +48,8 @@ enum Rewards {
         let coins = coinsFor(result: result)
         let xp    = xpFor(result: result)
 
+        let previousBestScore = progress.bestScore
+        let previousBestCombo = progress.bestCombo
         let isNewScore = result.finalScore > progress.bestScore
         let isNewCombo = result.maxCombo > progress.bestCombo
 
@@ -105,6 +109,8 @@ enum Rewards {
         return Outcome(
             coinsEarned: coins + streakBonus,
             xpEarned: xp,
+            previousBestScore: previousBestScore,
+            previousBestCombo: previousBestCombo,
             isNewBestScore: isNewScore,
             isNewBestCombo: isNewCombo,
             didLevelUp: progress.level > previousLevel,
