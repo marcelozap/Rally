@@ -238,7 +238,18 @@ enum Tunables {
     static let skidPostBounceAcceleration: CGFloat = 1.22
     static let floaterPostBounceAcceleration: CGFloat = 0.95
     static let bounceShadowAlpha:     CGFloat = 0.22
-    static let maxSameLaneRun:        Int      = 2
+    /// Ball shadow scale when the ball is at the player's feet (near / ground).
+    /// Drives the 3-D height read: large shadow = ball is on the court surface.
+    static let ballShadowGroundScale: CGFloat = 0.90
+    /// Ball shadow scale when the ball is at the far wall (small / distant).
+    static let ballShadowFarScale:    CGFloat = 0.30
+    /// How much altitude (mid-arc lift) further shrinks the shadow per unit of altitudeScalar.
+    static let ballShadowAltitudeShrink: CGFloat = 0.18
+    /// Alpha scalar for the shadow when the ball is at the far/wall end of travel.
+    static let ballShadowFarAlphaScalar: CGFloat = 0.38
+    /// Forcing strict side-to-side alternation: max consecutive hits on the same
+    /// lane before the spawner is required to cross over. 1 = every ball alternates.
+    static let maxSameLaneRun:        Int      = 1
     static let maxConsecutiveSixteenths: Int   = 2
     static let minimumDoubleGapBeats: Double   = 3.0
     static let minimumPatternLength:  Int      = 2

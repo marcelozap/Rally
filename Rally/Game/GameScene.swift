@@ -7211,18 +7211,32 @@ final class BallNode: SKShapeNode {
     private func updateShadow(progress: CGFloat, bounceProgress: CGFloat, overrun: CGFloat, altitude: CGFloat) {
         let altitudeScalar = max(0, min(1, altitude / max(18, arcHeightForShape())))
         if wallStyleMode {
-            let depthScale = lerp(from: Tunables.ballDepthScaleFar, to: Tunables.ballDepthScaleNear, progress: min(1, progress))
+            // Shadow scales from ~0.9 (ball near player / ground) down to ~0.3
+            // (ball at wall / far end) so the player can judge 3-D depth at a glance.
+            // `progress` is 0 at spawn (wall/far) and 1 at the strike line (near).
+            // We drive the scale purely off progress so it reads like a ball
+            // hovering over a court surface that's further away when near the wall.
             let wallContact = wallContactEmphasis(for: progress)
             let release = wallLaunchStretch(for: progress)
-            shadowNode.xScale = (0.82 + depthScale * 0.62) * (1 + altitudeScalar * 0.12)
-            shadowNode.yScale = (0.54 + depthScale * 0.24) * (1 - altitudeScalar * 0.20)
+            let nearScale: CGFloat = Tunables.ballShadowGroundScale
+            let farScale: CGFloat  = Tunables.ballShadowFarScale
+            let baseScale = lerp(from: farScale, to: nearScale, progress: min(1, progress))
+            // Extra shrink when the ball is airborne mid-arc (altitudeScalar > 0).
+            let heightShrink = altitudeScalar * Tunables.ballShadowAltitudeShrink
+            shadowNode.xScale = (baseScale - heightShrink) * (1 + wallContact * 0.12)
+            shadowNode.yScale = (baseScale * 0.68 - heightShrink * 0.5) * (1 - altitudeScalar * 0.18)
             shadowNode.position = CGPoint(
                 x: shadowOffsetX(for: progress, altitudeScalar: altitudeScalar) * 0.42,
                 y: -10 - altitudeScalar * 10
             )
+            // Alpha mirrors the scale read: bright on the ground, dim at the wall.
+            let nearAlpha = Tunables.bounceShadowAlpha
+            let farAlpha  = Tunables.bounceShadowAlpha * Tunables.ballShadowFarAlphaScalar
             shadowNode.alpha = max(
-                0.08,
-                Tunables.bounceShadowAlpha * (0.92 - altitudeScalar * Tunables.ballShadowHighAlphaScalar) - overrun * 0.10
+                0.05,
+                lerp(from: farAlpha, to: nearAlpha, progress: min(1, progress))
+                    - altitudeScalar * Tunables.ballShadowHighAlphaScalar
+                    - overrun * 0.10
             )
             wallShadowNode.alpha = wallContact * (0.12 + trackingEmphasis * 0.08) + release * 0.18
             wallShadowNode.position = CGPoint(x: curveDirectionForLane() * (6 - release * 5), y: 6 + wallContact * 12)
