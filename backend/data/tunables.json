@@ -1,0 +1,7 @@
+{
+  "bpmWarmUp": 84,
+  "bpmExchange": 110,
+  "bpmPressure": 140,
+  "bpmBreaker": 168,
+  "recoverySeconds": 3.0
+}

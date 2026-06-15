@@ -62,7 +62,11 @@ scripts/
 
 # Node backend
 backend/node_modules/
-backend/data/
+backend/data/*
+!backend/data/tunables.json
+backend/data/*.sqlite
+backend/data/*.sqlite-shm
+backend/data/*.sqlite-wal
 
 # Secrets / local config
 *.env

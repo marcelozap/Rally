@@ -339,9 +339,7 @@ struct AvatarCustomizerView: View {
         config.hasCompletedSetup = true
         try? modelContext.save()
         if auth.isAuthenticated {
-            Task {
-                await RallySyncCoordinator.pushIfAuthenticated(modelContext: modelContext)
-            }
+            RallySyncTriggers.pushAvatarAfterLocalSave(modelContext: modelContext)
         }
         if !isFirstLaunch {
             dismiss()

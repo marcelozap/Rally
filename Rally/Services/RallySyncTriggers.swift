@@ -13,4 +13,17 @@ enum RallySyncTriggers {
             await RallySyncCoordinator.pushIfAuthenticated(modelContext: modelContext)
         }
     }
+
+    /// Avatar identity and gear edits carry an expected server revision so a
+    /// stale device cannot silently overwrite another device's appearance.
+    /// Progress and session accruals intentionally use `pushAfterLocalSave`
+    /// because the backend merges those fields with max-wins.
+    static func pushAvatarAfterLocalSave(modelContext: ModelContext) {
+        Task {
+            await RallySyncCoordinator.pushIfAuthenticated(
+                modelContext: modelContext,
+                enforceAvatarRevision: true
+            )
+        }
+    }
 }

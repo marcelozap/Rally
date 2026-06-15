@@ -24,7 +24,8 @@ This doc complements [`README.md`](./README.md) and [`GDD.md`](./GDD.md). It foc
 - **Model:** one JSON **snapshot per user** on the server (`avatar`, `progress`, `trainingSessions`, `matchEntries`, `journalEntries`).
 - **Conflict policy:**
   - **`PlayerProgress` numerics** (`coins`, `xp`, `bestScore`, `bestCombo`, every `total*`, `dailyStreak`, `lastPlayDate`) are reconciled **max-wins** on the server during `PUT`. This protects a multi-device user from losing accrued totals if a stale device pushes after a fresh one.
-  - **Avatar + collections** (training / match / journal) remain **last-writer-wins** — these are user-edited, not accrued, so blowing-away semantics are correct there.
+  - **Avatar + gear edits** are protected by a lightweight device revision. The client stores `X-Rally-Current-Revision` from pull/push responses and sends it back as `X-Rally-Expected-Revision` only for avatar/gear saves. If another device edited appearance first, the server returns `409` plus the current revision instead of silently overwriting the other device.
+  - **Collections** (training / match / journal) remain **last-writer-wins** — these are user-edited records in the current snapshot model, not accrued counters.
   - The merged snapshot is echoed in the `PUT` response (`merged`) so the client can apply the reconciled progress fields locally without a second `GET`. See `mergeProgressMaxWins` in `backend/src/server.js` and `ProgressPayload.mergedMaxWins` in `Rally/Services/RallySyncPayload.swift` — keep them in sync.
 - **Pull:** replaces collection rows locally and overwrites the singleton `AvatarConfig` / `PlayerProgress` fields from the payload.
 - **Two-device walkthrough:**
@@ -32,6 +33,10 @@ This doc complements [`README.md`](./README.md) and [`GDD.md`](./GDD.md). It foc
   2. Device B (stale; last pull had `bestScore = 800`) finishes a run with 900 → pushes.
   3. Server merges: max(1200, 900) = 1200 ; client B receives `merged.progress` and overwrites its local 900 with 1200.
   4. No data lost; converges in one round-trip.
+- **Avatar conflict walkthrough:**
+  1. Device A pulls revision `7`, changes hair, and pushes with `X-Rally-Expected-Revision: 7` → server stores revision `8`.
+  2. Device B still has revision `7`, changes shoes, and pushes with `X-Rally-Expected-Revision: 7`.
+  3. Server rejects with `409` and `X-Rally-Current-Revision: 8`; Device B records revision `8` and must pull before retrying its appearance change.
 - **When uploads run:**
   - After **login / register** (pull then continue locally).
   - After **avatar save** (when signed in).

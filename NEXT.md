@@ -14,10 +14,10 @@ follow-ups.
       Audio brief says we should *prefer* host-time scheduling already; we
       don't yet — `ToneSynth` plays via a source-node callback. Wiring
       that change is non-trivial and out of scope for this pass.
-- [ ] **`.gitignore` audit for SwiftData.** `.gitignore` already covers
+- [x] **`.gitignore` audit for SwiftData.** `.gitignore` already covers
       DerivedData; double-check `.sqlite`, `.sqlite-shm`, `.sqlite-wal`
-      and `*.store` after the next local run. None are currently tracked,
-      so this is a guardrail, not a fix.
+      and `*.store` after the next local run. `backend/data/tunables.json`
+      is intentionally tracked; backend SQLite files remain ignored.
 - [ ] **Regenerate Xcode project** (`xcodegen generate`) after the
       Phase C.6 `NSLocationWhenInUseUsageDescription` was added to
       `project.yml`. Not done here because `xcodegen` isn't installed in
@@ -58,15 +58,13 @@ follow-ups.
 - [ ] **Server compaction.** The PUT handler now re-serialises the whole
       snapshot on every write. Fine at current scale; revisit if user
       counts grow.
-- [ ] **`deviceRevision` header.** The merge protects accruals but not
-      avatar concurrency. Add an `X-Rally-Expected-Revision` header so
-      stale avatar edits 409 instead of silently overwriting.
-- [ ] **Remote tunables admin.** Right now `/api/tunables` is a literal
-      object in `server.js`. Wire it to a `data/tunables.json` so live-ops
-      can edit without a redeploy.
-- [ ] **Manifest persistence.** `RemoteTunables` is in-memory only. If
-      offline-with-overrides matters, persist the last manifest to
-      `UserDefaults` and load it on launch.
+- [x] **`deviceRevision` header.** Avatar/gear edits now use
+      `X-Rally-Expected-Revision`; stale appearance edits get a `409`
+      while progress/session pushes continue using max-wins merge.
+- [x] **Remote tunables admin.** `/api/tunables` reads and writes
+      `backend/data/tunables.json` behind `X-Admin-Secret`.
+- [x] **Manifest persistence.** `RemoteTunables` loads the cached manifest
+      from `UserDefaults` and refreshes/persists when the feature flag is on.
 
 ## Tests not yet written
 

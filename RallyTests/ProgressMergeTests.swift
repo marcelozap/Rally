@@ -73,4 +73,18 @@ final class ProgressMergeTests: XCTestCase {
         XCTAssertEqual(merged.bestScore, serverBest, "Stale client must never overwrite a higher server best")
         XCTAssertEqual(merged.bestCombo, 80)
     }
+
+    func testSyncRevisionStoreRoundTripsAndClears() {
+        let suite = "RallySyncRevisionStoreTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer {
+            defaults.removePersistentDomain(forName: suite)
+        }
+
+        XCTAssertNil(RallySyncRevisionStore.load(defaults: defaults))
+        RallySyncRevisionStore.save(42, defaults: defaults)
+        XCTAssertEqual(RallySyncRevisionStore.load(defaults: defaults), 42)
+        RallySyncRevisionStore.clear(defaults: defaults)
+        XCTAssertNil(RallySyncRevisionStore.load(defaults: defaults))
+    }
 }

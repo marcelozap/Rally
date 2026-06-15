@@ -35,6 +35,13 @@ enum RallyAPIClient {
         let merged: SyncEnvelope?
     }
 
+    /// Envelope plus the server-side revision advertised by `GET /api/me/sync`.
+    /// The sync coordinator persists this and sends it only for avatar-edit PUTs.
+    struct SyncFetchResponse {
+        let envelope: SyncEnvelope
+        let revision: Int?
+    }
+
     /// Error thrown when the server returns 409 (avatar revision conflict).
     struct RevisionConflict: Error {
         let serverRevision: Int
@@ -68,6 +75,10 @@ enum RallyAPIClient {
     }
 
     static func fetchSync(token: String) async throws -> SyncEnvelope {
+        try await fetchSyncWithRevision(token: token).envelope
+    }
+
+    static func fetchSyncWithRevision(token: String) async throws -> SyncFetchResponse {
         let url = RallyAPIConfig.baseURL.appendingPathComponent("api/me/sync")
         var req = URLRequest(url: url)
         req.httpMethod = "GET"
@@ -82,7 +93,10 @@ enum RallyAPIClient {
             let msg = try? jsonDecoder.decode(APIErrorPayload.self, from: data).error
             throw RallyAPIError.http(http.statusCode, msg)
         }
-        return try jsonDecoder.decode(SyncEnvelope.self, from: data)
+        let envelope = try jsonDecoder.decode(SyncEnvelope.self, from: data)
+        let revision = http.value(forHTTPHeaderField: "X-Rally-Current-Revision")
+            .flatMap(Int.init)
+        return SyncFetchResponse(envelope: envelope, revision: revision)
     }
 
     @discardableResult

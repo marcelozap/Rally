@@ -1004,6 +1004,6 @@ struct ShopItemDetailView: View {
         // Without this, the store stays stale until another surface's
         // onAppear happens to re-sync.
         avatarAppearanceStore.sync(from: avatar)
-        RallySyncTriggers.pushAfterLocalSave(modelContext: modelContext)
+        RallySyncTriggers.pushAvatarAfterLocalSave(modelContext: modelContext)
     }
 }

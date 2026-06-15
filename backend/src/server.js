@@ -303,10 +303,10 @@ function mergeProgressMaxWins(serverProgress, clientProgress) {
  * - PlayerProgress numerics merge max-wins (see `mergeProgressMaxWins`).
  * - Avatar + collections are last-writer-wins.
  * - If the client sends `X-Rally-Expected-Revision`, the server checks it
- *   against the stored revision. A mismatch means a concurrent avatar edit
- *   raced in — the server returns 409 with the current revision so the
- *   client can pull, re-apply its avatar delta, and retry. Progress fields
- *   are never rejected by the revision check (they always max-win anyway).
+ *   against the stored revision. Rally iOS sends that header only for
+ *   avatar/gear edits; a mismatch means a concurrent appearance edit raced
+ *   in, so the server returns 409 with the current revision. Ordinary
+ *   progress/session pushes omit the header and still max-win merge.
  */
 app.put("/api/me/sync", authMiddleware, (req, res) => {
   const body = req.body;

@@ -1,6 +1,26 @@
 import Foundation
 import SwiftData
 
+// MARK: - Revision Store
+
+enum RallySyncRevisionStore {
+    private static let key = "rally.sync.currentServerRevision"
+
+    static func load(defaults: UserDefaults = .standard) -> Int? {
+        guard defaults.object(forKey: key) != nil else { return nil }
+        return defaults.integer(forKey: key)
+    }
+
+    static func save(_ revision: Int?, defaults: UserDefaults = .standard) {
+        guard let revision else { return }
+        defaults.set(revision, forKey: key)
+    }
+
+    static func clear(defaults: UserDefaults = .standard) {
+        defaults.removeObject(forKey: key)
+    }
+}
+
 /// Pull/push full player snapshot with the Rally API (SwiftData ↔ JSON).
 @MainActor
 enum RallySyncCoordinator {
@@ -9,15 +29,22 @@ enum RallySyncCoordinator {
         guard let token = KeychainStore.shared.token else {
             throw RallyAPIError.unauthorized
         }
-        let envelope = try await RallyAPIClient.fetchSync(token: token)
-        try apply(envelope, modelContext: modelContext)
+        let response = try await RallyAPIClient.fetchSyncWithRevision(token: token)
+        RallySyncRevisionStore.save(response.revision)
+        try apply(response.envelope, modelContext: modelContext)
         try modelContext.save()
     }
 
-    static func push(modelContext: ModelContext) async throws {
+    static func push(modelContext: ModelContext, enforceAvatarRevision: Bool = false) async throws {
         guard let token = KeychainStore.shared.token else { return }
         let envelope = try encode(modelContext: modelContext)
-        let response = try await RallyAPIClient.putSync(token: token, envelope: envelope)
+        let expectedRevision = enforceAvatarRevision ? RallySyncRevisionStore.load() : nil
+        let response = try await RallyAPIClient.putSync(
+            token: token,
+            envelope: envelope,
+            expectedRevision: expectedRevision
+        )
+        RallySyncRevisionStore.save(response.revision)
 
         // Server merge-back: if a second device pushed first, the server
         // reconciled our PlayerProgress numerics with max-wins and returned
@@ -33,9 +60,19 @@ enum RallySyncCoordinator {
     }
 
     /// Soft-fail push for UI hooks (avatar save, etc.).
-    static func pushIfAuthenticated(modelContext: ModelContext) async {
+    static func pushIfAuthenticated(modelContext: ModelContext, enforceAvatarRevision: Bool = false) async {
         guard KeychainStore.shared.token != nil else { return }
-        try? await push(modelContext: modelContext)
+        do {
+            try await push(modelContext: modelContext, enforceAvatarRevision: enforceAvatarRevision)
+        } catch let conflict as RallyAPIClient.RevisionConflict {
+            #if DEBUG
+            print("Rally sync avatar revision conflict. Pull before retrying avatar save. serverRevision=\(conflict.serverRevision)")
+            #endif
+        } catch {
+            #if DEBUG
+            print("Rally sync push failed: \(error)")
+            #endif
+        }
     }
 
     // MARK: - Encode

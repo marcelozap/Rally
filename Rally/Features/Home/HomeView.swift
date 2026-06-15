@@ -193,6 +193,7 @@ struct HomeView: View {
             avatarAppearanceStore.sync(from: avatar)
         }
         try? modelContext.save()
+        RallySyncTriggers.pushAvatarAfterLocalSave(modelContext: modelContext)
     }
 
     private func equippedItem(for category: ShopItem.Category) -> ShopItem? {
