@@ -449,6 +449,8 @@ enum ShopCatalog {
 
         // Tour-edition cosmetics — gated by court-atlas check-ins. Hidden
         // until `CourtUnlocks` reports the matching `courtID` is unlocked.
+        //
+        // Tier 1 — unlocked by visiting Wimbledon or Roland-Garros.
         .init(id: "rally.wristband.tour.wimbledon", category: .accessory, name: "Lawn Tour Band", brand: "Rally", vendorID: "rally-co",
               productURL: URL(string: "https://rally.app/shop/tour-wimbledon")!,
               priceUSD: 18, colorHex: "#1F6F3A", accentHex: "#FFFFFF",
@@ -459,6 +461,24 @@ enum ShopCatalog {
               priceUSD: 18, colorHex: "#B14424", accentHex: "#FFFFFF",
               checkoutPromoCode: "TOURCLAY",
               promoNote: "Tour edition — unlocked by checking in at Philippe Chatrier."),
+
+        // Tier 2 — unlocked by visiting Arthur Ashe, Rod Laver Arena, or Indian Wells.
+        // Hard-court venues; colour palette reflects stadium blues and desert palms.
+        .init(id: "rally.wristband.tour.ashe",      category: .accessory, name: "Night Session Band", brand: "Rally", vendorID: "rally-co",
+              productURL: URL(string: "https://rally.app/shop/tour-ashe")!,
+              priceUSD: 18, colorHex: "#13295E", accentHex: "#E8C84A",
+              checkoutPromoCode: "TOURNIGHT",
+              promoNote: "Tour edition — unlocked by checking in at Arthur Ashe Stadium."),
+        .init(id: "rally.wristband.tour.laver",     category: .accessory, name: "Summer Slam Band", brand: "Rally", vendorID: "rally-co",
+              productURL: URL(string: "https://rally.app/shop/tour-laver")!,
+              priceUSD: 18, colorHex: "#0057A8", accentHex: "#FFFFFF",
+              checkoutPromoCode: "TOURSLAM",
+              promoNote: "Tour edition — unlocked by checking in at Rod Laver Arena."),
+        .init(id: "rally.wristband.tour.indianwells", category: .accessory, name: "Desert Oasis Band", brand: "Rally", vendorID: "rally-co",
+              productURL: URL(string: "https://rally.app/shop/tour-indianwells")!,
+              priceUSD: 18, colorHex: "#2E7D6B", accentHex: "#F5E6C8",
+              checkoutPromoCode: "TOURDESERT",
+              promoNote: "Tour edition — unlocked by checking in at Indian Wells Tennis Garden."),
     ]
 
     /// Court-atlas → shop-item gating. Items listed as a value here are
@@ -466,8 +486,13 @@ enum ShopCatalog {
     /// `CourtUnlocks.shared.unlockedCourtIDs`. The reverse-lookup is also
     /// used by `CourtDetailView` to show "Tap to unlock the Lawn Tour Band".
     static let courtUnlockToShopItem: [String: String] = [
-        "wimbledon.cc":   "rally.wristband.tour.wimbledon",
-        "rolandgarros.pc": "rally.wristband.tour.roland"
+        // Tier 1 — the original two Slam check-in rewards.
+        "wimbledon.cc":    "rally.wristband.tour.wimbledon",
+        "rolandgarros.pc": "rally.wristband.tour.roland",
+        // Tier 2 — hard-court majors and Masters 1000 venues added in CC sprint.
+        "usopen.ashe":     "rally.wristband.tour.ashe",
+        "ausopen.rl":      "rally.wristband.tour.laver",
+        "indianwells":     "rally.wristband.tour.indianwells",
     ]
 
     /// Set of shop item IDs that are court-gated. Cheap precomputed lookup.

@@ -4,6 +4,9 @@ import SwiftUI
 /// Global map of **curated tennis venues only** — satellite-style layers evoke “Earth” browsing;
 /// Google Earth itself isn’t embedded (would require their SDK & keys).
 struct CourtsMapView: View {
+    /// Observes unlock state so rows update reactively when a check-in succeeds.
+    @ObservedObject private var unlocks = CourtUnlocks.shared
+
     @State private var position: MapCameraPosition = .region(
         MKCoordinateRegion(
             center: CLLocationCoordinate2D(latitude: 22, longitude: 15),
@@ -124,6 +127,21 @@ struct CourtsMapView: View {
 
     private var hasActiveFilters: Bool {
         filter != .all || bestFor != nil || selectedRegion != nil || !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    // MARK: - Court-unlock helpers
+
+    /// Returns true when `court` has a shop reward available via check-in
+    /// that the player has not yet collected.
+    private func hasLockedReward(_ court: IconicTennisCourt) -> Bool {
+        guard ShopCatalog.courtUnlockToShopItem[court.id] != nil else { return false }
+        return !unlocks.isUnlocked(courtID: court.id)
+    }
+
+    /// Returns true when `court` has a shop reward and it has already been collected.
+    private func hasCollectedReward(_ court: IconicTennisCourt) -> Bool {
+        guard ShopCatalog.courtUnlockToShopItem[court.id] != nil else { return false }
+        return unlocks.isUnlocked(courtID: court.id)
     }
 
     private var activeFilterHighlights: [(String, Color)] {
@@ -677,6 +695,12 @@ struct CourtsMapView: View {
                         if court.officialProgramURL != nil {
                             actionStatusTag("Program", available: true, tint: RallyUIKit.Palette.gold)
                         }
+                        // Reward badge — visible for any court with a court-gated shop item.
+                        if hasCollectedReward(court) {
+                            rewardTag(collected: true)
+                        } else if hasLockedReward(court) {
+                            rewardTag(collected: false)
+                        }
                     }
                 }
             }
@@ -850,6 +874,26 @@ struct CourtsMapView: View {
         )
         .overlay(
             Capsule().stroke(tint.opacity(0.18), lineWidth: 1)
+        )
+    }
+
+    /// Small inline badge shown on destination rows and map cards for courts
+    /// that have a tour-edition shop cosmetic gated behind a check-in.
+    private func rewardTag(collected: Bool) -> some View {
+        HStack(spacing: 5) {
+            Image(systemName: collected ? "checkmark.seal.fill" : "lock.fill")
+                .font(.system(size: 10, weight: .bold))
+            Text(collected ? "Reward" : "Unlock reward")
+                .font(RallyUIKit.Typography.label(.caption2, weight: .bold))
+        }
+        .foregroundStyle(collected ? RallyUIKit.Palette.lime : RallyUIKit.Palette.rose)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 6)
+        .background(
+            Capsule().fill((collected ? RallyUIKit.Palette.lime : RallyUIKit.Palette.rose).opacity(0.11))
+        )
+        .overlay(
+            Capsule().stroke((collected ? RallyUIKit.Palette.lime : RallyUIKit.Palette.rose).opacity(0.18), lineWidth: 1)
         )
     }
 
