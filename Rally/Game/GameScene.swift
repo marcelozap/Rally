@@ -1705,6 +1705,10 @@ final class GameScene: SKScene {
         combo.horizontalAlignmentMode = .center
         addChild(combo)
         comboLabel = combo
+        if usesMinimalWallHUD {
+            combo.alpha = 0
+            combo.isHidden = true
+        }
 
         let time = SKLabelNode(fontNamed: "AvenirNext-Medium")
         time.text = usesMinimalWallHUD ? "" : "3:00"
@@ -2208,19 +2212,23 @@ final class GameScene: SKScene {
         let gripAngle = playerRacketHandle.zRotation + CGFloat.pi / 2
         let gripDX = cos(gripAngle)
         let gripDY = sin(gripAngle)
+        let gripHalfSeparation = (isBackhandPose ? Tunables.backhandSupportHandGripSeparation : 8.5) * gameplayScale
         let gripLower = CGPoint(
-            x: playerRacketHandle.position.x - gripDX * 8.5 * gameplayScale,
-            y: playerRacketHandle.position.y - gripDY * 8.5 * gameplayScale
+            x: playerRacketHandle.position.x - gripDX * gripHalfSeparation,
+            y: playerRacketHandle.position.y - gripDY * gripHalfSeparation
         )
         let gripUpper = CGPoint(
-            x: playerRacketHandle.position.x + gripDX * 8.5 * gameplayScale,
-            y: playerRacketHandle.position.y + gripDY * 8.5 * gameplayScale
+            x: playerRacketHandle.position.x + gripDX * gripHalfSeparation,
+            y: playerRacketHandle.position.y + gripDY * gripHalfSeparation
         )
         let leadHandTarget = gripLower
         let trailHandTarget = isBackhandPose
             ? gripUpper
             : CGPoint(x: targets.trailArmX - 8 * leanDirection, y: targets.trailArmY - 24 * gameplayScale)
-        let handBlend: CGFloat = isBackhandPose ? 0.46 : 0.34
+        let backhandGripLock = max(contactFlash, isContactPhase ? 1 : 0)
+        let handBlend: CGFloat = isBackhandPose
+            ? 0.50 + (Tunables.backhandContactGripLockBlend - 0.50) * backhandGripLock
+            : 0.34
         playerLeadHand.position.x += (leadHandTarget.x - playerLeadHand.position.x) * handBlend
         playerLeadHand.position.y += (leadHandTarget.y - playerLeadHand.position.y) * handBlend
         playerTrailHand.position.x += (trailHandTarget.x - playerTrailHand.position.x) * handBlend
@@ -4186,12 +4194,14 @@ final class GameScene: SKScene {
             hudMaxLabel?.alpha = 0
             hudMaxValueLabel?.alpha = 0
             comboLabel?.alpha = 0
+            comboLabel?.isHidden = true
             hudMaxLabel?.text = "BEST"
         } else {
             hudCaptionLabel?.alpha = 1
             hudPhaseLabel?.alpha = 1
             hudPhaseValueLabel?.alpha = 1
             timeLabel?.alpha = 1
+            comboLabel?.isHidden = false
             hudPhaseValueLabel?.text = flow?.currentPhase.rawValue ?? "EXCHANGE"
             hudPhaseValueLabel?.fontColor = bannerColor(for: flow?.currentPhase ?? .exchange).withAlphaComponent(0.88)
         }

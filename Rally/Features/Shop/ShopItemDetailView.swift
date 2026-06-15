@@ -109,6 +109,11 @@ struct ShopItemDetailView: View {
         .background(RallyUIKit.screenBackground)
         .navigationTitle(item.name)
         .navigationBarTitleDisplayMode(.inline)
+        .onAppear {
+            if canTryOnItem, tryingOn {
+                avatarAppearanceStore.tryOn(item, from: avatar)
+            }
+        }
     }
 
     private var productVisualHero: some View {
@@ -465,7 +470,7 @@ struct ShopItemDetailView: View {
 
     private var tryOnToggle: some View {
         Button {
-            tryingOn.toggle()
+            setTryingOn(!tryingOn)
         } label: {
             HStack(spacing: 8) {
                 Image(systemName: tryingOn ? "tshirt.fill" : "tshirt")
@@ -990,6 +995,22 @@ struct ShopItemDetailView: View {
         }
     }
 
+    private var canTryOnItem: Bool {
+        item.category != .bag && item.category != .accessory
+    }
+
+    private func setTryingOn(_ enabled: Bool) {
+        guard canTryOnItem else { return }
+        tryingOn = enabled
+        if enabled {
+            avatarAppearanceStore.tryOn(item, from: avatar)
+            stageEmote = .shopLook
+        } else {
+            avatarAppearanceStore.clearTryOn(from: avatar)
+            stageEmote = .idle
+        }
+    }
+
     private func equip() {
         switch item.category {
         case .top:    avatar.equippedTopID    = item.id
@@ -1003,7 +1024,7 @@ struct ShopItemDetailView: View {
         // store so Home, Locker, and GameScene update immediately (A-4/S-4).
         // Without this, the store stays stale until another surface's
         // onAppear happens to re-sync.
-        avatarAppearanceStore.sync(from: avatar)
+        avatarAppearanceStore.commitPersisted(from: avatar)
         RallySyncTriggers.pushAvatarAfterLocalSave(modelContext: modelContext)
     }
 }

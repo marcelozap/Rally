@@ -169,8 +169,8 @@ struct RallyAvatarAppearance: Codable, Equatable {
             )
         )
 
-        if let previewItem {
-            equipPreview(previewItem)
+        if let itemToPreview = previewItem ?? RallyAvatarAppearanceStore.activeTryOnItem {
+            equipPreview(itemToPreview)
         }
     }
 
@@ -270,6 +270,7 @@ struct RallyAvatarAppearance: Codable, Equatable {
 
 final class RallyAvatarAppearanceStore: ObservableObject {
     @Published var appearance: RallyAvatarAppearance
+    fileprivate static var activeTryOnItem: ShopItem?
 
     init(appearance: RallyAvatarAppearance = RallyAvatarAppearance()) {
         self.appearance = appearance
@@ -281,18 +282,36 @@ final class RallyAvatarAppearanceStore: ObservableObject {
     }
 
     func appearance(for config: AvatarConfig?, previewItem: ShopItem? = nil) -> RallyAvatarAppearance {
+        let itemToPreview = previewItem ?? Self.activeTryOnItem
         guard let config else {
             var fallback = appearance
-            if let previewItem {
-                fallback.equipPreview(previewItem)
+            if let itemToPreview {
+                fallback.equipPreview(itemToPreview)
             }
             return fallback
         }
-        return RallyAvatarAppearance(config: config, previewItem: previewItem)
+        return RallyAvatarAppearance(config: config, previewItem: itemToPreview)
     }
 
     func equip(_ gear: RallyGearReference?, for slot: RallyGearSlot) {
         appearance.set(gear, for: slot)
+    }
+
+    func tryOn(_ item: ShopItem, from config: AvatarConfig?) {
+        Self.activeTryOnItem = item
+        appearance = appearance(for: config, previewItem: item)
+    }
+
+    func clearTryOn(from config: AvatarConfig?) {
+        Self.activeTryOnItem = nil
+        if let config {
+            appearance = RallyAvatarAppearance(config: config)
+        }
+    }
+
+    func commitPersisted(from config: AvatarConfig?) {
+        Self.activeTryOnItem = nil
+        sync(from: config)
     }
 }
 

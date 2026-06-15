@@ -316,18 +316,19 @@ final class RhythmSpawner {
             return influencedLane
         }
 
-        let lane: Lane
+        let patternLane: Lane
         switch currentPattern {
         case .neutralCrosscourt:
-            lane = chooseAlternatingLane(repeatProbability: repeatProbability(for: phase) * 0.45)
+            patternLane = chooseAlternatingLane(repeatProbability: repeatProbability(for: phase) * 0.45)
         case .pressureChange:
-            lane = choosePressureLane()
+            patternLane = choosePressureLane()
         case .servePlusOne:
-            lane = chooseServePlusOneLane()
+            patternLane = chooseServePlusOneLane()
         case .returnScramble:
-            lane = chooseReturnScrambleLane()
+            patternLane = chooseReturnScrambleLane()
         }
 
+        let lane = laneCappedToAlternation(patternLane)
         patternRemainingNotes = max(0, patternRemainingNotes - 1)
         updateLaneRunTracking(with: lane)
         return lane
@@ -424,6 +425,13 @@ final class RhythmSpawner {
         let canRepeat = sameLaneRunLength < Tunables.maxSameLaneRun
         let shouldRepeat = canRepeat && rng.bool(p: repeatProbability)
         return shouldRepeat ? lastLane : lastLane.opposite
+    }
+
+    private func laneCappedToAlternation(_ lane: Lane) -> Lane {
+        if lane == lastLane, sameLaneRunLength >= Tunables.maxSameLaneRun {
+            return lastLane.opposite
+        }
+        return lane
     }
 
     private func choosePressureLane() -> Lane {

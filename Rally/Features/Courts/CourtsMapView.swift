@@ -7,12 +7,13 @@ struct CourtsMapView: View {
     /// Observes unlock state so rows update reactively when a check-in succeeds.
     @ObservedObject private var unlocks = CourtUnlocks.shared
 
-    @State private var position: MapCameraPosition = .region(
-        MKCoordinateRegion(
-            center: CLLocationCoordinate2D(latitude: 22, longitude: 15),
-            span: MKCoordinateSpan(latitudeDelta: 115, longitudeDelta: 115)
-        )
+    private static let worldRegion = MKCoordinateRegion(
+        center: CLLocationCoordinate2D(latitude: 22, longitude: 15),
+        span: MKCoordinateSpan(latitudeDelta: 115, longitudeDelta: 115)
     )
+
+    @State private var position: MapCameraPosition = .region(Self.worldRegion)
+    @State private var visibleRegion = Self.worldRegion
     @State private var mapLook: MapLook = .satellite
     @State private var selectedCourt: IconicTennisCourt?
     @State private var filter: AtlasFilter = .all
@@ -32,6 +33,28 @@ struct CourtsMapView: View {
         case venues = "Venues"
         case camps = "Camps"
         var id: String { rawValue }
+    }
+
+    private enum MarkerDensity {
+        case regionalClusters
+        case compactPins
+        case labeledPins
+    }
+
+    private struct AtlasCluster: Identifiable {
+        let id: String
+        let title: String
+        let coordinate: CLLocationCoordinate2D
+        let courts: [IconicTennisCourt]
+        let tint: Color
+
+        var venueCount: Int {
+            courts.filter { $0.kind == .venue }.count
+        }
+
+        var campCount: Int {
+            courts.count - venueCount
+        }
     }
 
     private var visibleDestinations: [IconicTennisCourt] {
@@ -63,6 +86,56 @@ struct CourtsMapView: View {
 
     private var featuredDestinations: [IconicTennisCourt] {
         Array(visibleDestinations.prefix(3))
+    }
+
+    private var markerDensity: MarkerDensity {
+        let latitudeDelta = visibleRegion.span.latitudeDelta
+        let longitudeDelta = visibleRegion.span.longitudeDelta
+        let widestDelta = max(latitudeDelta, longitudeDelta)
+
+        if widestDelta > 38 {
+            return .regionalClusters
+        }
+        if widestDelta > 12 {
+            return .compactPins
+        }
+        return .labeledPins
+    }
+
+    private var priorityMarkerIDs: Set<String> {
+        var ids = Set(featuredDestinations.map(\.id))
+        if let selectedCourt {
+            ids.insert(selectedCourt.id)
+        }
+        return ids
+    }
+
+    private var priorityMarkerDestinations: [IconicTennisCourt] {
+        let ids = priorityMarkerIDs
+        return visibleDestinations.filter { ids.contains($0.id) }
+    }
+
+    private var clusterableDestinations: [IconicTennisCourt] {
+        let ids = priorityMarkerIDs
+        return visibleDestinations.filter { !ids.contains($0.id) }
+    }
+
+    private var regionalClusters: [AtlasCluster] {
+        Dictionary(grouping: clusterableDestinations, by: \.region)
+            .compactMap { region, courts in
+                guard !courts.isEmpty else { return nil }
+                let averageLatitude = courts.map(\.latitude).reduce(0, +) / Double(courts.count)
+                let averageLongitude = courts.map(\.longitude).reduce(0, +) / Double(courts.count)
+                let hasAcademy = courts.contains { $0.kind == .academy }
+                return AtlasCluster(
+                    id: region,
+                    title: region,
+                    coordinate: CLLocationCoordinate2D(latitude: averageLatitude, longitude: averageLongitude),
+                    courts: courts,
+                    tint: hasAcademy ? RallyUIKit.Palette.gold : RallyUIKit.Palette.cyan
+                )
+            }
+            .sorted { $0.title < $1.title }
     }
 
     private var bestForOptions: [BestForTag] {
@@ -256,20 +329,51 @@ struct CourtsMapView: View {
 
     var body: some View {
         let destinations = visibleDestinations
+        let markerDensity = markerDensity
 
         Map(position: $position) {
-            ForEach(destinations) { court in
-                Annotation(court.name, coordinate: court.coordinate) {
-                    Button {
-                        selectedCourt = court
-                    } label: {
-                        courtMarker(court)
+            if markerDensity == .regionalClusters {
+                ForEach(regionalClusters) { cluster in
+                    Annotation(cluster.title, coordinate: cluster.coordinate) {
+                        Button {
+                            focus(on: cluster.courts)
+                        } label: {
+                            clusterMarker(cluster)
+                        }
+                        .buttonStyle(.plain)
                     }
-                    .buttonStyle(.plain)
+                }
+
+                ForEach(priorityMarkerDestinations) { court in
+                    Annotation(court.name, coordinate: court.coordinate) {
+                        Button {
+                            selectedCourt = court
+                        } label: {
+                            courtMarker(court, showsLabel: true)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            } else {
+                ForEach(destinations) { court in
+                    Annotation(court.name, coordinate: court.coordinate) {
+                        Button {
+                            selectedCourt = court
+                        } label: {
+                            courtMarker(
+                                court,
+                                showsLabel: markerDensity == .labeledPins || priorityMarkerIDs.contains(court.id)
+                            )
+                        }
+                        .buttonStyle(.plain)
+                    }
                 }
             }
         }
         .mapStyle(mapStyle)
+        .onMapCameraChange(frequency: .onEnd) { context in
+            visibleRegion = context.region
+        }
         .overlay {
             LinearGradient(
                 colors: [
@@ -457,10 +561,11 @@ struct CourtsMapView: View {
                         .padding(.horizontal, 16)
                     }
                 }
-                .padding(.top, 8)
+                .padding(.top, 18)
                 .padding(.bottom, 8)
                 .scrollClipDisabled()
             }
+            .zIndex(10)
         }
         .allowsHitTesting(true)
         .navigationTitle("World")
@@ -916,13 +1021,10 @@ struct CourtsMapView: View {
     }
 
     private func focusWorld() {
+        let region = Self.worldRegion
         withAnimation(.easeInOut(duration: 0.45)) {
-            position = .region(
-                MKCoordinateRegion(
-                    center: CLLocationCoordinate2D(latitude: 22, longitude: 15),
-                    span: MKCoordinateSpan(latitudeDelta: 115, longitudeDelta: 115)
-                )
-            )
+            position = .region(region)
+            visibleRegion = region
         }
     }
 
@@ -956,17 +1058,19 @@ struct CourtsMapView: View {
             longitudeDelta: max(6, (maxLon - minLon) * 1.75)
         )
 
+        let region = MKCoordinateRegion(center: center, span: span)
         withAnimation(.easeInOut(duration: 0.42)) {
-            position = .region(MKCoordinateRegion(center: center, span: span))
+            position = .region(region)
+            visibleRegion = region
         }
     }
 
     @ViewBuilder
-    private func courtMarker(_ court: IconicTennisCourt) -> some View {
+    private func courtMarker(_ court: IconicTennisCourt, showsLabel: Bool) -> some View {
         let surface = court.surfaceAccent
         let tint = court.kind == .venue ? surface.primary : RallyUIKit.Palette.gold
 
-        VStack(spacing: 4) {
+        VStack(spacing: showsLabel ? 4 : 0) {
             ZStack {
                 Circle()
                     .fill(
@@ -989,13 +1093,73 @@ struct CourtsMapView: View {
             .shadow(color: tint.opacity(0.45), radius: 8, x: 0, y: 3)
             .shadow(color: .black.opacity(0.35), radius: 4, x: 0, y: 2)
 
-            Text(court.shortLabel)
-                .font(RallyUIKit.Typography.label(.caption2, weight: .bold))
-                .foregroundStyle(RallyUIKit.Palette.frost)
-                .padding(.horizontal, 7)
-                .padding(.vertical, 3)
-                .background(Capsule().fill(Color.black.opacity(0.62)))
+            if showsLabel {
+                Text(court.shortLabel)
+                    .font(RallyUIKit.Typography.label(.caption2, weight: .bold))
+                    .foregroundStyle(RallyUIKit.Palette.frost)
+                    .padding(.horizontal, 7)
+                    .padding(.vertical, 3)
+                    .background(Capsule().fill(Color.black.opacity(0.62)))
+            }
         }
+        .contentShape(Rectangle())
+        .accessibilityLabel("\(court.name), \(court.subtitle)")
+    }
+
+    @ViewBuilder
+    private func clusterMarker(_ cluster: AtlasCluster) -> some View {
+        VStack(spacing: 5) {
+            ZStack {
+                Circle()
+                    .fill(
+                        RadialGradient(
+                            colors: [
+                                cluster.tint.opacity(0.96),
+                                RallyUIKit.Palette.obsidian.opacity(0.88)
+                            ],
+                            center: .center,
+                            startRadius: 3,
+                            endRadius: 28
+                        )
+                    )
+                    .frame(width: 52, height: 52)
+                    .overlay(Circle().stroke(Color.white.opacity(0.42), lineWidth: 1.3))
+                    .shadow(color: cluster.tint.opacity(0.34), radius: 12, x: 0, y: 5)
+                    .shadow(color: .black.opacity(0.38), radius: 5, x: 0, y: 2)
+
+                Text("\(cluster.courts.count)")
+                    .font(RallyUIKit.Typography.title(.headline, weight: .black))
+                    .foregroundStyle(.white)
+            }
+
+            VStack(spacing: 1) {
+                Text(cluster.title)
+                    .font(RallyUIKit.Typography.label(.caption2, weight: .bold))
+                    .foregroundStyle(RallyUIKit.Palette.frost)
+                    .lineLimit(1)
+
+                Text(clusterSummary(cluster))
+                    .font(RallyUIKit.Typography.label(.caption2, weight: .semibold))
+                    .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.68))
+                    .lineLimit(1)
+            }
+            .padding(.horizontal, 9)
+            .padding(.vertical, 5)
+            .background(Capsule().fill(Color.black.opacity(0.68)))
+            .overlay(Capsule().stroke(cluster.tint.opacity(0.2), lineWidth: 1))
+        }
+        .contentShape(Rectangle())
+        .accessibilityLabel("\(cluster.title), \(cluster.courts.count) destinations")
+    }
+
+    private func clusterSummary(_ cluster: AtlasCluster) -> String {
+        if cluster.venueCount > 0 && cluster.campCount > 0 {
+            return "\(cluster.venueCount) venues · \(cluster.campCount) camps"
+        }
+        if cluster.campCount > 0 {
+            return "\(cluster.campCount) camps"
+        }
+        return "\(cluster.venueCount) venues"
     }
 }
 

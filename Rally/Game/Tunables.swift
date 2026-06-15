@@ -370,6 +370,8 @@ enum Tunables {
     static let backhandFollowHandleY: CGFloat = 182.0
     static let backhandFollowHeadX: CGFloat = -110.0
     static let backhandFollowHeadY: CGFloat = 216.0
+    static let backhandSupportHandGripSeparation: CGFloat = 12.5
+    static let backhandContactGripLockBlend: CGFloat = 0.72
 
     /// Extra hip-lead over shoulders during backswing coil (radians).
     static let torsoHipLeadAngle: CGFloat = 0.18            // hips clearly lead shoulders

@@ -64,7 +64,7 @@ final class RhythmSpawnerTests: XCTestCase {
         }
     }
 
-    func testWarmUpContainsServePlusOneStyleOpener() {
+    func testWarmUpAlternatesForehandBackhandOpener() {
         let coordinator = MatchFlowCoordinator(sessionDurationSeconds: 180)
         coordinator.update(trackTime: 5, combo: 0)
 
@@ -79,10 +79,10 @@ final class RhythmSpawnerTests: XCTestCase {
 
         let normalLanes = notes.filter { $0.kind == .normal }.map(\.lane)
         XCTAssertGreaterThanOrEqual(normalLanes.count, 2)
-        XCTAssertEqual(normalLanes[0], normalLanes[1])
+        XCTAssertNotEqual(normalLanes[0], normalLanes[1])
     }
 
-    func testPressureEventuallyChangesDirection() {
+    func testPressureAlternatesAcrossBothDirections() {
         let coordinator = MatchFlowCoordinator(sessionDurationSeconds: 180)
         coordinator.update(trackTime: 120, combo: 25)
 
@@ -98,15 +98,11 @@ final class RhythmSpawnerTests: XCTestCase {
         let normalLanes = notes.filter { $0.kind == .normal }.map(\.lane)
         XCTAssertGreaterThanOrEqual(normalLanes.count, 4)
 
-        var foundAlternation = false
-        for windowStart in 0...(normalLanes.count - 4) {
-            let slice = Array(normalLanes[windowStart..<(windowStart + 4)])
-            if slice[0] != slice[1] && slice[1] == slice[2] && slice[2] != slice[3] {
-                foundAlternation = true
-                break
-            }
+        for pair in zip(normalLanes, normalLanes.dropFirst()) {
+            XCTAssertNotEqual(pair.0, pair.1)
         }
 
-        XCTAssertTrue(foundAlternation)
+        XCTAssertTrue(normalLanes.contains(.left))
+        XCTAssertTrue(normalLanes.contains(.right))
     }
 }
