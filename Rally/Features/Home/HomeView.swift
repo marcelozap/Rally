@@ -1219,7 +1219,7 @@ struct HomeView: View {
 
     private func venueShortName(_ venue: CourtVenue) -> String {
         switch venue {
-        case .miamiHard: return "Australia"
+        case .miamiHard: return "Miami"
         case .wimbledonGrass: return "Wimbledon"
         case .redClay: return "Clay"
         case .barcelonaClay: return "Barcelona"

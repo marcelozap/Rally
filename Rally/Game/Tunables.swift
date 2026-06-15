@@ -237,7 +237,7 @@ enum Tunables {
     static let topspinPostBounceAcceleration: CGFloat = 1.15
     static let skidPostBounceAcceleration: CGFloat = 1.22
     static let floaterPostBounceAcceleration: CGFloat = 0.95
-    static let bounceShadowAlpha:     CGFloat = 0.22
+    static let bounceShadowAlpha:     CGFloat = 0.32
     /// Ball shadow scale when the ball is at the player's feet (near / ground).
     /// Drives the 3-D height read: large shadow = ball is on the court surface.
     static let ballShadowGroundScale: CGFloat = 0.90
