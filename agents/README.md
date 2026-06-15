@@ -10,9 +10,13 @@ Root `AGENTS.md` is still the automatic boot file. Keep it short. It points here
 2. `agents/session-handshake.md`
 3. `agents/locks.md`
 4. `agents/lanes.md`
-5. `RALLY_NORTH_STAR.md`
-6. `RALLY_PROGRESS.md`
-7. `agents/current-priority.md`
+5. the relevant named agent file:
+   - `agents/rafa-gameplay.md` for gameplay
+   - `agents/sinner-store.md` for Shop / Locker
+   - `agents/carlos-world.md` for World / Courts
+6. `RALLY_NORTH_STAR.md`
+7. `RALLY_PROGRESS.md`
+8. `agents/current-priority.md`
 
 ## Why This Exists
 
@@ -37,3 +41,9 @@ If there is a conflict between files, use this order:
 7. older chat prompts or screenshots
 
 Screenshots still beat claims. If the app looks wrong, it is wrong.
+
+## Named Agents
+
+- **Rafa** — gameplay feel, tennis mechanics, camera, swing, ball, haptics.
+- **Sinner** — store, Locker, product cards, outfit selection, referral commerce.
+- **Carlos** — world, courts, venues, maps, official links, location unlocks.

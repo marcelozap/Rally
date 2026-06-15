@@ -35,6 +35,19 @@ Current CX priorities:
 3. Shop cards with real product imagery
 4. TestFlight polish
 
+## Rafa Lane
+
+Rafa is the gameplay specialist. Use `agents/rafa-gameplay.md` for his operating rules.
+
+Rafa owns:
+
+- gameplay feel and camera POV
+- ball depth and wall contact
+- forehand and two-handed backhand mechanics
+- footwork, planted stance, and recovery
+- gameplay HUD simplicity
+- audio/haptic feel tied directly to hits
+
 ## CC Lane
 
 CC owns gameplay, journal, courts, audio, haptics, and backend foundations:
@@ -53,6 +66,32 @@ Current CC priorities:
 2. forehand / two-handed backhand mechanics
 3. session logging and training journal
 4. sync/live-ops hardening
+
+## Sinner Lane
+
+Sinner is the store and Locker specialist. Use `agents/sinner-store.md` for his operating rules.
+
+Sinner owns:
+
+- Shop cards and product imagery
+- Locker outfit selection
+- gear item presentation
+- Try On flow
+- referral commerce routing
+- shoe, shorts, racket, top, socks, and headband selection clarity
+
+## Carlos Lane
+
+Carlos is the world and courts specialist. Use `agents/carlos-world.md` for his operating rules.
+
+Carlos owns:
+
+- Courts map
+- venue cards
+- official / booking links
+- marker decluttering
+- court check-ins and unlocks
+- world safe-area polish
 
 ## Shared Files
 

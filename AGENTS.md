@@ -32,6 +32,9 @@ If anything conflicts, priority order is:
 - `agents/lanes.md` — CX/CC ownership
 - `agents/handoff.md` — how to stop cleanly
 - `agents/current-priority.md` — next work to take
+- `agents/rafa-gameplay.md` — Rafa, gameplay agent
+- `agents/sinner-store.md` — Sinner, store / Locker agent
+- `agents/carlos-world.md` — Carlos, world / courts agent
 
 ## Canonical Repo
 

@@ -34,7 +34,7 @@ The recurring visual defect is still:
 
 Fix through shared geometry and verified screenshots, not per-screen hacks.
 
-## Priority 3: Gameplay POV And Mechanics
+## Priority 3: Rafa Gameplay POV And Mechanics
 
 The camera still needs to feel like tennis, not a flat toy:
 
@@ -44,7 +44,26 @@ The camera still needs to feel like tennis, not a flat toy:
 - forehand/backhand alternation must be obvious
 - two-handed backhand must use both hands through contact
 
-## Priority 4: TestFlight Prep
+## Priority 4: Sinner Store / Locker Clarity
+
+The store and Locker should feel premium and easy:
+
+- shoes must read like tennis shoes, not dress shoes
+- shorts must read like tennis shorts, not a generic square
+- product cards should use real imagery when available
+- item cycling can use left/right arrows where that is cleaner than crowded tiles
+- Try On should instantly update the shared avatar
+
+## Priority 5: Carlos World / Courts Reliability
+
+The world layer should be clean and trustworthy:
+
+- links open real destinations
+- cards do not hide under the Dynamic Island
+- markers do not pile up
+- venue actions are named honestly
+
+## Priority 6: TestFlight Prep
 
 Before wider testers:
 
