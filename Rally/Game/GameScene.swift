@@ -1381,7 +1381,7 @@ final class GameScene: SKScene {
         let mouth = SKShapeNode(path: RallyAvatarGeometry.friendlyMouthPath(scale: faceScale))
         mouth.strokeColor = skin.mixed(with: .black, ratio: 0.58).withAlphaComponent(0.96)
         mouth.fillColor = .clear
-        mouth.lineWidth = max(2.55 * bodyScale, 1.82)
+        mouth.lineWidth = max(1.45 * bodyScale, 1.10)
         mouth.lineCap = .round
         mouth.position = CGPoint(x: 0, y: layout.headY + 2 * bodyScale + RallyAvatarGeometry.mouthCenterY(scale: faceScale))
         mouth.zRotation = RallyAvatarRebuildDefaults.Face.smileRotationDegrees * .pi / 180

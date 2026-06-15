@@ -208,6 +208,7 @@ struct RallyAvatarView: View {
         )
 
         drawNeck(in: &context, centerX: centerX, baseline: baseline, y: layout.neckY - 2 * scale + idleLift * 0.3, scale: faceScale)
+        drawBackHair(in: &context, centerX: centerX, baseline: baseline, layout: layout, scale: scale, idleLift: idleLift)
         drawPath(
             RallyAvatarGeometry.earPath(side: -1, scale: faceScale),
             in: &context,
@@ -249,6 +250,29 @@ struct RallyAvatarView: View {
             drawHand(in: &context, centerX: centerX, baseline: baseline, x: 54 * scale, y: layout.torsoY - 27 * scale, scale: scale, color: appearance.skinColor)
         }
         drawHand(in: &context, centerX: centerX, baseline: baseline, x: -42 * scale, y: layout.torsoY - 29 * scale, scale: scale, color: Color(uiColor: appearance.skinUIColor.rallyBlended(withFraction: 0.035, of: .white)).opacity(0.75))
+    }
+
+    private func drawBackHair(
+        in context: inout GraphicsContext,
+        centerX: CGFloat,
+        baseline: CGFloat,
+        layout: RallyAvatarRebuildDefaults.CourtLayout,
+        scale: CGFloat,
+        idleLift: CGFloat
+    ) {
+        guard appearance.hairStyle != .bald, appearance.hairStyle != .cap else { return }
+        let hairScale = layout.headPathScale * 0.96
+        drawPath(
+            RallyAvatarGeometry.premiumBackHairPath(scale: hairScale),
+            in: &context,
+            centerX: centerX,
+            baseline: baseline,
+            x: 0,
+            y: layout.headY + idleLift,
+            fill: Color(uiColor: appearance.hairUIColor.rallyBlended(withFraction: 0.08, of: .white)),
+            stroke: .clear,
+            lineWidth: 0
+        )
     }
 
     private func drawPath(
@@ -442,17 +466,6 @@ struct RallyAvatarView: View {
 
         if shouldDrawHair {
             drawPath(
-                RallyAvatarGeometry.premiumBackHairPath(scale: hairScale),
-                in: &context,
-                centerX: centerX,
-                baseline: baseline,
-                x: 0,
-                y: headY,
-                fill: Color(uiColor: appearance.hairUIColor.rallyBlended(withFraction: 0.08, of: .white)),
-                stroke: .clear,
-                lineWidth: 0
-            )
-            drawPath(
                 RallyAvatarGeometry.premiumHairPath(scale: hairScale),
                 in: &context,
                 centerX: centerX,
@@ -597,8 +610,8 @@ struct RallyAvatarView: View {
             x: 0,
             y: headY + RallyAvatarGeometry.mouthCenterY(scale: scale),
             fill: .clear,
-            stroke: Color.black.opacity(0.72),
-            lineWidth: max(1.65 * scale, 1.18)
+            stroke: Color.black.opacity(0.56),
+            lineWidth: max(1.10 * scale, 0.92)
         )
     }
 
