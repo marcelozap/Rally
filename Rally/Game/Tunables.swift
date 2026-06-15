@@ -556,6 +556,9 @@ enum Tunables {
 
     /// UserDefaults key for the all-time best wall rally combo.
     static let wallHighComboKey = "rally.wallRally.highCombo"
+    /// When the player is this many hits from their all-time wall combo,
+    /// the HUD switches from passive "BEST 18" to active "3 TO BEST".
+    static let wallNearBestComboWindow: Int = 5
 
     // MARK: - Scoring
 

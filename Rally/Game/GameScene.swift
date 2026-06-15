@@ -4431,13 +4431,11 @@ final class GameScene: SKScene {
             } else {
                 wallStreakLabel?.run(.fadeAlpha(to: 0.0, duration: 0.12), withKey: "streakFade")
             }
-            let displayBest = max(allTimeHighCombo, maxCombo)
-            if displayBest > 0 {
-                let isNewBest = maxCombo > allTimeHighCombo && maxCombo > 0
-                wallBestLabel?.text = isNewBest ? "★ \(maxCombo)" : "BEST \(displayBest)"
-                wallBestLabel?.fontColor = isNewBest
-                    ? UIColor(red: 1.0, green: 0.88, blue: 0.42, alpha: 0.90)
-                    : UIColor(red: 1.0, green: 0.86, blue: 0.42, alpha: 0.55)
+            if let wallBestLabel {
+                let state = wallBestHUDState()
+                wallBestLabel.text = state.text
+                wallBestLabel.fontColor = state.color
+                wallBestLabel.alpha = state.text.isEmpty ? 0 : 1
             }
         }
         hudTopPlate?.strokeColor = combo > 1
@@ -4533,6 +4531,28 @@ final class GameScene: SKScene {
             punch.timingMode = .easeOut
             c.run(punch, withKey: "punch")
         }
+    }
+
+    private func wallBestHUDState() -> (text: String, color: UIColor) {
+        guard usesMinimalWallHUD else {
+            return ("", UIColor.clear)
+        }
+        if allTimeHighCombo <= 0 {
+            return maxCombo > 0
+                ? ("BEST \(maxCombo)", UIColor(red: 1.0, green: 0.86, blue: 0.42, alpha: 0.52))
+                : ("", UIColor.clear)
+        }
+        if maxCombo > allTimeHighCombo {
+            return ("★ \(maxCombo)", UIColor(red: 1.0, green: 0.88, blue: 0.42, alpha: 0.92))
+        }
+        if combo == allTimeHighCombo && combo > 0 {
+            return ("MATCH BEST", UIColor(red: 0.70, green: 0.95, blue: 1.0, alpha: 0.84))
+        }
+        let gap = allTimeHighCombo - combo
+        if gap > 0, gap <= Tunables.wallNearBestComboWindow {
+            return ("\(gap) TO BEST", UIColor(red: 1.0, green: 0.86, blue: 0.42, alpha: 0.86))
+        }
+        return ("BEST \(allTimeHighCombo)", UIColor(red: 1.0, green: 0.86, blue: 0.42, alpha: 0.56))
     }
 
     private func hudImpactGlowBoost() -> CGFloat {
