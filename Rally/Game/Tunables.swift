@@ -114,6 +114,28 @@ enum Tunables {
     static let wallReturnAccelerationGain: CGFloat = 0.65
     /// Total wall→player return flight time (seconds).
     static let wallReturnTravelSeconds: Double = 0.56
+
+    // MARK: - Survival loop ("one more try")
+    //
+    // The wall rally is a Flappy-Bird-style survival run: every miss costs a
+    // life, the run ends the instant lives hit zero, and there is no clock —
+    // you play until you fail and chase your best score. This is the entire
+    // stakes/payoff structure the sandbox loop was missing.
+    enum Survival {
+        /// Master switch. When true the wall rally is a survival run.
+        static let enabled = true
+        /// Misses allowed before the run ends. Flappy is 1; 3 gives a tennis
+        /// rally a little more rope while still making every ball matter.
+        static let lives = 3
+        /// Difficulty ramp: the return ball comes back faster as score climbs.
+        /// The travel-time scalar lerps from 1.0 (base) at `rampStartScore`
+        /// down to `rampMinTravelScalar` at `rampFullScore`.
+        static let rampStartScore = 60
+        static let rampFullScore = 1400
+        /// Fastest return as a fraction of `wallReturnTravelSeconds`. 0.72 =
+        /// the late-run ball returns ~28% quicker than the opening ball.
+        static let rampMinTravelScalar: Double = 0.72
+    }
     /// Ball-node scale at the wall plane during the racket→wall exchange,
     /// relative to its scale at racket release. Sells the outbound depth leg.
     static let wallExchangeDepthFarScale: CGFloat = 0.58

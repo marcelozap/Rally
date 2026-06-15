@@ -146,6 +146,12 @@ final class GameScene: SKScene {
     private var score: Int = 0
     private var lastComboTier: Int = 0
 
+    /// Survival lives remaining in the current run. Each miss costs one; the
+    /// run ends the moment this hits zero. Fresh scene per run, so the default
+    /// is the start-of-run value.
+    private var livesRemaining: Int = Tunables.Survival.lives
+    private var livesLabel: SKLabelNode?
+
     // Hit-quality histogram, accumulated across the whole session. Drives
     // the end-of-run accuracy %, perfect rate, and reward math.
     private var perfectHits: Int = 0
@@ -887,6 +893,45 @@ final class GameScene: SKScene {
         hudMaxLabel?.position = CGPoint(x: size.width * 0.78, y: courtScoreY)
         hudMaxValueLabel?.position = CGPoint(x: size.width * 0.78, y: courtScoreY)
         comboLabel?.position = CGPoint(x: size.width / 2, y: courtScoreY - 30)
+        livesLabel?.position = CGPoint(x: size.width / 2, y: courtScoreY - 22)
+    }
+
+    /// Renders the survival lives as tennis-ball pips: bright for remaining,
+    /// dim for spent. Called on setup and after every miss.
+    private func updateLivesHUD() {
+        guard let livesLabel else { return }
+        guard Tunables.Survival.enabled else {
+            livesLabel.isHidden = true
+            return
+        }
+        let total = Tunables.Survival.lives
+        let remaining = max(0, livesRemaining)
+        let attributed = NSMutableAttributedString()
+        let bright = UIColor(red: 0.85, green: 0.95, blue: 0.45, alpha: 0.96) // tennis-ball green
+        let spent  = UIColor(white: 1.0, alpha: 0.18)
+        for index in 0..<total {
+            let color = index < remaining ? bright : spent
+            attributed.append(NSAttributedString(
+                string: index == 0 ? "\u{25CF}" : " \u{25CF}",
+                attributes: [
+                    .foregroundColor: color,
+                    .font: UIFont(name: "AvenirNext-Bold", size: livesLabel.fontSize) ?? UIFont.systemFont(ofSize: livesLabel.fontSize)
+                ]
+            ))
+        }
+        livesLabel.attributedText = attributed
+    }
+
+    /// Difficulty ramp: the return ball comes back faster as the run's score
+    /// climbs. Returns a scalar on `wallReturnTravelSeconds`, 1.0 at the start
+    /// tapering to `rampMinTravelScalar` once `rampFullScore` is reached.
+    private func survivalReturnTravelScalar() -> Double {
+        guard Tunables.Survival.enabled else { return 1.0 }
+        let start = Double(Tunables.Survival.rampStartScore)
+        let full = Double(Tunables.Survival.rampFullScore)
+        guard full > start else { return 1.0 }
+        let t = max(0, min(1, (Double(score) - start) / (full - start)))
+        return 1.0 - (1.0 - Tunables.Survival.rampMinTravelScalar) * t
     }
 
     // MARK: - Opponent Avatar
@@ -1677,6 +1722,24 @@ final class GameScene: SKScene {
         score.horizontalAlignmentMode = .center
         addChild(score)
         scoreLabel = score
+
+        // Survival lives — tennis-ball pips under the score. The one new HUD
+        // element that gives the run stakes, so it stays visible in the
+        // minimal wall-rally HUD.
+        let lives = SKLabelNode(fontNamed: "AvenirNext-Bold")
+        lives.fontSize = usesMinimalWallHUD ? 15 : 18
+        lives.zPosition = 50
+        lives.horizontalAlignmentMode = .center
+        lives.verticalAlignmentMode = .center
+        lives.position = CGPoint(
+            x: size.width / 2,
+            y: (usesMinimalWallHUD
+                ? size.height * Tunables.minimalHUDScoreYRatio
+                : size.height * 0.875) - (usesMinimalWallHUD ? 22 : 30)
+        )
+        addChild(lives)
+        livesLabel = lives
+        updateLivesHUD()
 
         if usesMinimalWallHUD {
             caption.alpha = 0
@@ -2784,13 +2847,15 @@ final class GameScene: SKScene {
         let strikePoint = racketContactPoint(for: returnLane)
         let config = RallyReentryConfig.rallyDefault
         let start = currentTrackTime
-        let arrival = start + config.returnTravelDuration
+        // Survival difficulty ramp: shorter return flight as the score climbs.
+        let travelDuration = config.returnTravelDuration * survivalReturnTravelScalar()
+        let arrival = start + travelDuration
 
         ball.beginReentry(
             RallyReentryBallState(
                 startTime: start,
                 arrivalTime: arrival,
-                strikeTime: arrival - min(config.contactRearmDelay, config.returnTravelDuration * 0.72),
+                strikeTime: arrival - min(config.contactRearmDelay, travelDuration * 0.72),
                 startPoint: handoff.point,
                 strikePoint: strikePoint,
                 config: config,
@@ -4051,6 +4116,20 @@ final class GameScene: SKScene {
             lastComboTier = 0
             wallNextLane = correctLane ?? lane
             updateHUD()
+            // Survival: every miss costs a life. Out of lives ends the run.
+            if Tunables.Survival.enabled {
+                livesRemaining -= 1
+                updateLivesHUD()
+                if livesRemaining <= 0 {
+                    stageResetBeat(duration: 0.12, soft: true)
+                    GameEventBus.shared.publish(.miss(lane: lane))
+                    if wallReason == .side, let correctLane {
+                        stageWallSideMissFeedback(swungLane: lane, correctLane: correctLane)
+                    }
+                    failRun(lastLane: lane)
+                    return
+                }
+            }
             stageResetBeat(duration: previous > 0 ? 0.10 : 0.08, soft: true)
             GameEventBus.shared.publish(.miss(lane: lane))
             if wallReason == .side, let correctLane {
@@ -5909,6 +5988,48 @@ final class GameScene: SKScene {
         )
         stageStrikeTransition(color: finishColor, intensity: 1.0, duration: 0.44)
         showInstruction("Strong finish. Review the match story.", hold: 0.7)
+        GameEventBus.shared.publish(.sessionEnd(buildResult()))
+    }
+
+    /// Ends a survival run when lives reach zero. Mirrors `completeSession`
+    /// but with the Flappy "you died" framing, and fires the same
+    /// `.sessionEnd` event so the existing Game Over → Play Again flow runs.
+    private func failRun(lastLane: Lane) {
+        guard !sessionEnded else { return }
+        resetSwingBodyMechanics()
+        sessionEnded = true
+        pendingWallSpawnToken = nil
+
+        // Clear everything in flight so the frozen frame reads as "over".
+        strikeLinePulse?.cancelAll()
+        for ball in activeBalls {
+            ball.run(.sequence([.fadeOut(withDuration: 0.16), .removeFromParent()]))
+        }
+        activeBalls.removeAll()
+        activeExchanges.removeAll()
+
+        let failColor = UIColor(red: 0.98, green: 0.42, blue: 0.40, alpha: 1)
+        frameStopUntil = currentTimeSnapshot + Tunables.frameStopDeathMs.seconds
+        CameraShake.drift(
+            cameraNode,
+            dx: 0,
+            dy: -7,
+            settleDx: 0,
+            settleDy: -1,
+            outMs: 60,
+            driftMs: 120,
+            backMs: 240
+        )
+        background?.pulseHorizon(intensity: 1.18)
+        background?.setMomentum(tier: 0, phase: "match-complete", breaking: true)
+        showMomentBanner(
+            text: "RUN OVER",
+            color: failColor,
+            hold: 0.6,
+            startScale: 0.9,
+            peakScale: 1.06
+        )
+        stageStrikeTransition(color: failColor, intensity: 1.0, duration: 0.42)
         GameEventBus.shared.publish(.sessionEnd(buildResult()))
     }
 

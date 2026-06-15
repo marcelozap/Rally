@@ -10,7 +10,7 @@ Governing priority: RALLY_NORTH_STAR.md > CLAUDE_CODE_PARALLEL_PLAN.md > RALLY_O
 
 | Date       | Commit     | Lane | Work                              | Notes                                           |
 |------------|------------|------|-----------------------------------|-------------------------------------------------|
-| 2026-06-15 | 6025cb7    | [CX] | Shop tab badge + locker highlight | shopHasUnseenUnlock @AppStorage; badge clears on Shop .onAppear; equipped tile gold/champagne glow. BUILD NOT RUN |
+| 2026-06-15 | (pending)  | [CC] | Survival loop: lives + fail + ramp | Wall rally now a Flappy-style run: 3 lives, each miss costs one, 0 lives → failRun() fires existing sessionEnd→GameOver→Play Again. Endless (no clock end in wallRally already). Lives pips HUD under score. Return-travel ramps faster as score climbs (survivalReturnTravelScalar). Tunables.Survival added. Files: GameScene.swift, Tunables.swift. BUILD NOT RUN |
 | 2026-06-15 | 85e3582    | [CC] | Ball shadow lerp + strict FH/BH   | Shadow xScale 0.30–0.90 lerp with depth+altitude; maxSameLaneRun 2→1 forces strict alternation. BUILD NOT RUN |
 | 2026-06-15 | 49d8a4e    | [CC] | Courts tier 2 unlocks             | Ashe/Laver/IndianWells wristband rewards in ShopCatalog; reward badge UI in CourtsMapView. BUILD NOT RUN |
 | 2026-06-15 | f994b40    | [CC] | Journal CTA in exit confirmation  | Exit button → confirmationDialog; "Log how it felt" opens journal then exits; exitAfterLog flag. BUILD NOT RUN |
