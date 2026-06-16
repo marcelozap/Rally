@@ -16,6 +16,8 @@ The village is alive, but it is not allowed to wander.
 
 Live village state sits next to the project ledger in `RALLY_VILLAGE_STATE.md`.
 
+Village job classes and agent reproduction rules live in `AGENT_VILLAGE_ROLES.md`.
+
 ---
 
 ## Village Map
@@ -27,6 +29,8 @@ flowchart TD
     TH --> LW["Lock Wall<br/>RALLY_AGENT_LOCK.md"]
     TH --> VG["Village Gate<br/>RALLY_REPO_GUARD.md"]
 
+    TH --> Pro["Rally Pro<br/>President / old-head coach"]
+    Pro --> BT
     BT --> RafaHut["Rafa Builder Hut<br/>Court Lab"]
     BT --> SinnerHut["Sinner Builder Hut<br/>Locker Atelier"]
     BT --> CarlosHut["Carlos Builder Hut<br/>Atlas Room"]
@@ -49,6 +53,7 @@ flowchart TD
 | Building | File / System | Purpose |
 |----------|---------------|---------|
 | **Town Hall** | `RALLY_NORTH_STAR.md` | Highest-level product direction. If confused, come here. |
+| **President Box** | `agents/rally-pro-coach.md` | Owner-backed final rulings and old-head tennis judgment. |
 | **Builder Tower** | `RALLY_PROGRESS.md` | The queue. Agents pull from here, one task at a time. |
 | **Village State Board** | `RALLY_VILLAGE_STATE.md` | Tracks who is awake, who is sleeping, what is damaged, and what needs proof. |
 | **Lock Wall** | `RALLY_AGENT_LOCK.md` | Prevents agents from building on the same tile. |
@@ -57,6 +62,7 @@ flowchart TD
 | **War Log** | Git commits | History of who built what and when. |
 | **Replay Theater** | Simulator screenshots / real-phone tests | Proof that the upgrade works on screen. |
 | **Builder Huts** | Rafa / Sinner / Carlos docs | Specialized work lanes. |
+| **Life Registry** | `AGENT_VILLAGE_ROLES.md` | Defines Builder, Artist, Planner, Scout, Keeper, Tester, aging, death, and reproduction. |
 
 ---
 
@@ -261,3 +267,25 @@ Once the app is stable enough for real-phone testing, the village can become mor
 The point is not to make agents busy.
 
 The point is to make Rally continuously better without losing the plot.
+
+---
+
+## Worker Classes
+
+Rally Pro is president.
+
+Rafa, Sinner, and Carlos are houses.
+
+Each house can spawn worker classes:
+
+- **Builder** — writes code.
+- **Artist** — improves visual taste and feel.
+- **Planner** — orders work without broad code changes.
+- **Tester** — verifies build, screenshots, real-phone behavior.
+
+Cross-house classes:
+
+- **Scout** — reads new clues, screenshots, and golden files.
+- **Keeper** — protects docs, locks, and inheritance.
+
+Read `AGENT_VILLAGE_ROLES.md` before spawning a worker.

@@ -24,7 +24,9 @@ to them. So locks live in git, not in your head:
 4. **To release:** when your change is committed, delete your row (or mark it `RELEASED`) in the
    same commit as the work, or a follow-up `[lock] release` commit.
 5. **If you see the other agent already holds a lock you need:** do not wait silently and do not
-   work around it. Tell the user, quote the lock row, and let them re-cut the boundary.
+   work around it. Tell the user, quote the lock row, and let them re-cut the boundary. If the
+   owner rules on the dispute, log that ruling under Rally Pro in `agents/rally-pro-coach.md`
+   (Owner's Box, final say) so the next session inherits the decision instead of re-asking.
 
 A lock is cooperative — it only works if both agents check it first. That check is non-negotiable.
 

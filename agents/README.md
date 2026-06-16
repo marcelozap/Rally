@@ -10,17 +10,19 @@ Root `AGENTS.md` is still the automatic boot file. Keep it short. It points here
 2. `AGENT_VISUALIZER.md`
 3. `AGENT_WORLD.md`
 4. `AGENT_VILLAGE_AUTONOMY.md`
-5. `RALLY_VILLAGE_STATE.md`
-6. `agents/session-handshake.md`
-7. `agents/locks.md`
-8. `agents/lanes.md`
-9. the relevant named agent file:
+5. `AGENT_VILLAGE_ROLES.md`
+6. `RALLY_VILLAGE_STATE.md`
+7. `agents/session-handshake.md`
+8. `agents/locks.md`
+9. `agents/lanes.md`
+10. `agents/rally-pro-coach.md`
+11. the relevant named agent file:
    - `agents/rafa-gameplay.md` for gameplay
    - `agents/sinner-store.md` for Shop / Locker
    - `agents/carlos-world.md` for World / Courts
-10. `RALLY_NORTH_STAR.md`
-11. `RALLY_PROGRESS.md`
-12. `agents/current-priority.md`
+12. `RALLY_NORTH_STAR.md`
+13. `RALLY_PROGRESS.md`
+14. `agents/current-priority.md`
 
 ## Why This Exists
 
@@ -48,6 +50,7 @@ Screenshots still beat claims. If the app looks wrong, it is wrong.
 
 ## Named Agents
 
+- **Rally Pro** — president / old-head tennis coach; final say above Codex and Claude when the owner makes a ruling.
 - **Rafa** — gameplay feel, tennis mechanics, camera, swing, ball, haptics.
 - **Sinner** — store, Locker, product cards, outfit selection, referral commerce.
 - **Carlos** — world, courts, venues, maps, official links, location unlocks.
@@ -61,3 +64,5 @@ Use `AGENT_WORLD.md` when you want the agents to operate like a small command-ce
 Use `AGENT_VILLAGE_AUTONOMY.md` when you want the agents to operate like a Clash-style builder village with queues, locks, sync tower, and autonomy levels.
 
 Use `RALLY_VILLAGE_STATE.md` to see whether the village is Green, Yellow, Red, or Wiped, and which agent is awake.
+
+Use `AGENT_VILLAGE_ROLES.md` to spawn the right kind of villager: Builder, Artist, Planner, Scout, Keeper, or Tester.

@@ -16,6 +16,7 @@ Rally is still a module inside XIV OS. XIV holds the field. Rally moves clean.
 flowchart TD
     XIV["XIV OS<br/>Root Field"] --> Rally["Rally<br/>Movement / sport / focus node"]
     Rally --> Hub["Rally Operations Hub"]
+    Hub --> ProBox["Rally Pro Box<br/>president / old-head coach"]
     Hub --> RafaRoom["Rafa Court Lab<br/>gameplay reality"]
     Hub --> SinnerRoom["Sinner Locker Atelier<br/>gear desire"]
     Hub --> CarlosRoom["Carlos Atlas Room<br/>world trust"]
@@ -44,6 +45,7 @@ The Rally Operations Hub is the shared room.
 It contains:
 
 - **North Star Screen** — `RALLY_NORTH_STAR.md`
+- **Rally Pro Box** — `agents/rally-pro-coach.md`
 - **Progress Ledger** — `RALLY_PROGRESS.md`
 - **Village State Board** — `RALLY_VILLAGE_STATE.md`
 - **Lock Wall** — `RALLY_AGENT_LOCK.md`
@@ -52,6 +54,33 @@ It contains:
 - **XIV Context Panel** — `XIV_RALLY.md`
 
 No agent starts in their own room. Every agent starts in the Hub, reads the state, then enters the correct room.
+
+Rally Pro sits above the rooms. He is not a worker. He is the president / old-head tennis coach whose rulings preserve the owner's final say.
+
+---
+
+## Rally Pro Box
+
+Rally Pro is the owner's coach voice written into the village.
+
+He is above:
+
+- Codex / CX
+- Claude Code / CC
+- Rafa
+- Sinner
+- Carlos
+- all Builder / Artist / Planner / Scout / Keeper / Tester workers
+
+He judges:
+
+- whether tennis movement looks real
+- whether gameplay feels like one more run
+- whether Home and gameplay are the same player
+- whether a lane dispute has a final answer
+- whether a screenshot overrules a technical claim
+
+Rally Pro does not code. He rules, and the correct worker carries out the ruling.
 
 ---
 

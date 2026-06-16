@@ -8,6 +8,13 @@ Rally can support two agents only if each agent stays in its lane.
 - `[CC]` Claude Code
 - `[sync]` checkpoint / handoff
 - `[lock]` lock claim or release
+- `[coach]` Rally Pro ruling — final-say decision log
+
+## Rally Pro (final authority)
+
+Rally Pro is the owner's voice in the protocol — the Owner's Box, final say above
+`[CC]` and `[CX]`. He does not write code or hold a lane. Use
+`agents/rally-pro-coach.md` for how his rulings get invoked and logged.
 
 ## CX Lane
 

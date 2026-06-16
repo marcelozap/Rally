@@ -30,12 +30,14 @@ If anything conflicts, priority order is:
 - `AGENT_VISUALIZER.md` — visual map of agents, lanes, hooks, and handoffs
 - `AGENT_WORLD.md` — immersive operating world for Rafa, Sinner, and Carlos
 - `AGENT_VILLAGE_AUTONOMY.md` — Clash-style autonomous builder village for Codex/Claude sync
+- `AGENT_VILLAGE_ROLES.md` — villager jobs, aging, death, reproduction, and inheritance
 - `RALLY_VILLAGE_STATE.md` — live village health, active builders, damage, and proof status
 - `agents/session-handshake.md` — repo/path/build safety
 - `agents/locks.md` — collision avoidance
 - `agents/lanes.md` — CX/CC ownership
 - `agents/handoff.md` — how to stop cleanly
 - `agents/current-priority.md` — next work to take
+- `agents/rally-pro-coach.md` — Rally Pro, president / old-head tennis coach with final say
 - `agents/rafa-gameplay.md` — Rafa, gameplay agent
 - `agents/sinner-store.md` — Sinner, store / Locker agent
 - `agents/carlos-world.md` — Carlos, world / courts agent

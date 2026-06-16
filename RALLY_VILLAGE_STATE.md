@@ -18,6 +18,7 @@ This is an interface metaphor over real repo facts. The agents are not magic. Th
 | Sync Tower | Stable | Active branch is `rally/dev`; GitHub remote is `https://github.com/marcelozap/Rally.git`. |
 | Builder Tower | Under construction | `RALLY_PROGRESS.md` has active pending gameplay / Claude-hook entries. Do not rewrite it casually. |
 | Lock Wall | Stable | `RALLY_AGENT_LOCK.md` exists; active locks must be checked before hot-zone edits. |
+| Rally Pro Box | Stable | `agents/rally-pro-coach.md` exists; Rally Pro sits above Codex and Claude as final owner-backed ruling voice. |
 | Rafa Court Lab | Awake | Gameplay files currently have uncommitted work: `Rally/Game/GameScene.swift`, `Rally/Game/Tunables.swift`. |
 | Sinner Locker Atelier | Sleeping | No active Shop/Locker task should begin until gameplay loop stabilizes or user explicitly routes to Sinner. |
 | Carlos Atlas Room | Sleeping | No active World/Courts task should begin until gameplay loop stabilizes or user explicitly routes to Carlos. |
@@ -29,6 +30,7 @@ This is an interface metaphor over real repo facts. The agents are not magic. Th
 
 | Turn | Agent | Status | Allowed Work | Stop Condition |
 |------|-------|--------|--------------|----------------|
+| 0 | Rally Pro | President | Final rulings only; does not code | Owner has not made a ruling |
 | 1 | Rafa | Active | Wall-rally addiction loop, timing, camera, score/lives/multiplier feel | Build fails, avatar identity diverges, or gameplay screenshot contradicts claim |
 | 2 | Sinner | Queued | Locker/Shop clarity after Rafa checkpoint | Gameplay loop still unstable |
 | 3 | Carlos | Queued | Courts/Journal reliability after Rafa checkpoint | Gameplay loop still unstable |
@@ -153,6 +155,8 @@ Both must treat these files as shared state:
 - `AGENT_VISUALIZER.md`
 - `AGENT_WORLD.md`
 - `AGENT_VILLAGE_AUTONOMY.md`
+- `AGENT_VILLAGE_ROLES.md`
+- `agents/rally-pro-coach.md`
 - `RALLY_VILLAGE_STATE.md`
 - `RALLY_PROGRESS.md`
 - `RALLY_AGENT_LOCK.md`
@@ -163,3 +167,17 @@ Codex follows the markdown protocol directly.
 
 If Claude says something and Codex says something else, Git + screenshots + `RALLY_NORTH_STAR.md` decide.
 
+---
+
+## Current Generations
+
+| House / Worker | Generation | Life State | Inheritance Source |
+|----------------|------------|------------|--------------------|
+| Rally Pro | President | Awake only for rulings | Owner decisions logged in `agents/rally-pro-coach.md` |
+| Rafa Builder | 1 | Awake | `RALLY_PROGRESS.md` active gameplay rows + dirty `GameScene.swift` / `Tunables.swift` |
+| Sinner Artist | 1 | Sleeping | `agents/sinner-store.md`, Shop backlog |
+| Carlos Planner | 1 | Sleeping | `agents/carlos-world.md`, Journal/World backlog |
+| Keeper | 1 | Awake when docs/locks change | `AGENTS.md`, `RALLY_AGENT_LOCK.md`, village docs |
+| Scout | 1 | Awake when golden files appear | screenshots, `RALLY_CHAT_CONTEXT.md`, user notes |
+
+When a worker session ends, increment its generation only if the next session continues the same house/job from committed repo memory.

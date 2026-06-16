@@ -31,6 +31,7 @@ flowchart TD
     Agents --> Guard["RALLY_REPO_GUARD.md<br/>canonical repo safety"]
     Agents --> Lock["RALLY_AGENT_LOCK.md<br/>hot-zone locks"]
     Agents --> AgentDocs["agents/<br/>lane manuals"]
+    AgentDocs --> RallyPro["Rally Pro<br/>president + old-head coach"]
     AgentDocs --> Rafa["Rafa<br/>gameplay feel"]
     AgentDocs --> Sinner["Sinner<br/>shop + locker"]
     AgentDocs --> Carlos["Carlos<br/>world + courts"]
@@ -40,8 +41,10 @@ flowchart TD
     VillageDoc --> Progress
     VillageDoc --> Lock
 
-    Codex["Codex / CX<br/>this app"] --> AgentDocs
-    Claude["Claude Code / CC<br/>local Claude app"] --> ClaudeHooks[".claude/hooks<br/>mechanical guards"]
+    RallyPro --> Codex["Codex / CX<br/>this app"]
+    RallyPro --> Claude["Claude Code / CC<br/>local Claude app"]
+    Codex --> AgentDocs
+    Claude --> ClaudeHooks[".claude/hooks<br/>mechanical guards"]
     ClaudeHooks --> Guard
     ClaudeHooks --> Lock
 
@@ -56,6 +59,7 @@ flowchart TD
 
 | Name | Surface | Primary Mission | Primary Files | Must Not Do |
 |------|---------|-----------------|---------------|-------------|
+| **Rally Pro** | President / coach | Final say when owner makes a ruling; old-head tennis standard for gameplay and product truth. | `agents/rally-pro-coach.md`, ruling log only | Write implementation code, bypass locks, become a normal worker lane |
 | **Rafa** | Gameplay | Make wall rally addictive, physical, readable, and fair. | `Rally/Game/GameScene.swift`, `Rally/Game/Tunables.swift`, `Rally/Game/*`, gameplay audio/haptics | Add visual clutter, break Home/gameplay avatar identity, edit Shop/World without explicit override |
 | **Sinner** | Store / Locker | Make gear selection and real-merch browsing feel premium and easy. | `Rally/Features/Shop/*`, `Rally/Services/RallyGearItem.swift`, `Rally/Services/RallyReferralCatalog.swift`, `Rally/Services/RallyReferralLinkRouter.swift` | Touch gameplay tuning or courts logic |
 | **Carlos** | World / Courts | Make venues, links, court unlocks, and training-life surfaces trustworthy. | `Rally/Features/Courts/*`, `Rally/Features/Journal/*`, `Rally/Data/IconicCourtsCatalog.swift` | Rename actions dishonestly, show dead links, pile markers over cards |
