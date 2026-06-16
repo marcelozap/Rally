@@ -19,7 +19,7 @@ This is an interface metaphor over real repo facts. The agents are not magic. Th
 | Builder Tower | Under construction | `RALLY_PROGRESS.md` has active pending gameplay / Claude-hook entries. Do not rewrite it casually. |
 | Lock Wall | Stable | `RALLY_AGENT_LOCK.md` exists; active locks must be checked before hot-zone edits. |
 | Rally Pro Box | Stable | `agents/rally-pro-coach.md` exists; Rally Pro sits above Codex and Claude as final owner-backed ruling voice. |
-| Rafa Court Lab | Awake | Gameplay files currently have uncommitted work: `Rally/Game/GameScene.swift`, `Rally/Game/Tunables.swift`. |
+| Rafa Court Lab | Awake | Repo is clean; Rafa still needs visual gameplay proof for camera/depth/addiction-loop feel. |
 | Sinner Locker Atelier | Sleeping | No active Shop/Locker task should begin until gameplay loop stabilizes or user explicitly routes to Sinner. |
 | Carlos Atlas Room | Sleeping | No active World/Courts task should begin until gameplay loop stabilizes or user explicitly routes to Carlos. |
 | Replay Theater | Needs proof | Visual gameplay verification still matters more than claims. |
@@ -53,7 +53,7 @@ The village has four health states.
 Current default:
 
 ```text
-Yellow — gameplay edits are active and uncommitted.
+Yellow — gameplay visual QA is still missing; build state is clean, but Replay Theater still needs proof.
 ```
 
 ---
@@ -174,7 +174,7 @@ If Claude says something and Codex says something else, Git + screenshots + `RAL
 | House / Worker | Generation | Life State | Inheritance Source |
 |----------------|------------|------------|--------------------|
 | Rally Pro | President | Awake only for rulings | Owner decisions logged in `agents/rally-pro-coach.md` |
-| Rafa Builder | 1 | Awake | `RALLY_PROGRESS.md` active gameplay rows + dirty `GameScene.swift` / `Tunables.swift` |
+| Rafa Builder | 1 | Awake | `RALLY_PROGRESS.md` active gameplay rows + pending visual QA for the wall-rally loop |
 | Sinner Artist | 1 | Sleeping | `agents/sinner-store.md`, Shop backlog |
 | Carlos Planner | 1 | Sleeping | `agents/carlos-world.md`, Journal/World backlog |
 | Keeper | 1 | Awake when docs/locks change | `AGENTS.md`, `RALLY_AGENT_LOCK.md`, village docs |
