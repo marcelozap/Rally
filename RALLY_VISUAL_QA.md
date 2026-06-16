@@ -351,11 +351,19 @@ xcodebuild -project Rally.xcodeproj -scheme Rally -configuration Debug -destinat
 Result: BUILD SUCCEEDED
 ```
 
+Regression tests:
+
+```text
+xcodebuild -project Rally.xcodeproj -scheme Rally -configuration Debug -destination 'platform=iOS Simulator,name=iPhone 16 Pro' CODE_SIGNING_ALLOWED=NO -only-testing:RallyTests/WallRallyEscalationTests test
+Result: TEST SUCCEEDED — 9 tests, 0 failures
+```
+
 Findings:
 
 - Misses that drop survival mode to one life now give the "LAST LIFE" warning priority over the normal RESET banner.
 - Miss coaching copy is suppressed on that same last-life beat, so the pressure signal owns the screen instead of stacking three messages.
 - New-best banners remain eligible on the same miss because reward beats should not be hidden by survival copy priority.
+- Survival miss copy priority is now covered by pure tests, so the last-life suppression contract is less likely to drift during future gameplay tuning.
 - Lost-life pip burst still fires at the spent pip to keep the life loss readable.
 - Remaining issue: needs a manual miss-ladder visual check to confirm first miss, last-life miss, and run-over miss each read as separate beats.
 

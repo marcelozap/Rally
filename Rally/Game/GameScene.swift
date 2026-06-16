@@ -4322,7 +4322,11 @@ final class GameScene: SKScene {
             lastComboTier = 0
             wallNextLane = correctLane ?? lane
             updateHUD()
-            let willEnterLastLife = Tunables.Survival.enabled && livesRemaining == 2
+            let missCopyPriority = Tunables.wallMissCopyPriority(
+                previousCombo: previous,
+                livesBeforeMiss: livesRemaining,
+                beatBestThisRun: previous > allTimeHighCombo
+            )
             var enteredLastLife = false
 
             // Personal best (combo): save immediately so it's recorded even if
@@ -4332,7 +4336,7 @@ final class GameScene: SKScene {
                 UserDefaults.standard.set(allTimeHighCombo, forKey: Tunables.wallHighComboKey)
                 wallBestLabel?.text = "BEST \(allTimeHighCombo)"
                 showWallNewBestBanner(combo: allTimeHighCombo)
-            } else if previous >= 5 && !willEnterLastLife {
+            } else if missCopyPriority.showResetBanner {
                 // RESET banner only on meaningful combo breaks.
                 showWallBanner(
                     text: "RESET",
@@ -4368,7 +4372,7 @@ final class GameScene: SKScene {
             if wallReason == .side, let correctLane {
                 stageWallSideMissFeedback(swungLane: lane, correctLane: correctLane)
             }
-            if !enteredLastLife || !Tunables.Survival.suppressMissInstructionOnLastLife {
+            if !enteredLastLife || missCopyPriority.showMissInstruction {
                 showWallMissInstruction(
                     wallMissCue(for: wallReason, comboWasLive: previous > 0, correctLane: correctLane),
                     comboWasLive: previous > 0

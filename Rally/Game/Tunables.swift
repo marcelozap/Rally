@@ -656,6 +656,20 @@ enum Tunables {
         }
     }
 
+    /// Copy-priority policy for survival misses. The visual rule is that the
+    /// one-life warning owns the frame: it suppresses normal RESET/coaching copy
+    /// unless the miss also earned a new-best reward banner.
+    static func wallMissCopyPriority(
+        previousCombo: Int,
+        livesBeforeMiss: Int,
+        beatBestThisRun: Bool
+    ) -> (showResetBanner: Bool, showMissInstruction: Bool) {
+        let entersLastLife = Survival.enabled && livesBeforeMiss == 2
+        let showResetBanner = previousCombo >= 5 && !entersLastLife && !beatBestThisRun
+        let showMissInstruction = !entersLastLife || !Survival.suppressMissInstructionOnLastLife
+        return (showResetBanner, showMissInstruction)
+    }
+
     /// UserDefaults key for the all-time best wall rally combo.
     static let wallHighComboKey = "rally.wallRally.highCombo"
     /// When the player is this many hits from their all-time wall combo,

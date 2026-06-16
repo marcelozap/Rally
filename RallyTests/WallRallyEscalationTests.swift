@@ -132,4 +132,50 @@ final class WallRallyEscalationTests: XCTestCase {
             accuracy: 1e-9
         )
     }
+
+    // MARK: - survival miss copy priority
+
+    func testSurvivalMissCopyShowsResetForMeaningfulNonLastLifeBreak() {
+        let priority = Tunables.wallMissCopyPriority(
+            previousCombo: 12,
+            livesBeforeMiss: 3,
+            beatBestThisRun: false
+        )
+
+        XCTAssertTrue(priority.showResetBanner)
+        XCTAssertTrue(priority.showMissInstruction)
+    }
+
+    func testSurvivalMissCopySuppressesResetAndInstructionWhenEnteringLastLife() {
+        let priority = Tunables.wallMissCopyPriority(
+            previousCombo: 12,
+            livesBeforeMiss: 2,
+            beatBestThisRun: false
+        )
+
+        XCTAssertFalse(priority.showResetBanner)
+        XCTAssertFalse(priority.showMissInstruction)
+    }
+
+    func testSurvivalMissCopyKeepsQuietMissesFromShowingReset() {
+        let priority = Tunables.wallMissCopyPriority(
+            previousCombo: 0,
+            livesBeforeMiss: 3,
+            beatBestThisRun: false
+        )
+
+        XCTAssertFalse(priority.showResetBanner)
+        XCTAssertTrue(priority.showMissInstruction)
+    }
+
+    func testSurvivalMissCopyLetsNewBestOwnTheRewardBeat() {
+        let priority = Tunables.wallMissCopyPriority(
+            previousCombo: 18,
+            livesBeforeMiss: 3,
+            beatBestThisRun: true
+        )
+
+        XCTAssertFalse(priority.showResetBanner)
+        XCTAssertTrue(priority.showMissInstruction)
+    }
 }
