@@ -6218,8 +6218,11 @@ final class GameScene: SKScene {
             ? intensity * Tunables.wallStrikeTransitionIntensityMultiplier
             : intensity
         if let strikeHalo {
+            let haloBaseAlpha = sessionMode == .wallRally ? Tunables.wallStrikeTransitionHaloFillBaseAlpha : 0.08
+            let haloBoostAlpha = sessionMode == .wallRally ? Tunables.wallStrikeTransitionHaloFillBoostAlpha : 0.10
+            let haloRestAlpha = sessionMode == .wallRally ? Tunables.wallStrikeTransitionHaloRestAlpha : 0.05
             strikeHalo.removeAction(forKey: "transition")
-            strikeHalo.fillColor = color.withAlphaComponent(0.08 + effectiveIntensity * 0.10)
+            strikeHalo.fillColor = color.withAlphaComponent(haloBaseAlpha + effectiveIntensity * haloBoostAlpha)
             strikeHalo.run(.sequence([
                 .group([
                     .fadeAlpha(to: sessionMode == .wallRally ? Tunables.wallStrikeTransitionHaloAlpha : 0.92, duration: duration * 0.28),
@@ -6229,7 +6232,7 @@ final class GameScene: SKScene {
                 .group([
                     .fadeAlpha(to: 1.0, duration: 0),
                     .run { [weak strikeHalo] in
-                        strikeHalo?.fillColor = color.withAlphaComponent(0.05)
+                        strikeHalo?.fillColor = color.withAlphaComponent(haloRestAlpha)
                     },
                     .scaleX(to: 1.0, duration: duration * 0.72),
                     .scaleY(to: 1.0, duration: duration * 0.72),
@@ -6252,7 +6255,7 @@ final class GameScene: SKScene {
         sweep.run(.sequence([
             .group([
                 .moveBy(x: 0, y: 12 + effectiveIntensity * 8, duration: duration * 0.22),
-                .fadeAlpha(to: sessionMode == .wallRally ? 0.58 : 0.95, duration: duration * 0.18),
+                .fadeAlpha(to: sessionMode == .wallRally ? Tunables.wallStrikeTransitionSweepPeakAlpha : 0.95, duration: duration * 0.18),
                 .scaleX(to: 1.12 + effectiveIntensity * 0.10, duration: duration * 0.22)
             ]),
             .group([
@@ -6501,12 +6504,16 @@ final class GameScene: SKScene {
         ball.zPosition = 67
         ball.alpha = 1
 
+        let wallMode = sessionMode == .wallRally
+        let haloAlphaMultiplier = wallMode ? Tunables.wallRacketContactHaloAlphaMultiplier : 1
+        let haloGlowMultiplier = wallMode ? Tunables.wallRacketContactHaloGlowMultiplier : 1
+        let haloScaleMultiplier = wallMode ? Tunables.wallRacketContactHaloScaleMultiplier : 1
         let halo = SKShapeNode(circleOfRadius: Tunables.ballRadiusPoints * 0.84)
         halo.position = contactPoint
-        halo.fillColor = wallStrokeAccentColor(for: strokeSide, quality: quality).withAlphaComponent(0.16)
-        halo.strokeColor = UIColor.white.withAlphaComponent(0.22)
+        halo.fillColor = wallStrokeAccentColor(for: strokeSide, quality: quality).withAlphaComponent(0.16 * haloAlphaMultiplier)
+        halo.strokeColor = UIColor.white.withAlphaComponent(0.22 * haloAlphaMultiplier)
         halo.lineWidth = 0.9
-        halo.glowWidth = 9
+        halo.glowWidth = 9 * haloGlowMultiplier
         halo.alpha = 0
         halo.zPosition = 66
         addChild(halo)
@@ -6534,11 +6541,14 @@ final class GameScene: SKScene {
             ball.xScale = frame.xScale
             ball.yScale = frame.yScale
             ball.alpha = 1 - max(0, progress - 0.76) / 0.24
+            if wallMode {
+                ball.applyWallContactProxyReadability(progress: progress)
+            }
 
             halo.position = contactPoint
-            halo.alpha = max(0, frame.shadowAlpha + 0.18)
-            halo.xScale = 0.96 + model.compressionScalar(at: progress) * 0.46
-            halo.yScale = 0.86 + model.releaseVelocityScalar(at: progress) * 0.12
+            halo.alpha = max(0, frame.shadowAlpha + 0.18) * haloAlphaMultiplier
+            halo.xScale = (0.96 + model.compressionScalar(at: progress) * 0.46) * haloScaleMultiplier
+            halo.yScale = (0.86 + model.releaseVelocityScalar(at: progress) * 0.12) * haloScaleMultiplier
 
             for (index, string) in self.playerRacketStrings.enumerated() {
                 guard index < stringBaselines.count else { continue }
@@ -7533,6 +7543,16 @@ final class BallNode: SKShapeNode {
             altitude: max(0, (1 - frame.shadowAlpha) * 48),
             compression: max(0, frame.xScale - 1)
         )
+    }
+
+    func applyWallContactProxyReadability(progress: CGFloat) {
+        glowWidth = Tunables.wallContactProxyBallGlowWidth
+        warningRingNode.alpha = 0
+        focusRingNode.alpha = Tunables.wallContactProxyBallFocusAlpha * max(0, 1 - progress * 0.65)
+        auraNode.alpha = Tunables.wallContactProxyBallAuraAlpha * max(0.2, 1 - progress * 0.5)
+        coreNode.alpha = Tunables.wallContactProxyBallCoreAlpha
+        coreNode.setScale(Tunables.wallBallCoreScaleScalar)
+        tailNode.alpha = 0.08
     }
 
     func contactWindowPhase(at trackTime: Double) -> ContactWindowPhase {

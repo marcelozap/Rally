@@ -371,16 +371,27 @@ enum Tunables {
     static let contactRacketBurstAlphaMultiplier: CGFloat = 0.52
     static let contactRacketBurstScaleMultiplier: CGFloat = 0.62
     static let contactRacketBurstGlowMultiplier: CGFloat = 0.58
-    static let wallStrikeTransitionIntensityMultiplier: CGFloat = 0.24
-    static let wallStrikeTransitionHaloAlpha: CGFloat = 0.18
-    static let wallStrikeTransitionSweepAlpha: CGFloat = 0.16
+    static let wallStrikeTransitionIntensityMultiplier: CGFloat = 0.16
+    static let wallStrikeTransitionHaloFillBaseAlpha: CGFloat = 0.022
+    static let wallStrikeTransitionHaloFillBoostAlpha: CGFloat = 0.034
+    static let wallStrikeTransitionHaloRestAlpha: CGFloat = 0.018
+    static let wallStrikeTransitionHaloAlpha: CGFloat = 0.08
+    static let wallStrikeTransitionSweepAlpha: CGFloat = 0.10
+    static let wallStrikeTransitionSweepPeakAlpha: CGFloat = 0.24
 
     /// Wall-mode ball/fx is intentionally quieter so the player body and racket stay readable.
-    static let wallBallVisualScalar: CGFloat = 0.26
-    static let wallBallAuraAlphaScalar: CGFloat = 0.22
-    static let wallBallCoreAlphaScalar: CGFloat = 0.46
-    static let wallBallCoreScaleScalar: CGFloat = 0.64
-    static let wallBallContactScaleBoost: CGFloat = 0.01
+    static let wallBallVisualScalar: CGFloat = 0.22
+    static let wallBallAuraAlphaScalar: CGFloat = 0.15
+    static let wallBallCoreAlphaScalar: CGFloat = 0.42
+    static let wallBallCoreScaleScalar: CGFloat = 0.56
+    static let wallBallContactScaleBoost: CGFloat = 0.0
+    static let wallRacketContactHaloAlphaMultiplier: CGFloat = 0.42
+    static let wallRacketContactHaloGlowMultiplier: CGFloat = 0.44
+    static let wallRacketContactHaloScaleMultiplier: CGFloat = 0.72
+    static let wallContactProxyBallGlowWidth: CGFloat = 1.4
+    static let wallContactProxyBallAuraAlpha: CGFloat = 0.06
+    static let wallContactProxyBallCoreAlpha: CGFloat = 0.24
+    static let wallContactProxyBallFocusAlpha: CGFloat = 0.035
     static let wallContactBurstRingScaleMultiplier: CGFloat = 0.30
     static let wallContactBurstFlashScaleMultiplier: CGFloat = 0.18
     static let wallContactBurstAlphaMultiplier: CGFloat = 0.18

@@ -187,3 +187,39 @@ Recommended next Rafa task:
 ```text
 Tune the contact glow shape: keep the hit aura bright around the ball/racket, but reduce the broad beige/white cloud spilling over the avatar silhouette.
 ```
+
+## 2026-06-16 — Contact Glow Shape Pass
+
+Build:
+
+```text
+xcodebuild -project Rally.xcodeproj -scheme Rally -configuration Debug -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build
+Result: BUILD SUCCEEDED
+```
+
+Simulator:
+
+```text
+iPhone 16 Pro, iOS 18.6
+Bundle: com.marcelozap.rally
+Autoplay argument: -RallyAutoPlay
+```
+
+Screenshots:
+
+```text
+Gameplay autoplay after contact-glow pass: /tmp/rally_visual_qa/autoplay_after_contact_glow_shape_145538.png
+```
+
+Findings:
+
+- Wall-mode racket-contact halo and BallNode proxy aura now use named wall-specific readability tunables instead of the shared normal-contact bloom values.
+- Strike-line transition halo/sweep now uses lower wall-mode alpha knobs instead of hardcoded broad bloom alphas.
+- Build passes, and the captured frame keeps the avatar, racket, and ball readable through contact better than the earlier broad-glow screenshots.
+- Remaining issue: a broad contact aura still exists around the strike moment. The next pass should inspect `stageRacketContactHalo` / `stageContactImprint` and consider replacing the circular cloud with a tighter directional spark/comet payoff.
+
+Recommended next Rafa task:
+
+```text
+Inspect the remaining contact halo/imprint emitters and replace the broad circular cloud with a tighter directional racket-spark/comet effect so contact remains punchy without covering the player.
+```
