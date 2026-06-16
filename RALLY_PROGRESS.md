@@ -10,7 +10,13 @@ Governing priority: RALLY_NORTH_STAR.md > CLAUDE_CODE_PARALLEL_PLAN.md > RALLY_O
 
 | Date       | Commit     | Lane | Work                              | Notes                                           |
 |------------|------------|------|-----------------------------------|-------------------------------------------------|
-| 2026-06-15 | (pending)  | [CC] | Survival loop: lives + fail + ramp | Wall rally now a Flappy-style run: 3 lives, each miss costs one, 0 lives → failRun() fires existing sessionEnd→GameOver→Play Again. Endless (no clock end in wallRally already). Lives pips HUD under score. Return-travel ramps faster as score climbs (survivalReturnTravelScalar). Tunables.Survival added. Files: GameScene.swift, Tunables.swift. BUILD NOT RUN |
+| 2026-06-16 | (pending)  | [CC] | RallyTab rename + wall-rally test coverage | `RallyTab.journal` → `.world` (ContentView.swift) to match the actual "World" tab label/icon (Courts map) — was naming debt from T7 golden-file routing, confirmed single-file blast radius via grep before renaming. Added `RallyTests/WallRallyEscalationTests.swift`: full coverage of `Tunables.wallSpeedTier`/`wallSpeedScalar`/`wallTimingScalar` (tier boundaries, monotonic taper, openingBoost confined to tier 0 only). Surveyed `RallySyncCoordinator`/`RallySyncTriggers`/`RemoteTunables`/`RallyAPIClient` for live-ops risk — found one real bug (see BLOCKED/NOTES), did not touch it. Files: `Rally/App/ContentView.swift`, `RallyTests/WallRallyEscalationTests.swift` (new), `RALLY_PROGRESS.md`. BUILD NOT RUN, TESTS NOT RUN — no Xcode/simulator in this sandbox. |
+| 2026-06-16 | d355b86    | [CX] | Timing taper + multiplier banners  | wallTimingScalar tapers with combo tier (1.78→1.62→1.44→1.26→1.10→0.96) matching speed ramp so tier-5 is genuinely harder. wallStreakLabel punched on each hit (comboLabel hidden in wall mode). ×2/×3 multiplier-bump banners (gold→platinum) when combo/5 steps up and no speed-tier fires same hit. xcodebuild generic iOS Simulator Debug BUILD SUCCEEDED. |
+| 2026-06-16 | 0460ecc    | [coach] | Rally Pro / Owner's Box added | New president / old-head tennis coach persona representing the real repo owner with final-say authority above [CC] and [CX]. Not autonomous: cannot be invoked by agents on their own initiative, does not write code, does not hold a lane, and only formalizes rulings the owner actually states in chat. |
+| 2026-06-16 | b3ed88a    | [CX] | Real Claude Code hooks for protocol | .claude/settings.json + .claude/hooks/{guard-edit,guard-bash,session-start}.sh. Mechanizes canonical-path and destructive-command guards for native Claude Code sessions; CX still follows markdown protocol directly. |
+| 2026-06-16 | (verify)   | [CX] | BUILD VERIFY — whole tree         | xcodebuild generic iOS Simulator, Debug: **BUILD SUCCEEDED** after Rally Pro docs and d355b86 gameplay timing/multiplier pass. |
+| 2026-06-15 | 5a72640    | [CX] | Flappy-Bird speed ramp + combo HUD | 5-tier speed escalation (combo 5/12/22/35/55 → 0.92/0.81/0.71/0.61/0.52× travel). Streak counter left-of-score. Personal-best combo persisted in UserDefaults; "★ NEW BEST!" banner on break. Speed-tier banners wired. Verified by 2026-06-16 build. |
+| 2026-06-15 | e5e7898    | [CC] | Survival loop: lives + fail + ramp | Wall rally now a Flappy-style run: 3 lives, each miss costs one, 0 lives → failRun() fires existing sessionEnd→GameOver→Play Again. Endless wall-rally mode keeps running until fail. Lives pips HUD under score. Verified by 2026-06-16 build. |
 | 2026-06-15 | 85e3582    | [CC] | Ball shadow lerp + strict FH/BH   | Shadow xScale 0.30–0.90 lerp with depth+altitude; maxSameLaneRun 2→1 forces strict alternation. BUILD NOT RUN |
 | 2026-06-15 | 49d8a4e    | [CC] | Courts tier 2 unlocks             | Ashe/Laver/IndianWells wristband rewards in ShopCatalog; reward badge UI in CourtsMapView. BUILD NOT RUN |
 | 2026-06-15 | f994b40    | [CC] | Journal CTA in exit confirmation  | Exit button → confirmationDialog; "Log how it felt" opens journal then exits; exitAfterLog flag. BUILD NOT RUN |
@@ -113,7 +119,9 @@ All avatar visual edits to GameScene.swift are tech debt until this ships.
 
 ### T6 — Shop real-merchandise overhaul
 **Lane:** [CX]
-**Spec source:** RALLY_OVERHAUL_DIRECTIVE.md Workstream B
+**Spec source:** RALLY_OVERHAUL_DIRECTIVE.md Workstream B, `shop-art-direction.md` (golden file,
+routed 2026-06-16 — full "Locker Room Before the Match" hero-stage/try-on/card redesign spec;
+read it before starting CX Shop work, ordered impact list at its bottom)
 
 - RallyReferralCatalog.json has 12 items (meets S1 audit)
 - [x] Shop CTA → router (ShopItemDetailView routes via RallyReferralLinkRouter; verified 2026-06-12)
@@ -128,8 +136,43 @@ All avatar visual edits to GameScene.swift are tech debt until this ships.
 
 ---
 
+### T7 — Findings carried over from RALLY_CHAT_CONTEXT.md (golden file, routed 2026-06-16)
+
+That file was a stale session-boot context dump (wrong branch name on its header — said
+`cursor/init-rally-ios-scaffold`, repo is actually on `rally/dev`; everything else in it matched
+current state). Archived to `archive/RALLY_CHAT_CONTEXT_2026-06-16.md`. Its non-duplicate findings,
+carried forward here so they aren't lost:
+
+- [ ] **[CX]** Nose invisible at device scale — `RallyAvatarView.swift` nose stroke
+      `lineWidth: 0.85 * scale` renders ~0.46pt at gameplay scale, sub-pixel on Retina.
+      Suggested fix: `max(1.4 * scale, 1.1)`.
+- [ ] **[CX]** ~300 lines dead code in `HomeView.swift` — `avatarCard`, `homeLoadoutSection`,
+      `essentialsSection`, `thisWeekStrip`, `pregameRow`, `pregameChip` defined but never called.
+      Safe to delete.
+- [x] **[CC]** `RallyTab.journal` naming debt — enum case in `ContentView.swift` actually backs
+      the World/Courts tab (`tag(RallyTab.journal)` on the "World" tabItem). Confirmed blast
+      radius via grep: only `ContentView.swift` references the case directly; `HomeView.swift`
+      only holds the `RallyTab` type, never `.journal`. Renamed to `case world` (2026-06-16).
+
+---
+
 ## BLOCKED / NOTES
 
+- **Sync data-loss risk found 2026-06-16 (NOT fixed — needs a session with build access,
+  flagging only):** `RallySyncCoordinator.apply()` (`Rally/Services/RallySyncCoordinator.swift`)
+  deletes every local `TrainingSession`/`MatchEntry`/`JournalEntry` row and re-inserts the
+  server's envelope wholesale on **every** `pull()`. Avatar and Progress have real conflict
+  protection (revision header + 409 + max-wins merge-back), but these three collections do not —
+  there is no id-based diff/merge, so a `pull()` racing ahead of a not-yet-pushed local save
+  (e.g. foreground refresh right after writing a journal entry) silently discards that entry.
+  Surveyed `RallySyncTriggers.swift`, `RallyAPIClient.swift`, `RemoteTunables.swift` too —
+  those are well-hardened (offline-first, fail-safe, feature-flagged, cached-fallback). This one
+  collection-replace path is the actual gap. Did not touch the fix itself: it's data-loss-adjacent
+  logic touching the user's real journal/training history, and unverifiable without Xcode/sim in
+  this sandbox — exactly the kind of change North Star's "real-phone checks beat agent confidence"
+  rule says not to push blind. Recommended fix shape for whoever picks this up: merge by `dto.id`
+  (update existing row if id matches, insert if new, optionally soft-delete-track removals)
+  instead of delete-all-then-insert.
 - Avatar decoration in GameScene (shoe xFlip, hair scale) lives outside RallyAvatarGeometry.
   Tech debt. Do not add more avatar drawing to GameScene until T5 consolidation lands.
 - CLAUDE_CODE_PARALLEL_PLAN.md lanes: CC does not own Courts/World files by default.
