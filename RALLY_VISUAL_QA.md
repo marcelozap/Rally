@@ -297,3 +297,25 @@ Recommended next Rafa task:
 ```text
 Run a manual wall-rally device/simulator check and tune the score/lives/streak layout only if touch-driven play exposes overlap; otherwise move to body mechanics or manual-run addiction feel.
 ```
+
+## 2026-06-16 — Last-Life Pressure Cue Pass
+
+Build:
+
+```text
+xcodebuild -project Rally.xcodeproj -scheme Rally -configuration Debug -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build
+Result: BUILD SUCCEEDED
+```
+
+Findings:
+
+- Survival mode now fires a dedicated "LAST LIFE" wall banner when a miss leaves exactly one life.
+- The lives pips punch to 1.34x and settle back quickly, giving the player a clear pressure beat without adding permanent HUD chrome.
+- A small camera dip and horizon pulse make the near-death state feel physical while keeping the top chrome simple.
+- Remaining issue: this is build-verified only. A manual simulator/device miss sequence should verify the cue timing, readability, and whether it competes with RESET or miss coaching copy.
+
+Recommended next Rafa task:
+
+```text
+Manual-test the survival miss ladder: miss once, miss twice, confirm LAST LIFE reads cleanly, then miss again and confirm RUN OVER still owns the moment.
+```

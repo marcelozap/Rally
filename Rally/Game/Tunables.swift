@@ -140,6 +140,13 @@ enum Tunables {
         /// Fastest return as a fraction of `wallReturnTravelSeconds`. 0.72 =
         /// the late-run ball returns ~28% quicker than the opening ball.
         static let rampMinTravelScalar: Double = 0.72
+        /// One-life warning: a short Flappy-style pressure beat. It should
+        /// make the next rally feel dangerous without adding permanent HUD.
+        static let lastLifeBannerHoldSeconds: TimeInterval = 0.34
+        static let lastLifeLivesPunchScale: CGFloat = 1.34
+        static let lastLifeLivesPunchOutSeconds: TimeInterval = 0.08
+        static let lastLifeLivesPunchBackSeconds: TimeInterval = 0.18
+        static let lastLifeCameraDipPoints: CGFloat = 4.5
     }
     /// Ball-node scale at the wall plane during the racket→wall exchange,
     /// relative to its scale at racket release. Sells the outbound depth leg.

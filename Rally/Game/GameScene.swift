@@ -976,6 +976,32 @@ final class GameScene: SKScene {
         livesLabel.attributedText = attributed
     }
 
+    private func stageLastLifeWarning() {
+        guard sessionMode == .wallRally else { return }
+        let warningColor = UIColor(red: 1.0, green: 0.58, blue: 0.34, alpha: 1)
+        showWallBanner(
+            text: "LAST LIFE",
+            color: warningColor,
+            hold: Tunables.Survival.lastLifeBannerHoldSeconds
+        )
+        livesLabel?.removeAllActions()
+        livesLabel?.run(.sequence([
+            .scale(to: Tunables.Survival.lastLifeLivesPunchScale, duration: Tunables.Survival.lastLifeLivesPunchOutSeconds),
+            .scale(to: 1.0, duration: Tunables.Survival.lastLifeLivesPunchBackSeconds)
+        ]))
+        CameraShake.drift(
+            cameraNode,
+            dx: 0,
+            dy: -Tunables.Survival.lastLifeCameraDipPoints,
+            settleDx: 0,
+            settleDy: -0.5,
+            outMs: 42,
+            driftMs: 80,
+            backMs: 180
+        )
+        background?.pulseHorizon(intensity: 1.08)
+    }
+
     /// Difficulty ramp: the return ball comes back faster as the run's score
     /// climbs. Returns a scalar on `wallReturnTravelSeconds`, 1.0 at the start
     /// tapering to `rampMinTravelScalar` once `rampFullScore` is reached.
@@ -4291,6 +4317,9 @@ final class GameScene: SKScene {
             if Tunables.Survival.enabled {
                 livesRemaining -= 1
                 updateLivesHUD()
+                if livesRemaining == 1 {
+                    stageLastLifeWarning()
+                }
                 if livesRemaining <= 0 {
                     stageResetBeat(duration: 0.12, soft: true)
                     GameEventBus.shared.publish(.miss(lane: lane))
