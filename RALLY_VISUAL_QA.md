@@ -223,3 +223,40 @@ Recommended next Rafa task:
 ```text
 Inspect the remaining contact halo/imprint emitters and replace the broad circular cloud with a tighter directional racket-spark/comet effect so contact remains punchy without covering the player.
 ```
+
+## 2026-06-16 — Directional Contact Imprint Pass
+
+Build:
+
+```text
+xcodebuild -project Rally.xcodeproj -scheme Rally -configuration Debug -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build
+Result: BUILD SUCCEEDED
+```
+
+Simulator:
+
+```text
+iPhone 16 Pro, iOS 18.6
+Bundle: com.marcelozap.rally
+Autoplay argument: -RallyAutoPlay
+```
+
+Screenshots:
+
+```text
+Gameplay autoplay after directional-contact pass: /tmp/rally_visual_qa/autoplay_after_directional_contact_151347.png
+Contact-frame burst proof: /tmp/rally_visual_qa/autoplay_directional_burst_1_151541.png
+```
+
+Findings:
+
+- The older `stageRacketContactHalo` circle now uses wall-mode alpha/glow/scale tunables, so it no longer expands into a full fog bubble over the avatar.
+- `stageContactImprint` now heavily quiets wall-mode rings and pushes the slash/spark travel farther, making the hit read more like a racket cut than a circular cloud.
+- The contact-frame proof shows the avatar, feet, racket head, and ball remain readable while the hit still has a visible yellow-white payoff.
+- Remaining issue: wall-mode score typography can become visually too large/noisy during long autoplay runs; next Rafa pass should clamp/format the score display for six-digit survival runs without covering the Dynamic Island.
+
+Recommended next Rafa task:
+
+```text
+Clamp and format the wall-rally score HUD for long survival runs, then verify the contact effect still reads in a normal manual run and not only autoplay.
+```

@@ -392,6 +392,15 @@ enum Tunables {
     static let wallContactProxyBallAuraAlpha: CGFloat = 0.06
     static let wallContactProxyBallCoreAlpha: CGFloat = 0.24
     static let wallContactProxyBallFocusAlpha: CGFloat = 0.035
+    static let wallRacketContactLegacyHaloAlpha: CGFloat = 0.20
+    static let wallRacketContactLegacyHaloGlow: CGFloat = 2.2
+    static let wallRacketContactLegacyHaloScaleX: CGFloat = 0.98
+    static let wallRacketContactLegacyHaloScaleY: CGFloat = 0.58
+    static let wallContactImprintRingAlphaMultiplier: CGFloat = 0.28
+    static let wallContactImprintRingGlowMultiplier: CGFloat = 0.30
+    static let wallContactImprintSlashAlphaMultiplier: CGFloat = 1.12
+    static let wallContactImprintSlashGlowMultiplier: CGFloat = 0.62
+    static let wallContactImprintSparkTravelMultiplier: CGFloat = 1.28
     static let wallContactBurstRingScaleMultiplier: CGFloat = 0.30
     static let wallContactBurstFlashScaleMultiplier: CGFloat = 0.18
     static let wallContactBurstAlphaMultiplier: CGFloat = 0.18

@@ -5454,26 +5454,37 @@ final class GameScene: SKScene {
         quality: HitQuality,
         strokeSide: StrokeSide
     ) {
+        let wallMode = sessionMode == .wallRally
         let halo = SKShapeNode(circleOfRadius: Tunables.ballRadiusPoints * 0.84)
         halo.position = point
-        halo.fillColor = wallStrokeAccentColor(for: strokeSide, quality: quality).withAlphaComponent(0.16)
-        halo.strokeColor = UIColor.white.withAlphaComponent(0.22)
+        halo.fillColor = wallStrokeAccentColor(for: strokeSide, quality: quality).withAlphaComponent(
+            wallMode ? Tunables.wallRacketContactLegacyHaloAlpha * 0.36 : 0.16
+        )
+        halo.strokeColor = UIColor.white.withAlphaComponent(
+            wallMode ? Tunables.wallRacketContactLegacyHaloAlpha : 0.22
+        )
         halo.lineWidth = 0.9
-        halo.glowWidth = 9
+        halo.glowWidth = wallMode ? Tunables.wallRacketContactLegacyHaloGlow : 9
         halo.alpha = 0
         halo.zPosition = 66
         addChild(halo)
 
+        let peakAlpha: CGFloat = wallMode ? 0.36 : 0.88
+        let peakScaleX: CGFloat = wallMode ? Tunables.wallRacketContactLegacyHaloScaleX : 1.18
+        let peakScaleY: CGFloat = wallMode ? Tunables.wallRacketContactLegacyHaloScaleY : 0.92
+        let releaseScaleX: CGFloat = wallMode ? 1.18 : 1.46
+        let releaseScaleY: CGFloat = wallMode ? 0.76 : 1.08
+        let releaseDuration: TimeInterval = wallMode ? 0.11 : 0.17
         halo.run(.sequence([
             .group([
-                .fadeAlpha(to: 0.88, duration: 0.05),
-                .scaleX(to: 1.18, duration: 0.05),
-                .scaleY(to: 0.92, duration: 0.05)
+                .fadeAlpha(to: peakAlpha, duration: 0.05),
+                .scaleX(to: peakScaleX, duration: 0.05),
+                .scaleY(to: peakScaleY, duration: 0.05)
             ]),
             .group([
-                .fadeOut(withDuration: 0.17),
-                .scaleX(to: 1.46, duration: 0.17),
-                .scaleY(to: 1.08, duration: 0.17)
+                .fadeOut(withDuration: releaseDuration),
+                .scaleX(to: releaseScaleX, duration: releaseDuration),
+                .scaleY(to: releaseScaleY, duration: releaseDuration)
             ]),
             .removeFromParent()
         ]))
@@ -6394,22 +6405,28 @@ final class GameScene: SKScene {
         quality: HitQuality
     ) {
         let palette = swingTrailPalette(intent: intent, lane: lane)
+        let wallMode = sessionMode == .wallRally
+        let ringAlphaMultiplier = wallMode ? Tunables.wallContactImprintRingAlphaMultiplier : 1
+        let ringGlowMultiplier = wallMode ? Tunables.wallContactImprintRingGlowMultiplier : 1
+        let slashAlphaMultiplier = wallMode ? Tunables.wallContactImprintSlashAlphaMultiplier : 1
+        let slashGlowMultiplier = wallMode ? Tunables.wallContactImprintSlashGlowMultiplier : 1
+        let sparkTravelMultiplier = wallMode ? Tunables.wallContactImprintSparkTravelMultiplier : 1
         let ringRadius: CGFloat = quality == .perfect ? 13 : (quality == .great ? 11 : 9)
         let ring = SKShapeNode(circleOfRadius: ringRadius)
         ring.position = point
         ring.fillColor = .clear
-        ring.strokeColor = palette.glow.withAlphaComponent(quality == .good ? 0.34 : 0.52)
-        ring.lineWidth = quality == .perfect ? 1.8 : 1.2
-        ring.glowWidth = quality == .perfect ? 6 : 4
+        ring.strokeColor = palette.glow.withAlphaComponent((quality == .good ? 0.34 : 0.52) * ringAlphaMultiplier)
+        ring.lineWidth = (quality == .perfect ? 1.8 : 1.2) * (wallMode ? 0.82 : 1)
+        ring.glowWidth = (quality == .perfect ? 6 : 4) * ringGlowMultiplier
         ring.zPosition = 13.18
         addChild(ring)
 
         let innerRing = SKShapeNode(circleOfRadius: ringRadius * 0.62)
         innerRing.position = point
-        innerRing.fillColor = palette.tip.withAlphaComponent(quality == .perfect ? 0.09 : 0.06)
-        innerRing.strokeColor = .white.withAlphaComponent(quality == .perfect ? 0.30 : 0.18)
+        innerRing.fillColor = palette.tip.withAlphaComponent((quality == .perfect ? 0.09 : 0.06) * ringAlphaMultiplier)
+        innerRing.strokeColor = .white.withAlphaComponent((quality == .perfect ? 0.30 : 0.18) * ringAlphaMultiplier)
         innerRing.lineWidth = 1
-        innerRing.glowWidth = 4
+        innerRing.glowWidth = 4 * ringGlowMultiplier
         innerRing.zPosition = 13.16
         addChild(innerRing)
 
@@ -6418,9 +6435,9 @@ final class GameScene: SKScene {
             cornerRadius: 1.5
         )
         slash.position = point
-        slash.fillColor = palette.core.withAlphaComponent(0.58)
+        slash.fillColor = palette.core.withAlphaComponent(0.58 * slashAlphaMultiplier)
         slash.strokeColor = .clear
-        slash.glowWidth = 3
+        slash.glowWidth = 3 * slashGlowMultiplier
         slash.zRotation = contactImprintRotation(intent: intent, lane: lane)
         slash.zPosition = 13.22
         addChild(slash)
@@ -6431,9 +6448,9 @@ final class GameScene: SKScene {
             cornerRadius: 1.2
         )
         sparkLead.position = point
-        sparkLead.fillColor = palette.tip.withAlphaComponent(0.62)
+        sparkLead.fillColor = palette.tip.withAlphaComponent(0.62 * slashAlphaMultiplier)
         sparkLead.strokeColor = .clear
-        sparkLead.glowWidth = 4
+        sparkLead.glowWidth = 4 * slashGlowMultiplier
         sparkLead.zRotation = contactImprintRotation(intent: intent, lane: lane) + direction * 0.08
         sparkLead.zPosition = 13.24
         addChild(sparkLead)
@@ -6443,30 +6460,30 @@ final class GameScene: SKScene {
             cornerRadius: 1
         )
         sparkTrail.position = point
-        sparkTrail.fillColor = palette.core.withAlphaComponent(0.50)
+        sparkTrail.fillColor = palette.core.withAlphaComponent(0.50 * slashAlphaMultiplier)
         sparkTrail.strokeColor = .clear
-        sparkTrail.glowWidth = 3
+        sparkTrail.glowWidth = 3 * slashGlowMultiplier
         sparkTrail.zRotation = contactImprintRotation(intent: intent, lane: lane) - direction * 0.05
         sparkTrail.zPosition = 13.2
         addChild(sparkTrail)
 
         ring.run(.sequence([
             .group([
-                .scale(to: quality == .perfect ? 1.55 : 1.34, duration: 0.2),
-                .fadeOut(withDuration: 0.2)
+                .scale(to: wallMode ? 1.14 : (quality == .perfect ? 1.55 : 1.34), duration: wallMode ? 0.12 : 0.2),
+                .fadeOut(withDuration: wallMode ? 0.12 : 0.2)
             ]),
             .removeFromParent()
         ]))
         innerRing.run(.sequence([
             .group([
-                .scale(to: quality == .perfect ? 1.18 : 1.12, duration: 0.16),
-                .fadeOut(withDuration: 0.16)
+                .scale(to: wallMode ? 1.05 : (quality == .perfect ? 1.18 : 1.12), duration: wallMode ? 0.10 : 0.16),
+                .fadeOut(withDuration: wallMode ? 0.10 : 0.16)
             ]),
             .removeFromParent()
         ]))
         slash.run(.sequence([
             .group([
-                .moveBy(x: lane == .right ? 8 : -8, y: intent == .topspin ? 8 : 4, duration: 0.16),
+                .moveBy(x: (lane == .right ? 8 : -8) * sparkTravelMultiplier, y: (intent == .topspin ? 8 : 4) * sparkTravelMultiplier, duration: 0.16),
                 .scaleX(to: intent == .slice ? 1.28 : 1.16, duration: 0.16),
                 .fadeOut(withDuration: 0.16)
             ]),
@@ -6474,7 +6491,7 @@ final class GameScene: SKScene {
         ]))
         sparkLead.run(.sequence([
             .group([
-                .moveBy(x: direction * 18, y: intent == .topspin ? 12 : 6, duration: 0.12),
+                .moveBy(x: direction * 18 * sparkTravelMultiplier, y: (intent == .topspin ? 12 : 6) * sparkTravelMultiplier, duration: 0.12),
                 .scaleX(to: 1.24, duration: 0.12),
                 .fadeOut(withDuration: 0.12)
             ]),
@@ -6482,7 +6499,7 @@ final class GameScene: SKScene {
         ]))
         sparkTrail.run(.sequence([
             .group([
-                .moveBy(x: direction * 12, y: intent == .slice ? -3 : 3, duration: 0.14),
+                .moveBy(x: direction * 12 * sparkTravelMultiplier, y: (intent == .slice ? -3 : 3) * sparkTravelMultiplier, duration: 0.14),
                 .scaleX(to: 1.12, duration: 0.14),
                 .fadeOut(withDuration: 0.14)
             ]),
