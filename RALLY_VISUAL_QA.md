@@ -76,3 +76,40 @@ Recommended next Rafa task:
 ```text
 Tune BallNode core/aura size at the strike plane and adjust gameplay camera/player scale so the body, feet, racket, and ball remain readable during contact without losing depth.
 ```
+
+## 2026-06-16 — Wall Contact Stack Cleanup
+
+Build:
+
+```text
+xcodebuild -project Rally.xcodeproj -scheme Rally -configuration Debug -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build
+Result: BUILD SUCCEEDED
+```
+
+Simulator:
+
+```text
+iPhone 16 Pro, iOS 18.6
+Bundle: com.marcelozap.rally
+Autoplay argument: -RallyAutoPlay
+```
+
+Screenshots:
+
+```text
+Gameplay autoplay after BallNode pass: /tmp/rally_visual_qa/autoplay_after_ball_aura_125312.png
+Gameplay autoplay after contact-stack cleanup: /tmp/rally_visual_qa/autoplay_after_contact_stack_132038.png
+```
+
+Findings:
+
+- BallNode wall mode now has separate tunables for aura alpha, core alpha, core scale, and contact-scale boost, making ball visibility tunable without changing normal gameplay.
+- Wall strike burst, racket-head burst, and strike-line transition now use wall-specific readability scalars instead of large shared/default alphas.
+- The player/racket stay more visible through contact than the earlier FX screenshots, but the next meaningful improvement is not more glow shaving: it is camera/player framing plus avatar scale/readability at gameplay distance.
+- This pass intentionally avoided avatar geometry hot-zone files and focused only on safe gameplay VFX tunables and contact presentation.
+
+Recommended next Rafa task:
+
+```text
+Tune gameplay camera/player framing: enlarge the player slightly, lower/angle the camera toward a more realistic behind-player wall-rally POV, and verify feet/racket/ball remain readable without changing shared avatar geometry.
+```
