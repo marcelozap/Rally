@@ -107,7 +107,7 @@ struct LockerHubView: View {
     }
 
     private var lockerHero: some View {
-        PremiumAvatarStageContainer(tone: .calm, accent: RallyUIKit.Palette.champagne, height: 176) {
+        PremiumAvatarStageContainer(tone: .calm, accent: RallyUIKit.Palette.champagne, height: 220) {
             ZStack {
                 LinearGradient(
                     colors: [
@@ -119,42 +119,34 @@ struct LockerHubView: View {
                 )
 
                 VStack(spacing: 0) {
-                    Spacer(minLength: 18)
+                    Spacer(minLength: 16)
 
-                    ZStack {
-                        Ellipse()
-                            .fill(RallyUIKit.Palette.champagne.opacity(0.12))
-                            .frame(width: 148, height: 42)
-                            .blur(radius: 16)
+                    VStack(spacing: 8) {
+                        Text("Match kit")
+                            .font(RallyUIKit.Typography.label(.caption2, weight: .bold))
+                            .tracking(1.8)
+                            .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.58))
 
-                        RoundedRectangle(cornerRadius: 18, style: .continuous)
-                            .fill(
-                                LinearGradient(
-                                    colors: [
-                                        RallyUIKit.Palette.champagne.opacity(0.80),
-                                        RallyUIKit.Palette.gold.opacity(0.42)
-                                    ],
-                                    startPoint: .top,
-                                    endPoint: .bottom
-                                )
-                            )
-                            .frame(width: 168, height: 56)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 18, style: .continuous)
-                                    .stroke(Color.white.opacity(0.12), lineWidth: 1)
-                            )
-                            .overlay {
-                                HStack(spacing: 16) {
-                                    Image(systemName: "shoe.fill")
-                                    Image(systemName: "tshirt.fill")
-                                    Image(systemName: "rectangle.fill")
-                                }
-                                .font(.system(size: 19, weight: .bold))
-                                .foregroundStyle(.white.opacity(0.92))
-                            }
+                        HStack(spacing: 12) {
+                            lockerKitGlyph(.racket, tint: RallyUIKit.Palette.gold)
+                            lockerKitGlyph(.top, tint: RallyUIKit.Palette.cyan)
+                            lockerKitGlyph(.bottom, tint: RallyUIKit.Palette.rose)
+                            lockerKitGlyph(.shoes, tint: RallyUIKit.Palette.lime)
+                        }
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 12)
+                        .background(
+                            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                                .fill(Color.black.opacity(0.26))
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                                .stroke(RallyUIKit.Palette.champagne.opacity(0.22), lineWidth: 1)
+                        )
+                        .shadow(color: RallyUIKit.Palette.champagne.opacity(0.12), radius: 18, y: 8)
                     }
 
-                    Spacer(minLength: 14)
+                    Spacer(minLength: 12)
 
                     HStack {
                         Text("Locker")
@@ -167,6 +159,24 @@ struct LockerHubView: View {
                 }
             }
         }
+    }
+
+    private func lockerKitGlyph(_ category: ShopItem.Category, tint: Color) -> some View {
+        RallyMerchFallbackGlyph(
+            category: category,
+            primary: RallyUIKit.Palette.frost,
+            accent: tint
+        )
+        .frame(width: 42, height: 42)
+        .padding(8)
+        .background(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(tint.opacity(0.12))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(tint.opacity(0.24), lineWidth: 1)
+        )
     }
 
     private var playNowButton: some View {

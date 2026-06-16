@@ -1078,18 +1078,15 @@ struct RallyMerchFallbackGlyph: View {
                         .fill(glyphGradient(size: size))
                     RallyShortsWaistShape()
                         .fill(Color.black.opacity(0.26))
+                    RallyShortsHemShape()
+                        .stroke(primary.opacity(0.64), lineWidth: max(1.1, size.width * 0.022))
+                    RallyShortsSideStripeShape()
+                        .stroke(accent.opacity(0.92), lineWidth: max(1.2, size.width * 0.026))
                     RallyShortsCreaseShape()
                         .stroke(Color.white.opacity(0.30), lineWidth: max(1, size.width * 0.018))
 
                 case .shoes:
-                    RallyTennisShoeGlyphShape()
-                        .fill(glyphGradient(size: size))
-                    RallyShoeSoleShape()
-                        .fill(primary.opacity(0.92))
-                    RallyShoeLaceShape()
-                        .stroke(accent.opacity(0.92), lineWidth: max(1.2, size.width * 0.030))
-                    RallyShoeToeCapShape()
-                        .stroke(Color.white.opacity(0.58), lineWidth: max(1, size.width * 0.022))
+                    RallyTennisShoePairGlyph(primary: primary, accent: accent)
 
                 case .racket:
                     RallyRacketFallbackGlyph(primary: primary, accent: accent)
@@ -1207,13 +1204,14 @@ private struct RallyShortsGlyphShape: Shape {
         var p = Path()
         let w = rect.width
         let h = rect.height
-        p.move(to: CGPoint(x: rect.minX + w * 0.18, y: rect.minY + h * 0.18))
-        p.addQuadCurve(to: CGPoint(x: rect.minX + w * 0.82, y: rect.minY + h * 0.18), control: CGPoint(x: rect.midX, y: rect.minY + h * 0.11))
-        p.addLine(to: CGPoint(x: rect.minX + w * 0.74, y: rect.minY + h * 0.86))
-        p.addQuadCurve(to: CGPoint(x: rect.minX + w * 0.54, y: rect.minY + h * 0.84), control: CGPoint(x: rect.minX + w * 0.64, y: rect.minY + h * 0.94))
-        p.addLine(to: CGPoint(x: rect.midX, y: rect.minY + h * 0.54))
-        p.addLine(to: CGPoint(x: rect.minX + w * 0.46, y: rect.minY + h * 0.84))
-        p.addQuadCurve(to: CGPoint(x: rect.minX + w * 0.26, y: rect.minY + h * 0.86), control: CGPoint(x: rect.minX + w * 0.36, y: rect.minY + h * 0.94))
+        p.move(to: CGPoint(x: rect.minX + w * 0.17, y: rect.minY + h * 0.20))
+        p.addQuadCurve(to: CGPoint(x: rect.minX + w * 0.83, y: rect.minY + h * 0.20), control: CGPoint(x: rect.midX, y: rect.minY + h * 0.12))
+        p.addLine(to: CGPoint(x: rect.minX + w * 0.80, y: rect.minY + h * 0.72))
+        p.addQuadCurve(to: CGPoint(x: rect.minX + w * 0.60, y: rect.minY + h * 0.86), control: CGPoint(x: rect.minX + w * 0.72, y: rect.minY + h * 0.90))
+        p.addLine(to: CGPoint(x: rect.minX + w * 0.53, y: rect.minY + h * 0.55))
+        p.addQuadCurve(to: CGPoint(x: rect.minX + w * 0.47, y: rect.minY + h * 0.55), control: CGPoint(x: rect.midX, y: rect.minY + h * 0.49))
+        p.addLine(to: CGPoint(x: rect.minX + w * 0.40, y: rect.minY + h * 0.86))
+        p.addQuadCurve(to: CGPoint(x: rect.minX + w * 0.20, y: rect.minY + h * 0.72), control: CGPoint(x: rect.minX + w * 0.28, y: rect.minY + h * 0.90))
         p.closeSubpath()
         return p
     }
@@ -1239,18 +1237,101 @@ private struct RallyShortsCreaseShape: Shape {
     }
 }
 
+private struct RallyShortsHemShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        var p = Path()
+        let w = rect.width
+        let h = rect.height
+        p.move(to: CGPoint(x: rect.minX + w * 0.24, y: rect.minY + h * 0.70))
+        p.addQuadCurve(to: CGPoint(x: rect.minX + w * 0.42, y: rect.minY + h * 0.80), control: CGPoint(x: rect.minX + w * 0.32, y: rect.minY + h * 0.77))
+        p.move(to: CGPoint(x: rect.minX + w * 0.58, y: rect.minY + h * 0.80))
+        p.addQuadCurve(to: CGPoint(x: rect.minX + w * 0.76, y: rect.minY + h * 0.70), control: CGPoint(x: rect.minX + w * 0.68, y: rect.minY + h * 0.77))
+        return p
+    }
+}
+
+private struct RallyShortsSideStripeShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        var p = Path()
+        let w = rect.width
+        let h = rect.height
+        p.move(to: CGPoint(x: rect.minX + w * 0.27, y: rect.minY + h * 0.31))
+        p.addLine(to: CGPoint(x: rect.minX + w * 0.22, y: rect.minY + h * 0.66))
+        p.move(to: CGPoint(x: rect.minX + w * 0.73, y: rect.minY + h * 0.31))
+        p.addLine(to: CGPoint(x: rect.minX + w * 0.78, y: rect.minY + h * 0.66))
+        return p
+    }
+}
+
+private struct RallyTennisShoePairGlyph: View {
+    let primary: Color
+    let accent: Color
+
+    var body: some View {
+        GeometryReader { proxy in
+            let w = proxy.size.width
+            let h = proxy.size.height
+            ZStack {
+                RallySingleTennisShoe(primary: primary, accent: accent)
+                    .frame(width: w * 0.58, height: h * 0.52)
+                    .rotationEffect(.degrees(-10))
+                    .offset(x: -w * 0.16, y: h * 0.08)
+
+                RallySingleTennisShoe(primary: primary, accent: accent)
+                    .frame(width: w * 0.58, height: h * 0.52)
+                    .rotationEffect(.degrees(10))
+                    .scaleEffect(x: -1, y: 1)
+                    .offset(x: w * 0.16, y: -h * 0.06)
+            }
+        }
+    }
+}
+
+private struct RallySingleTennisShoe: View {
+    let primary: Color
+    let accent: Color
+
+    var body: some View {
+        GeometryReader { proxy in
+            let size = proxy.size
+            ZStack {
+                RallyTennisShoeGlyphShape()
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                primary.opacity(0.98),
+                                primary.opacity(0.78),
+                                accent.opacity(0.88)
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                RallyShoeSoleShape()
+                    .fill(Color.white.opacity(0.94))
+                RallyShoeLaceShape()
+                    .stroke(accent.opacity(0.96), lineWidth: max(1.2, size.width * 0.036))
+                RallyShoeToeCapShape()
+                    .stroke(Color.white.opacity(0.66), lineWidth: max(1, size.width * 0.026))
+                RallyShoeSpeedStripeShape()
+                    .stroke(Color.black.opacity(0.24), lineWidth: max(1, size.width * 0.026))
+            }
+        }
+    }
+}
+
 private struct RallyTennisShoeGlyphShape: Shape {
     func path(in rect: CGRect) -> Path {
         var p = Path()
         let w = rect.width
         let h = rect.height
-        p.move(to: CGPoint(x: rect.minX + w * 0.16, y: rect.minY + h * 0.55))
-        p.addQuadCurve(to: CGPoint(x: rect.minX + w * 0.42, y: rect.minY + h * 0.30), control: CGPoint(x: rect.minX + w * 0.25, y: rect.minY + h * 0.32))
-        p.addQuadCurve(to: CGPoint(x: rect.minX + w * 0.80, y: rect.minY + h * 0.46), control: CGPoint(x: rect.minX + w * 0.63, y: rect.minY + h * 0.28))
-        p.addQuadCurve(to: CGPoint(x: rect.minX + w * 0.93, y: rect.minY + h * 0.65), control: CGPoint(x: rect.minX + w * 0.93, y: rect.minY + h * 0.49))
-        p.addLine(to: CGPoint(x: rect.minX + w * 0.91, y: rect.minY + h * 0.76))
-        p.addLine(to: CGPoint(x: rect.minX + w * 0.17, y: rect.minY + h * 0.76))
-        p.addQuadCurve(to: CGPoint(x: rect.minX + w * 0.16, y: rect.minY + h * 0.55), control: CGPoint(x: rect.minX + w * 0.08, y: rect.minY + h * 0.67))
+        p.move(to: CGPoint(x: rect.minX + w * 0.08, y: rect.minY + h * 0.58))
+        p.addQuadCurve(to: CGPoint(x: rect.minX + w * 0.36, y: rect.minY + h * 0.34), control: CGPoint(x: rect.minX + w * 0.18, y: rect.minY + h * 0.36))
+        p.addQuadCurve(to: CGPoint(x: rect.minX + w * 0.66, y: rect.minY + h * 0.38), control: CGPoint(x: rect.minX + w * 0.50, y: rect.minY + h * 0.25))
+        p.addQuadCurve(to: CGPoint(x: rect.minX + w * 0.95, y: rect.minY + h * 0.62), control: CGPoint(x: rect.minX + w * 0.88, y: rect.minY + h * 0.40))
+        p.addQuadCurve(to: CGPoint(x: rect.minX + w * 0.91, y: rect.minY + h * 0.78), control: CGPoint(x: rect.minX + w * 1.00, y: rect.minY + h * 0.74))
+        p.addLine(to: CGPoint(x: rect.minX + w * 0.13, y: rect.minY + h * 0.80))
+        p.addQuadCurve(to: CGPoint(x: rect.minX + w * 0.08, y: rect.minY + h * 0.58), control: CGPoint(x: rect.minX + w * 0.00, y: rect.minY + h * 0.70))
         return p
     }
 }
@@ -1287,6 +1368,18 @@ private struct RallyShoeToeCapShape: Shape {
         let h = rect.height
         p.move(to: CGPoint(x: rect.minX + w * 0.73, y: rect.minY + h * 0.49))
         p.addQuadCurve(to: CGPoint(x: rect.minX + w * 0.90, y: rect.minY + h * 0.65), control: CGPoint(x: rect.minX + w * 0.91, y: rect.minY + h * 0.49))
+        return p
+    }
+}
+
+private struct RallyShoeSpeedStripeShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        var p = Path()
+        let w = rect.width
+        let h = rect.height
+        p.move(to: CGPoint(x: rect.minX + w * 0.27, y: rect.minY + h * 0.62))
+        p.addLine(to: CGPoint(x: rect.minX + w * 0.49, y: rect.minY + h * 0.52))
+        p.addLine(to: CGPoint(x: rect.minX + w * 0.70, y: rect.minY + h * 0.62))
         return p
     }
 }
