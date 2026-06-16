@@ -341,3 +341,26 @@ Recommended next Rafa task:
 ```text
 Manual-test the survival miss ladder and decide whether miss coaching should suppress RESET/LAST LIFE copy on crowded moments.
 ```
+
+## 2026-06-16 — Last-Life Copy Priority Pass
+
+Build:
+
+```text
+xcodebuild -project Rally.xcodeproj -scheme Rally -configuration Debug -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build
+Result: BUILD SUCCEEDED
+```
+
+Findings:
+
+- Misses that drop survival mode to one life now give the "LAST LIFE" warning priority over the normal RESET banner.
+- Miss coaching copy is suppressed on that same last-life beat, so the pressure signal owns the screen instead of stacking three messages.
+- New-best banners remain eligible on the same miss because reward beats should not be hidden by survival copy priority.
+- Lost-life pip burst still fires at the spent pip to keep the life loss readable.
+- Remaining issue: needs a manual miss-ladder visual check to confirm first miss, last-life miss, and run-over miss each read as separate beats.
+
+Recommended next Rafa task:
+
+```text
+Manual-test the survival miss ladder after this build: first miss should show lost-pip feedback, second miss should clearly show LAST LIFE without RESET/coaching clutter, final miss should show RUN OVER.
+```

@@ -151,6 +151,7 @@ enum Tunables {
         static let lostLifePipLift: CGFloat = 10
         static let lostLifePipScale: CGFloat = 1.65
         static let lostLifePipFadeSeconds: TimeInterval = 0.34
+        static let suppressMissInstructionOnLastLife = true
     }
     /// Ball-node scale at the wall plane during the racket→wall exchange,
     /// relative to its scale at racket release. Sells the outbound depth leg.

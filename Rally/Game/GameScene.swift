@@ -4322,6 +4322,8 @@ final class GameScene: SKScene {
             lastComboTier = 0
             wallNextLane = correctLane ?? lane
             updateHUD()
+            let willEnterLastLife = Tunables.Survival.enabled && livesRemaining == 2
+            var enteredLastLife = false
 
             // Personal best (combo): save immediately so it's recorded even if
             // survival ends the run on this same miss.
@@ -4330,7 +4332,7 @@ final class GameScene: SKScene {
                 UserDefaults.standard.set(allTimeHighCombo, forKey: Tunables.wallHighComboKey)
                 wallBestLabel?.text = "BEST \(allTimeHighCombo)"
                 showWallNewBestBanner(combo: allTimeHighCombo)
-            } else if previous >= 5 {
+            } else if previous >= 5 && !willEnterLastLife {
                 // RESET banner only on meaningful combo breaks.
                 showWallBanner(
                     text: "RESET",
@@ -4347,7 +4349,8 @@ final class GameScene: SKScene {
                 livesRemaining -= 1
                 updateLivesHUD()
                 stageLostLifePip(previousLives: previousLives)
-                if livesRemaining == 1 {
+                enteredLastLife = livesRemaining == 1
+                if enteredLastLife {
                     stageLastLifeWarning()
                 }
                 if livesRemaining <= 0 {
@@ -4365,10 +4368,12 @@ final class GameScene: SKScene {
             if wallReason == .side, let correctLane {
                 stageWallSideMissFeedback(swungLane: lane, correctLane: correctLane)
             }
-            showWallMissInstruction(
-                wallMissCue(for: wallReason, comboWasLive: previous > 0, correctLane: correctLane),
-                comboWasLive: previous > 0
-            )
+            if !enteredLastLife || !Tunables.Survival.suppressMissInstructionOnLastLife {
+                showWallMissInstruction(
+                    wallMissCue(for: wallReason, comboWasLive: previous > 0, correctLane: correctLane),
+                    comboWasLive: previous > 0
+                )
+            }
             scheduleWallBall(after: wallMissRestartSeconds(previousCombo: previous))
             return
         }
