@@ -10,16 +10,17 @@ Root `AGENTS.md` is still the automatic boot file. Keep it short. It points here
 2. `AGENT_VISUALIZER.md`
 3. `AGENT_WORLD.md`
 4. `AGENT_VILLAGE_AUTONOMY.md`
-5. `agents/session-handshake.md`
-6. `agents/locks.md`
-7. `agents/lanes.md`
-8. the relevant named agent file:
+5. `RALLY_VILLAGE_STATE.md`
+6. `agents/session-handshake.md`
+7. `agents/locks.md`
+8. `agents/lanes.md`
+9. the relevant named agent file:
    - `agents/rafa-gameplay.md` for gameplay
    - `agents/sinner-store.md` for Shop / Locker
    - `agents/carlos-world.md` for World / Courts
-9. `RALLY_NORTH_STAR.md`
-10. `RALLY_PROGRESS.md`
-11. `agents/current-priority.md`
+10. `RALLY_NORTH_STAR.md`
+11. `RALLY_PROGRESS.md`
+12. `agents/current-priority.md`
 
 ## Why This Exists
 
@@ -58,3 +59,5 @@ Use `AGENT_VISUALIZER.md` when you need the whole operating model at once: named
 Use `AGENT_WORLD.md` when you want the agents to operate like a small command-center world: Rafa in the Court Lab, Sinner in the Locker Atelier, and Carlos in the Atlas Room.
 
 Use `AGENT_VILLAGE_AUTONOMY.md` when you want the agents to operate like a Clash-style builder village with queues, locks, sync tower, and autonomy levels.
+
+Use `RALLY_VILLAGE_STATE.md` to see whether the village is Green, Yellow, Red, or Wiped, and which agent is awake.

@@ -45,6 +45,7 @@ It contains:
 
 - **North Star Screen** — `RALLY_NORTH_STAR.md`
 - **Progress Ledger** — `RALLY_PROGRESS.md`
+- **Village State Board** — `RALLY_VILLAGE_STATE.md`
 - **Lock Wall** — `RALLY_AGENT_LOCK.md`
 - **Visualizer Wall** — `AGENT_VISUALIZER.md`
 - **Repo Guard Gate** — `RALLY_REPO_GUARD.md`

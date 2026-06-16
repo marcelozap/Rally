@@ -14,6 +14,8 @@ The agents should feel like an active village that is always improving Rally, bu
 
 The village is alive, but it is not allowed to wander.
 
+Live village state sits next to the project ledger in `RALLY_VILLAGE_STATE.md`.
+
 ---
 
 ## Village Map
@@ -48,6 +50,7 @@ flowchart TD
 |----------|---------------|---------|
 | **Town Hall** | `RALLY_NORTH_STAR.md` | Highest-level product direction. If confused, come here. |
 | **Builder Tower** | `RALLY_PROGRESS.md` | The queue. Agents pull from here, one task at a time. |
+| **Village State Board** | `RALLY_VILLAGE_STATE.md` | Tracks who is awake, who is sleeping, what is damaged, and what needs proof. |
 | **Lock Wall** | `RALLY_AGENT_LOCK.md` | Prevents agents from building on the same tile. |
 | **Village Gate** | `RALLY_REPO_GUARD.md` + `agents/session-handshake.md` | Blocks stale-folder work. |
 | **Sync Tower** | GitHub `rally/dev` | Shared cloud state between Codex, Claude, and future agents. |
@@ -204,6 +207,7 @@ Codex and Claude do not need to share a chat window. They share:
 
 - `rally/dev`
 - `RALLY_PROGRESS.md`
+- `RALLY_VILLAGE_STATE.md`
 - `RALLY_AGENT_LOCK.md`
 - `AGENT_WORLD.md`
 - commits
@@ -223,6 +227,7 @@ Operate at autonomy level 2.
 Role: Rafa.
 Pull rally/dev.
 Read AGENTS.md, AGENT_WORLD.md, AGENT_VILLAGE_AUTONOMY.md, RALLY_PROGRESS.md, RALLY_AGENT_LOCK.md.
+Read RALLY_VILLAGE_STATE.md.
 Take the top Rafa gameplay task only.
 Build, screenshot if visual, commit, push, update ledger.
 Stop if you hit a hot-zone lock or a visual mismatch.
@@ -236,6 +241,7 @@ Rafa handles gameplay.
 Sinner handles Shop/Locker.
 Carlos handles World/Courts/Journal.
 Each builder takes one task only, claims locks for hot zones, builds, screenshots visual work, commits, pushes, and updates the ledger.
+Each builder updates RALLY_VILLAGE_STATE.md only when village health, active builder, damage, or proof status changes.
 No cross-lane edits without explicit override.
 ```
 
@@ -255,4 +261,3 @@ Once the app is stable enough for real-phone testing, the village can become mor
 The point is not to make agents busy.
 
 The point is to make Rally continuously better without losing the plot.
-
