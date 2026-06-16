@@ -372,3 +372,40 @@ Recommended next Rafa task:
 ```text
 Manual-test the survival miss ladder after this build: first miss should show lost-pip feedback, second miss should clearly show LAST LIFE without RESET/coaching clutter, final miss should show RUN OVER.
 ```
+
+## 2026-06-16 — Autoplay Gameplay Proof After Copy Policy
+
+Build:
+
+```text
+xcodebuild -project Rally.xcodeproj -scheme Rally -configuration Debug -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build
+Result: BUILD SUCCEEDED
+```
+
+Simulator:
+
+```text
+iPhone 16 Pro, iOS 18.6
+Bundle: com.marcelozap.rally
+Autoplay argument: -RallyAutoPlay
+```
+
+Screenshots:
+
+```text
+Gameplay autoplay after copy-policy pass: /tmp/rally_visual_qa/autoplay_after_copy_policy_181351.png
+```
+
+Findings:
+
+- The compact top score/lives stack is readable under the Dynamic Island at score 165, and the exit button no longer collides with the main score.
+- Player body, shoes, racket, and court grounding are visible in the contact frame; this is a better proof frame than the older flat/toy screenshots.
+- The contact flash still blooms too large and foggy over the avatar/racket area. The payoff is exciting, but it is now the next biggest readability offender.
+- `SWIPE UP` coaching copy is visible during autoplay proof, which pollutes screenshots and competes with timing text.
+- The right-side "BEST 2" label reads confusingly next to a 165 score. It may be combo-best semantics, but the visual relationship needs clarification or relocation.
+
+Recommended next Rafa task:
+
+```text
+Reduce wall-mode contact fog radius/opacity another notch and suppress gesture coaching during autoplay/debug proof frames; then re-capture a contact frame.
+```
