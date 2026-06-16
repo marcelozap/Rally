@@ -2,6 +2,7 @@ import SwiftUI
 import SwiftData
 
 struct ShopView: View {
+    @EnvironmentObject private var avatarAppearanceStore: RallyAvatarAppearanceStore
     @Query private var avatarConfigs: [AvatarConfig]
     @State private var selectedCategory: ShopItem.Category? = nil
     @State private var groupByVendor: Bool = false
@@ -298,6 +299,7 @@ struct ShopView: View {
         Button {
             withAnimation(.spring(response: 0.28, dampingFraction: 0.72)) {
                 tryOnItem = item
+                avatarAppearanceStore.tryOn(item, from: avatar)
                 stageEmote = .shopLook
             }
         } label: {
