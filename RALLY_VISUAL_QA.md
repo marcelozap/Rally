@@ -113,3 +113,41 @@ Recommended next Rafa task:
 ```text
 Tune gameplay camera/player framing: enlarge the player slightly, lower/angle the camera toward a more realistic behind-player wall-rally POV, and verify feet/racket/ball remain readable without changing shared avatar geometry.
 ```
+
+## 2026-06-16 — Gameplay Camera Framing Pass
+
+Build:
+
+```text
+xcodebuild -project Rally.xcodeproj -scheme Rally -configuration Debug -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build
+Result: BUILD SUCCEEDED
+```
+
+Simulator:
+
+```text
+iPhone 16 Pro, iOS 18.6
+Bundle: com.marcelozap.rally
+Autoplay argument: -RallyAutoPlay
+```
+
+Screenshots:
+
+```text
+Gameplay autoplay after camera/framing pass: /tmp/rally_visual_qa/autoplay_after_camera_framing_134317.png
+Gameplay autoplay after HUD safety nudge: /tmp/rally_visual_qa/autoplay_after_camera_framing_hud_135036.png
+```
+
+Findings:
+
+- Court perspective is more aggressive: the near court is wider, the far court is tighter/higher, and the playable field reads more like a behind-player tunnel toward the wall.
+- Player scale is larger and grounded lower in frame, improving body/racket readability without touching shared avatar geometry or any avatar hot-zone files.
+- Strike plane moved higher so the contact line no longer slices through the avatar face at rest.
+- Minimal wall HUD score moved down to clear the Dynamic Island while keeping the score central.
+- Remaining issue: contact text/glow can still partially obscure the avatar during PERFECT frames, so the next pass should target contact feedback layering rather than camera geometry.
+
+Recommended next Rafa task:
+
+```text
+Tune contact feedback layering: keep PERFECT readable, but move/scale the label and glow so the racket/ball/player remain visible during the exact contact frame.
+```

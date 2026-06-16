@@ -83,7 +83,7 @@ enum Tunables {
     /// before wall contact (same 0.40–0.50 s swing-now window).
     static let wallAnticipationLeadMs: Double = 520
     static let wallReboundBandYRatio: CGFloat = 0.902
-    static let minimalHUDScoreYRatio: CGFloat = 0.790
+    static let minimalHUDScoreYRatio: CGFloat = 0.752
     static let wallReboundCueDurationMs: Double = 260
     static let wallContactRingRadius: CGFloat = 38
     static let wallApproachWindowRatio: CGFloat = 0.50
@@ -219,20 +219,20 @@ enum Tunables {
 
     static let ballRadiusPoints:      CGFloat = 22
     static let ballTravelSeconds:     Double  = 1.52
-    static let strikeLineYRatio:      CGFloat = 0.315
-    static let gameplayCameraYOffsetRatio: CGFloat = -0.105
-    static let gameplayCourtNearOverscanRatio: CGFloat = 0.24
-    static let gameplayCourtFarYRatio: CGFloat = 0.835
-    static let gameplayCourtNearHalfWidthRatio: CGFloat = 0.88
-    static let gameplayCourtFarHalfWidthRatio: CGFloat = 0.17
-    static let gameplayCourtNetDepthRatio: CGFloat = 0.50
-    static let gameplayCourtNetNearHalfScalar: CGFloat = 0.58
-    static let gameplayCourtNetFarHalfScalar: CGFloat = 1.05
-    static let gameplayPlayerRootYRatio: CGFloat = 0.142
-    static let gameplayPlayerVisualScale: CGFloat = 0.60
+    static let strikeLineYRatio:      CGFloat = 0.345
+    static let gameplayCameraYOffsetRatio: CGFloat = -0.125
+    static let gameplayCourtNearOverscanRatio: CGFloat = 0.30
+    static let gameplayCourtFarYRatio: CGFloat = 0.865
+    static let gameplayCourtNearHalfWidthRatio: CGFloat = 0.96
+    static let gameplayCourtFarHalfWidthRatio: CGFloat = 0.145
+    static let gameplayCourtNetDepthRatio: CGFloat = 0.47
+    static let gameplayCourtNetNearHalfScalar: CGFloat = 0.62
+    static let gameplayCourtNetFarHalfScalar: CGFloat = 0.98
+    static let gameplayPlayerRootYRatio: CGFloat = 0.128
+    static let gameplayPlayerVisualScale: CGFloat = 0.66
     /// SpriteKit gameplay needs shoes smaller than the locker hero view because
     /// the court camera compresses the feet near the bottom of the frame.
-    static let gameplayShoeVisualScale: CGFloat = 0.76
+    static let gameplayShoeVisualScale: CGFloat = 0.80
     static let spawnLineYRatio:       CGFloat = 1.05
     static let cullBelowStrikePoints: CGFloat = 40
     static let horizonLaneInsetRatio: CGFloat = 0.12
