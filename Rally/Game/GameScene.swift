@@ -976,6 +976,34 @@ final class GameScene: SKScene {
         livesLabel.attributedText = attributed
     }
 
+    private func stageLostLifePip(previousLives: Int) {
+        guard sessionMode == .wallRally, let livesLabel else { return }
+        let total = Tunables.Survival.lives
+        guard previousLives > 0, previousLives <= total else { return }
+        let lostIndex = previousLives - 1
+        let centerOffset = CGFloat(lostIndex) - CGFloat(total - 1) * 0.5
+        let pip = SKLabelNode(fontNamed: "AvenirNext-Heavy")
+        pip.text = "\u{25CF}"
+        pip.fontSize = livesLabel.fontSize
+        pip.fontColor = UIColor(red: 1.0, green: 0.38, blue: 0.32, alpha: 0.95)
+        pip.horizontalAlignmentMode = .center
+        pip.verticalAlignmentMode = .center
+        pip.position = CGPoint(
+            x: livesLabel.position.x + centerOffset * Tunables.Survival.lostLifePipSpacing,
+            y: livesLabel.position.y
+        )
+        pip.zPosition = livesLabel.zPosition + 2
+        addChild(pip)
+        pip.run(.sequence([
+            .group([
+                .moveBy(x: 0, y: Tunables.Survival.lostLifePipLift, duration: Tunables.Survival.lostLifePipFadeSeconds),
+                .scale(to: Tunables.Survival.lostLifePipScale, duration: Tunables.Survival.lostLifePipFadeSeconds),
+                .fadeAlpha(to: 0.0, duration: Tunables.Survival.lostLifePipFadeSeconds)
+            ]),
+            .removeFromParent()
+        ]))
+    }
+
     private func stageLastLifeWarning() {
         guard sessionMode == .wallRally else { return }
         let warningColor = UIColor(red: 1.0, green: 0.58, blue: 0.34, alpha: 1)
@@ -4315,8 +4343,10 @@ final class GameScene: SKScene {
 
             // Survival: every miss costs a life. Out of lives ends the run.
             if Tunables.Survival.enabled {
+                let previousLives = livesRemaining
                 livesRemaining -= 1
                 updateLivesHUD()
+                stageLostLifePip(previousLives: previousLives)
                 if livesRemaining == 1 {
                     stageLastLifeWarning()
                 }

@@ -147,6 +147,10 @@ enum Tunables {
         static let lastLifeLivesPunchOutSeconds: TimeInterval = 0.08
         static let lastLifeLivesPunchBackSeconds: TimeInterval = 0.18
         static let lastLifeCameraDipPoints: CGFloat = 4.5
+        static let lostLifePipSpacing: CGFloat = 13
+        static let lostLifePipLift: CGFloat = 10
+        static let lostLifePipScale: CGFloat = 1.65
+        static let lostLifePipFadeSeconds: TimeInterval = 0.34
     }
     /// Ball-node scale at the wall plane during the racket→wall exchange,
     /// relative to its scale at racket release. Sells the outbound depth leg.

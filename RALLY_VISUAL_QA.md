@@ -319,3 +319,25 @@ Recommended next Rafa task:
 ```text
 Manual-test the survival miss ladder: miss once, miss twice, confirm LAST LIFE reads cleanly, then miss again and confirm RUN OVER still owns the moment.
 ```
+
+## 2026-06-16 — Lost-Life Pip Burst Pass
+
+Build:
+
+```text
+xcodebuild -project Rally.xcodeproj -scheme Rally -configuration Debug -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build
+Result: BUILD SUCCEEDED
+```
+
+Findings:
+
+- Each survival miss now stages a transient red lost-life pip burst at the spent pip position, so the life loss reads even before the next ball spawns.
+- The effect is temporary and tied to the existing lives row, preserving the simple score/exit gameplay chrome.
+- The last-life banner still fires when the remaining count reaches one, while the final miss continues into the existing RUN OVER flow.
+- Remaining issue: this still needs a manual miss-ladder visual check to judge whether the lost-pip burst, LAST LIFE, RESET, and miss coaching copy compete with each other.
+
+Recommended next Rafa task:
+
+```text
+Manual-test the survival miss ladder and decide whether miss coaching should suppress RESET/LAST LIFE copy on crowded moments.
+```
