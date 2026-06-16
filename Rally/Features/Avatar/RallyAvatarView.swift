@@ -599,7 +599,7 @@ struct RallyAvatarView: View {
             y: headY,
             fill: .clear,
             stroke: Color(uiColor: appearance.skinUIColor.rallyBlended(withFraction: 0.08, of: .black)).opacity(0.42),
-            lineWidth: max(1.05 * scale, 0.92)
+            lineWidth: max(1.22 * scale, 1.08)
         )
 
         drawPath(
@@ -610,8 +610,8 @@ struct RallyAvatarView: View {
             x: 0,
             y: headY + RallyAvatarGeometry.mouthCenterY(scale: scale),
             fill: .clear,
-            stroke: Color.black.opacity(0.56),
-            lineWidth: max(1.10 * scale, 0.92)
+            stroke: Color.black.opacity(0.66),
+            lineWidth: max(1.34 * scale, 1.14)
         )
     }
 

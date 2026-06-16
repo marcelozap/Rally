@@ -1317,7 +1317,7 @@ final class GameScene: SKScene {
         backHair.strokeColor = .clear
         backHair.lineWidth = 0
         backHair.position = CGPoint(x: 0, y: headAnchorY)
-        backHair.zPosition = showsRearAvatar ? 6.55 : 5.7
+        backHair.zPosition = 5.7
         root.addChild(backHair)
         playerBackHair = backHair
 
@@ -1337,7 +1337,7 @@ final class GameScene: SKScene {
         leftEar.lineWidth = 0
         leftEar.position = CGPoint(x: 0, y: layout.headY + 2 * bodyScale)
         leftEar.zPosition = 6.05
-        leftEar.alpha = 0.76
+        leftEar.alpha = 0.92
         root.addChild(leftEar)
         playerLeftEar = leftEar
 
@@ -1347,7 +1347,7 @@ final class GameScene: SKScene {
         rightEar.lineWidth = 0
         rightEar.position = CGPoint(x: 0, y: layout.headY + 2 * bodyScale)
         rightEar.zPosition = 6.05
-        rightEar.alpha = 0.76
+        rightEar.alpha = 0.92
         root.addChild(rightEar)
         playerRightEar = rightEar
 
@@ -1416,8 +1416,8 @@ final class GameScene: SKScene {
 
         let nose = SKShapeNode(path: RallyAvatarGeometry.nosePath(scale: faceScale))
         nose.fillColor = .clear
-        nose.strokeColor = skin.mixed(with: .black, ratio: 0.10).withAlphaComponent(0.34)
-        nose.lineWidth = max(1.05 * bodyScale, 0.82)
+        nose.strokeColor = skin.mixed(with: .black, ratio: 0.16).withAlphaComponent(0.54)
+        nose.lineWidth = max(1.24 * bodyScale, 1.05)
         nose.lineCap = .round
         nose.position = CGPoint(x: 0, y: layout.headY + 2 * bodyScale)
         nose.zPosition = 8
@@ -1478,9 +1478,9 @@ final class GameScene: SKScene {
         playerRightTemple = rightTemple
 
         let mouth = SKShapeNode(path: RallyAvatarGeometry.friendlyMouthPath(scale: faceScale))
-        mouth.strokeColor = skin.mixed(with: .black, ratio: 0.58).withAlphaComponent(0.96)
+        mouth.strokeColor = skin.mixed(with: .black, ratio: 0.66).withAlphaComponent(0.98)
         mouth.fillColor = .clear
-        mouth.lineWidth = max(1.45 * bodyScale, 1.10)
+        mouth.lineWidth = max(1.62 * bodyScale, 1.24)
         mouth.lineCap = .round
         mouth.position = CGPoint(x: 0, y: layout.headY + 2 * bodyScale + RallyAvatarGeometry.mouthCenterY(scale: faceScale))
         mouth.zRotation = RallyAvatarRebuildDefaults.Face.smileRotationDegrees * .pi / 180
