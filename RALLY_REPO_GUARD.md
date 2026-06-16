@@ -19,7 +19,7 @@ The canonical Xcode project is:
 The canonical branch is:
 
 ```bash
-cursor/init-rally-ios-scaffold
+rally/dev
 ```
 
 The canonical remote is:
@@ -59,7 +59,7 @@ Expected output:
 ```bash
 /Users/a14/Desktop/Rally
 /Users/a14/Desktop/Rally
-cursor/init-rally-ios-scaffold
+rally/dev
 ```
 
 If `pwd` or `git rev-parse --show-toplevel` is anything other than `/Users/a14/Desktop/Rally`, stop and report:
@@ -133,4 +133,3 @@ xcodebuild -project Rally.xcodeproj -scheme Rally -configuration Debug -destinat
 ```
 
 Documentation-only changes do not require a build.
-
