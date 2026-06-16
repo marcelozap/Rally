@@ -27,6 +27,7 @@ If anything conflicts, priority order is:
 ## Agent Operating Docs
 
 - `agents/README.md` — overview and reading order
+- `AGENT_VISUALIZER.md` — visual map of agents, lanes, hooks, and handoffs
 - `agents/session-handshake.md` — repo/path/build safety
 - `agents/locks.md` — collision avoidance
 - `agents/lanes.md` — CX/CC ownership

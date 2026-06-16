@@ -7,16 +7,17 @@ Root `AGENTS.md` is still the automatic boot file. Keep it short. It points here
 ## Required Reading Order
 
 1. `AGENTS.md`
-2. `agents/session-handshake.md`
-3. `agents/locks.md`
-4. `agents/lanes.md`
-5. the relevant named agent file:
+2. `AGENT_VISUALIZER.md`
+3. `agents/session-handshake.md`
+4. `agents/locks.md`
+5. `agents/lanes.md`
+6. the relevant named agent file:
    - `agents/rafa-gameplay.md` for gameplay
    - `agents/sinner-store.md` for Shop / Locker
    - `agents/carlos-world.md` for World / Courts
-6. `RALLY_NORTH_STAR.md`
-7. `RALLY_PROGRESS.md`
-8. `agents/current-priority.md`
+7. `RALLY_NORTH_STAR.md`
+8. `RALLY_PROGRESS.md`
+9. `agents/current-priority.md`
 
 ## Why This Exists
 
@@ -47,3 +48,7 @@ Screenshots still beat claims. If the app looks wrong, it is wrong.
 - **Rafa** — gameplay feel, tennis mechanics, camera, swing, ball, haptics.
 - **Sinner** — store, Locker, product cards, outfit selection, referral commerce.
 - **Carlos** — world, courts, venues, maps, official links, location unlocks.
+
+## Visual Dashboard
+
+Use `AGENT_VISUALIZER.md` when you need the whole operating model at once: named agents, Codex/Claude lanes, hook coverage, hot zones, and handoff flow.
