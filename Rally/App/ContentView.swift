@@ -4,7 +4,7 @@ import SwiftData
 // MARK: - Tab identity
 
 enum RallyTab: Hashable {
-    case home, journal, shop
+    case home, world, shop
 }
 
 // MARK: - Root
@@ -86,7 +86,7 @@ struct ContentView: View {
         TabView(selection: $selectedTab) {
             CourtsMapView()
                 .tabItem { Label("World", systemImage: "globe.americas.fill") }
-                .tag(RallyTab.journal)
+                .tag(RallyTab.world)
                 .transition(.asymmetric(insertion: .opacity.combined(with: .scale(scale: 0.95)), removal: .opacity))
 
             HomeView(selectedTab: $selectedTab, isPlaying: $isPlaying)
