@@ -368,6 +368,18 @@ enum Tunables {
 
     /// Radius of the white radial burst spawned at the racket head on contact.
     static let contactRacketBurstRadius: CGFloat = 13
+    static let contactRacketBurstAlphaMultiplier: CGFloat = 0.52
+    static let contactRacketBurstScaleMultiplier: CGFloat = 0.62
+    static let contactRacketBurstGlowMultiplier: CGFloat = 0.58
+    static let wallStrikeTransitionIntensityMultiplier: CGFloat = 0.42
+
+    /// Wall-mode ball/fx is intentionally quieter so the player body and racket stay readable.
+    static let wallBallVisualScalar: CGFloat = 0.26
+    static let wallContactBurstRingScaleMultiplier: CGFloat = 0.72
+    static let wallContactBurstFlashScaleMultiplier: CGFloat = 0.58
+    static let wallContactBurstAlphaMultiplier: CGFloat = 0.62
+    static let wallContactBurstGlowMultiplier: CGFloat = 0.55
+    static let wallContactSparkGlowMultiplier: CGFloat = 0.68
 
     /// Blend fraction applied to all pose targets during hit-stop (near-zero = frozen).
     static let hitStopBlendFraction: CGFloat = 0.03
