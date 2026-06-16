@@ -557,6 +557,39 @@ enum Tunables {
         }
     }
 
+    // MARK: - Wall rally timing taper (mirrors the speed ramp)
+    //
+    // As balls arrive faster (wallSpeedScalar shrinks), the hit window tapers
+    // proportionally — so tier 5 is genuinely harder, not trivially easy relative
+    // to ball speed. The opening forgiveness bonus still applies in tier 0 only.
+    //
+    // Tier 0: combo 0–4    → 1.78  (+ openingBoost × 0.16 — very generous on-ramp)
+    // Tier 1: combo 5–11   → 1.62
+    // Tier 2: combo 12–21  → 1.44
+    // Tier 3: combo 22–34  → 1.26
+    // Tier 4: combo 35–54  → 1.10
+    // Tier 5: combo 55+    → 0.96  (tighter than baseline — Flappy end-game)
+    static let wallTimingScalarTier0: Double = 1.78
+    static let wallTimingScalarTier1: Double = 1.62
+    static let wallTimingScalarTier2: Double = 1.44
+    static let wallTimingScalarTier3: Double = 1.26
+    static let wallTimingScalarTier4: Double = 1.10
+    static let wallTimingScalarTier5: Double = 0.96
+
+    /// Timing-window multiplier for wall rally. Tightens with combo tier to
+    /// match the speed ramp. `openingBoost` is the 0…1 grace value from GameScene
+    /// (decays over the first 7 hits).
+    static func wallTimingScalar(forCombo combo: Int, openingBoost: Double) -> Double {
+        switch wallSpeedTier(forCombo: combo) {
+        case 0:  return wallTimingScalarTier0 + openingBoost * 0.16
+        case 1:  return wallTimingScalarTier1
+        case 2:  return wallTimingScalarTier2
+        case 3:  return wallTimingScalarTier3
+        case 4:  return wallTimingScalarTier4
+        default: return wallTimingScalarTier5
+        }
+    }
+
     /// UserDefaults key for the all-time best wall rally combo.
     static let wallHighComboKey = "rally.wallRally.highCombo"
     /// When the player is this many hits from their all-time wall combo,

@@ -4099,12 +4099,20 @@ final class GameScene: SKScene {
 
         combo += 1
         maxCombo = max(maxCombo, combo)
-        // Speed-tier escalation banner (wall rally only).
+        // Speed-tier escalation + score multiplier banners (wall rally only).
         if sessionMode == .wallRally {
             let newTier = Tunables.wallSpeedTier(forCombo: combo)
             if newTier > lastWallSpeedTier {
+                // Speed tier upgrade takes banner priority.
                 lastWallSpeedTier = newTier
                 showWallSpeedUpBanner(tier: newTier)
+            } else {
+                // Show score multiplier climb when no speed banner fires this hit.
+                let mult = max(1, combo / 5)
+                let prevMult = max(1, (combo - 1) / 5)
+                if mult > prevMult, mult >= 2 {
+                    showWallMultiplierBanner(multiplier: mult)
+                }
             }
         }
         switch quality {
@@ -4562,6 +4570,18 @@ final class GameScene: SKScene {
             ])
             punch.timingMode = .easeOut
             c.run(punch, withKey: "punch")
+        }
+        // In wall rally, comboLabel is hidden — punch wallStreakLabel instead.
+        if sessionMode == .wallRally, combo >= 2, let ws = wallStreakLabel {
+            ws.removeAction(forKey: "punch")
+            let wsBonus = min(0.14, CGFloat(combo) * 0.008)
+            let wsScale: CGFloat = quality == .perfect ? 1.24 + wsBonus : 1.15 + wsBonus * 0.6
+            let wsPunch = SKAction.sequence([
+                .scale(to: wsScale, duration: quality == .perfect ? 0.06 : 0.05),
+                .scale(to: 1.0, duration: 0.18)
+            ])
+            wsPunch.timingMode = .easeOut
+            ws.run(wsPunch, withKey: "punch")
         }
     }
 
@@ -5814,6 +5834,17 @@ final class GameScene: SKScene {
         showWallBanner(text: texts[tier], color: colors[tier], hold: 0.28)
     }
 
+    /// "×2", "×3" … multiplier-bump banner — fires when combo / 5 crosses
+    /// an integer boundary (10→×2, 15→×3, etc.) and no speed-tier banner
+    /// fired on the same hit.
+    private func showWallMultiplierBanner(multiplier: Int) {
+        // Gold up to ×5, platinum shimmer at ×6+.
+        let color: UIColor = multiplier >= 6
+            ? UIColor(red: 0.80, green: 0.96, blue: 1.0, alpha: 1.0)
+            : UIColor(red: 0.98, green: 0.84, blue: 0.26, alpha: 1.0)
+        showWallBanner(text: "×\(multiplier)", color: color, hold: 0.30)
+    }
+
     /// "★ NEW BEST!" banner — fires when a new all-time combo record is set.
     private func showWallNewBestBanner(combo: Int) {
         guard let wallMomentLabel else { return }
@@ -6660,7 +6691,10 @@ final class GameScene: SKScene {
         strokeSide: StrokeSide
     ) -> Double {
         if sessionMode == .wallRally {
-            return 1.78 + Double(wallOpeningForgivenessBoost()) * 0.16
+            return Tunables.wallTimingScalar(
+                forCombo: combo,
+                openingBoost: Double(wallOpeningForgivenessBoost())
+            )
         }
         let base = (flow?.currentProfile().timingWindowScalar ?? 1.0) * racketTuning.timingAssistScalar
         let shotScalar = shotTimingScalar(for: target.shotShape, signedDelta: signedDelta)
