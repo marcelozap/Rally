@@ -6,6 +6,8 @@ Use it when the project feels noisy. It is a visual index, not a replacement for
 
 For the more immersive "little world" view of the agents, read `AGENT_WORLD.md`.
 
+For the autonomous Clash-style builder village, read `AGENT_VILLAGE_AUTONOMY.md`.
+
 Source of truth order still comes from `AGENTS.md`:
 
 1. `RALLY_NORTH_STAR.md`
@@ -23,6 +25,7 @@ Source of truth order still comes from `AGENTS.md`:
 flowchart TD
     User["Marcelo / Product Direction"] --> NorthStar["RALLY_NORTH_STAR.md<br/>vision + priorities"]
     User --> WorldDoc["AGENT_WORLD.md<br/>agent rooms + rituals"]
+    User --> VillageDoc["AGENT_VILLAGE_AUTONOMY.md<br/>builder huts + sync tower"]
     NorthStar --> Progress["RALLY_PROGRESS.md<br/>backlog + session log"]
     NorthStar --> Agents["AGENTS.md<br/>boot file"]
     Agents --> Guard["RALLY_REPO_GUARD.md<br/>canonical repo safety"]
@@ -34,6 +37,8 @@ flowchart TD
     WorldDoc --> Rafa
     WorldDoc --> Sinner
     WorldDoc --> Carlos
+    VillageDoc --> Progress
+    VillageDoc --> Lock
 
     Codex["Codex / CX<br/>this app"] --> AgentDocs
     Claude["Claude Code / CC<br/>local Claude app"] --> ClaudeHooks[".claude/hooks<br/>mechanical guards"]

@@ -4,6 +4,8 @@ This is the little world where Rally agents live.
 
 It is not roleplay for its own sake. It is an operating interface: each agent has a room, a signal, a console, and a stop condition. The goal is to make parallel work feel organized, alive, and hard to confuse.
 
+For the more autonomous Clash-style builder village, read `AGENT_VILLAGE_AUTONOMY.md`.
+
 Rally is still a module inside XIV OS. XIV holds the field. Rally moves clean.
 
 ---
@@ -264,4 +266,3 @@ The project works better when the agents feel distinct:
 Together they make Rally more than a tennis game.
 
 They make it a clean loop for the body.
-
