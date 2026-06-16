@@ -1,8 +1,20 @@
 # Current Priority
 
-Last updated: 2026-06-15
+Last updated: 2026-06-16
 
 Rally is close enough for real-device testing. The next work should reduce risk and improve what the player immediately feels.
+
+## Current Operating Mode
+
+Active branch: `rally/dev`
+
+Canonical repo: `/Users/a14/Desktop/Rally`
+
+Do not use or reference the old `cursor/init-rally-ios-scaffold` branch as the active lane.
+
+There are active gameplay edits in `Rally/Game/GameScene.swift`, `Rally/Game/Tunables.swift`, and `RALLY_PROGRESS.md` from the timing taper / streak punch / multiplier banner pass. Do not overwrite, revert, or commit those files unless the user explicitly asks.
+
+Primary lane right now: **Rafa Gameplay**. Finish the addictive wall-rally loop before starting new Shop, World, or Journal feature work.
 
 ## Priority 1: Real Phone Test
 

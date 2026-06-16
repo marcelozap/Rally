@@ -35,7 +35,7 @@ Expected:
 ```text
 /Users/a14/Desktop/Rally
 /Users/a14/Desktop/Rally
-cursor/init-rally-ios-scaffold
+rally/dev
 ```
 
 If the path is wrong, stop and report:

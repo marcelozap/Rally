@@ -40,7 +40,7 @@ If anything conflicts, priority order is:
 
 - Path: `/Users/a14/Desktop/Rally`
 - Remote: `https://github.com/marcelozap/Rally.git`
-- Branch: `cursor/init-rally-ios-scaffold`
+- Branch: `rally/dev`
 
 ## Build Rule
 
