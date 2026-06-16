@@ -389,6 +389,14 @@ enum Tunables {
     static let wallRacketBurstAlphaMultiplier: CGFloat = 0.24
     static let wallRacketBurstScaleMultiplier: CGFloat = 0.34
     static let wallRacketBurstGlowMultiplier: CGFloat = 0.24
+    static let wallTimingPopupFontScale: CGFloat = 0.82
+    static let wallTimingPopupSideOffset: CGFloat = 34
+    static let wallTimingPopupYOffset: CGFloat = 36
+    static let wallTimingPopupRise: CGFloat = 18
+    static let wallTimingPopupPeakScale: CGFloat = 1.05
+    static let wallMomentBannerYRatio: CGFloat = 0.755
+    static let wallMomentBannerStartScale: CGFloat = 0.76
+    static let wallMomentBannerPeakScale: CGFloat = 0.92
 
     /// Blend fraction applied to all pose targets during hit-stop (near-zero = frozen).
     static let hitStopBlendFraction: CGFloat = 0.03

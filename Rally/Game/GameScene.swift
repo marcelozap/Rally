@@ -922,7 +922,7 @@ final class GameScene: SKScene {
         // Addictiveness HUD
         wallStreakLabel?.position = CGPoint(x: size.width * 0.22, y: courtScoreY)
         wallBestLabel?.position = CGPoint(x: size.width * 0.78, y: courtScoreY - 16)
-        wallMomentLabel?.position = CGPoint(x: size.width / 2, y: size.height * 0.68)
+        wallMomentLabel?.position = CGPoint(x: size.width / 2, y: size.height * Tunables.wallMomentBannerYRatio)
     }
 
     /// Shows the persistent best score when one exists. Hidden on a first-ever
@@ -1933,9 +1933,9 @@ final class GameScene: SKScene {
             // Mid-screen moment label (speed tier bumps, new bests)
             let moment = SKLabelNode(fontNamed: "AvenirNext-DemiBold")
             moment.text = ""
-            moment.fontSize = 22
+            moment.fontSize = 20
             moment.fontColor = .white
-            moment.position = CGPoint(x: size.width / 2, y: size.height * 0.68)
+            moment.position = CGPoint(x: size.width / 2, y: size.height * Tunables.wallMomentBannerYRatio)
             moment.zPosition = 55
             moment.horizontalAlignmentMode = .center
             moment.alpha = 0
@@ -4995,12 +4995,16 @@ final class GameScene: SKScene {
 
         let label = SKLabelNode(fontNamed: "AvenirNext-Heavy")
         label.text = burstText
-        label.fontSize = quality == .perfect ? 22 : 16
+        let wallMode = sessionMode == .wallRally
+        let fontScale = wallMode ? Tunables.wallTimingPopupFontScale : 1
+        label.fontSize = (quality == .perfect ? 22 : 16) * fontScale
         label.fontColor = quality == .perfect
             ? UIColor(red: 1.0, green: 0.84, blue: 0.18, alpha: 1)
             : UIColor.white.withAlphaComponent(0.92)
-        let sideOffset: CGFloat = strokeSide == .backhand ? -20 : 20
-        label.position = CGPoint(x: point.x + sideOffset, y: point.y + 18)
+        let sideOffsetMagnitude = wallMode ? Tunables.wallTimingPopupSideOffset : 20
+        let sideOffset: CGFloat = strokeSide == .backhand ? -sideOffsetMagnitude : sideOffsetMagnitude
+        let yOffset = wallMode ? Tunables.wallTimingPopupYOffset : 18
+        label.position = CGPoint(x: point.x + sideOffset, y: point.y + yOffset)
         label.zPosition = 20
         label.alpha = 0
         addChild(label)
@@ -5009,13 +5013,15 @@ final class GameScene: SKScene {
         shadow.text = label.text
         shadow.fontSize = label.fontSize
         shadow.fontColor = UIColor.black.withAlphaComponent(0.3)
-        shadow.position = CGPoint(x: point.x + sideOffset, y: point.y + 16)
+        shadow.position = CGPoint(x: point.x + sideOffset, y: point.y + yOffset - 2)
         shadow.zPosition = 19
         shadow.alpha = 0
         addChild(shadow)
 
-        let rise = Tunables.timingPopupRise
-        let peakScale: CGFloat = quality == .perfect ? 1.18 : 1.04
+        let rise = wallMode ? Tunables.wallTimingPopupRise : Tunables.timingPopupRise
+        let peakScale: CGFloat = wallMode
+            ? Tunables.wallTimingPopupPeakScale
+            : (quality == .perfect ? 1.18 : 1.04)
         let fadeDuration = max(0.08, Tunables.timingPopupDuration - 0.08)
         label.run(.sequence([
             .group([
@@ -5814,16 +5820,17 @@ final class GameScene: SKScene {
         wallMomentLabel.removeAllActions()
         wallMomentLabel.text = text
         wallMomentLabel.fontColor = color
-        wallMomentLabel.setScale(0.86)
+        wallMomentLabel.position = CGPoint(x: size.width / 2, y: size.height * Tunables.wallMomentBannerYRatio)
+        wallMomentLabel.setScale(Tunables.wallMomentBannerStartScale)
         wallMomentLabel.run(.sequence([
             .group([
-                .fadeAlpha(to: 1.0, duration: 0.12),
-                .scale(to: 1.04, duration: 0.16)
+                .fadeAlpha(to: 0.92, duration: 0.12),
+                .scale(to: Tunables.wallMomentBannerPeakScale, duration: 0.16)
             ]),
             .wait(forDuration: hold),
             .group([
                 .fadeAlpha(to: 0.0, duration: 0.26),
-                .scale(to: 1.0, duration: 0.30)
+                .scale(to: Tunables.wallMomentBannerStartScale, duration: 0.30)
             ])
         ]))
     }

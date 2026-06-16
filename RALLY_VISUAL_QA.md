@@ -151,3 +151,39 @@ Recommended next Rafa task:
 ```text
 Tune contact feedback layering: keep PERFECT readable, but move/scale the label and glow so the racket/ball/player remain visible during the exact contact frame.
 ```
+
+## 2026-06-16 — Contact Feedback Layering Pass
+
+Build:
+
+```text
+xcodebuild -project Rally.xcodeproj -scheme Rally -configuration Debug -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build
+Result: BUILD SUCCEEDED
+```
+
+Simulator:
+
+```text
+iPhone 16 Pro, iOS 18.6
+Bundle: com.marcelozap.rally
+Autoplay argument: -RallyAutoPlay
+```
+
+Screenshots:
+
+```text
+Gameplay autoplay after contact-layering pass: /tmp/rally_visual_qa/autoplay_after_contact_layering_141301.png
+```
+
+Findings:
+
+- PERFECT timing text is now wall-mode scaled and offset away from the player body/racket instead of using the full normal-contact placement.
+- Wall moment banners move higher toward the wall plane and use quieter scale/alpha so streak copy does not compete with the player.
+- Contact payoff remains visible, but the player face, body, racket, and ball are easier to read during the captured contact frame.
+- Remaining issue: the contact glow cloud itself is still broad; the next pass should tune the glow shape/gradient or clip it away from the avatar silhouette rather than moving text again.
+
+Recommended next Rafa task:
+
+```text
+Tune the contact glow shape: keep the hit aura bright around the ball/racket, but reduce the broad beige/white cloud spilling over the avatar silhouette.
+```
