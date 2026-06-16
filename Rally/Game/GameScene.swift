@@ -934,7 +934,7 @@ final class GameScene: SKScene {
             return
         }
         survivalBestLabel.isHidden = false
-        survivalBestLabel.text = "BEST \(bestScore)"
+        survivalBestLabel.text = "BEST \(wallFormattedScore(bestScore))"
     }
 
     /// Fires once per run the instant the live score passes the stored best —
@@ -4431,9 +4431,10 @@ final class GameScene: SKScene {
     var sessionIsOver: Bool { sessionEnded }
 
     private func updateHUD() {
-        scoreLabel?.text = "\(score)"
+        scoreLabel?.text = usesMinimalWallHUD ? wallFormattedScore(score) : "\(score)"
         if usesMinimalWallHUD {
             layoutWallHUDPositions()
+            applyMinimalWallScoreTypography()
             hudCaptionLabel?.alpha = 0
             hudPhaseLabel?.alpha = 0
             hudPhaseValueLabel?.text = ""
@@ -4505,6 +4506,35 @@ final class GameScene: SKScene {
         punchHUD(recentContactQuality)
     }
 
+    private func wallFormattedScore(_ value: Int) -> String {
+        guard usesMinimalWallHUD else { return "\(value)" }
+        let absoluteValue = abs(value)
+        if absoluteValue >= 1_000_000 {
+            let compact = Double(value) / 1_000_000
+            return compact >= 10 ? "\(Int(compact.rounded()))M" : String(format: "%.1fM", compact)
+        }
+        if absoluteValue >= Tunables.wallHUDScoreCompactThreshold {
+            let compact = Double(value) / 1_000
+            return compact >= 100 ? "\(Int(compact.rounded()))K" : String(format: "%.1fK", compact)
+        }
+        return "\(value)"
+    }
+
+    private func applyMinimalWallScoreTypography() {
+        guard usesMinimalWallHUD, let scoreLabel else { return }
+        let characterCount = scoreLabel.text?.count ?? 1
+        if characterCount >= 6 {
+            scoreLabel.fontSize = Tunables.wallHUDScoreFontMin
+            scoreLabel.fontName = "AvenirNext-Heavy"
+        } else if characterCount >= 5 {
+            scoreLabel.fontSize = Tunables.wallHUDScoreFontMid
+            scoreLabel.fontName = "AvenirNext-Heavy"
+        } else {
+            scoreLabel.fontSize = Tunables.wallHUDScoreFontMax
+            scoreLabel.fontName = "AvenirNext-Bold"
+        }
+    }
+
     /// Quick scale-spring on the score label so each hit visibly *lands*
     /// in the HUD. Combo label punches at slightly different rhythm so the
     /// two pieces feel alive rather than synchronized.
@@ -4533,8 +4563,11 @@ final class GameScene: SKScene {
                 scoreOut = 0.04
                 scoreBack = 0.12
             }
+            let clampedScoreScale = usesMinimalWallHUD
+                ? min(scoreScale, Tunables.wallHUDScorePunchMaxScale)
+                : scoreScale
             let punch = SKAction.sequence([
-                .scale(to: scoreScale, duration: scoreOut),
+                .scale(to: clampedScoreScale, duration: scoreOut),
                 .scale(to: 1.0, duration: scoreBack)
             ])
             punch.timingMode = .easeOut

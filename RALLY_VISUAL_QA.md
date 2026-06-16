@@ -260,3 +260,40 @@ Recommended next Rafa task:
 ```text
 Clamp and format the wall-rally score HUD for long survival runs, then verify the contact effect still reads in a normal manual run and not only autoplay.
 ```
+
+## 2026-06-16 — Wall Score HUD Clamp Pass
+
+Build:
+
+```text
+xcodebuild -project Rally.xcodeproj -scheme Rally -configuration Debug -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build
+Result: BUILD SUCCEEDED
+```
+
+Simulator:
+
+```text
+iPhone 16 Pro, iOS 18.6
+Bundle: com.marcelozap.rally
+Autoplay argument: -RallyAutoPlay
+```
+
+Screenshots:
+
+```text
+Gameplay autoplay after score-HUD pass: /tmp/rally_visual_qa/autoplay_after_score_hud_154750.png
+```
+
+Findings:
+
+- Wall-mode scores now use compact formatting for 100K+/1M+ survival runs, and the best-score label uses the same formatter.
+- Minimal wall score typography clamps by formatted length and caps score punch at 1.10x, so long scores do not crowd the Dynamic Island.
+- Score y ratio was nudged down slightly for safer top chrome while keeping the live score readable.
+- Build passes, and the captured autoplay frame confirms the normal score HUD still reads cleanly below the Dynamic Island.
+- Remaining issue: run a manual wall-rally check later to verify score, lives, streak, and best labels all stay legible with touch input.
+
+Recommended next Rafa task:
+
+```text
+Run a manual wall-rally device/simulator check and tune the score/lives/streak layout only if touch-driven play exposes overlap; otherwise move to body mechanics or manual-run addiction feel.
+```
