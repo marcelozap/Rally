@@ -28,6 +28,7 @@ If anything conflicts, priority order is:
 
 - `agents/README.md` — overview and reading order
 - `AGENT_VISUALIZER.md` — visual map of agents, lanes, hooks, and handoffs
+- `AGENT_WORLD.md` — immersive operating world for Rafa, Sinner, and Carlos
 - `agents/session-handshake.md` — repo/path/build safety
 - `agents/locks.md` — collision avoidance
 - `agents/lanes.md` — CX/CC ownership

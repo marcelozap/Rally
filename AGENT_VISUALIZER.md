@@ -4,6 +4,8 @@ This file is the map of who is working on Rally, what they own, what guards them
 
 Use it when the project feels noisy. It is a visual index, not a replacement for the rules.
 
+For the more immersive "little world" view of the agents, read `AGENT_WORLD.md`.
+
 Source of truth order still comes from `AGENTS.md`:
 
 1. `RALLY_NORTH_STAR.md`
@@ -20,6 +22,7 @@ Source of truth order still comes from `AGENTS.md`:
 ```mermaid
 flowchart TD
     User["Marcelo / Product Direction"] --> NorthStar["RALLY_NORTH_STAR.md<br/>vision + priorities"]
+    User --> WorldDoc["AGENT_WORLD.md<br/>agent rooms + rituals"]
     NorthStar --> Progress["RALLY_PROGRESS.md<br/>backlog + session log"]
     NorthStar --> Agents["AGENTS.md<br/>boot file"]
     Agents --> Guard["RALLY_REPO_GUARD.md<br/>canonical repo safety"]
@@ -28,6 +31,9 @@ flowchart TD
     AgentDocs --> Rafa["Rafa<br/>gameplay feel"]
     AgentDocs --> Sinner["Sinner<br/>shop + locker"]
     AgentDocs --> Carlos["Carlos<br/>world + courts"]
+    WorldDoc --> Rafa
+    WorldDoc --> Sinner
+    WorldDoc --> Carlos
 
     Codex["Codex / CX<br/>this app"] --> AgentDocs
     Claude["Claude Code / CC<br/>local Claude app"] --> ClaudeHooks[".claude/hooks<br/>mechanical guards"]
@@ -177,4 +183,3 @@ Focus:
 4. Do not start large new Shop, World, or Journal features until the gameplay loop feels good.
 
 Protected active edits are listed in `agents/current-priority.md`.
-
