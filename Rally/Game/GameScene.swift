@@ -137,6 +137,9 @@ final class GameScene: SKScene {
         didSet { applyMatchPaceIfNeeded() }
     }
     var autoPlayEnabled = false
+    private var shouldSuppressProofCoaching: Bool {
+        autoPlayEnabled || ProcessInfo.processInfo.arguments.contains("-RallyAutoPlay")
+    }
     private let sessionMode: SessionMode = .wallRally
 
     // MARK: - Runtime state
@@ -3202,7 +3205,7 @@ final class GameScene: SKScene {
         } else {
             timingRead = laneRead
         }
-        focusStrokeReadLabel?.text = timingRead
+        focusStrokeReadLabel?.text = shouldSuppressProofCoaching ? "" : timingRead
         focusStrokeReadLabel?.position = CGPoint(
             x: focusPoint.x,
             y: focusPoint.y + Tunables.wallFocusReadLabelLift + 6
@@ -3210,7 +3213,7 @@ final class GameScene: SKScene {
         focusStrokeReadLabel?.fontColor = cueColor.withAlphaComponent(0.86)
         focusStrokeReadLabel?.fontSize = absDelta <= greatWindow + nowCueLead ? 16 : 13
         focusStrokeReadLabel?.setScale(1.0 + approach * 0.06)
-        focusStrokeReadLabel?.alpha = min(0.70, 0.10 + approach * 0.54)
+        focusStrokeReadLabel?.alpha = shouldSuppressProofCoaching ? 0 : min(0.70, 0.10 + approach * 0.54)
 
         wallAnticipationBar?.position = CGPoint(x: focusPoint.x, y: focusPoint.y + Tunables.wallFocusReadLabelLift - 26)
         wallAnticipationBar?.alpha = min(0.38, 0.04 + approach * 0.34)
@@ -3232,7 +3235,7 @@ final class GameScene: SKScene {
             anticipationProgress = max(0.78, 1 - CGFloat(timeToContact / peakLead) * 0.22)
         }
         focusStrokeReadLabel?.setScale(1.0 + anticipationProgress * 0.08)
-        focusStrokeReadLabel?.alpha = min(0.82, 0.10 + approach * 0.46 + anticipationProgress * 0.26)
+        focusStrokeReadLabel?.alpha = shouldSuppressProofCoaching ? 0 : min(0.82, 0.10 + approach * 0.46 + anticipationProgress * 0.26)
         let readabilityWindow = max(goodWindow * 3.0, 0.48)
         let timingFill = max(0, min(1, 1 - absDelta / readabilityWindow))
         let fillWidthProgress = max(0.14, anticipationProgress * 0.74 + timingFill * 0.26)
@@ -5341,9 +5344,9 @@ final class GameScene: SKScene {
         let trail = SKShapeNode()
         trail.zPosition = 63
         trail.lineCap = .round
-        trail.strokeColor = color.withAlphaComponent(0.88)
-        trail.lineWidth = width
-        trail.glowWidth = width * 1.8
+        trail.strokeColor = color.withAlphaComponent(0.88 * Tunables.wallReturnTrailAlphaMultiplier)
+        trail.lineWidth = width * Tunables.wallReturnTrailWidthMultiplier
+        trail.glowWidth = width * 1.8 * Tunables.wallReturnTrailGlowMultiplier
         let path = CGMutablePath()
         path.move(to: point)
         path.addLine(to: point)
@@ -5357,6 +5360,7 @@ final class GameScene: SKScene {
             liveBall.position = point
             liveBall.zPosition = 64
             liveBall.alpha = 1
+            liveBall.applyWallReturnReadability()
             ghost = liveBall
         } else {
             let synthetic = SKShapeNode(circleOfRadius: quality == .perfect ? 8 : 7)
@@ -5404,7 +5408,7 @@ final class GameScene: SKScene {
             ghost.xScale = frame.xScale
             ghost.yScale = frame.yScale
             ghost.zRotation = laneDirection * 0.05 - laneDirection * wallModel.compressionScalar(at: CGFloat(t)) * 0.06
-            ghost.alpha = 0.98 - CGFloat(t) * 0.64
+            ghost.alpha = (0.98 - CGFloat(t) * 0.64) * Tunables.wallReturnGhostAlphaMultiplier
 
             let livePath = CGMutablePath()
             livePath.move(to: point)
@@ -5436,7 +5440,7 @@ final class GameScene: SKScene {
                 y: frame.point.y + (1 - CGFloat(t)) * 1.2
             )
             echo.setScale(0.92 + wallModel.compressionScalar(at: CGFloat(t)) * 0.18)
-            echo.alpha = (1 - CGFloat(t)) * 0.28
+            echo.alpha = (1 - CGFloat(t)) * 0.28 * Tunables.wallReturnEchoAlphaMultiplier
         }
         echo.run(.sequence([
             echoMove,
@@ -5491,7 +5495,7 @@ final class GameScene: SKScene {
         impactPulse.run(.sequence([
             .wait(forDuration: max(0, duration - Tunables.wallOutboundCompressionSeconds)),
             .group([
-                .fadeAlpha(to: 1.0, duration: Tunables.wallOutboundCompressionSeconds),
+                .fadeAlpha(to: Tunables.wallReturnImpactPulseAlphaMultiplier, duration: Tunables.wallOutboundCompressionSeconds),
                 .scaleX(to: 1.36, duration: Tunables.wallOutboundCompressionSeconds),
                 .scaleY(to: 0.74, duration: Tunables.wallOutboundCompressionSeconds)
             ]),
@@ -5570,12 +5574,12 @@ final class GameScene: SKScene {
         halo.zPosition = 66
         addChild(halo)
 
-        let peakAlpha: CGFloat = wallMode ? 0.36 : 0.88
+        let peakAlpha: CGFloat = wallMode ? Tunables.wallRacketContactLegacyHaloAlpha : 0.88
         let peakScaleX: CGFloat = wallMode ? Tunables.wallRacketContactLegacyHaloScaleX : 1.18
         let peakScaleY: CGFloat = wallMode ? Tunables.wallRacketContactLegacyHaloScaleY : 0.92
-        let releaseScaleX: CGFloat = wallMode ? 1.18 : 1.46
-        let releaseScaleY: CGFloat = wallMode ? 0.76 : 1.08
-        let releaseDuration: TimeInterval = wallMode ? 0.11 : 0.17
+        let releaseScaleX: CGFloat = wallMode ? 0.98 : 1.46
+        let releaseScaleY: CGFloat = wallMode ? 0.56 : 1.08
+        let releaseDuration: TimeInterval = wallMode ? 0.09 : 0.17
         halo.run(.sequence([
             .group([
                 .fadeAlpha(to: peakAlpha, duration: 0.05),
@@ -7671,6 +7675,16 @@ final class BallNode: SKShapeNode {
         coreNode.alpha = Tunables.wallContactProxyBallCoreAlpha
         coreNode.setScale(Tunables.wallBallCoreScaleScalar)
         tailNode.alpha = 0.08
+    }
+
+    func applyWallReturnReadability() {
+        glowWidth = Tunables.wallContactProxyBallGlowWidth * 0.42
+        warningRingNode.alpha = 0
+        focusRingNode.alpha = 0
+        auraNode.alpha = Tunables.wallContactProxyBallAuraAlpha * 0.22
+        coreNode.alpha = Tunables.wallContactProxyBallCoreAlpha
+        coreNode.setScale(Tunables.wallBallCoreScaleScalar * 0.92)
+        tailNode.alpha = 0.06
     }
 
     func contactWindowPhase(at trackTime: Double) -> ContactWindowPhase {

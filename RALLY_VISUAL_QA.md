@@ -188,6 +188,44 @@ Recommended next Rafa task:
 Tune the contact glow shape: keep the hit aura bright around the ball/racket, but reduce the broad beige/white cloud spilling over the avatar silhouette.
 ```
 
+## 2026-06-16 — Autoplay Contact Clutter Pass
+
+Build:
+
+```text
+xcodebuild -project Rally.xcodeproj -scheme Rally -configuration Debug -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build
+Result: BUILD SUCCEEDED
+```
+
+Simulator:
+
+```text
+iPhone 16 Pro, iOS 18.6
+Bundle: com.marcelozap.rally
+Autoplay argument: -RallyAutoPlay
+```
+
+Screenshots:
+
+```text
+Gameplay autoplay after coaching suppression: /tmp/rally_visual_qa/autoplay_after_contact_clutter_184730.png
+Gameplay autoplay after wall-return trail tuning: /tmp/rally_visual_qa/autoplay_after_contact_clutter_190749.png
+Gameplay autoplay after live-ball return readability: /tmp/rally_visual_qa/autoplay_after_wall_return_readability_191636.png
+```
+
+Findings:
+
+- Autoplay/debug proof frames no longer show the wall-read coaching label (`SWIPE UP`, `LEFT SIDE`, `RIGHT SIDE`), so screenshots focus on the actual gameplay state.
+- Wall-mode contact halo, imprint, strike transition, return trail, return ghost, echo, and live-ball return aura now use quieter wall-specific scalars.
+- Player/racket/ball readability is slightly cleaner, especially around the outgoing trail, but the broad central contact cloud remains too large for the premium gameplay target.
+- Further scalar shaving is not the right next move. The next Rafa pass should replace the broad circular/rectangular wall-contact cloud with a tighter directional spark/comet effect that travels away from the avatar silhouette.
+
+Recommended next Rafa task:
+
+```text
+Replace the broad wall-contact glow with a directional comet/spark payoff: small bright core at the ball, narrow outgoing streak toward the wall, no large circular cloud over the player head/racket.
+```
+
 ## 2026-06-16 — Contact Glow Shape Pass
 
 Build:
