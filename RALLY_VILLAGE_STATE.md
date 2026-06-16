@@ -22,7 +22,7 @@ This is an interface metaphor over real repo facts. The agents are not magic. Th
 | Rafa Court Lab | Awake | Repo is clean; Rafa still needs visual gameplay proof for camera/depth/addiction-loop feel. |
 | Sinner Locker Atelier | Sleeping | No active Shop/Locker task should begin until gameplay loop stabilizes or user explicitly routes to Sinner. |
 | Carlos Atlas Room | Sleeping | No active World/Courts task should begin until gameplay loop stabilizes or user explicitly routes to Carlos. |
-| Replay Theater | Needs proof | Visual gameplay verification still matters more than claims. |
+| Replay Theater | Proof captured | `RALLY_VISUAL_QA.md` records Home + autoplay gameplay screenshots; proof shows camera/effect/player-readability work remains. |
 
 ---
 
@@ -53,7 +53,7 @@ The village has four health states.
 Current default:
 
 ```text
-Yellow — gameplay visual QA is still missing; build state is clean, but Replay Theater still needs proof.
+Yellow — gameplay visual QA is captured; build state is clean, but Replay Theater proof shows Rafa still needs a camera/effect/player-readability patch.
 ```
 
 ---
