@@ -2936,7 +2936,14 @@ final class GameScene: SKScene {
         } else {
             ttlText = "-"
         }
-        label.text = "feed b:\(activeBalls.count) ex:\(activeExchanges.count) p:\(hasPendingFeed ? "Y" : "N") ttl:\(ttlText) last:\(wallFeedDebugLastEvent)"
+
+        let idleText: String
+        if emptyCourt, let wallEmptyCourtSince {
+            idleText = String(format: "%.2fs", max(0, currentTimeSnapshot - wallEmptyCourtSince))
+        } else {
+            idleText = "-"
+        }
+        label.text = "feed b:\(activeBalls.count) ex:\(activeExchanges.count) p:\(hasPendingFeed ? "Y" : "N") ttl:\(ttlText) idle:\(idleText) last:\(wallFeedDebugLastEvent)"
     }
 
     private func recordWallFeedDebugEvent(_ event: String) {
