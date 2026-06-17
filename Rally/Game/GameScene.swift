@@ -2974,6 +2974,12 @@ final class GameScene: SKScene {
         stillAlive.reserveCapacity(activeBalls.count)
 
         for ball in activeBalls {
+            guard ball.parent != nil else {
+                #if DEBUG
+                recordWallFeedDebugEvent("prune ball")
+                #endif
+                continue
+            }
             if let reentryState = ball.reentryState {
                 let frame = reentryState.frame(at: trackTime)
                 if frame.handoffReady {
@@ -3006,6 +3012,12 @@ final class GameScene: SKScene {
             } else {
                 let progress = max(0, min(1.18, (trackTime - ball.effectiveSpawnTime) / ball.effectiveTravelSeconds))
                 ball.updatePresentation(progress: CGFloat(progress))
+            }
+            guard ball.parent != nil else {
+                #if DEBUG
+                recordWallFeedDebugEvent("drop removed ball")
+                #endif
+                continue
             }
             stillAlive.append(ball)
         }
