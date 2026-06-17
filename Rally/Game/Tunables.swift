@@ -90,10 +90,10 @@ enum Tunables {
     static let wallHUDScorePunchMaxScale: CGFloat = 1.10
     static let wallHUDScoreCompactThreshold: Int = 100_000
     static let wallReboundCueDurationMs: Double = 260
-    /// If a delayed wall-feed token survives longer than this, assume the
-    /// callback was overtaken by scene timing and let the empty-court watchdog
-    /// schedule a fresh ball. Prevents "quiet court, no feed" stalls.
-    static let wallSpawnWatchdogTimeoutSeconds: TimeInterval = 0.85
+    /// Extra grace after a scheduled wall-feed delay. If the token survives
+    /// past `requestedAt + delay + grace`, scene timing likely overtook the
+    /// callback, so the empty-court watchdog can safely schedule a fresh ball.
+    static let wallSpawnWatchdogGraceSeconds: TimeInterval = 0.38
     static let wallContactRingRadius: CGFloat = 38
     static let wallApproachWindowRatio: CGFloat = 0.50
     static let wallSurfaceHeight: CGFloat = 20

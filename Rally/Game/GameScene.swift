@@ -179,7 +179,7 @@ final class GameScene: SKScene {
     private var currentTrackTime: TimeInterval = 0
     private var frameStopUntil: TimeInterval = 0
     private var pendingWallSpawnToken: UUID?
-    private var pendingWallSpawnRequestedAt: TimeInterval?
+    private var pendingWallSpawnDeadline: TimeInterval?
     private var isDying = false
     private var sessionEnded = false
     private var betweenPointLiftUntil: TimeInterval = 0
@@ -3424,7 +3424,7 @@ final class GameScene: SKScene {
         guard activeBalls.isEmpty, activeExchanges.isEmpty else { return }
         let token = UUID()
         pendingWallSpawnToken = token
-        pendingWallSpawnRequestedAt = currentTimeSnapshot
+        pendingWallSpawnDeadline = currentTimeSnapshot + delay + Tunables.wallSpawnWatchdogGraceSeconds
         DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
             guard let self else { return }
             guard self.pendingWallSpawnToken == token else { return }
@@ -3461,13 +3461,13 @@ final class GameScene: SKScene {
 
     private func clearPendingWallSpawnToken() {
         pendingWallSpawnToken = nil
-        pendingWallSpawnRequestedAt = nil
+        pendingWallSpawnDeadline = nil
     }
 
     private func clearExpiredWallSpawnToken(currentTime: TimeInterval) {
         guard pendingWallSpawnToken != nil,
-              let requestedAt = pendingWallSpawnRequestedAt,
-              currentTime - requestedAt > Tunables.wallSpawnWatchdogTimeoutSeconds
+              let deadline = pendingWallSpawnDeadline,
+              currentTime > deadline
         else { return }
 
         clearPendingWallSpawnToken()
