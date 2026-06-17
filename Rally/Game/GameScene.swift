@@ -3464,6 +3464,12 @@ final class GameScene: SKScene {
 
     private func scheduleWallBall(after delay: Double) {
         guard sessionMode == .wallRally, !sessionEnded else { return }
+        guard pendingWallSpawnToken == nil else {
+            #if DEBUG
+            recordWallFeedDebugEvent("skip pending")
+            #endif
+            return
+        }
         guard activeBalls.isEmpty, activeExchanges.isEmpty else { return }
         let token = UUID()
         pendingWallSpawnToken = token
