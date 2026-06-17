@@ -169,7 +169,7 @@ struct RallyAvatarAppearance: Codable, Equatable {
             )
         )
 
-        if let itemToPreview = previewItem ?? RallyAvatarAppearanceStore.activeTryOnItem {
+        if let itemToPreview = previewItem {
             equipPreview(itemToPreview)
         }
     }
