@@ -598,12 +598,8 @@ struct HomeView: View {
                 ForEach(editableLoadoutCategories, id: \.self) { category in
                     let item = equippedItem(for: category)
                     Button {
-                        if selectedLoadoutCategory == category {
-                            cycleLoadout(1)
-                        } else {
-                            withAnimation(.spring(response: 0.22, dampingFraction: 0.82)) {
-                                selectedLoadoutCategory = category
-                            }
+                        withAnimation(.spring(response: 0.22, dampingFraction: 0.82)) {
+                            selectedLoadoutCategory = category
                         }
                     } label: {
                         loadoutSlotTile(

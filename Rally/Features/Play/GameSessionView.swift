@@ -22,10 +22,7 @@ struct GameSessionView: View {
     @StateObject private var gamePreferences = GamePreferences.shared
     @State private var scene: GameScene? = nil
     @State private var sessionKey = UUID()
-    @State private var reflectionPrompt: JournalPrompt? = nil
     @State private var showExitConfirmation = false
-    /// When true, the session exits as soon as the reflection sheet dismisses.
-    @State private var exitAfterLog = false
     @State private var viewportSize: CGSize = .zero
     @State private var autoPlayEnabled = ProcessInfo.processInfo.arguments.contains("-RallyAutoPlay")
 
@@ -66,10 +63,6 @@ struct GameSessionView: View {
                         onExit: {
                             viewModel.dismiss()
                             onExit()
-                        },
-                        onLogReflection: {
-                            reflectionPrompt = JournalPromptLibrary
-                                .sessionReflectionPrompt(for: result, outcome: outcome)
                         }
                     )
                     .transition(.opacity.combined(with: .scale(scale: 1.02)))
@@ -117,27 +110,8 @@ struct GameSessionView: View {
         .onChange(of: avatarAppearanceStore.appearance) { _, appearance in
             scene?.applyAvatarAppearance(appearance)
         }
-        .sheet(item: $reflectionPrompt) { prompt in
-            NavigationStack {
-                JournalEditorView(entry: nil, seedPrompt: prompt)
-            }
-        }
-        .onChange(of: reflectionPrompt) { _, newValue in
-            // After the reflection sheet dismisses, exit if the player chose
-            // "Log how it felt" from the exit confirmation dialog.
-            if newValue == nil && exitAfterLog {
-                exitAfterLog = false
-                onExit()
-            }
-        }
         .confirmationDialog("End this run?", isPresented: $showExitConfirmation) {
             Button("Keep Playing", role: .cancel) {}
-            Button("Log how it felt") {
-                exitAfterLog = true
-                reflectionPrompt = JournalPromptLibrary.dailyPrompt(
-                    for: Date(), focus: .rallyGame
-                )
-            }
             Button("End Run", role: .destructive) { onExit() }
         } message: {
             Text("Your progress will be saved automatically.")
