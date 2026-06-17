@@ -312,6 +312,7 @@ final class GameScene: SKScene {
 
     #if DEBUG
     private var phaseDebugLabel: SKLabelNode?
+    private var wallFeedDebugLabel: SKLabelNode?
     #endif
 
     // Pan-gesture swing state — see `handlePan(_:)`.
@@ -415,6 +416,7 @@ final class GameScene: SKScene {
 
         #if DEBUG
         installPhaseDebugLabel()
+        installWallFeedDebugLabel()
         #endif
 
         // Pre-set startTime so update() can run without crashing, but the
@@ -2054,6 +2056,9 @@ final class GameScene: SKScene {
                 scheduleWallBall(after: 0.22)
             }
         }
+        #if DEBUG
+        updateWallFeedDebugLabel()
+        #endif
         moveBalls(trackTime: currentTrackTime)
         updateLiveExchanges(currentTime: currentTime)
         updateTrackingAssist()
@@ -2899,6 +2904,39 @@ final class GameScene: SKScene {
         label.zPosition = 200
         addChild(label)
         phaseDebugLabel = label
+    }
+
+    private func installWallFeedDebugLabel() {
+        guard sessionMode == .wallRally else { return }
+        let label = SKLabelNode(fontNamed: "Menlo")
+        label.text = ""
+        label.fontSize = 9
+        label.fontColor = UIColor(red: 1.0, green: 0.90, blue: 0.42, alpha: 0.68)
+        label.horizontalAlignmentMode = .left
+        label.verticalAlignmentMode = .top
+        label.position = CGPoint(x: 12, y: max(72, size.height * 0.17))
+        label.zPosition = 250
+        label.isHidden = true
+        addChild(label)
+        wallFeedDebugLabel = label
+    }
+
+    private func updateWallFeedDebugLabel() {
+        guard sessionMode == .wallRally, let label = wallFeedDebugLabel else { return }
+        let emptyCourt = activeBalls.isEmpty && activeExchanges.isEmpty
+        let hasPendingFeed = pendingWallSpawnToken != nil
+        let shouldShow = !sessionEnded && !isCountingDown && (emptyCourt || hasPendingFeed)
+        label.isHidden = !shouldShow
+        guard shouldShow else { return }
+
+        let ttlText: String
+        if let deadline = pendingWallSpawnDeadline {
+            let ttl = deadline - ProcessInfo.processInfo.systemUptime
+            ttlText = String(format: "%.2fs", ttl)
+        } else {
+            ttlText = "-"
+        }
+        label.text = "wall feed  balls:\(activeBalls.count) ex:\(activeExchanges.count) pending:\(hasPendingFeed ? "Y" : "N") ttl:\(ttlText)"
     }
     #endif
 
