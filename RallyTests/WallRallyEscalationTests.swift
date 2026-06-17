@@ -227,6 +227,24 @@ final class WallRallyEscalationTests: XCTestCase {
         )
     }
 
+    func testWallEmptyCourtRescueFeedIsFasterThanNormalFeed() {
+        XCTAssertGreaterThan(
+            Tunables.wallEmptyCourtRescueSeconds,
+            Tunables.wallFeedDelaySeconds,
+            "rescue should only engage after the normal empty-court feed had time to fire"
+        )
+        XCTAssertLessThan(
+            Tunables.wallFeedRescueDelaySeconds,
+            Tunables.wallFeedDelaySeconds,
+            "rescue feed must be a near-immediate recovery, not another normal wait"
+        )
+        XCTAssertLessThan(
+            Tunables.wallFeedRescueDelaySeconds,
+            Tunables.wallEmptyCourtRescueSeconds,
+            "rescue delay should never exceed the empty-court stall threshold"
+        )
+    }
+
     // MARK: - survival miss copy priority
 
     func testSurvivalMissCopyShowsResetForMeaningfulNonLastLifeBreak() {
