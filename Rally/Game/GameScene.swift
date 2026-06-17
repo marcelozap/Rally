@@ -1558,13 +1558,13 @@ final class GameScene: SKScene {
             RallyAvatarPartRenderer.armTexture(skinColor: skin, scale: bodyScale, topWidth: 14.2, bottomWidth: 9.8, length: 63)
         )
 
-        // Sleeve cap over shoulder joint — tracks arm dynamically in updateCourtAvatar
-        let leadSleeveR: CGFloat = 11.5 * bodyScale
-        let leadSleeve = SKShapeNode(circleOfRadius: leadSleeveR)
+        // Flat sleeve cap over the shoulder joint. Circles read like puppet pins at game scale.
+        let leadSleeve = SKShapeNode(ellipseOf: CGSize(width: 26 * bodyScale, height: 14 * bodyScale))
         leadSleeve.fillColor = top.blended(withFraction: 0.12, of: .white) ?? top
         leadSleeve.strokeColor = .clear
         leadSleeve.lineWidth = 0
         leadSleeve.position = CGPoint(x: 36 * bodyScale, y: layout.torsoY + 32 * bodyScale)
+        leadSleeve.zRotation = -0.12
         leadSleeve.zPosition = 3.1  // just above leadArm (3.0) to cap the joint
         root.addChild(leadSleeve)
         playerLeadSleeve = leadSleeve
@@ -1580,12 +1580,12 @@ final class GameScene: SKScene {
             RallyAvatarPartRenderer.armTexture(skinColor: skin.mixed(with: .black, ratio: 0.05), scale: bodyScale, topWidth: 13.8, bottomWidth: 9.4, length: 62)
         )
 
-        let trailSleeveR: CGFloat = 11.0 * bodyScale
-        let trailSleeve = SKShapeNode(circleOfRadius: trailSleeveR)
-        trailSleeve.fillColor = top.blended(withFraction: 0.05, of: .black) ?? top
+        let trailSleeve = SKShapeNode(ellipseOf: CGSize(width: 25 * bodyScale, height: 13 * bodyScale))
+        trailSleeve.fillColor = top.blended(withFraction: 0.08, of: .white) ?? top
         trailSleeve.strokeColor = .clear
         trailSleeve.lineWidth = 0
         trailSleeve.position = CGPoint(x: -36 * bodyScale, y: layout.torsoY + 32 * bodyScale)
+        trailSleeve.zRotation = 0.12
         trailSleeve.zPosition = 2.1  // just above trailArm (1.8), below torso front
         root.addChild(trailSleeve)
         playerTrailSleeve = trailSleeve
@@ -3368,6 +3368,9 @@ final class GameScene: SKScene {
         let strikeInset = size.width * Tunables.strikeLaneInsetRatio * racketTuning.strikeWidthScalar * (sessionMode == .wallRally ? 1.08 : 1.0)
         let spawnX = horizonCenterX + (note.lane == .left ? -horizonSpread : horizonSpread)
         let strikeX = note.lane == .left ? strikeInset : size.width - strikeInset
+        let strikePoint = sessionMode == .wallRally
+            ? authoredRacketContactPoint(for: note.lane)
+            : CGPoint(x: strikeX, y: strikeY)
         let shotShape = selectShotShape(for: note)
         let ballRole: BeatmapNote.Role = sessionMode == .wallRally ? .returnBall : note.role
         let strikeDiameter = size.width * Tunables.ballStrikeDiameterSceneWidthRatio
@@ -3382,7 +3385,7 @@ final class GameScene: SKScene {
             spawnTime: spawnTime,
             travelSeconds: travelSeconds,
             spawnPoint: CGPoint(x: spawnX, y: spawnY),
-            strikePoint: CGPoint(x: strikeX, y: strikeY),
+            strikePoint: strikePoint,
             spawnScale: Tunables.ballSpawnScale * racketTuning.spawnScaleScalar,
             strikeScale: sceneRelativeStrikeScale * racketTuning.strikeScaleScalar,
             overrunScale: Tunables.ballOverrunScale * racketTuning.overrunScaleScalar,
@@ -5702,17 +5705,21 @@ final class GameScene: SKScene {
         max(0.35, min(1.45, swingSpeed / max(1, Tunables.swingFastVelocity)))
     }
 
-    private func racketContactPoint(for lane: Lane) -> CGPoint {
+    private func authoredRacketContactPoint(for lane: Lane) -> CGPoint {
         guard let playerRoot else {
             return CGPoint(
-                x: lane == .left ? size.width * 0.34 : size.width * 0.66,
-                y: size.height * Tunables.strikeLineYRatio
+                x: size.width / 2 + contactPocketOffsetX(for: lane),
+                y: size.height * Tunables.strikeLineYRatio + contactPocketLift(for: lane)
             )
         }
-        let authored = CGPoint(
+        return CGPoint(
             x: playerRoot.position.x + contactPocketOffsetX(for: lane),
             y: size.height * Tunables.strikeLineYRatio + contactPocketLift(for: lane)
         )
+    }
+
+    private func racketContactPoint(for lane: Lane) -> CGPoint {
+        let authored = authoredRacketContactPoint(for: lane)
         guard let playerRacketHead, lane == swingVisualLane else {
             return authored
         }

@@ -401,11 +401,11 @@ enum Tunables {
     static let wallStrikeTransitionSweepAlpha: CGFloat = 0.06
     static let wallStrikeTransitionSweepPeakAlpha: CGFloat = 0.14
 
-    /// Wall-mode ball/fx is intentionally quieter so the player body and racket stay readable.
-    static let wallBallVisualScalar: CGFloat = 0.22
-    static let wallBallAuraAlphaScalar: CGFloat = 0.15
-    static let wallBallCoreAlphaScalar: CGFloat = 0.42
-    static let wallBallCoreScaleScalar: CGFloat = 0.56
+    /// Wall-mode ball/fx stays readable without swallowing the player body.
+    static let wallBallVisualScalar: CGFloat = 0.36
+    static let wallBallAuraAlphaScalar: CGFloat = 0.28
+    static let wallBallCoreAlphaScalar: CGFloat = 0.72
+    static let wallBallCoreScaleScalar: CGFloat = 0.76
     static let wallBallContactScaleBoost: CGFloat = 0.0
     static let wallRacketContactHaloAlphaMultiplier: CGFloat = 0.10
     static let wallRacketContactHaloGlowMultiplier: CGFloat = 0.12
@@ -437,16 +437,16 @@ enum Tunables {
     static let wallReturnEchoAlphaMultiplier: CGFloat = 0.56
     static let wallReturnImpactPulseAlphaMultiplier: CGFloat = 0.18
     static let wallReturnImpactPulseGlowWidth: CGFloat = 1.2
-    static let wallLiveExchangeAuraScale: CGFloat = 0.14
-    static let wallLiveExchangeAuraAlphaMultiplier: CGFloat = 0.07
-    static let wallLiveExchangeCoreAlphaMultiplier: CGFloat = 0.88
+    static let wallLiveExchangeAuraScale: CGFloat = 0.20
+    static let wallLiveExchangeAuraAlphaMultiplier: CGFloat = 0.16
+    static let wallLiveExchangeCoreAlphaMultiplier: CGFloat = 1.0
     static let wallLiveExchangeTailAlphaFloor: CGFloat = 0.07
     static let wallLiveExchangeTailAlphaRebound: CGFloat = 0.20
     static let wallLiveExchangeTailApproachXScale: CGFloat = 0.92
     static let wallLiveExchangeTailReboundXScale: CGFloat = 1.28
     static let wallLiveExchangeTailYScale: CGFloat = 0.18
-    static let wallContactPocketOutwardOffset: CGFloat = 18
-    static let wallContactPocketVerticalOffset: CGFloat = -34
+    static let wallContactPocketOutwardOffset: CGFloat = 22
+    static let wallContactPocketVerticalOffset: CGFloat = -28
     static let wallRacketBurstAlphaMultiplier: CGFloat = 0.12
     static let wallRacketBurstScaleMultiplier: CGFloat = 0.20
     static let wallRacketBurstGlowMultiplier: CGFloat = 0.10
