@@ -487,3 +487,43 @@ Recommended next Rafa task:
 ```text
 Replace the remaining live wall-exchange bloom with a directional comet/spark: small bright ball core, narrow outbound streak toward the wall, and no large circular aura around the avatar/racket.
 ```
+
+## 2026-06-16 — Wall Contact Comet Readability Pass
+
+Build:
+
+```text
+xcodebuild -project Rally.xcodeproj -scheme Rally -configuration Debug -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build
+Result: BUILD SUCCEEDED
+```
+
+Simulator:
+
+```text
+iPhone 16 Pro, iOS 18.6
+Bundle: com.marcelozap.rally
+Autoplay argument: -RallyAutoPlay
+```
+
+Screenshots:
+
+```text
+First directional comet proof: /tmp/rally_visual_qa/autoplay_after_directional_comet_204045.png
+After contact stack clamp: /tmp/rally_visual_qa/autoplay_after_contact_stack_clamp_204941.png
+After proxy halo cut: /tmp/rally_visual_qa/autoplay_after_proxy_halo_cut_210510.png
+Final proof after wall swing-trail + tail trim: /tmp/rally_visual_qa/autoplay_after_comet_final_211058.png
+```
+
+Findings:
+
+- Wall-mode live exchange no longer renders warning/focus rings during the contact handoff; the proxy ball keeps a bright core but drops the large translucent target-circle treatment.
+- Racket-contact halo is disabled in wall mode, and the stacked racket/wall contact bursts use lower alpha, scale, and glow multipliers so the player body remains readable behind contact.
+- Wall-mode swipe/swing trail now uses a much thinner/lower-alpha stroke so it reads as input direction feedback rather than a full-screen fog bar.
+- The final proof frame shows a clearer bright tennis ball with a directional tail near the racket. The player face, racket, legs, shoes, score, lives, and exit button are readable.
+- Remaining issue: the contact still has a broad cream/cyan glow region. Further alpha shaving has diminishing returns; the next high-value improvement is a camera/composition pass that moves contact slightly farther from the face/racket and replaces the residual blur with discrete sparks/dust particles.
+
+Recommended next Rafa task:
+
+```text
+Gameplay camera/composition pass: lower or offset the contact lane so the ball strike point does not sit directly above the avatar face, then replace residual cream/cyan blur with 6-10 small directional sparks.
+```

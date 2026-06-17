@@ -3850,14 +3850,20 @@ final class GameScene: SKScene {
             : (current.x < origin.x ? .left : .right)
         let palette = swingTrailPalette(intent: intent, lane: lane)
 
-        trail.strokeColor = palette.core.withAlphaComponent(0.52 + 0.34 * intensity)
-        trail.lineWidth = Tunables.swingTrailLineWidth * (0.88 + intensity * 0.24)
-        swingTrailGlowNode?.strokeColor = palette.glow.withAlphaComponent(0.34 + 0.36 * intensity)
-        swingTrailGlowNode?.lineWidth = Tunables.swingTrailLineWidth * (1.7 + intensity * 0.52)
-        swingTrailGlowNode?.glowWidth = Tunables.swingTrailGlowWidth + 8 + 10 * intensity
+        let wallCoreAlphaScalar = sessionMode == .wallRally ? Tunables.wallSwingTrailCoreAlphaMultiplier : 1
+        let wallGlowAlphaScalar = sessionMode == .wallRally ? Tunables.wallSwingTrailGlowAlphaMultiplier : 1
+        let wallLineWidthScalar = sessionMode == .wallRally ? Tunables.wallSwingTrailLineWidthMultiplier : 1
+        let wallGlowWidthScalar = sessionMode == .wallRally ? Tunables.wallSwingTrailGlowWidthMultiplier : 1
+        let wallTipAlphaScalar = sessionMode == .wallRally ? Tunables.wallSwingTrailTipAlphaMultiplier : 1
+
+        trail.strokeColor = palette.core.withAlphaComponent((0.52 + 0.34 * intensity) * wallCoreAlphaScalar)
+        trail.lineWidth = Tunables.swingTrailLineWidth * (0.88 + intensity * 0.24) * wallLineWidthScalar
+        swingTrailGlowNode?.strokeColor = palette.glow.withAlphaComponent((0.34 + 0.36 * intensity) * wallGlowAlphaScalar)
+        swingTrailGlowNode?.lineWidth = Tunables.swingTrailLineWidth * (1.7 + intensity * 0.52) * wallLineWidthScalar
+        swingTrailGlowNode?.glowWidth = (Tunables.swingTrailGlowWidth + 8 + 10 * intensity) * wallGlowWidthScalar
         swingTrailTipNode?.position = current
         swingTrailTipNode?.fillColor = palette.tip.withAlphaComponent(0.72 + 0.18 * intensity)
-        swingTrailTipNode?.alpha = 0.42 + 0.5 * intensity
+        swingTrailTipNode?.alpha = (0.42 + 0.5 * intensity) * wallTipAlphaScalar
         swingTrailTipNode?.setScale(0.82 + intensity * 0.4)
     }
 
@@ -6672,7 +6678,7 @@ final class GameScene: SKScene {
             }
 
             halo.position = contactPoint
-            halo.alpha = max(0, frame.shadowAlpha + 0.18) * haloAlphaMultiplier
+            halo.alpha = wallMode ? 0 : max(0, frame.shadowAlpha + 0.18) * haloAlphaMultiplier
             halo.xScale = (0.96 + model.compressionScalar(at: progress) * 0.46) * haloScaleMultiplier
             halo.yScale = (0.86 + model.releaseVelocityScalar(at: progress) * 0.12) * haloScaleMultiplier
 
@@ -7647,13 +7653,15 @@ final class BallNode: SKShapeNode {
 
         warningRingNode.alpha = 0
         focusRingNode.alpha = 0
-        auraNode.alpha = max(0.04, frame.shadowAlpha * 0.62 * Tunables.wallLiveExchangeAuraAlphaMultiplier)
+        auraNode.alpha = max(0.008, frame.shadowAlpha * Tunables.wallLiveExchangeAuraAlphaMultiplier)
         auraNode.setScale(Tunables.wallLiveExchangeAuraScale)
         coreNode.alpha = max(0.18, frame.shadowAlpha * 0.82 * Tunables.wallLiveExchangeCoreAlphaMultiplier)
-        let reboundSpeedBoost: CGFloat = frame.phase == .wallRebound ? 1.0 : 0.42
-        tailNode.alpha = 0.08 + reboundSpeedBoost * 0.28
-        tailNode.xScale = 0.92 + reboundSpeedBoost * 0.46
-        tailNode.yScale = 0.76 + reboundSpeedBoost * 0.18
+        let reboundSpeedBoost: CGFloat = frame.phase == .wallRebound ? 1.0 : 0.0
+        tailNode.alpha = Tunables.wallLiveExchangeTailAlphaFloor
+            + reboundSpeedBoost * Tunables.wallLiveExchangeTailAlphaRebound
+        tailNode.xScale = Tunables.wallLiveExchangeTailApproachXScale
+            + reboundSpeedBoost * (Tunables.wallLiveExchangeTailReboundXScale - Tunables.wallLiveExchangeTailApproachXScale)
+        tailNode.yScale = Tunables.wallLiveExchangeTailYScale
 
         shadowNode.alpha = frame.shadowAlpha
         shadowNode.xScale = frame.shadowXScale
@@ -7675,9 +7683,9 @@ final class BallNode: SKShapeNode {
     func applyWallContactProxyReadability(progress: CGFloat) {
         glowWidth = Tunables.wallContactProxyBallGlowWidth * 0.35
         warningRingNode.alpha = 0
-        focusRingNode.alpha = Tunables.wallContactProxyBallFocusAlpha * max(0, 1 - progress * 0.65)
+        focusRingNode.alpha = 0
         focusRingNode.setScale(Tunables.wallContactProxyBallFocusScale)
-        auraNode.alpha = Tunables.wallContactProxyBallAuraAlpha * max(0.2, 1 - progress * 0.5)
+        auraNode.alpha = 0
         auraNode.setScale(Tunables.wallContactProxyBallAuraScale)
         coreNode.alpha = Tunables.wallContactProxyBallCoreAlpha
         coreNode.setScale(Tunables.wallBallCoreScaleScalar)
