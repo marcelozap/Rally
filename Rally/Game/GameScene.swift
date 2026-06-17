@@ -179,6 +179,7 @@ final class GameScene: SKScene {
     private var currentTrackTime: TimeInterval = 0
     private var frameStopUntil: TimeInterval = 0
     private var pendingWallSpawnToken: UUID?
+    private var pendingWallSpawnRequestedAt: TimeInterval?
     private var isDying = false
     private var sessionEnded = false
     private var betweenPointLiftUntil: TimeInterval = 0
@@ -2048,6 +2049,7 @@ final class GameScene: SKScene {
         } else if !sessionEnded, !isCountingDown, sessionMode == .wallRally {
             currentBPM = wallTempoBPM(for: matchPace)
             currentTravelSeconds = wallTravelSeconds()
+            clearExpiredWallSpawnToken(currentTime: currentTime)
             if activeBalls.isEmpty, activeExchanges.isEmpty, pendingWallSpawnToken == nil {
                 scheduleWallBall(after: 0.22)
             }
@@ -3355,7 +3357,7 @@ final class GameScene: SKScene {
 
     func spawnBall(_ note: BeatmapNote) {
         if sessionMode == .wallRally {
-            pendingWallSpawnToken = nil
+            clearPendingWallSpawnToken()
         }
         spawnedBallCount += 1
         let travelSeconds = currentTravelSeconds
@@ -3422,23 +3424,24 @@ final class GameScene: SKScene {
         guard activeBalls.isEmpty, activeExchanges.isEmpty else { return }
         let token = UUID()
         pendingWallSpawnToken = token
+        pendingWallSpawnRequestedAt = currentTimeSnapshot
         DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
             guard let self else { return }
             guard self.pendingWallSpawnToken == token else { return }
             guard self.sessionMode == .wallRally, !self.sessionEnded, !self.isCountingDown else {
-                self.pendingWallSpawnToken = nil
+                self.clearPendingWallSpawnToken()
                 return
             }
             guard self.activeBalls.isEmpty, self.activeExchanges.isEmpty else {
-                self.pendingWallSpawnToken = nil
+                self.clearPendingWallSpawnToken()
                 return
             }
             guard !self.activeBalls.contains(where: { $0.ownershipPhase.blocksSpawn }) else {
-                self.pendingWallSpawnToken = nil
+                self.clearPendingWallSpawnToken()
                 return
             }
             guard self.activeBalls.isEmpty else {
-                self.pendingWallSpawnToken = nil
+                self.clearPendingWallSpawnToken()
                 return
             }
             let lane = self.nextWallSpawnLane()
@@ -3451,9 +3454,23 @@ final class GameScene: SKScene {
             )
             // This token gates the empty-court watchdog. Clear it once the ball
             // actually exists, otherwise the rally can get stuck with no feed.
-            self.pendingWallSpawnToken = nil
+            self.clearPendingWallSpawnToken()
             self.spawnBall(note)
         }
+    }
+
+    private func clearPendingWallSpawnToken() {
+        pendingWallSpawnToken = nil
+        pendingWallSpawnRequestedAt = nil
+    }
+
+    private func clearExpiredWallSpawnToken(currentTime: TimeInterval) {
+        guard pendingWallSpawnToken != nil,
+              let requestedAt = pendingWallSpawnRequestedAt,
+              currentTime - requestedAt > Tunables.wallSpawnWatchdogTimeoutSeconds
+        else { return }
+
+        clearPendingWallSpawnToken()
     }
 
     private func stagePointCueIfNeeded(for note: BeatmapNote) {
@@ -6454,7 +6471,7 @@ final class GameScene: SKScene {
         guard !sessionEnded else { return }
         resetSwingBodyMechanics()
         sessionEnded = true
-        pendingWallSpawnToken = nil
+        clearPendingWallSpawnToken()
 
         // Persist the run's score if it set a new best.
         if score > bestScore {
