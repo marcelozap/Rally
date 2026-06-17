@@ -3443,6 +3443,9 @@ final class GameScene: SKScene {
                 kind: .normal,
                 role: .rally
             )
+            // This token gates the empty-court watchdog. Clear it once the ball
+            // actually exists, otherwise the rally can get stuck with no feed.
+            self.pendingWallSpawnToken = nil
             self.spawnBall(note)
         }
     }
