@@ -2049,7 +2049,7 @@ final class GameScene: SKScene {
         } else if !sessionEnded, !isCountingDown, sessionMode == .wallRally {
             currentBPM = wallTempoBPM(for: matchPace)
             currentTravelSeconds = wallTravelSeconds()
-            clearExpiredWallSpawnToken(currentTime: currentTime)
+            clearExpiredWallSpawnToken()
             if activeBalls.isEmpty, activeExchanges.isEmpty, pendingWallSpawnToken == nil {
                 scheduleWallBall(after: 0.22)
             }
@@ -3424,7 +3424,7 @@ final class GameScene: SKScene {
         guard activeBalls.isEmpty, activeExchanges.isEmpty else { return }
         let token = UUID()
         pendingWallSpawnToken = token
-        pendingWallSpawnDeadline = currentTimeSnapshot + delay + Tunables.wallSpawnWatchdogGraceSeconds
+        pendingWallSpawnDeadline = ProcessInfo.processInfo.systemUptime + delay + Tunables.wallSpawnWatchdogGraceSeconds
         DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
             guard let self else { return }
             guard self.pendingWallSpawnToken == token else { return }
@@ -3464,10 +3464,10 @@ final class GameScene: SKScene {
         pendingWallSpawnDeadline = nil
     }
 
-    private func clearExpiredWallSpawnToken(currentTime: TimeInterval) {
+    private func clearExpiredWallSpawnToken() {
         guard pendingWallSpawnToken != nil,
               let deadline = pendingWallSpawnDeadline,
-              currentTime > deadline
+              ProcessInfo.processInfo.systemUptime > deadline
         else { return }
 
         clearPendingWallSpawnToken()
