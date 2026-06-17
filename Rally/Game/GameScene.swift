@@ -313,6 +313,7 @@ final class GameScene: SKScene {
     #if DEBUG
     private var phaseDebugLabel: SKLabelNode?
     private var wallFeedDebugLabel: SKLabelNode?
+    private var wallFeedDebugLastEvent = "boot"
     #endif
 
     // Pan-gesture swing state — see `handlePan(_:)`.
@@ -2936,7 +2937,11 @@ final class GameScene: SKScene {
         } else {
             ttlText = "-"
         }
-        label.text = "wall feed  balls:\(activeBalls.count) ex:\(activeExchanges.count) pending:\(hasPendingFeed ? "Y" : "N") ttl:\(ttlText)"
+        label.text = "feed b:\(activeBalls.count) ex:\(activeExchanges.count) p:\(hasPendingFeed ? "Y" : "N") ttl:\(ttlText) last:\(wallFeedDebugLastEvent)"
+    }
+
+    private func recordWallFeedDebugEvent(_ event: String) {
+        wallFeedDebugLastEvent = event
     }
     #endif
 
@@ -3466,22 +3471,42 @@ final class GameScene: SKScene {
             requestedAt: ProcessInfo.processInfo.systemUptime,
             delay: delay
         )
+        #if DEBUG
+        recordWallFeedDebugEvent(String(format: "schedule %.2fs", delay))
+        #endif
         DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
             guard let self else { return }
-            guard self.pendingWallSpawnToken == token else { return }
+            guard self.pendingWallSpawnToken == token else {
+                #if DEBUG
+                self.recordWallFeedDebugEvent("drop stale token")
+                #endif
+                return
+            }
             guard self.sessionMode == .wallRally, !self.sessionEnded, !self.isCountingDown else {
+                #if DEBUG
+                self.recordWallFeedDebugEvent("clear inactive")
+                #endif
                 self.clearPendingWallSpawnToken()
                 return
             }
             guard self.activeBalls.isEmpty, self.activeExchanges.isEmpty else {
+                #if DEBUG
+                self.recordWallFeedDebugEvent("clear occupied")
+                #endif
                 self.clearPendingWallSpawnToken()
                 return
             }
             guard !self.activeBalls.contains(where: { $0.ownershipPhase.blocksSpawn }) else {
+                #if DEBUG
+                self.recordWallFeedDebugEvent("clear ownership")
+                #endif
                 self.clearPendingWallSpawnToken()
                 return
             }
             guard self.activeBalls.isEmpty else {
+                #if DEBUG
+                self.recordWallFeedDebugEvent("clear active")
+                #endif
                 self.clearPendingWallSpawnToken()
                 return
             }
@@ -3495,6 +3520,9 @@ final class GameScene: SKScene {
             )
             // This token gates the empty-court watchdog. Clear it once the ball
             // actually exists, otherwise the rally can get stuck with no feed.
+            #if DEBUG
+            self.recordWallFeedDebugEvent("spawn \(String(describing: lane))")
+            #endif
             self.clearPendingWallSpawnToken()
             self.spawnBall(note)
         }
@@ -3511,9 +3539,12 @@ final class GameScene: SKScene {
               Tunables.isWallSpawnWatchdogExpired(
                 now: ProcessInfo.processInfo.systemUptime,
                 deadline: deadline
-              )
+        )
         else { return }
 
+        #if DEBUG
+        recordWallFeedDebugEvent("expired")
+        #endif
         clearPendingWallSpawnToken()
     }
 
