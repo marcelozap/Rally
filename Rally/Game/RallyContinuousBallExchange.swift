@@ -84,6 +84,10 @@ final class RallyContinuousBallExchange {
         config.racket.totalDuration + config.wall.totalDuration
     }
 
+    func isStranded(at currentTime: TimeInterval, grace: TimeInterval) -> Bool {
+        ball.parent == nil || currentTime - startTime > totalDuration + grace
+    }
+
     func frame(at currentTime: TimeInterval) -> RallyContinuousBallExchangeFrame {
         let elapsed = max(0, currentTime - startTime)
         let isComplete = elapsed >= totalDuration

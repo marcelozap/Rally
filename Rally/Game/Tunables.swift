@@ -175,6 +175,9 @@ enum Tunables {
     /// Ball-node scale at the wall plane during the racket→wall exchange,
     /// relative to its scale at racket release. Sells the outbound depth leg.
     static let wallExchangeDepthFarScale: CGFloat = 0.58
+    /// Safety prune for any finished wall exchange that failed to hand off.
+    /// Keeps a stranded exchange object from blocking the next ball feed.
+    static let wallExchangeStrandedGraceSeconds: TimeInterval = 0.45
     /// Return-leg tail alpha at exit speed (slow) and terminal speed (fast).
     static let wallReturnTailAlphaFloor: CGFloat = 0.10
     static let wallReturnTailAlphaPeak: CGFloat = 0.38

@@ -3019,6 +3019,14 @@ final class GameScene: SKScene {
         stillActive.reserveCapacity(activeExchanges.count)
 
         for exchange in activeExchanges {
+            if exchange.isStranded(at: currentTime, grace: Tunables.wallExchangeStrandedGraceSeconds) {
+                #if DEBUG
+                recordWallFeedDebugEvent("prune exchange")
+                #endif
+                exchange.ball.removeFromParent()
+                continue
+            }
+
             let frame = exchange.frame(at: currentTime)
             if frame.phase == .wallApproach
                 || frame.phase == .wallCompression
