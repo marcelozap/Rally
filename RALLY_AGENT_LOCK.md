@@ -45,6 +45,7 @@ A lock is cooperative — it only works if both agents check it first. That chec
 | 2026-06-16 | [CX] | Avatar readability repair — `Rally/Features/Avatar/RallyAvatarGeometry.swift`, `Rally/Features/Avatar/RallyAvatarView.swift`, `Rally/Game/GameScene.swift` head/face/feet consumption | RELEASED | Focused gameplay-scale eyes/mouth/ears, connected hair, and foot toe-out consistency pass. xcodebuild generic iOS Simulator Debug BUILD SUCCEEDED. |
 | 2026-06-17 | [CX] | Rafa avatar/gameplay readability — `Rally/Game/GameScene.swift`, `Rally/Features/Avatar/RallyAvatarGeometry.swift`, `Rally/Game/Tunables.swift` | RELEASED | Build passed after lowering connected hair fringe, strengthening gameplay-scale facial features, restoring runtime hand skin tone, and increasing ready/outside foot toe-out. Visual QA still decides if another anatomy pass is needed. |
 | 2026-06-17 | [CX] | Rafa wall-rally spawn lifecycle — `Rally/Game/GameScene.swift` | RELEASED | Build passed after clearing stale pending spawn token before spawning the scheduled wall ball, preventing the empty-court watchdog from thinking a feed is still pending forever. |
+| 2026-06-17 | [CX] | Loadout try-on persistence drift — `Rally/Features/Avatar/RallyAvatarAppearance.swift` | ACTIVE | Narrow heartbeat task: stop stale global try-on previews from overlaying persisted gear when Home syncs or cycles another slot. |
 
 ---
 
