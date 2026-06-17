@@ -3424,9 +3424,15 @@ final class GameScene: SKScene {
         pendingWallSpawnToken = token
         DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
             guard let self else { return }
-            guard self.sessionMode == .wallRally, !self.sessionEnded, !self.isCountingDown else { return }
             guard self.pendingWallSpawnToken == token else { return }
-            guard self.activeBalls.isEmpty, self.activeExchanges.isEmpty else { return }
+            guard self.sessionMode == .wallRally, !self.sessionEnded, !self.isCountingDown else {
+                self.pendingWallSpawnToken = nil
+                return
+            }
+            guard self.activeBalls.isEmpty, self.activeExchanges.isEmpty else {
+                self.pendingWallSpawnToken = nil
+                return
+            }
             guard !self.activeBalls.contains(where: { $0.ownershipPhase.blocksSpawn }) else {
                 self.pendingWallSpawnToken = nil
                 return
