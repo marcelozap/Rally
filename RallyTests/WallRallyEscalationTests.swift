@@ -133,6 +133,56 @@ final class WallRallyEscalationTests: XCTestCase {
         )
     }
 
+    // MARK: - wall return depth and urgency
+
+    func testWallReentryGrowsFromWallDepthToStrikePlane() {
+        let state = RallyReentryBallState(
+            startTime: 10,
+            arrivalTime: 10 + Tunables.wallReturnTravelSeconds,
+            strikeTime: 10 + Tunables.wallReturnTravelSeconds,
+            startPoint: CGPoint(x: 180, y: 520),
+            strikePoint: CGPoint(x: 260, y: 160),
+            config: .rallyDefault,
+            handoffXScale: Tunables.wallExchangeDepthFarScale,
+            handoffYScale: Tunables.wallExchangeDepthFarScale,
+            handoffShadowAlpha: 0.18
+        )
+
+        let start = state.frame(at: state.startTime)
+        let middle = state.frame(at: state.startTime + state.travelSeconds * 0.5)
+        let end = state.frame(at: state.arrivalTime)
+
+        XCTAssertEqual(start.xScale, Tunables.wallExchangeDepthFarScale, accuracy: 1e-6)
+        XCTAssertEqual(start.yScale, Tunables.wallExchangeDepthFarScale, accuracy: 1e-6)
+        XCTAssertGreaterThan(middle.xScale, start.xScale)
+        XCTAssertGreaterThan(middle.yScale, start.yScale)
+        XCTAssertEqual(end.xScale, 1.0, accuracy: 1e-6)
+        XCTAssertEqual(end.yScale, 1.0, accuracy: 1e-6)
+        XCTAssertGreaterThan(end.shadowAlpha, start.shadowAlpha)
+    }
+
+    func testWallReentrySpeedScalarAcceleratesTowardPlayer() {
+        let state = RallyReentryBallState(
+            startTime: 4,
+            arrivalTime: 4 + Tunables.wallReturnTravelSeconds,
+            strikeTime: 4 + Tunables.wallReturnTravelSeconds,
+            startPoint: CGPoint(x: 220, y: 520),
+            strikePoint: CGPoint(x: 220, y: 160),
+            config: .rallyDefault,
+            handoffXScale: Tunables.wallExchangeDepthFarScale,
+            handoffYScale: Tunables.wallExchangeDepthFarScale,
+            handoffShadowAlpha: 0.18
+        )
+
+        let early = state.frame(at: state.startTime + state.travelSeconds * 0.10)
+        let middle = state.frame(at: state.startTime + state.travelSeconds * 0.50)
+        let late = state.frame(at: state.startTime + state.travelSeconds * 0.90)
+
+        XCTAssertLessThan(early.speedScalar, middle.speedScalar)
+        XCTAssertLessThan(middle.speedScalar, late.speedScalar)
+        XCTAssertGreaterThan(late.speedScalar, 0.80)
+    }
+
     // MARK: - survival miss copy priority
 
     func testSurvivalMissCopyShowsResetForMeaningfulNonLastLifeBreak() {
