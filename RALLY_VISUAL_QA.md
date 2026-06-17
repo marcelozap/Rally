@@ -527,3 +527,39 @@ Recommended next Rafa task:
 ```text
 Gameplay camera/composition pass: lower or offset the contact lane so the ball strike point does not sit directly above the avatar face, then replace residual cream/cyan blur with 6-10 small directional sparks.
 ```
+
+## 2026-06-16 — Wall Contact Composition Offset Pass
+
+Build:
+
+```text
+xcodebuild -project Rally.xcodeproj -scheme Rally -configuration Debug -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build
+Result: BUILD SUCCEEDED
+```
+
+Simulator:
+
+```text
+iPhone 16 Pro, iOS 18.6
+Bundle: com.marcelozap.rally
+Autoplay argument: -RallyAutoPlay
+```
+
+Screenshots:
+
+```text
+Contact composition proof: /tmp/rally_visual_qa/autoplay_after_contact_composition_213644.png
+```
+
+Findings:
+
+- Wall-rally contact pockets now move outward and lower in wall mode only, so the racket-side strike point is no longer centered directly over the avatar's face.
+- The same `racketContactPoint(for:)` source now drives hit selection, contact pockets, wall exchange, score burst, and contact VFX with the wall-only composition offset. This avoids per-effect drift.
+- The final proof frame reads more like the ball is being met by the racket hand rather than hovering above the head.
+- Remaining issue: the contact glow is still broad. The next improvement should replace the remaining soft blur with discrete directional particles/sparks rather than more global alpha reductions.
+
+Recommended next Rafa task:
+
+```text
+Replace residual contact blur with explicit particles: 6-10 small outbound sparks/dust puffs, no large filled glow behind the ball.
+```

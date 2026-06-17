@@ -5733,11 +5733,14 @@ final class GameScene: SKScene {
     private func contactPocketOffsetX(for lane: Lane) -> CGFloat {
         let forehand = strokeSide(for: lane) == .forehand
         let base = size.width * (forehand ? 0.165 : 0.125)
-        return lane == .left ? -base : base
+        let wallOutwardOffset = sessionMode == .wallRally ? Tunables.wallContactPocketOutwardOffset : 0
+        return lane == .left ? -(base + wallOutwardOffset) : (base + wallOutwardOffset)
     }
 
     private func contactPocketLift(for lane: Lane) -> CGFloat {
-        strokeSide(for: lane) == .forehand ? 4 : -2
+        let baseLift: CGFloat = strokeSide(for: lane) == .forehand ? 4 : -2
+        let wallVerticalOffset = sessionMode == .wallRally ? Tunables.wallContactPocketVerticalOffset : 0
+        return baseLift + wallVerticalOffset
     }
 
     private func refreshHandednessIfNeeded() {

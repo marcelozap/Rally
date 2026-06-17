@@ -445,6 +445,8 @@ enum Tunables {
     static let wallLiveExchangeTailApproachXScale: CGFloat = 0.92
     static let wallLiveExchangeTailReboundXScale: CGFloat = 1.28
     static let wallLiveExchangeTailYScale: CGFloat = 0.18
+    static let wallContactPocketOutwardOffset: CGFloat = 18
+    static let wallContactPocketVerticalOffset: CGFloat = -34
     static let wallRacketBurstAlphaMultiplier: CGFloat = 0.12
     static let wallRacketBurstScaleMultiplier: CGFloat = 0.20
     static let wallRacketBurstGlowMultiplier: CGFloat = 0.10
