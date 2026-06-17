@@ -44,6 +44,7 @@ A lock is cooperative — it only works if both agents check it first. That chec
 | 2026-06-14 | [CX] | Avatar/gameplay readability follow-up — `Rally/Features/Avatar/RallyAvatarGeometry.swift`, `Rally/Game/GameScene.swift`, `Rally/Game/Tunables.swift` | RELEASED | Build passed after stronger gameplay-scale face, connected hair mass, exposed ears/mouth, wider shoes, toe-out stance, and stronger court POV. Visual QA still decides if another anatomy pass is needed. |
 | 2026-06-16 | [CX] | Avatar readability repair — `Rally/Features/Avatar/RallyAvatarGeometry.swift`, `Rally/Features/Avatar/RallyAvatarView.swift`, `Rally/Game/GameScene.swift` head/face/feet consumption | RELEASED | Focused gameplay-scale eyes/mouth/ears, connected hair, and foot toe-out consistency pass. xcodebuild generic iOS Simulator Debug BUILD SUCCEEDED. |
 | 2026-06-17 | [CX] | Rafa avatar/gameplay readability — `Rally/Game/GameScene.swift`, `Rally/Features/Avatar/RallyAvatarGeometry.swift`, `Rally/Game/Tunables.swift` | RELEASED | Build passed after lowering connected hair fringe, strengthening gameplay-scale facial features, restoring runtime hand skin tone, and increasing ready/outside foot toe-out. Visual QA still decides if another anatomy pass is needed. |
+| 2026-06-17 | [CX] | Rafa wall-rally spawn lifecycle — `Rally/Game/GameScene.swift` | ACTIVE | Narrow heartbeat task: clear stale pending spawn token so wall-rally balls keep feeding after first spawn. |
 
 ---
 
