@@ -447,3 +447,43 @@ Recommended next Rafa task:
 ```text
 Reduce wall-mode contact fog radius/opacity another notch and suppress gesture coaching during autoplay/debug proof frames; then re-capture a contact frame.
 ```
+
+## 2026-06-16 — Autoplay Proof Overlay Suppression Pass
+
+Build:
+
+```text
+xcodebuild -project Rally.xcodeproj -scheme Rally -configuration Debug -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build
+Result: BUILD SUCCEEDED
+```
+
+Simulator:
+
+```text
+iPhone 16 Pro, iOS 18.6
+Bundle: com.marcelozap.rally
+Autoplay argument: -RallyAutoPlay
+```
+
+Screenshots:
+
+```text
+Baseline proof before this pass: /tmp/rally_visual_qa/autoplay_current_193418.png
+After wall popup tighten: /tmp/rally_visual_qa/autoplay_after_popup_tighten_194355.png
+After proof overlay suppression: /tmp/rally_visual_qa/autoplay_after_proof_overlay_suppression_200255.png
+After live aura / return-pulse clamp: /tmp/rally_visual_qa/autoplay_after_contact_overlay_trim_201848.png
+```
+
+Findings:
+
+- Autoplay/debug proof frames now suppress the wall-read training overlays (`SWIPE UP`, side coaching, anticipation bar, anticipation fill, and contact timing ring), leaving the screenshot focused on the rally state instead of tutorial chrome.
+- Wall-mode contact score popup is smaller, softer, and offset higher/farther from the avatar, so `PERFECT` no longer sits directly over the player face/racket in proof frames.
+- Ball proxy/live-exchange aura and return impact pulse now use smaller wall-specific scale/alpha/glow knobs.
+- The player face, racket, shoes, score, lives, and exit chrome are readable in the captured proof frame.
+- Remaining issue: a broad cyan/cream contact glow still exists around the wall-exchange ball. The overlay clutter was removed, but the next pass should replace that residual bloom with a true directional comet/spark effect rather than continuing to shave unrelated overlay alphas.
+
+Recommended next Rafa task:
+
+```text
+Replace the remaining live wall-exchange bloom with a directional comet/spark: small bright ball core, narrow outbound streak toward the wall, and no large circular aura around the avatar/racket.
+```

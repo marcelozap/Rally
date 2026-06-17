@@ -3216,7 +3216,7 @@ final class GameScene: SKScene {
         focusStrokeReadLabel?.alpha = shouldSuppressProofCoaching ? 0 : min(0.70, 0.10 + approach * 0.54)
 
         wallAnticipationBar?.position = CGPoint(x: focusPoint.x, y: focusPoint.y + Tunables.wallFocusReadLabelLift - 26)
-        wallAnticipationBar?.alpha = min(0.38, 0.04 + approach * 0.34)
+        wallAnticipationBar?.alpha = shouldSuppressProofCoaching ? 0 : min(0.38, 0.04 + approach * 0.34)
         wallAnticipationBar?.strokeColor = cueColor.withAlphaComponent(0.10 + approach * 0.18)
         wallAnticipationBar?.fillColor = UIColor(red: 0.03, green: 0.05, blue: 0.09, alpha: 0.14 + approach * 0.06)
         wallAnticipationBar?.glowWidth = 2 + approach * 3
@@ -3253,7 +3253,7 @@ final class GameScene: SKScene {
         )
         wallAnticipationFill?.position = wallAnticipationBar?.position ?? .zero
         wallAnticipationFill?.fillColor = cueColor.withAlphaComponent(0.20 + fillWidthProgress * 0.16)
-        wallAnticipationFill?.alpha = min(0.42, 0.08 + anticipationProgress * 0.26 + timingFill * 0.04)
+        wallAnticipationFill?.alpha = shouldSuppressProofCoaching ? 0 : min(0.42, 0.08 + anticipationProgress * 0.26 + timingFill * 0.04)
         wallAnticipationFill?.glowWidth = 4 + fillWidthProgress * 6
         wallAnticipationFill?.xScale = 1.0 + (anticipationProgress > 0.78 ? 0.04 : 0)
 
@@ -3264,8 +3264,10 @@ final class GameScene: SKScene {
         contactTimingRing?.glowWidth = 2 + anticipationProgress * 5 + fillWidthProgress * 2
         contactTimingRing?.lineWidth = 1.2 + (anticipationProgress > 0.78 ? 0.4 : 0) + (absDelta <= greatWindow ? 0.3 : 0)
         contactTimingRing?.setScale(ringScale)
-        contactTimingRing?.alpha = ringAlpha
-        if anticipationProgress > 0.92, contactTimingRing?.action(forKey: "contactPulse") == nil {
+        contactTimingRing?.alpha = shouldSuppressProofCoaching ? 0 : ringAlpha
+        if !shouldSuppressProofCoaching,
+            anticipationProgress > 0.92,
+            contactTimingRing?.action(forKey: "contactPulse") == nil {
             contactTimingRing?.run(.sequence([
                 .group([
                     .scale(to: ringScale * 1.12, duration: 0.08),
@@ -5101,10 +5103,12 @@ final class GameScene: SKScene {
         label.text = burstText
         let wallMode = sessionMode == .wallRally
         let fontScale = wallMode ? Tunables.wallTimingPopupFontScale : 1
+        let labelAlpha = wallMode ? Tunables.wallTimingPopupLabelAlpha : 1.0
+        let shadowAlpha = wallMode ? Tunables.wallTimingPopupShadowAlpha : 0.62
         label.fontSize = (quality == .perfect ? 22 : 16) * fontScale
         label.fontColor = quality == .perfect
-            ? UIColor(red: 1.0, green: 0.84, blue: 0.18, alpha: 1)
-            : UIColor.white.withAlphaComponent(0.92)
+            ? UIColor(red: 1.0, green: 0.84, blue: 0.18, alpha: labelAlpha)
+            : UIColor.white.withAlphaComponent(0.92 * labelAlpha)
         let sideOffsetMagnitude = wallMode ? Tunables.wallTimingPopupSideOffset : 20
         let sideOffset: CGFloat = strokeSide == .backhand ? -sideOffsetMagnitude : sideOffsetMagnitude
         let yOffset = wallMode ? Tunables.wallTimingPopupYOffset : 18
@@ -5129,7 +5133,7 @@ final class GameScene: SKScene {
         let fadeDuration = max(0.08, Tunables.timingPopupDuration - 0.08)
         label.run(.sequence([
             .group([
-                .fadeAlpha(to: 1.0, duration: 0.06),
+                .fadeAlpha(to: labelAlpha, duration: 0.06),
                 .scale(to: peakScale, duration: 0.08),
                 .moveBy(x: 0, y: 4, duration: 0.08)
             ]),
@@ -5142,7 +5146,7 @@ final class GameScene: SKScene {
         ]))
         shadow.run(.sequence([
             .group([
-                .fadeAlpha(to: 0.62, duration: 0.06),
+                .fadeAlpha(to: shadowAlpha, duration: 0.06),
                 .moveBy(x: 0, y: 3, duration: 0.08)
             ]),
             .group([
@@ -5385,10 +5389,10 @@ final class GameScene: SKScene {
 
         let impactPulse = SKShapeNode(circleOfRadius: Tunables.ballRadiusPoints * 0.74)
         impactPulse.position = endPoint
-        impactPulse.fillColor = color.withAlphaComponent(0.14)
-        impactPulse.strokeColor = UIColor.white.withAlphaComponent(0.26)
+        impactPulse.fillColor = color.withAlphaComponent(0.06)
+        impactPulse.strokeColor = UIColor.white.withAlphaComponent(0.10)
         impactPulse.lineWidth = 1.1
-        impactPulse.glowWidth = 8
+        impactPulse.glowWidth = Tunables.wallReturnImpactPulseGlowWidth
         impactPulse.alpha = 0
         impactPulse.zPosition = 65
         addChild(impactPulse)
@@ -7643,8 +7647,9 @@ final class BallNode: SKShapeNode {
 
         warningRingNode.alpha = 0
         focusRingNode.alpha = 0
-        auraNode.alpha = max(0.12, frame.shadowAlpha * 0.62)
-        coreNode.alpha = max(0.18, frame.shadowAlpha * 0.82)
+        auraNode.alpha = max(0.04, frame.shadowAlpha * 0.62 * Tunables.wallLiveExchangeAuraAlphaMultiplier)
+        auraNode.setScale(Tunables.wallLiveExchangeAuraScale)
+        coreNode.alpha = max(0.18, frame.shadowAlpha * 0.82 * Tunables.wallLiveExchangeCoreAlphaMultiplier)
         let reboundSpeedBoost: CGFloat = frame.phase == .wallRebound ? 1.0 : 0.42
         tailNode.alpha = 0.08 + reboundSpeedBoost * 0.28
         tailNode.xScale = 0.92 + reboundSpeedBoost * 0.46
@@ -7668,10 +7673,12 @@ final class BallNode: SKShapeNode {
     }
 
     func applyWallContactProxyReadability(progress: CGFloat) {
-        glowWidth = Tunables.wallContactProxyBallGlowWidth
+        glowWidth = Tunables.wallContactProxyBallGlowWidth * 0.35
         warningRingNode.alpha = 0
         focusRingNode.alpha = Tunables.wallContactProxyBallFocusAlpha * max(0, 1 - progress * 0.65)
+        focusRingNode.setScale(Tunables.wallContactProxyBallFocusScale)
         auraNode.alpha = Tunables.wallContactProxyBallAuraAlpha * max(0.2, 1 - progress * 0.5)
+        auraNode.setScale(Tunables.wallContactProxyBallAuraScale)
         coreNode.alpha = Tunables.wallContactProxyBallCoreAlpha
         coreNode.setScale(Tunables.wallBallCoreScaleScalar)
         tailNode.alpha = 0.08
@@ -7681,7 +7688,9 @@ final class BallNode: SKShapeNode {
         glowWidth = Tunables.wallContactProxyBallGlowWidth * 0.42
         warningRingNode.alpha = 0
         focusRingNode.alpha = 0
+        focusRingNode.setScale(Tunables.wallContactProxyBallFocusScale)
         auraNode.alpha = Tunables.wallContactProxyBallAuraAlpha * 0.22
+        auraNode.setScale(Tunables.wallContactProxyBallAuraScale)
         coreNode.alpha = Tunables.wallContactProxyBallCoreAlpha
         coreNode.setScale(Tunables.wallBallCoreScaleScalar * 0.92)
         tailNode.alpha = 0.06
