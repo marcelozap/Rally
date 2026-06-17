@@ -94,6 +94,21 @@ enum Tunables {
     /// past `requestedAt + delay + grace`, scene timing likely overtook the
     /// callback, so the empty-court watchdog can safely schedule a fresh ball.
     static let wallSpawnWatchdogGraceSeconds: TimeInterval = 0.38
+
+    static func wallSpawnWatchdogDeadline(
+        requestedAt currentTime: TimeInterval,
+        delay: TimeInterval
+    ) -> TimeInterval {
+        currentTime + delay + wallSpawnWatchdogGraceSeconds
+    }
+
+    static func isWallSpawnWatchdogExpired(
+        now currentTime: TimeInterval,
+        deadline: TimeInterval
+    ) -> Bool {
+        currentTime > deadline
+    }
+
     static let wallContactRingRadius: CGFloat = 38
     static let wallApproachWindowRatio: CGFloat = 0.50
     static let wallSurfaceHeight: CGFloat = 20

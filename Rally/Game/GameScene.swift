@@ -3424,7 +3424,10 @@ final class GameScene: SKScene {
         guard activeBalls.isEmpty, activeExchanges.isEmpty else { return }
         let token = UUID()
         pendingWallSpawnToken = token
-        pendingWallSpawnDeadline = ProcessInfo.processInfo.systemUptime + delay + Tunables.wallSpawnWatchdogGraceSeconds
+        pendingWallSpawnDeadline = Tunables.wallSpawnWatchdogDeadline(
+            requestedAt: ProcessInfo.processInfo.systemUptime,
+            delay: delay
+        )
         DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
             guard let self else { return }
             guard self.pendingWallSpawnToken == token else { return }
@@ -3467,7 +3470,10 @@ final class GameScene: SKScene {
     private func clearExpiredWallSpawnToken() {
         guard pendingWallSpawnToken != nil,
               let deadline = pendingWallSpawnDeadline,
-              ProcessInfo.processInfo.systemUptime > deadline
+              Tunables.isWallSpawnWatchdogExpired(
+                now: ProcessInfo.processInfo.systemUptime,
+                deadline: deadline
+              )
         else { return }
 
         clearPendingWallSpawnToken()

@@ -183,6 +183,50 @@ final class WallRallyEscalationTests: XCTestCase {
         XCTAssertGreaterThan(late.speedScalar, 0.80)
     }
 
+    // MARK: - wall spawn watchdog
+
+    func testWallSpawnWatchdogDeadlineRespectsScheduledDelayPlusGrace() {
+        let requestedAt: TimeInterval = 100
+        let delay: TimeInterval = 0.68
+
+        let deadline = Tunables.wallSpawnWatchdogDeadline(
+            requestedAt: requestedAt,
+            delay: delay
+        )
+
+        XCTAssertEqual(
+            deadline,
+            requestedAt + delay + Tunables.wallSpawnWatchdogGraceSeconds,
+            accuracy: 1e-9
+        )
+        XCTAssertFalse(
+            Tunables.isWallSpawnWatchdogExpired(now: requestedAt + delay, deadline: deadline)
+        )
+        XCTAssertFalse(
+            Tunables.isWallSpawnWatchdogExpired(now: deadline, deadline: deadline)
+        )
+        XCTAssertTrue(
+            Tunables.isWallSpawnWatchdogExpired(now: deadline + 0.001, deadline: deadline)
+        )
+    }
+
+    func testWallSpawnWatchdogUsesOneClockDomainForRequestAndExpiry() {
+        let requestedAt: TimeInterval = 1_000
+        let delay: TimeInterval = 0.22
+
+        let deadline = Tunables.wallSpawnWatchdogDeadline(
+            requestedAt: requestedAt,
+            delay: delay
+        )
+
+        XCTAssertFalse(
+            Tunables.isWallSpawnWatchdogExpired(
+                now: requestedAt + delay * 0.5,
+                deadline: deadline
+            )
+        )
+    }
+
     // MARK: - survival miss copy priority
 
     func testSurvivalMissCopyShowsResetForMeaningfulNonLastLifeBreak() {
