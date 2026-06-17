@@ -180,6 +180,7 @@ final class GameScene: SKScene {
     private var frameStopUntil: TimeInterval = 0
     private var pendingWallSpawnToken: UUID?
     private var pendingWallSpawnDeadline: TimeInterval?
+    private var wallEmptyCourtSince: TimeInterval?
     private var isDying = false
     private var sessionEnded = false
     private var betweenPointLiftUntil: TimeInterval = 0
@@ -2053,9 +2054,7 @@ final class GameScene: SKScene {
             currentBPM = wallTempoBPM(for: matchPace)
             currentTravelSeconds = wallTravelSeconds()
             clearExpiredWallSpawnToken()
-            if activeBalls.isEmpty, activeExchanges.isEmpty, pendingWallSpawnToken == nil {
-                scheduleWallBall(after: 0.22)
-            }
+            maintainWallFeed(currentTime: currentTime)
         }
         #if DEBUG
         updateWallFeedDebugLabel()
@@ -3552,6 +3551,29 @@ final class GameScene: SKScene {
             self.clearPendingWallSpawnToken()
             self.spawnBall(note)
         }
+    }
+
+    private func maintainWallFeed(currentTime: TimeInterval) {
+        guard sessionMode == .wallRally, !sessionEnded, !isCountingDown else { return }
+
+        let courtIsEmpty = activeBalls.isEmpty && activeExchanges.isEmpty
+        guard courtIsEmpty else {
+            wallEmptyCourtSince = nil
+            return
+        }
+
+        let emptySince = wallEmptyCourtSince ?? currentTime
+        wallEmptyCourtSince = emptySince
+        guard pendingWallSpawnToken == nil else { return }
+
+        let emptyDuration = currentTime - emptySince
+        let needsRescue = emptyDuration >= Tunables.wallEmptyCourtRescueSeconds
+        #if DEBUG
+        if needsRescue {
+            recordWallFeedDebugEvent(String(format: "rescue %.2fs", emptyDuration))
+        }
+        #endif
+        scheduleWallBall(after: needsRescue ? Tunables.wallFeedRescueDelaySeconds : Tunables.wallFeedDelaySeconds)
     }
 
     private func clearPendingWallSpawnToken() {

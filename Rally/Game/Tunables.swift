@@ -90,6 +90,13 @@ enum Tunables {
     static let wallHUDScorePunchMaxScale: CGFloat = 1.10
     static let wallHUDScoreCompactThreshold: Int = 100_000
     static let wallReboundCueDurationMs: Double = 260
+    /// Normal wait before feeding the next wall-rally ball once the court is empty.
+    static let wallFeedDelaySeconds: TimeInterval = 0.22
+    /// If the court stays empty this long, feed almost immediately instead of
+    /// waiting through another normal delay. This protects the "one more try"
+    /// loop from ever feeling frozen after a lifecycle hiccup.
+    static let wallEmptyCourtRescueSeconds: TimeInterval = 0.70
+    static let wallFeedRescueDelaySeconds: TimeInterval = 0.035
     /// Extra grace after a scheduled wall-feed delay. If the token survives
     /// past `requestedAt + delay + grace`, scene timing likely overtook the
     /// callback, so the empty-court watchdog can safely schedule a fresh ball.
