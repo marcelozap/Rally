@@ -2349,7 +2349,7 @@ final class GameScene: SKScene {
         playerNose.position.x += (headAnchorX - playerNose.position.x) * 0.14
         playerNose.position.y += (headAnchorY - playerNose.position.y) * 0.14
         playerMouth?.position.x += (headAnchorX - (playerMouth?.position.x ?? 0)) * 0.14
-        playerMouth?.position.y += ((headAnchorY + RallyAvatarGeometry.mouthCenterY(scale: faceScale)) - (playerMouth?.position.y ?? 0)) * 0.14
+        playerMouth?.position.y += ((headAnchorY + 2 * gameplayScale + RallyAvatarGeometry.mouthCenterY(scale: faceScale)) - (playerMouth?.position.y ?? 0)) * 0.14
         playerMouth?.zRotation += ((RallyAvatarRebuildDefaults.Face.smileRotationDegrees * .pi / 180) + targets.headRotation * 0.2 - (playerMouth?.zRotation ?? 0)) * 0.12
         playerLeftLens?.position.x += (targets.headX - (playerLeftLens?.position.x ?? 0)) * 0.14
         playerLeftLens?.position.y += (headAnchorY - (playerLeftLens?.position.y ?? 0)) * 0.12
@@ -2512,8 +2512,10 @@ final class GameScene: SKScene {
             ?? playerRacketBaseColor
         playerRacketHandle.strokeColor = flashColor
         playerRacketHandle.fillColor = swingPalette.core.withAlphaComponent(0.74 + contactFlash * 0.16)
-        playerLeadHand.fillColor = playerLeadArm.fillColor
-        playerTrailHand.fillColor = playerTrailArm.fillColor
+        let liveSkinColor = avatarAppearance?.skinUIColor
+            ?? UIColor(red: 0.88, green: 0.68, blue: 0.52, alpha: 1)
+        playerLeadHand.fillColor = liveSkinColor.blended(withFraction: 0.06, of: .white) ?? liveSkinColor
+        playerTrailHand.fillColor = liveSkinColor.blended(withFraction: 0.04, of: .white) ?? liveSkinColor
         playerRacketStrings.forEach { string in
             string.alpha = 0.38 + contactFlash * 0.44 + qualityPose.stringBoost * qualityFlash
             string.fillColor = UIColor.white

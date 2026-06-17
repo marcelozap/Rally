@@ -27,11 +27,11 @@ enum RallyAvatarGeometry {
     static let mouthWidthRatio: CGFloat = 0.34
     static let shoulderWidening: CGFloat = 1.30
     static let jawNarrowing: CGFloat = 0.12
-    static let minGameplayEyeWidth: CGFloat = 5.4
-    static let minGameplayEyeHeight: CGFloat = 4.3
-    static let minGameplayBrowWidth: CGFloat = 7.4
-    static let minGameplayMouthHalfWidth: CGFloat = 9.0
-    static let minGameplayMouthCurve: CGFloat = 0.82
+    static let minGameplayEyeWidth: CGFloat = 6.2
+    static let minGameplayEyeHeight: CGFloat = 4.8
+    static let minGameplayBrowWidth: CGFloat = 8.6
+    static let minGameplayMouthHalfWidth: CGFloat = 10.6
+    static let minGameplayMouthCurve: CGFloat = 1.05
 
     static func headTop(scale: CGFloat) -> CGFloat { headHeight * 0.5 * scale }
     static func headBottom(scale: CGFloat) -> CGFloat { -headHeight * 0.5 * scale }
@@ -64,7 +64,7 @@ enum RallyAvatarGeometry {
     /// Small vertical lift applied to the FRONT hair. The hair path is authored
     /// around the head ellipse, so this must stay subtle: too high reads bald /
     /// disconnected, too low covers the face. Both renderers call this value.
-    static func hairFringeLift(scale: CGFloat) -> CGFloat { 0.52 * scale }
+    static func hairFringeLift(scale: CGFloat) -> CGFloat { 0.18 * scale }
 
     static func handRadius(scale: CGFloat, armThickness: CGFloat = 13.2) -> CGFloat {
         armThickness * 0.58 * scale
@@ -169,9 +169,9 @@ enum RallyAvatarGeometry {
     static func nosePath(scale: CGFloat) -> CGPath {
         let path = CGMutablePath()
         let y = noseCenterY(scale: scale)
-        path.move(to: CGPoint(x: max(0.8 * scale, 0.75), y: y + max(2.1 * scale, 1.8)))
+        path.move(to: CGPoint(x: max(1.0 * scale, 0.9), y: y + max(2.6 * scale, 2.1)))
         path.addQuadCurve(
-            to: CGPoint(x: min(-1.0 * scale, -0.9), y: y - max(2.4 * scale, 2.0)),
+            to: CGPoint(x: min(-1.2 * scale, -1.0), y: y - max(2.9 * scale, 2.3)),
             control: CGPoint(x: -0.2 * scale, y: y - 0.2 * scale)
         )
         return path
