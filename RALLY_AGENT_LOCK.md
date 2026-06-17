@@ -43,6 +43,7 @@ A lock is cooperative — it only works if both agents check it first. That chec
 | 2026-06-14 | [CX] | Avatar face/feet readability — `Rally/Features/Avatar/RallyAvatarGeometry.swift`, `Rally/Game/GameScene.swift`, `Rally/Game/Tunables.swift` | RELEASED | Committed as `3617aee`: gameplay-scale face, softer ears/mouth, outward shoe stance, and stronger court POV. |
 | 2026-06-14 | [CX] | Avatar/gameplay readability follow-up — `Rally/Features/Avatar/RallyAvatarGeometry.swift`, `Rally/Game/GameScene.swift`, `Rally/Game/Tunables.swift` | RELEASED | Build passed after stronger gameplay-scale face, connected hair mass, exposed ears/mouth, wider shoes, toe-out stance, and stronger court POV. Visual QA still decides if another anatomy pass is needed. |
 | 2026-06-16 | [CX] | Avatar readability repair — `Rally/Features/Avatar/RallyAvatarGeometry.swift`, `Rally/Features/Avatar/RallyAvatarView.swift`, `Rally/Game/GameScene.swift` head/face/feet consumption | RELEASED | Focused gameplay-scale eyes/mouth/ears, connected hair, and foot toe-out consistency pass. xcodebuild generic iOS Simulator Debug BUILD SUCCEEDED. |
+| 2026-06-17 | [CX] | Rafa avatar/gameplay readability — `Rally/Game/GameScene.swift`, `Rally/Features/Avatar/RallyAvatarGeometry.swift`, `Rally/Game/Tunables.swift` | ACTIVE | Narrow heartbeat task: reduce puppet read, improve gameplay-scale face/feet/camera only. |
 
 ---
 
