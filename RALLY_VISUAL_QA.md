@@ -701,3 +701,33 @@ Findings:
 - The previous proof path reached zero-score Game Over within five seconds, matching the owner report that balls were not coming through clearly.
 - The opening no-life-loss grace keeps the first visible feeds in gameplay instead of instantly ending the run.
 - Remaining issue: proof mode still misses early feeds, so the next Rafa task should tune early contact generosity/autoplay timing and make the first successful hit easier to read.
+
+## 2026-06-18 — Gameplay POV Readability Tuning
+
+Build:
+
+```text
+xcodebuild -project Rally.xcodeproj -scheme Rally -configuration Debug -destination 'platform=iOS Simulator,id=CA3029AB-A788-4370-BD71-E556B01C8FE6' CODE_SIGNING_ALLOWED=NO build
+Result: BUILD SUCCEEDED
+```
+
+Simulator:
+
+```text
+iPhone 16 Pro, iOS 18.6
+Bundle: com.marcelozap.rally
+Autoplay argument: -RallyAutoPlay
+```
+
+Screenshot:
+
+```text
+/tmp/rally_visual_qa/autoplay_pov_readability_060748.png
+```
+
+Findings:
+
+- The proof frame shows active scoring (`443`, x5) with a visible ball feed and no instant zero-score Game Over.
+- The gameplay player is slightly lower/smaller, leaving more visible court depth and less cramped contact space.
+- Wall-rally contact is pushed farther outside the torso/face, and the ball glow is softer so it reads as a tennis ball instead of a giant bloom.
+- Remaining issue: the avatar still needs a dedicated anatomy/face/feet pass. This pass intentionally avoided avatar identity files and only improved gameplay POV/readability.

@@ -36,7 +36,7 @@ A lock is cooperative — it only works if both agents check it first. That chec
 
 | Since (UTC date) | Agent | Area / files | Status | Notes |
 |------------------|-------|--------------|--------|-------|
-| 2026-06-18 | [CX] | Rafa gameplay POV readability — `Rally/Game/GameScene.swift`, `Rally/Game/Tunables.swift` | ACTIVE | Shift gameplay framing toward a more realistic tennis read: clearer depth, less cramped avatar/ball contact, and better first-glance ball visibility without touching avatar identity files. |
+| 2026-06-18 | [CX] | Rafa gameplay POV readability — `Rally/Game/GameScene.swift`, `Rally/Game/Tunables.swift` | RELEASED | Build/proof passed after lowering and slightly shrinking the gameplay player, moving wall-rally contact farther outside the body, and reducing ball bloom. Proof: `/tmp/rally_visual_qa/autoplay_pov_readability_060748.png`. |
 | 2026-06-18 | [CX] | Rafa opening contact timing — `Rally/Game/GameScene.swift`, `Rally/Game/Tunables.swift` | RELEASED | Build/proof passed: `-RallyAutoPlay` now reaches live scoring contact (`443`, x5) instead of zero-score Game Over by using proof-mode contact timing plus cull-boundary contact conversion. |
 | 2026-06-18 | [CX] | Rafa opening rally grace — `Rally/Game/GameScene.swift`, `Rally/Game/Tunables.swift` | RELEASED | Build/proof passed: first zero-score opening misses no longer spend lives during a short opening grace window, preventing instant Game Over before the feed is legible. |
 | 2026-06-18 | [CX] | Rafa wall-rally feed readability — `Rally/Game/GameScene.swift`, `Rally/Game/Tunables.swift` | RELEASED | Build passed after shortening the post-GO opening wall feed and wiring the existing feed cue so the first balls visibly travel toward the contact pocket. |

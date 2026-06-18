@@ -288,8 +288,8 @@ enum Tunables {
     static let gameplayCourtNetDepthRatio: CGFloat = 0.47
     static let gameplayCourtNetNearHalfScalar: CGFloat = 0.62
     static let gameplayCourtNetFarHalfScalar: CGFloat = 0.98
-    static let gameplayPlayerRootYRatio: CGFloat = 0.142
-    static let gameplayPlayerVisualScale: CGFloat = 0.72
+    static let gameplayPlayerRootYRatio: CGFloat = 0.132
+    static let gameplayPlayerVisualScale: CGFloat = 0.67
     /// SpriteKit gameplay needs shoes smaller than the locker hero view because
     /// the court camera compresses the feet near the bottom of the frame.
     static let gameplayShoeVisualScale: CGFloat = 0.86
@@ -453,16 +453,16 @@ enum Tunables {
     static let wallStrikeTransitionSweepPeakAlpha: CGFloat = 0.055
 
     /// Wall-mode ball/fx stays readable without swallowing the player body.
-    static let wallBallVisualScalar: CGFloat = 0.36
-    static let wallBallAuraAlphaScalar: CGFloat = 0.28
+    static let wallBallVisualScalar: CGFloat = 0.32
+    static let wallBallAuraAlphaScalar: CGFloat = 0.22
     static let wallBallCoreAlphaScalar: CGFloat = 0.72
-    static let wallBallCoreScaleScalar: CGFloat = 0.76
+    static let wallBallCoreScaleScalar: CGFloat = 0.72
     static let wallBallContactScaleBoost: CGFloat = 0.0
     static let wallBallAuraMaxAlpha: CGFloat = 0.018
     static let wallBallAuraScale: CGFloat = 0.24
     static let wallBallWarningMaxAlpha: CGFloat = 0.045
     static let wallBallWarningScale: CGFloat = 0.34
-    static let wallBallFocusMaxAlpha: CGFloat = 0.052
+    static let wallBallFocusMaxAlpha: CGFloat = 0.044
     static let wallBallFocusScale: CGFloat = 0.32
     static let wallBallRingGlowWidth: CGFloat = 0.75
     static let wallBallTailAlphaMultiplier: CGFloat = 0.16
@@ -543,8 +543,8 @@ enum Tunables {
     static let wallLiveExchangeTailApproachXScale: CGFloat = 1.08
     static let wallLiveExchangeTailReboundXScale: CGFloat = 1.58
     static let wallLiveExchangeTailYScale: CGFloat = 0.09
-    static let wallContactPocketOutwardOffset: CGFloat = 56
-    static let wallContactPocketVerticalOffset: CGFloat = -94
+    static let wallContactPocketOutwardOffset: CGFloat = 68
+    static let wallContactPocketVerticalOffset: CGFloat = -86
     static let wallRacketBurstAlphaMultiplier: CGFloat = 0.12
     static let wallRacketBurstScaleMultiplier: CGFloat = 0.20
     static let wallRacketBurstGlowMultiplier: CGFloat = 0.10
