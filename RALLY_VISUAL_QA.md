@@ -448,6 +448,44 @@ Recommended next Rafa task:
 Reduce wall-mode contact fog radius/opacity another notch and suppress gesture coaching during autoplay/debug proof frames; then re-capture a contact frame.
 ```
 
+## 2026-06-18 — Muted Autoplay Feed Proof
+
+Build:
+
+```text
+xcodebuild -project Rally.xcodeproj -scheme Rally -configuration Debug -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build
+Result: BUILD SUCCEEDED
+```
+
+Simulator:
+
+```text
+iPhone 16 Pro, iOS 18.6
+Bundle: com.marcelozap.rally
+Autoplay argument: -RallyAutoPlay
+Sound default: muted
+```
+
+Screenshots:
+
+```text
+Home sound-toggle proof: /tmp/rally_sound_toggle_home_015946.png
+Gameplay muted autoplay proof: /tmp/rally_visual_qa/autoplay_after_sound_default_off_021347.png
+```
+
+Findings:
+
+- Fresh autoplay proof confirms the wall-rally feed is alive: score is at 330, lives are intact, and a ball is visible traveling through the court.
+- The new sound default is safe for unattended runs: fresh/default and `-RallyAutoPlay` launches start muted, with a visible speaker toggle on Home and a Sound toggle in game settings.
+- The court depth and compact top chrome remain readable in the proof frame.
+- Remaining issue: the broad cyan wall-return/contact glow still occupies too much space near the avatar and can make the player read toy-like. Do not keep shaving unrelated UI; replace this with a tighter directional comet/spark payoff.
+
+Recommended next Rafa task:
+
+```text
+Replace the broad wall-return/contact glow with a narrow directional comet: small bright ball core, thin travel streak toward the wall, and no large rectangular/circular bloom over the avatar lane.
+```
+
 ## 2026-06-16 — Autoplay Proof Overlay Suppression Pass
 
 Build:
