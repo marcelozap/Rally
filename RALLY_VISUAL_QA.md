@@ -601,3 +601,42 @@ Recommended next Rafa task:
 ```text
 Replace residual contact blur with explicit particles: 6-10 small outbound sparks/dust puffs, no large filled glow behind the ball.
 ```
+
+## 2026-06-18 — Directional Sparks / Strike-Gate Quieting Pass
+
+Build:
+
+```text
+xcodebuild -project Rally.xcodeproj -scheme Rally -configuration Debug -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build
+Result: BUILD SUCCEEDED
+```
+
+Simulator:
+
+```text
+iPhone 16 Pro, iOS 18.6
+Bundle: com.marcelozap.rally
+Autoplay argument: -RallyAutoPlay
+```
+
+Screenshots:
+
+```text
+After directional sparks: /tmp/rally_visual_qa/autoplay_after_directional_sparks_025241.png
+After lane aura mute: /tmp/rally_visual_qa/autoplay_after_lane_aura_mute_025943.png
+After strike-gate outline + contact-pocket shift: /tmp/rally_visual_qa/autoplay_after_contact_pocket_shift_031951.png
+```
+
+Findings:
+
+- Wall contact payoff now uses small directional tennis-dust sparks that travel away from the avatar instead of relying on one broad filled cloud.
+- The side-lane aura and wall strike gate are quieted for wall rally mode; the gate now reads as a thin outline cue instead of a large glowing rounded rectangle.
+- The wall contact pocket is moved farther outward and lower so the ball no longer sits directly over the avatar's face during the strike read.
+- The final proof frame shows the ball readable up-court, the avatar face unobscured, and the racket/contact side clearer than the prior fog-heavy pass.
+- Remaining issue: the avatar anatomy and camera are still not pro-quality; feet turn in, shoulders/head feel puppet-like, and the camera remains too flat for realistic tennis depth.
+
+Recommended next Rafa task:
+
+```text
+Gameplay camera/anatomy pass: shift to a more realistic over-the-shoulder tennis POV and fix the grounded athletic stance so feet angle outward, shoulders read, and racket contact happens beside the body.
+```

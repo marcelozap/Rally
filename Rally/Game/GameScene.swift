@@ -3189,6 +3189,24 @@ final class GameScene: SKScene {
         guard let gate else { return }
         let palette = swingTrailPalette(intent: swingVisualIntent, lane: lane)
         let live = min(1, max(intensity, approach))
+        if sessionMode == .wallRally {
+            gate.alpha = Tunables.wallStrikeGateQuietAlpha + approach * 0.10 + intensity * 0.05
+            gate.fillColor = palette.glow.withAlphaComponent(Tunables.wallStrikeGateFillAlpha)
+            gate.strokeColor = palette.core.withAlphaComponent(
+                Tunables.wallStrikeGateStrokeAlpha
+                    + approach * Tunables.wallStrikeGateApproachStrokeAlpha
+                    + intensity * 0.08
+            )
+            gate.glowWidth = Tunables.wallStrikeGateGlowBase + approach * Tunables.wallStrikeGateApproachGlow
+            gate.lineWidth = 0.9 + approach * 0.35
+            gate.xScale = 1.0 + approach * Tunables.wallStrikeGateApproachXScale
+            gate.yScale = 0.72 + approach * Tunables.wallStrikeGateApproachYScale
+            gate.zRotation = (lane == .right ? 1 : -1) * approach * 0.025
+            if live > 0.85 {
+                gate.strokeColor = palette.tip.withAlphaComponent(0.36 + approach * 0.12)
+            }
+            return
+        }
         let wallBoost: CGFloat = sessionMode == .wallRally ? 1.48 : 1.0
         let quietLaneAlpha: CGFloat = sessionMode == .wallRally ? 0.06 : 0.14
         gate.alpha = min(1, quietLaneAlpha + intensity * 0.52 * wallBoost + approach * 0.32 * wallBoost)
@@ -5168,6 +5186,14 @@ final class GameScene: SKScene {
             .removeFromParent()
         ]))
 
+        stageWallDirectionalContactSparks(
+            at: point,
+            lane: lane,
+            quality: quality,
+            color: color,
+            duration: ringDuration
+        )
+
         let sparkCount: Int
         switch quality {
         case .perfect: sparkCount = Tunables.contactSparkPerfectCount
@@ -5211,6 +5237,58 @@ final class GameScene: SKScene {
                     .removeFromParent()
                 ]))
             }
+        }
+    }
+
+    private func stageWallDirectionalContactSparks(
+        at point: CGPoint,
+        lane: Lane,
+        quality: HitQuality,
+        color: UIColor,
+        duration: TimeInterval
+    ) {
+        guard quality != .miss else { return }
+
+        let direction: CGFloat = lane == .right ? 1 : -1
+        let count = quality == .perfect
+            ? Tunables.wallDirectionalSparkCount + 2
+            : Tunables.wallDirectionalSparkCount
+        let travel = Tunables.wallDirectionalSparkTravel * (quality == .good ? 0.82 : 1)
+        let coreSize = Tunables.wallDirectionalSparkCoreSize
+        let sparkDuration = max(duration, Tunables.wallDirectionalSparkDuration)
+
+        for index in 0..<count {
+            let spread = CGFloat(index) - CGFloat(count - 1) * 0.5
+            let spark = SKShapeNode(
+                rectOf: CGSize(
+                    width: coreSize * (index.isMultiple(of: 3) ? 1.85 : 1.35),
+                    height: coreSize * 0.72
+                ),
+                cornerRadius: coreSize * 0.36
+            )
+            spark.position = CGPoint(
+                x: point.x - direction * CGFloat(index % 3) * 1.8,
+                y: point.y + spread * 0.75
+            )
+            spark.fillColor = color.withAlphaComponent(index.isMultiple(of: 2) ? 0.88 : 0.62)
+            spark.strokeColor = .clear
+            spark.glowWidth = index.isMultiple(of: 2) ? 0.9 : 0.35
+            spark.zRotation = direction * (0.12 + CGFloat(index % 4) * 0.045)
+            spark.zPosition = 65.5
+            addChild(spark)
+
+            let stagger = CGFloat(index % 4) * 0.045
+            let xTravel = direction * travel * (0.72 + stagger)
+            let yTravel = Tunables.wallDirectionalSparkLift + spread * Tunables.wallDirectionalSparkSpread
+            spark.run(.sequence([
+                .group([
+                    .moveBy(x: xTravel, y: yTravel, duration: sparkDuration),
+                    .scaleX(to: 0.22, duration: sparkDuration),
+                    .scaleY(to: 0.18, duration: sparkDuration),
+                    .fadeOut(withDuration: sparkDuration)
+                ]),
+                .removeFromParent()
+            ]))
         }
     }
 

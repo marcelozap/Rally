@@ -381,6 +381,14 @@ enum Tunables {
     static let wallSwingTrailLineWidthMultiplier: CGFloat = 0.62
     static let wallSwingTrailGlowWidthMultiplier: CGFloat = 0.12
     static let wallSwingTrailTipAlphaMultiplier: CGFloat = 0.34
+    static let wallStrikeGateQuietAlpha: CGFloat = 0.035
+    static let wallStrikeGateFillAlpha: CGFloat = 0.0
+    static let wallStrikeGateStrokeAlpha: CGFloat = 0.22
+    static let wallStrikeGateApproachStrokeAlpha: CGFloat = 0.18
+    static let wallStrikeGateGlowBase: CGFloat = 0.2
+    static let wallStrikeGateApproachGlow: CGFloat = 2.2
+    static let wallStrikeGateApproachXScale: CGFloat = 0.10
+    static let wallStrikeGateApproachYScale: CGFloat = 0.05
 
     // MARK: - Tennis physics (post-hit impulse; swipe angle sets direction)
 
@@ -447,12 +455,12 @@ enum Tunables {
     static let wallBallTailXScaleMultiplier: CGFloat = 0.22
     static let wallBallTailYScaleMultiplier: CGFloat = 0.30
     static let wallBallTailOffsetMultiplier: CGFloat = 0.50
-    static let wallLaneGlowBaseAlpha: CGFloat = 0.025
-    static let wallLaneGlowRestAlpha: CGFloat = 0.035
-    static let wallLaneGlowPeakPerfect: CGFloat = 0.14
-    static let wallLaneGlowPeakGreat: CGFloat = 0.09
-    static let wallLaneGlowPeakGood: CGFloat = 0.06
-    static let wallLaneGlowWidth: CGFloat = 4
+    static let wallLaneGlowBaseAlpha: CGFloat = 0.006
+    static let wallLaneGlowRestAlpha: CGFloat = 0.008
+    static let wallLaneGlowPeakPerfect: CGFloat = 0.034
+    static let wallLaneGlowPeakGreat: CGFloat = 0.026
+    static let wallLaneGlowPeakGood: CGFloat = 0.018
+    static let wallLaneGlowWidth: CGFloat = 1.2
     static let wallLaneMissWrongAlpha: CGFloat = 0.025
     static let wallLaneMissCorrectPeakAlpha: CGFloat = 0.16
     static let wallLaneMissCorrectRestAlpha: CGFloat = 0.07
@@ -481,13 +489,21 @@ enum Tunables {
     static let wallContactImprintStreakAlpha: CGFloat = 0.42
     static let wallContactImprintStreakGlow: CGFloat = 0.35
     static let wallContactImprintStreakTravel: CGFloat = 22
-    static let wallContactBurstRingScaleMultiplier: CGFloat = 0.14
-    static let wallContactBurstFlashScaleMultiplier: CGFloat = 0.052
-    static let wallContactBurstAlphaMultiplier: CGFloat = 0.055
-    static let wallContactBurstGlowMultiplier: CGFloat = 0.035
-    static let wallContactSparkGlowMultiplier: CGFloat = 0.055
+    static let wallContactBurstRingScaleMultiplier: CGFloat = 0.075
+    static let wallContactBurstFlashScaleMultiplier: CGFloat = 0.028
+    static let wallContactBurstAlphaMultiplier: CGFloat = 0.030
+    static let wallContactBurstGlowMultiplier: CGFloat = 0.018
+    static let wallContactSparkGlowMultiplier: CGFloat = 0.030
     static let wallContactSparkStreakWidth: CGFloat = 10
     static let wallContactSparkStreakHeight: CGFloat = 2
+    /// Replaces the old broad wall-contact cloud with small directional
+    /// tennis-dust flecks that travel away from the avatar.
+    static let wallDirectionalSparkCount: Int = 9
+    static let wallDirectionalSparkTravel: CGFloat = 74
+    static let wallDirectionalSparkSpread: CGFloat = 5.4
+    static let wallDirectionalSparkLift: CGFloat = 22
+    static let wallDirectionalSparkCoreSize: CGFloat = 3.2
+    static let wallDirectionalSparkDuration: TimeInterval = 0.18
     static let wallContactPocketMaxAlpha: CGFloat = 0.20
     static let wallContactPocketBaseAlpha: CGFloat = 0.026
     static let wallContactPocketApproachAlpha: CGFloat = 0.10
@@ -496,8 +512,8 @@ enum Tunables {
     static let wallContactPocketGlowApproach: CGFloat = 1.20
     static let wallContactPocketScaleBase: CGFloat = 0.78
     static let wallContactPocketScaleApproach: CGFloat = 0.12
-    static let wallContactProxyBallAuraScale: CGFloat = 0.42
-    static let wallContactProxyBallFocusScale: CGFloat = 0.46
+    static let wallContactProxyBallAuraScale: CGFloat = 0.30
+    static let wallContactProxyBallFocusScale: CGFloat = 0.34
     static let wallReturnTrailAlphaMultiplier: CGFloat = 0.08
     static let wallReturnTrailWidthMultiplier: CGFloat = 0.24
     static let wallReturnTrailGlowMultiplier: CGFloat = 0.04
@@ -505,16 +521,16 @@ enum Tunables {
     static let wallReturnEchoAlphaMultiplier: CGFloat = 0.06
     static let wallReturnImpactPulseAlphaMultiplier: CGFloat = 0.026
     static let wallReturnImpactPulseGlowWidth: CGFloat = 0.10
-    static let wallLiveExchangeAuraScale: CGFloat = 0.20
-    static let wallLiveExchangeAuraAlphaMultiplier: CGFloat = 0.16
+    static let wallLiveExchangeAuraScale: CGFloat = 0.14
+    static let wallLiveExchangeAuraAlphaMultiplier: CGFloat = 0.0
     static let wallLiveExchangeCoreAlphaMultiplier: CGFloat = 1.0
-    static let wallLiveExchangeTailAlphaFloor: CGFloat = 0.07
-    static let wallLiveExchangeTailAlphaRebound: CGFloat = 0.20
-    static let wallLiveExchangeTailApproachXScale: CGFloat = 0.92
-    static let wallLiveExchangeTailReboundXScale: CGFloat = 1.28
-    static let wallLiveExchangeTailYScale: CGFloat = 0.18
-    static let wallContactPocketOutwardOffset: CGFloat = 22
-    static let wallContactPocketVerticalOffset: CGFloat = -28
+    static let wallLiveExchangeTailAlphaFloor: CGFloat = 0.035
+    static let wallLiveExchangeTailAlphaRebound: CGFloat = 0.12
+    static let wallLiveExchangeTailApproachXScale: CGFloat = 1.08
+    static let wallLiveExchangeTailReboundXScale: CGFloat = 1.58
+    static let wallLiveExchangeTailYScale: CGFloat = 0.09
+    static let wallContactPocketOutwardOffset: CGFloat = 56
+    static let wallContactPocketVerticalOffset: CGFloat = -94
     static let wallRacketBurstAlphaMultiplier: CGFloat = 0.12
     static let wallRacketBurstScaleMultiplier: CGFloat = 0.20
     static let wallRacketBurstGlowMultiplier: CGFloat = 0.10
