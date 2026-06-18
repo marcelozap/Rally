@@ -3616,6 +3616,7 @@ final class GameScene: SKScene {
                 self.clearPendingWallSpawnToken()
                 return
             }
+            self.pruneStrandedWallExchanges(currentTime: ProcessInfo.processInfo.systemUptime)
             guard self.activeBalls.isEmpty, self.activeExchanges.isEmpty else {
                 #if DEBUG
                 self.recordWallFeedDebugEvent("clear occupied")
@@ -3658,6 +3659,8 @@ final class GameScene: SKScene {
     private func maintainWallFeed(currentTime: TimeInterval) {
         guard sessionMode == .wallRally, !sessionEnded, !isCountingDown else { return }
 
+        pruneStrandedWallExchanges(currentTime: currentTime)
+
         let courtIsEmpty = activeBalls.isEmpty && activeExchanges.isEmpty
         guard courtIsEmpty else {
             wallEmptyCourtSince = nil
@@ -3683,6 +3686,28 @@ final class GameScene: SKScene {
         }
         #endif
         scheduleWallBall(after: needsRescue ? Tunables.wallFeedRescueDelaySeconds : Tunables.wallFeedDelaySeconds)
+    }
+
+    private func pruneStrandedWallExchanges(currentTime: TimeInterval) {
+        guard sessionMode == .wallRally, !activeExchanges.isEmpty else { return }
+
+        let before = activeExchanges.count
+        activeExchanges.removeAll { exchange in
+            let isStranded = exchange.isStranded(
+                at: currentTime,
+                grace: Tunables.wallExchangeStrandedGraceSeconds
+            )
+            if isStranded {
+                exchange.ball.removeFromParent()
+            }
+            return isStranded
+        }
+
+        #if DEBUG
+        if activeExchanges.count != before {
+            recordWallFeedDebugEvent("prune stale exchange")
+        }
+        #endif
     }
 
     private func clearPendingWallSpawnToken() {
