@@ -64,7 +64,7 @@ struct HomeView: View {
             .onAppear {
                 selectedCourt = featuredCourtVenues.contains(CourtVenue.current) ? CourtVenue.current : .wimbledonGrass
                 CourtVenue.current = selectedCourt
-                avatarAppearanceStore.sync(from: avatar)
+                avatarAppearanceStore.commitPersisted(from: avatar)
             }
         }
     }
@@ -193,7 +193,7 @@ struct HomeView: View {
         let nextIndex = (currentIndex + direction + items.count) % items.count
         withAnimation(.spring(response: 0.22, dampingFraction: 0.78)) {
             setEquippedID(items[nextIndex].id, for: selectedLoadoutCategory, avatar: avatar)
-            avatarAppearanceStore.sync(from: avatar)
+            avatarAppearanceStore.commitPersisted(from: avatar)
         }
         try? modelContext.save()
         RallySyncTriggers.pushAvatarAfterLocalSave(modelContext: modelContext)
