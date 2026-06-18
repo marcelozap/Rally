@@ -1567,13 +1567,13 @@ final class GameScene: SKScene {
             RallyAvatarPartRenderer.armTexture(skinColor: skin, scale: bodyScale, topWidth: 14.2, bottomWidth: 9.8, length: 63)
         )
 
-        // Flat sleeve cap over the shoulder joint. Circles read like puppet pins at game scale.
-        let leadSleeve = SKShapeNode(ellipseOf: CGSize(width: 26 * bodyScale, height: 14 * bodyScale))
+        // Sloped sleeve panel over the shoulder joint. Round caps read like puppet pins at game scale.
+        let leadSleeve = SKShapeNode(path: RallyAvatarGeometry.sleeveCapPath(scale: bodyScale, side: 1))
         leadSleeve.fillColor = top.blended(withFraction: 0.12, of: .white) ?? top
         leadSleeve.strokeColor = .clear
         leadSleeve.lineWidth = 0
-        leadSleeve.position = CGPoint(x: 36 * bodyScale, y: layout.torsoY + 32 * bodyScale)
-        leadSleeve.zRotation = -0.12
+        leadSleeve.position = CGPoint(x: 10 * bodyScale, y: layout.torsoY + 30 * bodyScale)
+        leadSleeve.zRotation = 0
         leadSleeve.zPosition = 3.1  // just above leadArm (3.0) to cap the joint
         root.addChild(leadSleeve)
         playerLeadSleeve = leadSleeve
@@ -1589,12 +1589,12 @@ final class GameScene: SKScene {
             RallyAvatarPartRenderer.armTexture(skinColor: skin.mixed(with: .black, ratio: 0.05), scale: bodyScale, topWidth: 13.8, bottomWidth: 9.4, length: 62)
         )
 
-        let trailSleeve = SKShapeNode(ellipseOf: CGSize(width: 25 * bodyScale, height: 13 * bodyScale))
+        let trailSleeve = SKShapeNode(path: RallyAvatarGeometry.sleeveCapPath(scale: bodyScale, side: -1))
         trailSleeve.fillColor = top.blended(withFraction: 0.08, of: .white) ?? top
         trailSleeve.strokeColor = .clear
         trailSleeve.lineWidth = 0
-        trailSleeve.position = CGPoint(x: -36 * bodyScale, y: layout.torsoY + 32 * bodyScale)
-        trailSleeve.zRotation = 0.12
+        trailSleeve.position = CGPoint(x: -10 * bodyScale, y: layout.torsoY + 30 * bodyScale)
+        trailSleeve.zRotation = 0
         trailSleeve.zPosition = 2.1  // just above trailArm (1.8), below torso front
         root.addChild(trailSleeve)
         playerTrailSleeve = trailSleeve
@@ -2464,11 +2464,11 @@ final class GameScene: SKScene {
         playerTrailShoe.position.x += (trailShoeTarget.x - playerTrailShoe.position.x) * 0.18
         playerTrailShoe.position.y += ((trailShoeTarget.y + trailFootY) - playerTrailShoe.position.y) * 0.18
         let readyToeOut = Tunables.footworkReadyToeOutRadians
-        let leadShoeRotationTarget = readyToeOut
-            + max(0, leadPlantRotation) * 0.35
+        let leadShoeRotationTarget = -readyToeOut
+            - max(0, leadPlantRotation) * 0.35
             + max(0, targets.leadLegRotation) * 0.006
-        let trailShoeRotationTarget = -readyToeOut
-            + min(0, trailPlantRotation) * 0.35
+        let trailShoeRotationTarget = readyToeOut
+            - min(0, trailPlantRotation) * 0.35
             + min(0, targets.trailLegRotation) * 0.006
         playerLeadShoe.zRotation += (leadShoeRotationTarget - playerLeadShoe.zRotation) * 0.24
         playerTrailShoe.zRotation += (trailShoeRotationTarget - playerTrailShoe.zRotation) * 0.24
