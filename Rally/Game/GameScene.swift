@@ -686,8 +686,8 @@ final class GameScene: SKScene {
         let left = SKShapeNode(ellipseOf: glowSize)
         left.position = CGPoint(x: size.width * 0.22, y: wallY - size.height * 0.06)
         left.strokeColor = .clear
-        left.fillColor = UIColor(red: 0.16, green: 0.56, blue: 0.72, alpha: 0.09)
-        left.glowWidth = 16
+        left.fillColor = UIColor(red: 0.16, green: 0.56, blue: 0.72, alpha: Tunables.wallLaneGlowBaseAlpha)
+        left.glowWidth = Tunables.wallLaneGlowWidth
         left.zPosition = -80
         addChild(left)
         leftLaneGlow = left
@@ -695,8 +695,8 @@ final class GameScene: SKScene {
         let right = SKShapeNode(ellipseOf: glowSize)
         right.position = CGPoint(x: size.width * 0.78, y: wallY - size.height * 0.06)
         right.strokeColor = .clear
-        right.fillColor = UIColor(red: 0.74, green: 0.36, blue: 0.30, alpha: 0.08)
-        right.glowWidth = 16
+        right.fillColor = UIColor(red: 0.74, green: 0.36, blue: 0.30, alpha: Tunables.wallLaneGlowBaseAlpha)
+        right.glowWidth = Tunables.wallLaneGlowWidth
         right.zPosition = -80
         addChild(right)
         rightLaneGlow = right
@@ -3208,6 +3208,28 @@ final class GameScene: SKScene {
         guard let pocket else { return }
         let palette = swingTrailPalette(intent: swingVisualIntent, lane: lane)
         let contactBias = recentContactLane == lane ? recentContactPocketBias() : 0
+        if sessionMode == .wallRally {
+            pocket.position = racketContactPoint(for: lane)
+            let active = max(intensity, approach)
+            pocket.alpha = min(
+                Tunables.wallContactPocketMaxAlpha,
+                Tunables.wallContactPocketBaseAlpha
+                    + intensity * 0.035
+                    + approach * Tunables.wallContactPocketApproachAlpha
+                    + contactBias * 0.035
+            )
+            pocket.strokeColor = palette.core.withAlphaComponent(0.045 + active * 0.11 + contactBias * 0.04)
+            pocket.fillColor = palette.glow.withAlphaComponent(Tunables.wallContactPocketFillAlpha + approach * 0.012)
+            pocket.glowWidth = Tunables.wallContactPocketGlowBase + approach * Tunables.wallContactPocketGlowApproach
+            pocket.lineWidth = 0.8 + active * 0.45 + contactBias * 0.22
+            let scale = Tunables.wallContactPocketScaleBase
+                + active * 0.06
+                + approach * Tunables.wallContactPocketScaleApproach
+                + contactBias * 0.05
+            pocket.xScale = scale
+            pocket.yScale = scale
+            return
+        }
         let wallBoost: CGFloat = sessionMode == .wallRally ? 1.38 : 1.0
         pocket.position = racketContactPoint(for: lane)
         pocket.alpha = min(1, 0.10 + intensity * 0.28 * wallBoost + approach * 0.68 * wallBoost + contactBias * 0.22)
@@ -4997,25 +5019,31 @@ final class GameScene: SKScene {
         let durationDown: TimeInterval
         switch quality {
         case .perfect:
-            peak = 0.35 + openingBoost * 0.06
+            peak = sessionMode == .wallRally
+                ? Tunables.wallLaneGlowPeakPerfect
+                : 0.35 + openingBoost * 0.06
             durationUp = 0.04
             durationDown = 0.34 + openingBoost * 0.02
         case .great:
-            peak = 0.2 + openingBoost * 0.04
+            peak = sessionMode == .wallRally
+                ? Tunables.wallLaneGlowPeakGreat
+                : 0.2 + openingBoost * 0.04
             durationUp = 0.05
             durationDown = 0.27 + openingBoost * 0.02
         case .good:
-            peak = 0.12 + openingBoost * 0.03
+            peak = sessionMode == .wallRally
+                ? Tunables.wallLaneGlowPeakGood
+                : 0.12 + openingBoost * 0.03
             durationUp = 0.06
             durationDown = 0.22 + openingBoost * 0.02
         case .miss:
             return
         }
+        let restAlpha = sessionMode == .wallRally ? Tunables.wallLaneGlowRestAlpha : 0.4
         glow.removeAllActions()
         glow.run(.sequence([
             .fadeAlpha(to: peak, duration: durationUp),
-            .fadeAlpha(to: 1.0, duration: 0),
-            .fadeAlpha(to: 0.4, duration: durationDown)
+            .fadeAlpha(to: restAlpha, duration: durationDown)
         ]))
         if quality == .perfect {
             background?.pulseHorizon(intensity: 1.0)
@@ -5150,12 +5178,18 @@ final class GameScene: SKScene {
         if sparkCount > 0 {
             let outboundDirection: CGFloat = lane == .right ? 1 : -1
             for i in 0..<sparkCount {
-                let radius = quality == .perfect ? 3.6 : 2.8
-                let spark = SKShapeNode(circleOfRadius: radius)
+                let spark = SKShapeNode(
+                    rectOf: CGSize(
+                        width: Tunables.wallContactSparkStreakWidth,
+                        height: Tunables.wallContactSparkStreakHeight
+                    ),
+                    cornerRadius: Tunables.wallContactSparkStreakHeight * 0.5
+                )
                 spark.fillColor = color.withAlphaComponent(0.92)
                 spark.strokeColor = .clear
                 spark.glowWidth = (quality == .perfect ? 10 : 7) * Tunables.wallContactSparkGlowMultiplier
                 spark.position = point
+                spark.zRotation = outboundDirection * 0.18
                 spark.zPosition = 65
                 addChild(spark)
                 let spread = CGFloat(i) - CGFloat(sparkCount - 1) * 0.5
@@ -5169,8 +5203,10 @@ final class GameScene: SKScene {
                             y: 18 + lateral,
                             duration: ringDuration * 1.08
                         ),
+                        .rotate(byAngle: outboundDirection * 0.16, duration: ringDuration * 1.08),
                         .fadeOut(withDuration: ringDuration * 1.08),
-                        .scale(to: 0.16, duration: ringDuration * 1.08)
+                        .scaleX(to: 0.34, duration: ringDuration * 1.08),
+                        .scaleY(to: 0.10, duration: ringDuration * 1.08)
                     ]),
                     .removeFromParent()
                 ]))
@@ -5187,12 +5223,12 @@ final class GameScene: SKScene {
         rightGlow?.removeAllActions()
 
         wrongGlow?.run(.sequence([
-            .fadeAlpha(to: 0.04, duration: 0.08),
-            .fadeAlpha(to: 0.38, duration: 0.22)
+            .fadeAlpha(to: Tunables.wallLaneMissWrongAlpha, duration: 0.08),
+            .fadeAlpha(to: Tunables.wallLaneGlowRestAlpha, duration: 0.22)
         ]))
         rightGlow?.run(.sequence([
-            .fadeAlpha(to: 0.64, duration: 0.08),
-            .fadeAlpha(to: 0.42, duration: 0.28)
+            .fadeAlpha(to: Tunables.wallLaneMissCorrectPeakAlpha, duration: 0.08),
+            .fadeAlpha(to: Tunables.wallLaneMissCorrectRestAlpha, duration: 0.28)
         ]))
 
         let wrongGate = swungLane == .left ? leftStrikeGate : rightStrikeGate
@@ -6700,6 +6736,43 @@ final class GameScene: SKScene {
         let slashAlphaMultiplier = wallMode ? Tunables.wallContactImprintSlashAlphaMultiplier : 1
         let slashGlowMultiplier = wallMode ? Tunables.wallContactImprintSlashGlowMultiplier : 1
         let sparkTravelMultiplier = wallMode ? Tunables.wallContactImprintSparkTravelMultiplier : 1
+        if wallMode {
+            let direction: CGFloat = lane == .right ? 1 : -1
+            for index in 0..<Tunables.wallContactImprintStreakCount {
+                let streak = SKShapeNode(
+                    rectOf: CGSize(
+                        width: Tunables.wallContactImprintStreakWidth + CGFloat(index) * 3,
+                        height: Tunables.wallContactImprintStreakHeight
+                    ),
+                    cornerRadius: Tunables.wallContactImprintStreakHeight * 0.5
+                )
+                streak.position = CGPoint(
+                    x: point.x - direction * CGFloat(index) * 2.5,
+                    y: point.y + CGFloat(index - 1) * 4
+                )
+                streak.fillColor = palette.tip.withAlphaComponent(
+                    Tunables.wallContactImprintStreakAlpha * (quality == .perfect ? 1.18 : 1)
+                )
+                streak.strokeColor = .clear
+                streak.glowWidth = Tunables.wallContactImprintStreakGlow
+                streak.zRotation = contactImprintRotation(intent: intent, lane: lane) + direction * CGFloat(index - 1) * 0.05
+                streak.zPosition = 13.24
+                addChild(streak)
+                streak.run(.sequence([
+                    .group([
+                        .moveBy(
+                            x: direction * Tunables.wallContactImprintStreakTravel,
+                            y: (intent == .topspin ? 8 : 3) + CGFloat(index - 1) * 3,
+                            duration: 0.11
+                        ),
+                        .scaleX(to: 1.18, duration: 0.11),
+                        .fadeOut(withDuration: 0.11)
+                    ]),
+                    .removeFromParent()
+                ]))
+            }
+            return
+        }
         let ringRadius: CGFloat = quality == .perfect ? 13 : (quality == .great ? 11 : 9)
         let ring = SKShapeNode(circleOfRadius: ringRadius)
         ring.position = point
@@ -7802,17 +7875,24 @@ final class BallNode: SKShapeNode {
         let wallAuraAlphaScalar: CGFloat = wallStyleMode ? Tunables.wallBallAuraAlphaScalar : 1.0
         let wallCoreAlphaScalar: CGFloat = wallStyleMode ? Tunables.wallBallCoreAlphaScalar : 1.0
         let wallCoreScaleScalar: CGFloat = wallStyleMode ? Tunables.wallBallCoreScaleScalar : 1.0
-        warningRingNode.alpha = progress <= 1 ? min(1, ((1 - eased * 0.92) + trackingLift * 0.52 + wallApproachLift * 0.18) * wallVisualScalar) : 0
-        auraNode.alpha = min(1, (auraAlpha(for: progress) + trackingLift * 0.18 + wallApproachLift * 0.12 + wallLockLift * 0.08) * wallVisualScalar * wallAuraAlphaScalar)
+        let warningAlpha = progress <= 1 ? min(1, ((1 - eased * 0.92) + trackingLift * 0.52 + wallApproachLift * 0.18) * wallVisualScalar) : 0
+        let auraAlpha = min(1, (auraAlpha(for: progress) + trackingLift * 0.18 + wallApproachLift * 0.12 + wallLockLift * 0.08) * wallVisualScalar * wallAuraAlphaScalar)
+        warningRingNode.alpha = wallStyleMode ? min(Tunables.wallBallWarningMaxAlpha, warningAlpha) : warningAlpha
+        auraNode.alpha = wallStyleMode ? min(Tunables.wallBallAuraMaxAlpha, auraAlpha) : auraAlpha
         coreNode.alpha = min(1, (coreAlpha(for: progress) + trackingLift * 0.12 + wallApproachLift * 0.05 + wallLockLift * 0.10) * wallCoreAlphaScalar)
         coreNode.setScale((coreScale(for: progress) + trackingLift * 0.08 + wallApproachLift * 0.05 + wallLockLift * 0.08) * wallCoreScaleScalar)
         warningRingNode.lineWidth = ringWidth(for: progress) + trackingLift * 1.2
-        warningRingNode.glowWidth = (baseRingGlowWidth() + trackingLift * 10) * wallVisualScalar
+        warningRingNode.glowWidth = wallStyleMode ? Tunables.wallBallRingGlowWidth : (baseRingGlowWidth() + trackingLift * 10) * wallVisualScalar
         warningRingNode.strokeColor = trackingStrokeColor(intensity: trackingLift)
-        focusRingNode.alpha = (focusRingAlpha(progress: eased, trackingLift: trackingLift) + wallLockLift * 0.36) * wallVisualScalar
+        let focusAlpha = (focusRingAlpha(progress: eased, trackingLift: trackingLift) + wallLockLift * 0.36) * wallVisualScalar
+        focusRingNode.alpha = wallStyleMode ? min(Tunables.wallBallFocusMaxAlpha, focusAlpha) : focusAlpha
         focusRingNode.lineWidth = 1.4 + trackingLift * 1.6 + wallLockLift * 1.2
-        focusRingNode.glowWidth = (trackingLift * (kind == .double ? 14 : 10) + wallLockLift * 8) * wallVisualScalar
-        focusRingNode.setScale(1.0 + trackingLift * 0.18 - wallLockLift * 0.08)
+        focusRingNode.glowWidth = wallStyleMode ? Tunables.wallBallRingGlowWidth : (trackingLift * (kind == .double ? 14 : 10) + wallLockLift * 8) * wallVisualScalar
+        focusRingNode.setScale(wallStyleMode ? Tunables.wallBallFocusScale : 1.0 + trackingLift * 0.18 - wallLockLift * 0.08)
+        if wallStyleMode {
+            auraNode.setScale(Tunables.wallBallAuraScale)
+            warningRingNode.setScale(Tunables.wallBallWarningScale)
+        }
         focusRingNode.strokeColor = focusRingColor(intensity: min(1, trackingLift + wallLockLift * 0.55))
         updateSpecular(progress: eased, altitude: altitude, compression: compression)
         updateTail(progress: progress, eased: eased, bounceProgress: bounceProgress, overrun: overrun)
@@ -8074,16 +8154,21 @@ final class BallNode: SKShapeNode {
         let baseLength = tailLengthForRole() * (0.72 + speedScalar * 0.92)
         let xOffset = -curveDirection * baseLength * 0.34
         let yOffset = -14 - baseLength * 0.18
-        tailNode.position = CGPoint(x: xOffset, y: yOffset)
+        let wallTailOffsetScalar = wallStyleMode ? Tunables.wallBallTailOffsetMultiplier : 1
+        tailNode.position = CGPoint(x: xOffset * wallTailOffsetScalar, y: yOffset * wallTailOffsetScalar)
         tailNode.zRotation = zRotation + curveDirection * 0.18
         tailNode.xScale = 0.62 + baseLength / 24
         tailNode.yScale = 0.66 + speedScalar * 0.26 + airborne * 0.12
+        if wallStyleMode {
+            tailNode.xScale *= Tunables.wallBallTailXScaleMultiplier
+            tailNode.yScale *= Tunables.wallBallTailYScaleMultiplier
+        }
 
         let roleAlpha = tailAlphaForRole()
         if overrun > 0 {
             tailNode.alpha = 0
         } else if wallStyleMode {
-            tailNode.alpha = roleAlpha * (0.22 + speedScalar * 0.42)
+            tailNode.alpha = roleAlpha * (0.22 + speedScalar * 0.42) * Tunables.wallBallTailAlphaMultiplier
         } else if eased >= bounceProgress {
             tailNode.alpha = roleAlpha * speedScalar * 0.32
         } else {
