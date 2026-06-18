@@ -5,6 +5,18 @@ import UserNotifications
 /// Manages local and push notifications for engagement and achievements
 struct NotificationManager {
     private static let scheduledBadgeCount = NSNumber(value: 1)
+
+    /// Local reminders stay silent by default so Rally never wakes the room.
+    /// If the player explicitly turns sound on, notification sounds may follow.
+    private static var shouldPlayNotificationSound: Bool {
+        let defaults = UserDefaults.standard
+        return defaults.bool(forKey: UserDefaultsKeys.soundPreferenceExplicitlySet)
+            && defaults.bool(forKey: UserDefaultsKeys.soundEnabled)
+    }
+
+    private static func applySoundPreference(to content: UNMutableNotificationContent) {
+        content.sound = shouldPlayNotificationSound ? .default : nil
+    }
     
     /// Request user permission for notifications (call on app launch)
     static func requestPermission() {
@@ -35,7 +47,7 @@ struct NotificationManager {
         let content = UNMutableNotificationContent()
         content.title = "Time to play! 🎾"
         content.body = "Complete today's challenges and keep your streak alive!"
-        content.sound = .default
+        applySoundPreference(to: content)
         content.badge = scheduledBadgeCount
         content.userInfo = ["type": "daily_reminder"]
 
@@ -55,7 +67,7 @@ struct NotificationManager {
         let content = UNMutableNotificationContent()
         content.title = "🏆 Achievement Unlocked!"
         content.body = achievement.title
-        content.sound = .default
+        applySoundPreference(to: content)
         content.badge = scheduledBadgeCount
         content.userInfo = ["type": "achievement", "badgeId": achievement.badgeId]
 
@@ -74,7 +86,7 @@ struct NotificationManager {
         let content = UNMutableNotificationContent()
         content.title = "⭐ Challenge Complete!"
         content.body = "\(challenge.title) — +\(challenge.rewardCoins) coins"
-        content.sound = .default
+        applySoundPreference(to: content)
         content.badge = scheduledBadgeCount
         content.userInfo = ["type": "challenge", "challengeId": challenge.challengeId]
 
@@ -95,7 +107,7 @@ struct NotificationManager {
         let content = UNMutableNotificationContent()
         content.title = "🔥 \(streak)-Day Streak!"
         content.body = "You're crushing it! Keep it going tomorrow."
-        content.sound = .default
+        applySoundPreference(to: content)
         content.badge = scheduledBadgeCount
         content.userInfo = ["type": "streak_milestone", "streak": streak]
 
@@ -120,7 +132,7 @@ struct NotificationManager {
         let content = UNMutableNotificationContent()
         content.title = "Your streak expires soon! ⚠️"
         content.body = "Play one more game before midnight to keep your streak alive."
-        content.sound = .default
+        applySoundPreference(to: content)
         content.badge = scheduledBadgeCount
         content.userInfo = ["type": "streak_warning"]
 
