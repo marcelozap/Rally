@@ -1478,8 +1478,8 @@ final class GameScene: SKScene {
 
         let nose = SKShapeNode(path: RallyAvatarGeometry.nosePath(scale: faceScale))
         nose.fillColor = .clear
-        nose.strokeColor = skin.mixed(with: .black, ratio: 0.16).withAlphaComponent(0.54)
-        nose.lineWidth = max(1.24 * bodyScale, 1.05)
+        nose.strokeColor = skin.mixed(with: .black, ratio: 0.18).withAlphaComponent(0.64)
+        nose.lineWidth = max(1.46 * bodyScale, 1.24)
         nose.lineCap = .round
         nose.position = CGPoint(x: 0, y: layout.headY + 2 * bodyScale)
         nose.zPosition = 8

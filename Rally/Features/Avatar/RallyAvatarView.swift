@@ -598,8 +598,8 @@ struct RallyAvatarView: View {
             x: 0,
             y: headY,
             fill: .clear,
-            stroke: Color(uiColor: appearance.skinUIColor.rallyBlended(withFraction: 0.08, of: .black)).opacity(0.42),
-            lineWidth: max(1.22 * scale, 1.08)
+            stroke: Color(uiColor: appearance.skinUIColor.rallyBlended(withFraction: 0.10, of: .black)).opacity(0.54),
+            lineWidth: max(1.48 * scale, 1.24)
         )
 
         drawPath(
