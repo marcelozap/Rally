@@ -397,6 +397,7 @@ struct GameSessionView: View {
 private struct GameSettingsSheet: View {
     @Environment(\.dismiss) private var dismiss
     @ObservedObject var preferences: GamePreferences
+    @ObservedObject private var audioPreferences = AudioPreferences.shared
 
     let onRestartMatch: () -> Void
 
@@ -448,6 +449,14 @@ private struct GameSettingsSheet: View {
                                 )
                             }
                             .tint(RallyUIKit.Palette.champagne)
+
+                            Toggle(isOn: $audioPreferences.isSoundEnabled) {
+                                toggleLabel(
+                                    title: "Sound",
+                                    copy: "Play contact, rally, and music feedback. Off by default for quiet testing."
+                                )
+                            }
+                            .tint(RallyUIKit.Palette.cyan)
                         }
                     }
 

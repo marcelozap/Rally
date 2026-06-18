@@ -37,13 +37,17 @@ struct HomeView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button {
-                        showsJournal = true
-                    } label: {
-                        topChromeIcon(systemName: "calendar")
+                    HStack(spacing: 8) {
+                        Button {
+                            showsJournal = true
+                        } label: {
+                            topChromeIcon(systemName: "calendar")
+                        }
+                        .buttonStyle(LoadoutPlayButtonStyle())
+                        .accessibilityLabel("Open journal")
+
+                        SoundToggleButton()
                     }
-                    .buttonStyle(LoadoutPlayButtonStyle())
-                    .accessibilityLabel("Open journal")
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     if let avatar = avatar {

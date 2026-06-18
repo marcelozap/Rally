@@ -15,12 +15,18 @@ enum UserDefaultsKeys {
 }
 
 enum RallyDefaults {
-    /// Sound should come up on unless the player explicitly turned it off.
+    /// Sound should stay quiet by default so test/autoplay launches never
+    /// surprise the room. The player can still opt in from the sound toggle.
     static func resolvedSoundEnabled(_ defaults: UserDefaults = .standard) -> Bool {
+        #if DEBUG
+        if ProcessInfo.processInfo.arguments.contains("-RallyAutoPlay") {
+            return false
+        }
+        #endif
         if defaults.bool(forKey: UserDefaultsKeys.soundPreferenceExplicitlySet) {
             return defaults.bool(forKey: UserDefaultsKeys.soundEnabled)
         }
-        return true
+        return false
     }
 }
 
