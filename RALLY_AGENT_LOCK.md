@@ -36,6 +36,7 @@ A lock is cooperative — it only works if both agents check it first. That chec
 
 | Since (UTC date) | Agent | Area / files | Status | Notes |
 |------------------|-------|--------------|--------|-------|
+| 2026-06-18 | [CX] | Rafa camera/avatar readability — `Rally/Game/GameScene.swift`, `Rally/Game/Tunables.swift`, `Rally/Features/Avatar/RallyAvatarGeometry.swift` | ACTIVE | Narrow pass: improve gameplay POV/player readability without changing outfit identity pipeline. |
 | 2026-06-13 | [CC] | Avatar identity render — `RallyAvatarView.swift`, `RallyAvatarGeometry.swift`, `Rally/Game/GameScene.swift` (head/hair block) | RELEASED | Claude Code session canceled by user; stale hold released so Codex can repair the runtime drift bug. |
 | 2026-06-14 | [CX] | Avatar runtime identity repair — `Rally/Game/GameScene.swift` head/hair/face/feet update block | RELEASED | Runtime repair built successfully; re-claim before any further avatar render edits. Visual QA still decides whether another pass is needed. |
 | 2026-06-14 | [CX] | Home/Loadout + Shop controls — `Rally/Features/Home/HomeView.swift`, `Rally/Features/Shop/LockerHubView.swift`, `Rally/Features/Shop/ShopView.swift`, `Rally/Features/Shop/ShopItemDetailView.swift` | RELEASED | Checkpoint committed; visual QA still pending. |
