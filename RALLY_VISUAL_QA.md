@@ -762,3 +762,32 @@ Findings:
 - Ears are slightly larger and farther out so the head/ear relationship is more legible.
 - Foot toe-out constants are increased so the ready stance reads less caved-in.
 - Remaining issue: the avatar still needs a deeper body/shoulder/shoe art pass; this was a focused readability repair, not a full character redesign.
+
+## 2026-06-18 — Wall Feed Recovery Verification
+
+Build:
+
+```text
+xcodebuild -project Rally.xcodeproj -scheme Rally -configuration Debug -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build
+Result: BUILD SUCCEEDED
+```
+
+Simulator:
+
+```text
+iPhone 16 Pro, iOS 18.6
+Bundle: com.marcelozap.rally
+Autoplay argument: -RallyAutoPlay
+```
+
+Screenshot:
+
+```text
+/tmp/rally_visual_qa/wall_feed_verify_105707.png
+```
+
+Findings:
+
+- The no-ball recovery patch is visually verified in this proof run: autoplay reached score `27`, all three life pips remained visible, and a live ball was present in the racket-side contact pocket.
+- This specifically confirms the court did not sit empty after the stale-exchange recovery patch.
+- Remaining issue: the gameplay avatar is still not premium enough. Face, shoulder, hand, shoe, and stance anatomy remain the next highest-impact craft pass after ball-feed reliability.
