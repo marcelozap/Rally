@@ -8,6 +8,8 @@ enum UserDefaultsKeys {
     static let soundEnabled = "rally.soundEnabled"
     /// Marks that the player intentionally changed the sound setting.
     static let soundPreferenceExplicitlySet = "rally.soundPreferenceExplicitlySet"
+    /// One-time migration marker for the quiet-by-default audio policy.
+    static let soundQuietDefaultApplied = "rally.soundQuietDefaultApplied.v1"
     static let gameDominantHand = "rally.gameDominantHand"
     static let gameShowCoachingCues = "rally.gameShowCoachingCues"
     static let gameHapticsEnabled = "rally.gameHapticsEnabled"
@@ -15,6 +17,16 @@ enum UserDefaultsKeys {
 }
 
 enum RallyDefaults {
+    /// One-time reset for builds that previously had sound enabled during
+    /// testing. After this runs, the player can still opt back in from any
+    /// sound toggle and that choice will persist.
+    static func applyQuietSoundDefaultIfNeeded(_ defaults: UserDefaults = .standard) {
+        guard !defaults.bool(forKey: UserDefaultsKeys.soundQuietDefaultApplied) else { return }
+        defaults.set(false, forKey: UserDefaultsKeys.soundEnabled)
+        defaults.set(true, forKey: UserDefaultsKeys.soundPreferenceExplicitlySet)
+        defaults.set(true, forKey: UserDefaultsKeys.soundQuietDefaultApplied)
+    }
+
     /// Sound should stay quiet by default so test/autoplay launches never
     /// surprise the room. The player can still opt in from the sound toggle.
     static func resolvedSoundEnabled(_ defaults: UserDefaults = .standard) -> Bool {

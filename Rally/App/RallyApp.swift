@@ -34,6 +34,10 @@ struct RallyApp: App {
             fatalError("Rally: failed to bring up SwiftData store — \(error)")
         }
 
+        // Keep Rally quiet by default, including upgrades from older test
+        // builds where sound may have been left enabled.
+        RallyDefaults.applyQuietSoundDefaultIfNeeded()
+
         // Wire managers to the event bus. Order is irrelevant.
         _ = HapticManager.shared
         _ = AudioManager.shared

@@ -94,6 +94,7 @@ final class AudioManager {
 
     /// Called from `RallyApp.init` to force first-touch latency to zero.
     func prewarm() {
+        guard isEnabled else { return }
         let primer = ToneSynth.Patch(
             freqStartHz: 880, freqEndHz: 880,
             durationMs: 30, waveform: .sine,
