@@ -153,6 +153,7 @@ final class GameScene: SKScene {
     /// run ends the moment this hits zero. Fresh scene per run, so the default
     /// is the start-of-run value.
     private var livesRemaining: Int = Tunables.Survival.lives
+    private var openingNoLifeMissesUsed: Int = 0
     private var livesLabel: SKLabelNode?
 
     /// Persistent best score across runs — the other half of the Flappy hook.
@@ -4562,6 +4563,14 @@ final class GameScene: SKScene {
 
             // Survival: every miss costs a life. Out of lives ends the run.
             if Tunables.Survival.enabled {
+                if shouldForgiveOpeningWallMiss(previousCombo: previous) {
+                    openingNoLifeMissesUsed += 1
+                    stageResetBeat(duration: 0.08, soft: true)
+                    GameEventBus.shared.publish(.miss(lane: lane))
+                    showWallMissInstruction("READ THE FEED", comboWasLive: false)
+                    scheduleWallBall(after: Tunables.wallOpeningFeedDelaySeconds)
+                    return
+                }
                 let previousLives = livesRemaining
                 livesRemaining -= 1
                 updateLivesHUD()
@@ -4604,6 +4613,17 @@ final class GameScene: SKScene {
             GameEventBus.shared.publish(.miss(lane: lane))
             showWallMissInstruction("", comboWasLive: false)
         }
+    }
+
+    private func shouldForgiveOpeningWallMiss(previousCombo: Int) -> Bool {
+        guard sessionMode == .wallRally,
+              Tunables.Survival.enabled,
+              score == 0,
+              previousCombo == 0,
+              openingNoLifeMissesUsed < Tunables.Survival.openingNoLifeLossMisses
+        else { return false }
+
+        return currentTrackTime <= Tunables.Survival.openingNoLifeLossSeconds
     }
 
     private func wallMissCue(

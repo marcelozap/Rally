@@ -36,7 +36,7 @@ A lock is cooperative — it only works if both agents check it first. That chec
 
 | Since (UTC date) | Agent | Area / files | Status | Notes |
 |------------------|-------|--------------|--------|-------|
-| 2026-06-18 | [CX] | Rafa opening rally grace — `Rally/Game/GameScene.swift`, `Rally/Game/Tunables.swift` | ACTIVE | Prevent immediate zero-score Game Over before the first visible wall-rally feed becomes playable. |
+| 2026-06-18 | [CX] | Rafa opening rally grace — `Rally/Game/GameScene.swift`, `Rally/Game/Tunables.swift` | RELEASED | Build/proof passed: first zero-score opening misses no longer spend lives during a short opening grace window, preventing instant Game Over before the feed is legible. |
 | 2026-06-18 | [CX] | Rafa wall-rally feed readability — `Rally/Game/GameScene.swift`, `Rally/Game/Tunables.swift` | RELEASED | Build passed after shortening the post-GO opening wall feed and wiring the existing feed cue so the first balls visibly travel toward the contact pocket. |
 | 2026-06-18 | [CX] | Avatar nose readability — `Rally/Features/Avatar/RallyAvatarView.swift`, `Rally/Game/GameScene.swift` | RELEASED | Build passed after making the shared SwiftUI/GameScene nose stroke visible at iPhone scale without changing avatar identity. |
 | 2026-06-18 | [CX] | Rafa camera/avatar readability — `Rally/Game/GameScene.swift`, `Rally/Game/Tunables.swift`, `Rally/Features/Avatar/RallyAvatarGeometry.swift` | RELEASED | Build passed after larger gameplay avatar scale, stronger gameplay-scale face details, lower shared hair fringe, corrected mouth runtime anchor, and stronger toe-out stance. |

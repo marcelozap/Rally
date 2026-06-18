@@ -640,3 +640,33 @@ Recommended next Rafa task:
 ```text
 Gameplay camera/anatomy pass: shift to a more realistic over-the-shoulder tennis POV and fix the grounded athletic stance so feet angle outward, shoulders read, and racket contact happens beside the body.
 ```
+
+## 2026-06-18 — Opening Feed Grace Check
+
+Build:
+
+```text
+xcodebuild -project Rally.xcodeproj -scheme Rally -configuration Debug -destination 'platform=iOS Simulator,id=CA3029AB-A788-4370-BD71-E556B01C8FE6' CODE_SIGNING_ALLOWED=NO build
+Result: BUILD SUCCEEDED
+```
+
+Simulator:
+
+```text
+iPhone 16 Pro, iOS 18.6
+Bundle: com.marcelozap.rally
+Autoplay argument: -RallyAutoPlay
+```
+
+Screenshots:
+
+```text
+Before patch, 5s proof landed on Game Over: /tmp/rally_visual_qa/autoplay_after_opening_feed_043457.png
+After patch, 5s proof remains in gameplay with a visible ball/feed: /tmp/rally_visual_qa/autoplay_after_opening_grace_044848.png
+```
+
+Findings:
+
+- The previous proof path reached zero-score Game Over within five seconds, matching the owner report that balls were not coming through clearly.
+- The opening no-life-loss grace keeps the first visible feeds in gameplay instead of instantly ending the run.
+- Remaining issue: proof mode still misses early feeds, so the next Rafa task should tune early contact generosity/autoplay timing and make the first successful hit easier to read.

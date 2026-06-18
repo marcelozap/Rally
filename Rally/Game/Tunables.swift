@@ -161,6 +161,10 @@ enum Tunables {
         /// Misses allowed before the run ends. Flappy is 1; 3 gives a tennis
         /// rally a little more rope while still making every ball matter.
         static let lives = 3
+        /// Opening mercy: a wall-rally should never dump the player into a
+        /// zero-score Game Over before the first feed is visually legible.
+        static let openingNoLifeLossSeconds: TimeInterval = 4.2
+        static let openingNoLifeLossMisses = 2
         /// Difficulty ramp: the return ball comes back faster as score climbs.
         /// The travel-time scalar lerps from 1.0 (base) at `rampStartScore`
         /// down to `rampMinTravelScalar` at `rampFullScore`.
