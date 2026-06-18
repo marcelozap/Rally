@@ -107,6 +107,11 @@ enum Tunables {
     /// loop from ever feeling frozen after a lifecycle hiccup.
     static let wallEmptyCourtRescueSeconds: TimeInterval = 0.70
     static let wallFeedRescueDelaySeconds: TimeInterval = 0.035
+    /// If the court is visibly empty and a pending wall-feed token is still
+    /// blocking this long, drop the token and feed a rescue ball immediately.
+    /// This catches async scheduling/lifecycle races before the loop reads as
+    /// "no balls are coming through."
+    static let wallStalePendingFeedRescueSeconds: TimeInterval = 0.58
     /// Extra grace after a scheduled wall-feed delay. If the token survives
     /// past `requestedAt + delay + grace`, scene timing likely overtook the
     /// callback, so the empty-court watchdog can safely schedule a fresh ball.

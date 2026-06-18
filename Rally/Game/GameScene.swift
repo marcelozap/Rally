@@ -3573,6 +3573,7 @@ final class GameScene: SKScene {
         }
         activeBalls.append(ball)
         if sessionMode == .wallRally {
+            wallEmptyCourtSince = nil
             let pulsePalette = swingTrailPalette(intent: .drive, lane: note.lane)
             strikeLinePulse?.fillColor = pulsePalette.core
             strikeLinePulse?.schedule(arrivalTime: note.arrivalTime, currentTrackTime: currentTrackTime)
@@ -3665,9 +3666,16 @@ final class GameScene: SKScene {
 
         let emptySince = wallEmptyCourtSince ?? currentTime
         wallEmptyCourtSince = emptySince
-        guard pendingWallSpawnToken == nil else { return }
 
         let emptyDuration = currentTime - emptySince
+        if pendingWallSpawnToken != nil {
+            guard emptyDuration >= Tunables.wallStalePendingFeedRescueSeconds else { return }
+            #if DEBUG
+            recordWallFeedDebugEvent(String(format: "rescue pending %.2fs", emptyDuration))
+            #endif
+            clearPendingWallSpawnToken()
+        }
+
         let needsRescue = emptyDuration >= Tunables.wallEmptyCourtRescueSeconds
         #if DEBUG
         if needsRescue {
