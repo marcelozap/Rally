@@ -27,11 +27,11 @@ enum RallyAvatarGeometry {
     static let mouthWidthRatio: CGFloat = 0.34
     static let shoulderWidening: CGFloat = 1.30
     static let jawNarrowing: CGFloat = 0.12
-    static let minGameplayEyeWidth: CGFloat = 6.2
-    static let minGameplayEyeHeight: CGFloat = 4.8
-    static let minGameplayBrowWidth: CGFloat = 8.6
-    static let minGameplayMouthHalfWidth: CGFloat = 10.6
-    static let minGameplayMouthCurve: CGFloat = 1.05
+    static let minGameplayEyeWidth: CGFloat = 7.4
+    static let minGameplayEyeHeight: CGFloat = 5.6
+    static let minGameplayBrowWidth: CGFloat = 9.8
+    static let minGameplayMouthHalfWidth: CGFloat = 12.2
+    static let minGameplayMouthCurve: CGFloat = 1.35
 
     static func headTop(scale: CGFloat) -> CGFloat { headHeight * 0.5 * scale }
     static func headBottom(scale: CGFloat) -> CGFloat { -headHeight * 0.5 * scale }
@@ -64,7 +64,7 @@ enum RallyAvatarGeometry {
     /// Small vertical lift applied to the FRONT hair. The hair path is authored
     /// around the head ellipse, so this must stay subtle: too high reads bald /
     /// disconnected, too low covers the face. Both renderers call this value.
-    static func hairFringeLift(scale: CGFloat) -> CGFloat { 0.18 * scale }
+    static func hairFringeLift(scale: CGFloat) -> CGFloat { 0.04 * scale }
 
     static func handRadius(scale: CGFloat, armThickness: CGFloat = 13.2) -> CGFloat {
         armThickness * 0.58 * scale

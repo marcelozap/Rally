@@ -2356,7 +2356,7 @@ final class GameScene: SKScene {
         playerNose.position.x += (headAnchorX - playerNose.position.x) * 0.14
         playerNose.position.y += (headAnchorY - playerNose.position.y) * 0.14
         playerMouth?.position.x += (headAnchorX - (playerMouth?.position.x ?? 0)) * 0.14
-        playerMouth?.position.y += ((headAnchorY + 2 * gameplayScale + RallyAvatarGeometry.mouthCenterY(scale: faceScale)) - (playerMouth?.position.y ?? 0)) * 0.14
+        playerMouth?.position.y += ((headAnchorY + RallyAvatarGeometry.mouthCenterY(scale: faceScale)) - (playerMouth?.position.y ?? 0)) * 0.14
         playerMouth?.zRotation += ((RallyAvatarRebuildDefaults.Face.smileRotationDegrees * .pi / 180) + targets.headRotation * 0.2 - (playerMouth?.zRotation ?? 0)) * 0.12
         playerLeftLens?.position.x += (targets.headX - (playerLeftLens?.position.x ?? 0)) * 0.14
         playerLeftLens?.position.y += (headAnchorY - (playerLeftLens?.position.y ?? 0)) * 0.12

@@ -274,11 +274,11 @@ enum Tunables {
     static let gameplayCourtNetDepthRatio: CGFloat = 0.47
     static let gameplayCourtNetNearHalfScalar: CGFloat = 0.62
     static let gameplayCourtNetFarHalfScalar: CGFloat = 0.98
-    static let gameplayPlayerRootYRatio: CGFloat = 0.128
-    static let gameplayPlayerVisualScale: CGFloat = 0.66
+    static let gameplayPlayerRootYRatio: CGFloat = 0.142
+    static let gameplayPlayerVisualScale: CGFloat = 0.72
     /// SpriteKit gameplay needs shoes smaller than the locker hero view because
     /// the court camera compresses the feet near the bottom of the frame.
-    static let gameplayShoeVisualScale: CGFloat = 0.80
+    static let gameplayShoeVisualScale: CGFloat = 0.86
     static let spawnLineYRatio:       CGFloat = 1.05
     static let cullBelowStrikePoints: CGFloat = 40
     static let horizonLaneInsetRatio: CGFloat = 0.12
@@ -569,11 +569,11 @@ enum Tunables {
     /// Extra compression at the exact contact stomp.
     static let footworkContactCompressionScale: CGFloat = 0.050  // body squats at contact moment
     /// Toe-out angle for the planted outside shoe.
-    static let footworkOutsideToeOutRadians: CGFloat = 0.27
+    static let footworkOutsideToeOutRadians: CGFloat = 0.38
     /// Neutral ready-stance toe-out so both shoes angle away from centre.
-    static let footworkReadyToeOutRadians: CGFloat = 0.24
+    static let footworkReadyToeOutRadians: CGFloat = 0.34
     /// Trail-foot drag/toe angle during recovery.
-    static let footworkRecoveryToeDragRadians: CGFloat = 0.04
+    static let footworkRecoveryToeDragRadians: CGFloat = 0.12
     /// Blend speed for side-to-side weight transfer.
     static let footworkWeightShiftBlend: CGFloat = 0.22
     /// Extra maximum blend toward lane target in wall-rally mode.
