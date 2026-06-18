@@ -91,10 +91,10 @@ enum Tunables {
     static let wallHUDScoreCompactThreshold: Int = 100_000
     static let wallReboundCueDurationMs: Double = 260
     /// Normal wait before feeding the next wall-rally ball once the court is empty.
-    static let wallFeedDelaySeconds: TimeInterval = 0.22
+    static let wallFeedDelaySeconds: TimeInterval = 0.18
     /// First feed after GO. Keep this short so the opening frame never reads
     /// like an empty court or broken spawner.
-    static let wallOpeningFeedDelaySeconds: TimeInterval = 0.12
+    static let wallOpeningFeedDelaySeconds: TimeInterval = 0.08
     /// Simulator/proof-mode timing offset for the auto player. A small
     /// positive delay waits until the wall ball is visually inside the contact
     /// pocket instead of swinging a frame early and producing a saved miss.
@@ -105,17 +105,17 @@ enum Tunables {
     /// If the court stays empty this long, feed almost immediately instead of
     /// waiting through another normal delay. This protects the "one more try"
     /// loop from ever feeling frozen after a lifecycle hiccup.
-    static let wallEmptyCourtRescueSeconds: TimeInterval = 0.70
-    static let wallFeedRescueDelaySeconds: TimeInterval = 0.035
+    static let wallEmptyCourtRescueSeconds: TimeInterval = 0.44
+    static let wallFeedRescueDelaySeconds: TimeInterval = 0.016
     /// If the court is visibly empty and a pending wall-feed token is still
     /// blocking this long, drop the token and feed a rescue ball immediately.
     /// This catches async scheduling/lifecycle races before the loop reads as
     /// "no balls are coming through."
-    static let wallStalePendingFeedRescueSeconds: TimeInterval = 0.58
+    static let wallStalePendingFeedRescueSeconds: TimeInterval = 0.32
     /// Extra grace after a scheduled wall-feed delay. If the token survives
     /// past `requestedAt + delay + grace`, scene timing likely overtook the
     /// callback, so the empty-court watchdog can safely schedule a fresh ball.
-    static let wallSpawnWatchdogGraceSeconds: TimeInterval = 0.38
+    static let wallSpawnWatchdogGraceSeconds: TimeInterval = 0.18
 
     static func wallSpawnWatchdogDeadline(
         requestedAt currentTime: TimeInterval,

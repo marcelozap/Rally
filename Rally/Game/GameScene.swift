@@ -3727,6 +3727,11 @@ final class GameScene: SKScene {
         #if DEBUG
         recordWallFeedDebugEvent("expired")
         #endif
+        let now = ProcessInfo.processInfo.systemUptime
+        wallEmptyCourtSince = min(
+            wallEmptyCourtSince ?? now,
+            now - Tunables.wallEmptyCourtRescueSeconds
+        )
         clearPendingWallSpawnToken()
     }
 
