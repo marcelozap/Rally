@@ -431,6 +431,13 @@ struct RallyAvatarView: View {
         let size = RallyAvatarGeometry.neckSize(scale: scale)
         let rect = CGRect(x: centerX - size.width * 0.5, y: baseline - y - size.height * 0.5, width: size.width, height: size.height)
         context.fill(Path(roundedRect: rect, cornerRadius: 4 * scale), with: .color(appearance.skinColor))
+
+        let shadowHeight = max(2.0 * scale, 1.6)
+        let shadowRect = CGRect(x: rect.minX + 1.5 * scale, y: rect.minY, width: rect.width - 3.0 * scale, height: shadowHeight)
+        context.fill(
+            Path(roundedRect: shadowRect, cornerRadius: shadowHeight * 0.5),
+            with: .color(Color(uiColor: appearance.skinUIColor.rallyBlended(withFraction: 0.14, of: .black)).opacity(0.42))
+        )
     }
 
     private func drawTorsoDetails(in context: inout GraphicsContext, centerX: CGFloat, baseline: CGFloat, y: CGFloat, scale: CGFloat) {
@@ -598,8 +605,8 @@ struct RallyAvatarView: View {
             x: 0,
             y: headY,
             fill: .clear,
-            stroke: Color(uiColor: appearance.skinUIColor.rallyBlended(withFraction: 0.10, of: .black)).opacity(0.54),
-            lineWidth: max(1.70 * scale, 1.38)
+            stroke: Color(uiColor: appearance.skinUIColor.rallyBlended(withFraction: 0.10, of: .black)).opacity(0.42),
+            lineWidth: max(1.22 * scale, 0.95)
         )
 
         drawPath(
@@ -610,8 +617,8 @@ struct RallyAvatarView: View {
             x: 0,
             y: headY + RallyAvatarGeometry.mouthCenterY(scale: scale),
             fill: .clear,
-            stroke: Color.black.opacity(0.74),
-            lineWidth: max(1.68 * scale, 1.32)
+            stroke: Color.black.opacity(0.58),
+            lineWidth: max(1.12 * scale, 0.92)
         )
     }
 
