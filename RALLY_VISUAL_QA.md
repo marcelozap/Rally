@@ -641,6 +641,37 @@ Recommended next Rafa task:
 Gameplay camera/anatomy pass: shift to a more realistic over-the-shoulder tennis POV and fix the grounded athletic stance so feet angle outward, shoulders read, and racket contact happens beside the body.
 ```
 
+## 2026-06-18 — Opening Autoplay Contact Proof
+
+Build:
+
+```text
+xcodebuild -project Rally.xcodeproj -scheme Rally -configuration Debug -destination 'platform=iOS Simulator,id=CA3029AB-A788-4370-BD71-E556B01C8FE6' CODE_SIGNING_ALLOWED=NO build
+Result: BUILD SUCCEEDED
+```
+
+Simulator:
+
+```text
+iPhone 16 Pro, iOS 18.6
+Bundle: com.marcelozap.rally
+Autoplay argument: -RallyAutoPlay
+```
+
+Screenshots:
+
+```text
+Failed proof before cull-boundary conversion: /tmp/rally_visual_qa/autoplay_proof_scene_flag_053559.png
+Passing proof after cull-boundary conversion: /tmp/rally_visual_qa/autoplay_cull_boundary_054254.png
+```
+
+Findings:
+
+- `-RallyAutoPlay` now reaches live scoring contact instead of ending at zero-score Game Over.
+- The passing proof frame shows score `443`, multiplier `x5`, three live pips, and the ball in the racket-side contact pocket.
+- The fix is scoped to proof/autoplay mode: normal wall-rally misses still run through the normal miss/cull path.
+- Remaining issue: avatar/camera craft is still not premium enough; next Rafa work should focus on realistic tennis POV and anatomy, not more proof plumbing.
+
 ## 2026-06-18 — Opening Feed Grace Check
 
 Build:

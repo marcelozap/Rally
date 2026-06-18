@@ -95,6 +95,13 @@ enum Tunables {
     /// First feed after GO. Keep this short so the opening frame never reads
     /// like an empty court or broken spawner.
     static let wallOpeningFeedDelaySeconds: TimeInterval = 0.12
+    /// Simulator/proof-mode timing offset for the auto player. A small
+    /// positive delay waits until the wall ball is visually inside the contact
+    /// pocket instead of swinging a frame early and producing a saved miss.
+    static let wallAutoPlayContactDelaySeconds: TimeInterval = 0.018
+    /// Opening spatial-assist multiplier layered on top of the normal wall
+    /// assist radius. This fades out through `wallOpeningForgivenessBoost()`.
+    static let wallOpeningContactAssistMultiplier: CGFloat = 0.24
     /// If the court stays empty this long, feed almost immediately instead of
     /// waiting through another normal delay. This protects the "one more try"
     /// loop from ever feeling frozen after a lifecycle hiccup.

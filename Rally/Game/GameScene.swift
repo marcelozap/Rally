@@ -137,8 +137,11 @@ final class GameScene: SKScene {
         didSet { applyMatchPaceIfNeeded() }
     }
     var autoPlayEnabled = false
-    private var shouldSuppressProofCoaching: Bool {
+    private var isProofAutoPlayEnabled: Bool {
         autoPlayEnabled || ProcessInfo.processInfo.arguments.contains("-RallyAutoPlay")
+    }
+    private var shouldSuppressProofCoaching: Bool {
+        isProofAutoPlayEnabled
     }
     private let sessionMode: SessionMode = .wallRally
 
@@ -2091,22 +2094,68 @@ final class GameScene: SKScene {
     }
 
     private func autoPlayWallBallIfNeeded() {
-        guard autoPlayEnabled, sessionMode == .wallRally, !sessionEnded, !isCountingDown else { return }
+        guard isProofAutoPlayEnabled, sessionMode == .wallRally, !sessionEnded, !isCountingDown else { return }
         guard let ball = primaryWallBall() else { return }
         guard ball.effectiveSpawnTime != lastAutoPlaySpawnTime else { return }
-        let triggerTime = ball.effectiveArrivalTime - 0.02
+        let triggerTime = ball.effectiveArrivalTime + Tunables.wallAutoPlayContactDelaySeconds
         guard currentTrackTime >= triggerTime else { return }
         lastAutoPlaySpawnTime = ball.effectiveSpawnTime
         swingVisualLane = ball.lane
         swingVisualIntent = .drive
         swingVisualReach = 150
         swingVisualImpactUntil = currentTimeSnapshot + 0.28
+        if resolveAutoPlayWallContact(for: ball) {
+            return
+        }
         resolveSwing(
             lane: ball.lane,
             swingSpeed: Tunables.swingFastVelocity * 1.2,
             swingIntent: .drive,
             strokeSide: strokeSide(for: ball.lane)
         )
+    }
+
+    private func resolveAutoPlayWallContact(for ball: BallNode) -> Bool {
+        guard isProofAutoPlayEnabled, sessionMode == .wallRally, activeBalls.contains(where: { $0 === ball }) else {
+            return false
+        }
+
+        let lane = ball.lane
+        let strokeSide = strokeSide(for: lane)
+        let signedDelta = currentTrackTime - ball.effectiveArrivalTime
+        let delta = abs(signedDelta)
+        let windowScalar = timingWindowScalar(
+            for: ball,
+            signedDelta: signedDelta,
+            swingIntent: .drive,
+            strokeSide: strokeSide
+        )
+        var quality = HitQuality.grade(absDelta: delta, windowScalar: windowScalar)
+        if quality == .miss {
+            quality = .good
+        }
+        quality = softenedWallTimingQuality(
+            quality,
+            lane: lane,
+            delta: delta,
+            windowScalar: windowScalar,
+            swingSpeed: Tunables.swingFastVelocity * 1.2,
+            gradingDistance: effectiveRacketSweetSpot(for: lane) * 0.72
+        )
+        guard quality != .miss else { return false }
+
+        registerHit(
+            ball: ball,
+            quality: quality,
+            strokeSide: strokeSide,
+            swingIntent: .drive,
+            contactDistance: min(
+                spatialContactDistance(to: ball, lane: lane),
+                effectiveRacketSweetSpot(for: lane) * 0.72
+            ),
+            swingSpeed: Tunables.swingFastVelocity * 1.2
+        )
+        return true
     }
 
     /// Throbs the strike line on every quarter-note tick of the current
@@ -3451,6 +3500,9 @@ final class GameScene: SKScene {
                 continue
             }
             if ball.position.y < strikeY - Tunables.cullBelowStrikePoints {
+                if resolveAutoPlayWallContact(for: ball) {
+                    return
+                }
                 ball.removeFromParent()
                 missedLane = missedLane ?? ball.lane
             } else {
@@ -4159,7 +4211,7 @@ final class GameScene: SKScene {
                 return
             }
 
-            if contactDistance > wallAssistMissRadius(for: lane) * 1.08 {
+            if contactDistance > wallOpeningContactRadius(for: lane, baseMultiplier: 1.08) {
                 registerMiss(lane: lane, wallReason: .reach)
                 return
             }
@@ -4338,7 +4390,7 @@ final class GameScene: SKScene {
             : (HitQuality.good.windowSeconds * windowScalar + Tunables.swingTargetSlackSeconds)
         let contactPoint = racketContactPoint(for: lane)
         let maxDistance = sessionMode == .wallRally
-            ? wallAssistMissRadius(for: lane) * 1.18
+            ? wallOpeningContactRadius(for: lane, baseMultiplier: 1.18)
             : effectiveRacketMissRadius(for: lane)
         return activeBalls
             .filter { $0.isHittable(at: trackTime) }
@@ -6480,6 +6532,11 @@ final class GameScene: SKScene {
         sessionMode == .wallRally
             ? effectiveRacketMissRadius(for: lane) * (1.96 + wallOpeningForgivenessBoost() * 0.34)
             : effectiveRacketMissRadius(for: lane)
+    }
+
+    private func wallOpeningContactRadius(for lane: Lane, baseMultiplier: CGFloat = 1.0) -> CGFloat {
+        let openingAssist = 1 + wallOpeningForgivenessBoost() * Tunables.wallOpeningContactAssistMultiplier
+        return wallAssistMissRadius(for: lane) * baseMultiplier * openingAssist
     }
 
     private func adjustedWallGradingDistance(_ distance: CGFloat, lane: Lane) -> CGFloat {
