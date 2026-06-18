@@ -39,6 +39,9 @@ final class AudioManager {
     /// Applies the persisted master mute — stops music when disabled.
     func applySoundEnabled(_ enabled: Bool) {
         isEnabled = enabled
+        if enabled {
+            ensureEngineRunning()
+        }
         refreshOutputVolumes()
         if enabled {
             if isSessionActive {
@@ -52,6 +55,12 @@ final class AudioManager {
     private func refreshOutputVolumes() {
         mixer.outputVolume = isEnabled ? 1.0 : 0.0
         musicMixer.outputVolume = (isEnabled && isMusicEnabled) ? Constants.musicMixLevel : 0.0
+    }
+
+    private func ensureEngineRunning() {
+        guard !engine.isRunning else { return }
+        configureSession()
+        startEngine()
     }
 
     private let engine = AVAudioEngine()
@@ -84,8 +93,9 @@ final class AudioManager {
         engine.attach(musicSynth.sourceNode)
         engine.connect(musicSynth.sourceNode, to: musicMixer, format: musicSynth.outputFormat)
 
-        configureSession()
-        startEngine()
+        if isEnabled {
+            ensureEngineRunning()
+        }
 
         GameEventBus.shared.subscribe(self) { [weak self] event in
             self?.handle(event)
