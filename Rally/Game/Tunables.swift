@@ -638,11 +638,11 @@ enum Tunables {
     /// Extra compression at the exact contact stomp.
     static let footworkContactCompressionScale: CGFloat = 0.050  // body squats at contact moment
     /// Toe-out angle for the planted outside shoe.
-    static let footworkOutsideToeOutRadians: CGFloat = 0.38
+    static let footworkOutsideToeOutRadians: CGFloat = 0.46
     /// Neutral ready-stance toe-out so both shoes angle away from centre.
-    static let footworkReadyToeOutRadians: CGFloat = 0.34
+    static let footworkReadyToeOutRadians: CGFloat = 0.42
     /// Trail-foot drag/toe angle during recovery.
-    static let footworkRecoveryToeDragRadians: CGFloat = 0.12
+    static let footworkRecoveryToeDragRadians: CGFloat = 0.16
     /// Blend speed for side-to-side weight transfer.
     static let footworkWeightShiftBlend: CGFloat = 0.22
     /// Extra maximum blend toward lane target in wall-rally mode.

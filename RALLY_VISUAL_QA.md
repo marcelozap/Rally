@@ -731,3 +731,34 @@ Findings:
 - The gameplay player is slightly lower/smaller, leaving more visible court depth and less cramped contact space.
 - Wall-rally contact is pushed farther outside the torso/face, and the ball glow is softer so it reads as a tennis ball instead of a giant bloom.
 - Remaining issue: the avatar still needs a dedicated anatomy/face/feet pass. This pass intentionally avoided avatar identity files and only improved gameplay POV/readability.
+
+## 2026-06-18 — Avatar Anatomy Readability Pass
+
+Build:
+
+```text
+xcodebuild -project Rally.xcodeproj -scheme Rally -configuration Debug -destination 'platform=iOS Simulator,id=CA3029AB-A788-4370-BD71-E556B01C8FE6' CODE_SIGNING_ALLOWED=NO build
+Result: BUILD SUCCEEDED
+```
+
+Simulator:
+
+```text
+iPhone 16 Pro, iOS 18.6
+Bundle: com.marcelozap.rally
+```
+
+Screenshots:
+
+```text
+Home: /tmp/rally_visual_qa/home_avatar_readability_063946.png
+Gameplay autoplay: /tmp/rally_visual_qa/game_avatar_readability_063957.png
+```
+
+Findings:
+
+- Shared face geometry now has stronger minimum eye, brow, nose, and mouth sizes so the player no longer reads as faceless at gameplay scale.
+- Hair fringe is lifted through the shared `RallyAvatarGeometry.hairFringeLift(scale:)` contract, keeping hair connected while clearing more of the eyes.
+- Ears are slightly larger and farther out so the head/ear relationship is more legible.
+- Foot toe-out constants are increased so the ready stance reads less caved-in.
+- Remaining issue: the avatar still needs a deeper body/shoulder/shoe art pass; this was a focused readability repair, not a full character redesign.
