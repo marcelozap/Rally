@@ -5029,12 +5029,16 @@ final class GameScene: SKScene {
     /// racket visually "hits" something even before the ball reacts.
     private func stageRacketContactBurst(quality: HitQuality) {
         guard quality != .miss else { return }
-        let origin = playerRacketHead.position
+        let origin = playerRacketHead.parent?.convert(playerRacketHead.position, to: self)
+            ?? playerRacketHead.position
         let r = Tunables.contactRacketBurstRadius
         let wallMode = sessionMode == .wallRally
         let alphaMultiplier = Tunables.contactRacketBurstAlphaMultiplier * (wallMode ? Tunables.wallRacketBurstAlphaMultiplier : 1)
         let scaleMultiplier = Tunables.contactRacketBurstScaleMultiplier * (wallMode ? Tunables.wallRacketBurstScaleMultiplier : 1)
         let glowMultiplier = Tunables.contactRacketBurstGlowMultiplier * (wallMode ? Tunables.wallRacketBurstGlowMultiplier : 1)
+        let burstZ = wallMode
+            ? Tunables.wallRacketContactBurstZPosition
+            : Tunables.standardRacketContactBurstZPosition
         let burst = SKShapeNode(circleOfRadius: r)
         burst.position = origin
         burst.fillColor = UIColor.white.withAlphaComponent(
@@ -5042,7 +5046,7 @@ final class GameScene: SKScene {
         )
         burst.strokeColor = .clear
         burst.glowWidth = (quality == .perfect ? 6 : 4) * glowMultiplier
-        burst.zPosition = 13.45
+        burst.zPosition = burstZ
         addChild(burst)
         let toScale: CGFloat = (quality == .perfect ? 2.05 : 1.68) * scaleMultiplier
         burst.run(.sequence([
@@ -5061,7 +5065,9 @@ final class GameScene: SKScene {
         ring.fillColor = .clear
         ring.lineWidth = (quality == .perfect ? 2.0 : 1.4) * glowMultiplier
         ring.glowWidth = (quality == .perfect ? 5 : 3) * glowMultiplier
-        ring.zPosition = 13.4
+        ring.zPosition = wallMode
+            ? max(0, burstZ - 0.05)
+            : Tunables.standardRacketContactRingZPosition
         addChild(ring)
         ring.run(.sequence([
             .group([

@@ -447,6 +447,9 @@ enum Tunables {
     static let wallRacketContactLegacyHaloGlow: CGFloat = 0.75
     static let wallRacketContactLegacyHaloScaleX: CGFloat = 0.82
     static let wallRacketContactLegacyHaloScaleY: CGFloat = 0.46
+    static let wallRacketContactBurstZPosition: CGFloat = 13.20
+    static let standardRacketContactBurstZPosition: CGFloat = 13.45
+    static let standardRacketContactRingZPosition: CGFloat = 13.40
     static let wallContactImprintRingAlphaMultiplier: CGFloat = 0.20
     static let wallContactImprintRingGlowMultiplier: CGFloat = 0.20
     static let wallContactImprintSlashAlphaMultiplier: CGFloat = 1.18
