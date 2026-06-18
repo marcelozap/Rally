@@ -36,7 +36,7 @@ A lock is cooperative — it only works if both agents check it first. That chec
 
 | Since (UTC date) | Agent | Area / files | Status | Notes |
 |------------------|-------|--------------|--------|-------|
-| 2026-06-18 | [CX] | Rafa wall-rally feed readability — `Rally/Game/GameScene.swift`, `Rally/Game/Tunables.swift` | ACTIVE | Inspecting and patching one safe gameplay/feed task after screenshot reports of no balls coming through. |
+| 2026-06-18 | [CX] | Rafa wall-rally feed readability — `Rally/Game/GameScene.swift`, `Rally/Game/Tunables.swift` | RELEASED | Build passed after shortening the post-GO opening wall feed and wiring the existing feed cue so the first balls visibly travel toward the contact pocket. |
 | 2026-06-18 | [CX] | Avatar nose readability — `Rally/Features/Avatar/RallyAvatarView.swift`, `Rally/Game/GameScene.swift` | RELEASED | Build passed after making the shared SwiftUI/GameScene nose stroke visible at iPhone scale without changing avatar identity. |
 | 2026-06-18 | [CX] | Rafa camera/avatar readability — `Rally/Game/GameScene.swift`, `Rally/Game/Tunables.swift`, `Rally/Features/Avatar/RallyAvatarGeometry.swift` | RELEASED | Build passed after larger gameplay avatar scale, stronger gameplay-scale face details, lower shared hair fringe, corrected mouth runtime anchor, and stronger toe-out stance. |
 | 2026-06-13 | [CC] | Avatar identity render — `RallyAvatarView.swift`, `RallyAvatarGeometry.swift`, `Rally/Game/GameScene.swift` (head/hair block) | RELEASED | Claude Code session canceled by user; stale hold released so Codex can repair the runtime drift bug. |

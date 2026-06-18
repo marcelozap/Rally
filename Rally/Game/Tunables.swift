@@ -92,6 +92,9 @@ enum Tunables {
     static let wallReboundCueDurationMs: Double = 260
     /// Normal wait before feeding the next wall-rally ball once the court is empty.
     static let wallFeedDelaySeconds: TimeInterval = 0.22
+    /// First feed after GO. Keep this short so the opening frame never reads
+    /// like an empty court or broken spawner.
+    static let wallOpeningFeedDelaySeconds: TimeInterval = 0.12
     /// If the court stays empty this long, feed almost immediately instead of
     /// waiting through another normal delay. This protects the "one more try"
     /// loop from ever feeling frozen after a lifecycle hiccup.

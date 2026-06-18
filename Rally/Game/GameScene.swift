@@ -537,7 +537,7 @@ final class GameScene: SKScene {
                 hold: Tunables.openingHintSeconds * 0.38
             )
             if self.sessionMode == .wallRally {
-                self.scheduleWallBall(after: 0.68)
+                self.scheduleWallBall(after: Tunables.wallOpeningFeedDelaySeconds)
             }
         })
         label.run(.sequence(seq))
@@ -3523,6 +3523,7 @@ final class GameScene: SKScene {
             let pulsePalette = swingTrailPalette(intent: .drive, lane: note.lane)
             strikeLinePulse?.fillColor = pulsePalette.core
             strikeLinePulse?.schedule(arrivalTime: note.arrivalTime, currentTrackTime: currentTrackTime)
+            stageWallFeedCue(for: ball)
             stageWallReboundCue(for: ball)
         }
         stagePointCueIfNeeded(for: note)
