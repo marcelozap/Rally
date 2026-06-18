@@ -22,7 +22,12 @@ final class AudioPreferences: ObservableObject {
 }
 
 struct SoundToggleButton: View {
+    let showsLabel: Bool
     @ObservedObject private var audio = AudioPreferences.shared
+
+    init(showsLabel: Bool = true) {
+        self.showsLabel = showsLabel
+    }
 
     var body: some View {
         Button {
@@ -31,13 +36,15 @@ struct SoundToggleButton: View {
             HStack(spacing: 6) {
                 Image(systemName: audio.isSoundEnabled ? "speaker.wave.2.fill" : "speaker.slash.fill")
                     .font(.system(size: 12, weight: .bold))
-                Text(audio.isSoundEnabled ? "Sound On" : "Sound Off")
-                    .font(.system(size: 11, weight: .black, design: .rounded))
-                    .lineLimit(1)
+                if showsLabel {
+                    Text(audio.isSoundEnabled ? "Sound On" : "Sound Off")
+                        .font(.system(size: 11, weight: .black, design: .rounded))
+                        .lineLimit(1)
+                }
             }
             .foregroundStyle(audio.isSoundEnabled ? Color.cyan : Color.white.opacity(0.62))
-            .padding(.horizontal, 10)
-            .frame(height: 36)
+            .padding(.horizontal, showsLabel ? 10 : 0)
+            .frame(width: showsLabel ? nil : 36, height: 36)
             .background(
                 Capsule(style: .continuous)
                     .fill(Color.white.opacity(audio.isSoundEnabled ? 0.10 : 0.055))

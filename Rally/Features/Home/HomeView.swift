@@ -45,8 +45,6 @@ struct HomeView: View {
                         }
                         .buttonStyle(LoadoutPlayButtonStyle())
                         .accessibilityLabel("Open journal")
-
-                        SoundToggleButton()
                     }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
@@ -400,6 +398,10 @@ struct HomeView: View {
             }
 
             Spacer(minLength: 8)
+
+            SoundToggleButton(showsLabel: false)
+                .buttonStyle(LoadoutPlayButtonStyle())
+                .accessibilityHint("Toggles Rally sound effects and music")
 
             Button {
                 withAnimation(.spring(response: 0.20, dampingFraction: 0.80)) {
