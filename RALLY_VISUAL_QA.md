@@ -791,3 +791,34 @@ Findings:
 - The no-ball recovery patch is visually verified in this proof run: autoplay reached score `27`, all three life pips remained visible, and a live ball was present in the racket-side contact pocket.
 - This specifically confirms the court did not sit empty after the stale-exchange recovery patch.
 - Remaining issue: the gameplay avatar is still not premium enough. Face, shoulder, hand, shoe, and stance anatomy remain the next highest-impact craft pass after ball-feed reliability.
+
+## 2026-06-19 — Quiet Sound Default + Autoplay Feed Proof
+
+Build:
+
+```text
+xcodebuild -project Rally.xcodeproj -scheme Rally -configuration Debug -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build
+Result: BUILD SUCCEEDED
+```
+
+Simulator:
+
+```text
+iPhone 16 Pro, iOS 18.6
+Bundle: com.marcelozap.rally
+Autoplay arguments: -RallyGuestMode -RallyAutoPlay
+```
+
+Screenshots:
+
+```text
+3s:  /tmp/rally_visual_qa/autoplay_3s.png
+8s:  /tmp/rally_visual_qa/autoplay_8s.png
+14s: /tmp/rally_visual_qa/autoplay_14s.png
+```
+
+Findings:
+
+- Sound is already quiet by default in the current tree: `RallyDefaults.applyQuietSoundDefaultIfNeeded()` runs at app launch, `AudioPreferences` persists the user toggle, and autoplay resolves sound to off.
+- Autoplay feed is alive in the fresh build: the 8s frame shows score `235` and combo `x3` with a visible ball; the 14s frame shows score `859` and combo `x9` with a visible ball.
+- This means the owner's "no balls coming through" report is not a global spawn failure in the current branch. The next Rafa task should be a manual-start visual proof to see whether the human tap-through path, first-feed timing, or ball readability still feels broken.
