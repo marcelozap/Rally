@@ -286,14 +286,14 @@ enum Tunables {
     static let ballTravelSeconds:     Double  = 1.52
     static let strikeLineYRatio:      CGFloat = 0.345
     static let gameplayCameraYOffsetRatio: CGFloat = -0.125
-    static let gameplayCourtNearOverscanRatio: CGFloat = 0.30
-    static let gameplayCourtFarYRatio: CGFloat = 0.865
-    static let gameplayCourtNearHalfWidthRatio: CGFloat = 0.96
-    static let gameplayCourtFarHalfWidthRatio: CGFloat = 0.145
-    static let gameplayCourtNetDepthRatio: CGFloat = 0.47
+    static let gameplayCourtNearOverscanRatio: CGFloat = 0.36
+    static let gameplayCourtFarYRatio: CGFloat = 0.895
+    static let gameplayCourtNearHalfWidthRatio: CGFloat = 1.08
+    static let gameplayCourtFarHalfWidthRatio: CGFloat = 0.118
+    static let gameplayCourtNetDepthRatio: CGFloat = 0.51
     static let gameplayCourtNetNearHalfScalar: CGFloat = 0.62
     static let gameplayCourtNetFarHalfScalar: CGFloat = 0.98
-    static let gameplayPlayerRootYRatio: CGFloat = 0.132
+    static let gameplayPlayerRootYRatio: CGFloat = 0.122
     static let gameplayPlayerVisualScale: CGFloat = 0.67
     /// SpriteKit gameplay needs shoes smaller than the locker hero view because
     /// the court camera compresses the feet near the bottom of the frame.
