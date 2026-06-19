@@ -884,42 +884,47 @@ private struct LoadoutShortsGlyph: View {
             let w = size.width
             let h = size.height
 
+            // Keep this icon graphic and athletic. Earlier versions rounded
+            // into a square block, which read more like a generic tile than
+            // tennis shorts at phone size.
             var body = Path()
-            body.move(to: CGPoint(x: w * 0.16, y: h * 0.18))
-            body.addQuadCurve(to: CGPoint(x: w * 0.84, y: h * 0.18), control: CGPoint(x: w * 0.50, y: h * 0.08))
-            body.addLine(to: CGPoint(x: w * 0.91, y: h * 0.78))
-            body.addQuadCurve(to: CGPoint(x: w * 0.60, y: h * 0.84), control: CGPoint(x: w * 0.76, y: h * 0.91))
-            body.addLine(to: CGPoint(x: w * 0.50, y: h * 0.48))
-            body.addLine(to: CGPoint(x: w * 0.40, y: h * 0.84))
-            body.addQuadCurve(to: CGPoint(x: w * 0.09, y: h * 0.78), control: CGPoint(x: w * 0.24, y: h * 0.91))
+            body.move(to: CGPoint(x: w * 0.15, y: h * 0.17))
+            body.addLine(to: CGPoint(x: w * 0.85, y: h * 0.17))
+            body.addLine(to: CGPoint(x: w * 0.80, y: h * 0.78))
+            body.addQuadCurve(to: CGPoint(x: w * 0.57, y: h * 0.82), control: CGPoint(x: w * 0.68, y: h * 0.88))
+            body.addLine(to: CGPoint(x: w * 0.50, y: h * 0.51))
+            body.addLine(to: CGPoint(x: w * 0.43, y: h * 0.82))
+            body.addQuadCurve(to: CGPoint(x: w * 0.20, y: h * 0.78), control: CGPoint(x: w * 0.32, y: h * 0.88))
             body.closeSubpath()
             context.fill(body, with: .color(primary))
 
             var innerShadow = Path()
-            innerShadow.move(to: CGPoint(x: w * 0.50, y: h * 0.28))
-            innerShadow.addLine(to: CGPoint(x: w * 0.50, y: h * 0.50))
+            innerShadow.move(to: CGPoint(x: w * 0.50, y: h * 0.22))
+            innerShadow.addLine(to: CGPoint(x: w * 0.50, y: h * 0.52))
             innerShadow.move(to: CGPoint(x: w * 0.50, y: h * 0.50))
-            innerShadow.addLine(to: CGPoint(x: w * 0.42, y: h * 0.82))
+            innerShadow.addLine(to: CGPoint(x: w * 0.43, y: h * 0.80))
             innerShadow.move(to: CGPoint(x: w * 0.50, y: h * 0.50))
-            innerShadow.addLine(to: CGPoint(x: w * 0.58, y: h * 0.82))
-            context.stroke(innerShadow, with: .color(Color.black.opacity(0.30)), lineWidth: max(1.15, w * 0.030))
+            innerShadow.addLine(to: CGPoint(x: w * 0.57, y: h * 0.80))
+            context.stroke(innerShadow, with: .color(Color.black.opacity(0.24)), lineWidth: max(1.05, w * 0.026))
 
             var waistband = Path()
-            waistband.move(to: CGPoint(x: w * 0.18, y: h * 0.25))
-            waistband.addQuadCurve(to: CGPoint(x: w * 0.82, y: h * 0.25), control: CGPoint(x: w * 0.50, y: h * 0.17))
-            context.stroke(waistband, with: .color(accent.opacity(0.92)), lineWidth: max(2.1, w * 0.052))
+            waistband.addRoundedRect(
+                in: CGRect(x: w * 0.17, y: h * 0.18, width: w * 0.66, height: max(3.2, h * 0.13)),
+                cornerSize: CGSize(width: w * 0.045, height: w * 0.045)
+            )
+            context.fill(waistband, with: .color(accent.opacity(0.92)))
 
             var hems = Path()
-            hems.move(to: CGPoint(x: w * 0.10, y: h * 0.76))
-            hems.addQuadCurve(to: CGPoint(x: w * 0.39, y: h * 0.81), control: CGPoint(x: w * 0.25, y: h * 0.88))
-            hems.move(to: CGPoint(x: w * 0.61, y: h * 0.81))
-            hems.addQuadCurve(to: CGPoint(x: w * 0.90, y: h * 0.76), control: CGPoint(x: w * 0.75, y: h * 0.88))
-            context.stroke(hems, with: .color(accent.opacity(0.80)), lineWidth: max(1.5, w * 0.038))
+            hems.move(to: CGPoint(x: w * 0.20, y: h * 0.77))
+            hems.addQuadCurve(to: CGPoint(x: w * 0.43, y: h * 0.80), control: CGPoint(x: w * 0.31, y: h * 0.84))
+            hems.move(to: CGPoint(x: w * 0.57, y: h * 0.80))
+            hems.addQuadCurve(to: CGPoint(x: w * 0.80, y: h * 0.77), control: CGPoint(x: w * 0.69, y: h * 0.84))
+            context.stroke(hems, with: .color(accent.opacity(0.82)), lineWidth: max(1.25, w * 0.032))
 
-            let shineRect = CGRect(x: w * 0.25, y: h * 0.27, width: w * 0.14, height: h * 0.42)
+            let shineRect = CGRect(x: w * 0.25, y: h * 0.32, width: w * 0.10, height: h * 0.35)
             var shine = Path()
             shine.addRoundedRect(in: shineRect, cornerSize: CGSize(width: w * 0.05, height: w * 0.05))
-            context.fill(shine, with: .color(Color.white.opacity(0.17)))
+            context.fill(shine, with: .color(Color.white.opacity(0.13)))
         }
     }
 }
@@ -934,54 +939,46 @@ private struct LoadoutTennisShoeGlyph: View {
             let h = size.height
 
             var shadow = Path()
-            shadow.addEllipse(in: CGRect(x: w * 0.08, y: h * 0.78, width: w * 0.84, height: h * 0.15))
+            shadow.addEllipse(in: CGRect(x: w * 0.14, y: h * 0.76, width: w * 0.72, height: h * 0.14))
             context.fill(shadow, with: .color(Color.black.opacity(0.18)))
 
-            func drawShoe(originX: CGFloat, mirror: CGFloat) {
-                let x0 = originX
-                func p(_ x: CGFloat, _ y: CGFloat) -> CGPoint {
-                    CGPoint(x: x0 + (mirror > 0 ? x : -x), y: y)
-                }
+            // One side-profile sneaker reads cleaner than a tiny pair at tile
+            // size; the long toe and heel collar keep it tennis-specific.
+            var upper = Path()
+            upper.move(to: CGPoint(x: w * 0.16, y: h * 0.62))
+            upper.addQuadCurve(to: CGPoint(x: w * 0.30, y: h * 0.43), control: CGPoint(x: w * 0.20, y: h * 0.47))
+            upper.addQuadCurve(to: CGPoint(x: w * 0.52, y: h * 0.39), control: CGPoint(x: w * 0.42, y: h * 0.31))
+            upper.addQuadCurve(to: CGPoint(x: w * 0.78, y: h * 0.57), control: CGPoint(x: w * 0.72, y: h * 0.38))
+            upper.addQuadCurve(to: CGPoint(x: w * 0.84, y: h * 0.66), control: CGPoint(x: w * 0.86, y: h * 0.61))
+            upper.addQuadCurve(to: CGPoint(x: w * 0.21, y: h * 0.70), control: CGPoint(x: w * 0.54, y: h * 0.80))
+            upper.addQuadCurve(to: CGPoint(x: w * 0.16, y: h * 0.62), control: CGPoint(x: w * 0.10, y: h * 0.69))
+            upper.closeSubpath()
+            context.fill(upper, with: .color(primary))
 
-                var upper = Path()
-                upper.move(to: p(w * 0.04, h * 0.60))
-                upper.addQuadCurve(to: p(w * 0.16, h * 0.40), control: p(w * 0.08, h * 0.42))
-                upper.addQuadCurve(to: p(w * 0.34, h * 0.34), control: p(w * 0.24, h * 0.28))
-                upper.addQuadCurve(to: p(w * 0.48, h * 0.47), control: p(w * 0.45, h * 0.34))
-                upper.addQuadCurve(to: p(w * 0.56, h * 0.66), control: p(w * 0.60, h * 0.53))
-                upper.addQuadCurve(to: p(w * 0.08, h * 0.72), control: p(w * 0.32, h * 0.82))
-                upper.addQuadCurve(to: p(w * 0.04, h * 0.60), control: p(w * 0.00, h * 0.68))
-                upper.closeSubpath()
-                context.fill(upper, with: .color(primary))
+            var sole = Path()
+            sole.move(to: CGPoint(x: w * 0.15, y: h * 0.72))
+            sole.addQuadCurve(to: CGPoint(x: w * 0.84, y: h * 0.69), control: CGPoint(x: w * 0.50, y: h * 0.82))
+            context.stroke(sole, with: .color(accent.opacity(0.96)), lineWidth: max(2.0, h * 0.096))
 
-                var sole = Path()
-                sole.move(to: p(w * 0.03, h * 0.72))
-                sole.addQuadCurve(to: p(w * 0.54, h * 0.70), control: p(w * 0.28, h * 0.86))
-                context.stroke(sole, with: .color(accent.opacity(0.96)), lineWidth: max(2.2, h * 0.11))
+            var toeCap = Path()
+            toeCap.move(to: CGPoint(x: w * 0.66, y: h * 0.51))
+            toeCap.addQuadCurve(to: CGPoint(x: w * 0.82, y: h * 0.64), control: CGPoint(x: w * 0.83, y: h * 0.55))
+            context.stroke(toeCap, with: .color(Color.white.opacity(0.52)), lineWidth: max(1.0, w * 0.022))
 
-                var toeCap = Path()
-                toeCap.move(to: p(w * 0.43, h * 0.47))
-                toeCap.addQuadCurve(to: p(w * 0.55, h * 0.65), control: p(w * 0.60, h * 0.51))
-                context.stroke(toeCap, with: .color(Color.white.opacity(0.58)), lineWidth: max(1.0, w * 0.024))
+            var laceDeck = Path()
+            laceDeck.move(to: CGPoint(x: w * 0.35, y: h * 0.47))
+            laceDeck.addQuadCurve(to: CGPoint(x: w * 0.57, y: h * 0.47), control: CGPoint(x: w * 0.45, y: h * 0.37))
+            laceDeck.addQuadCurve(to: CGPoint(x: w * 0.63, y: h * 0.59), control: CGPoint(x: w * 0.64, y: h * 0.53))
+            laceDeck.addQuadCurve(to: CGPoint(x: w * 0.38, y: h * 0.61), control: CGPoint(x: w * 0.49, y: h * 0.67))
+            laceDeck.closeSubpath()
+            context.fill(laceDeck, with: .color(accent.opacity(0.28)))
 
-                var laceDeck = Path()
-                laceDeck.move(to: p(w * 0.19, h * 0.43))
-                laceDeck.addQuadCurve(to: p(w * 0.34, h * 0.40), control: p(w * 0.27, h * 0.33))
-                laceDeck.addQuadCurve(to: p(w * 0.39, h * 0.60), control: p(w * 0.42, h * 0.50))
-                laceDeck.addQuadCurve(to: p(w * 0.20, h * 0.61), control: p(w * 0.30, h * 0.68))
-                laceDeck.closeSubpath()
-                context.fill(laceDeck, with: .color(accent.opacity(0.28)))
-
-                var laces = Path()
-                laces.move(to: p(w * 0.21, h * 0.48))
-                laces.addLine(to: p(w * 0.33, h * 0.55))
-                laces.move(to: p(w * 0.27, h * 0.45))
-                laces.addLine(to: p(w * 0.40, h * 0.54))
-                context.stroke(laces, with: .color(accent.opacity(0.92)), lineWidth: max(1.0, w * 0.022))
-            }
-
-            drawShoe(originX: w * 0.10, mirror: 1)
-            drawShoe(originX: w * 0.90, mirror: -1)
+            var laces = Path()
+            laces.move(to: CGPoint(x: w * 0.38, y: h * 0.50))
+            laces.addLine(to: CGPoint(x: w * 0.55, y: h * 0.57))
+            laces.move(to: CGPoint(x: w * 0.47, y: h * 0.47))
+            laces.addLine(to: CGPoint(x: w * 0.64, y: h * 0.56))
+            context.stroke(laces, with: .color(accent.opacity(0.92)), lineWidth: max(0.9, w * 0.020))
         }
     }
 }
