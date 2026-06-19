@@ -19,19 +19,19 @@ enum RallyAvatarGeometry {
     static let hairColorHex = "#0A0A0C"
     static let hairHighlightHex = "#2A2A30"
     static let faceInkHex = "#1C1C1E"
-    static let eyeCenterXRatio: CGFloat = 0.20
-    static let eyeCenterFromTopRatio: CGFloat = 0.515
+    static let eyeCenterXRatio: CGFloat = 0.225
+    static let eyeCenterFromTopRatio: CGFloat = 0.535
     static let browAboveEyeRatio: CGFloat = 0.135
     static let noseFromTopRatio: CGFloat = 0.62
     static let mouthFromTopRatio: CGFloat = 0.725
     static let mouthWidthRatio: CGFloat = 0.34
     static let shoulderWidening: CGFloat = 1.34
     static let jawNarrowing: CGFloat = 0.12
-    static let minGameplayEyeWidth: CGFloat = 7.4
-    static let minGameplayEyeHeight: CGFloat = 4.8
-    static let minGameplayBrowWidth: CGFloat = 8.6
-    static let minGameplayMouthHalfWidth: CGFloat = 10.8
-    static let minGameplayMouthCurve: CGFloat = 1.45
+    static let minGameplayEyeWidth: CGFloat = 5.6
+    static let minGameplayEyeHeight: CGFloat = 3.7
+    static let minGameplayBrowWidth: CGFloat = 6.8
+    static let minGameplayMouthHalfWidth: CGFloat = 8.4
+    static let minGameplayMouthCurve: CGFloat = 1.10
 
     static func headTop(scale: CGFloat) -> CGFloat { headHeight * 0.5 * scale }
     static func headBottom(scale: CGFloat) -> CGFloat { -headHeight * 0.5 * scale }
@@ -64,7 +64,7 @@ enum RallyAvatarGeometry {
     /// Small vertical lift applied to the FRONT hair. The hair path is authored
     /// around the head ellipse, so this must stay subtle: too high reads bald /
     /// disconnected, too low covers the face. Both renderers call this value.
-    static func hairFringeLift(scale: CGFloat) -> CGFloat { 0.08 * scale }
+    static func hairFringeLift(scale: CGFloat) -> CGFloat { 1.15 * scale }
 
     static func handRadius(scale: CGFloat, armThickness: CGFloat = 13.2) -> CGFloat {
         armThickness * 0.58 * scale
@@ -199,8 +199,8 @@ enum RallyAvatarGeometry {
         let browY = browCenterY(scale: scale)
         let eyeY = eyeCenterY(scale: scale)
         let templeY = eyeY + 0.6 * scale
-        let fringeBaseY = browY + 8.4 * scale
-        let fringeTipY = browY + 3.4 * scale
+        let fringeBaseY = browY + 7.4 * scale
+        let fringeTipY = browY + 4.8 * scale
 
         // Crown and temples are deliberately anchored around the head ellipse.
         path.move(to: CGPoint(x: -halfWidth - 5.8 * scale, y: templeY - 0.8 * scale))
@@ -223,12 +223,12 @@ enum RallyAvatarGeometry {
 
         // Angular Zuko-style fringe: asymmetric points that prove this is hair,
         // not a cap, helmet, or bald stripe.
-        path.addLine(to: CGPoint(x: 13.2 * scale, y: fringeBaseY + 0.4 * scale))
-        path.addLine(to: CGPoint(x: 7.2 * scale, y: fringeTipY + 1.6 * scale))
-        path.addLine(to: CGPoint(x: 1.0 * scale, y: fringeBaseY - 1.2 * scale))
-        path.addLine(to: CGPoint(x: -5.4 * scale, y: fringeTipY + 0.6 * scale))
-        path.addLine(to: CGPoint(x: -10.8 * scale, y: fringeBaseY + 0.3 * scale))
-        path.addLine(to: CGPoint(x: -15.4 * scale, y: fringeTipY + 1.0 * scale))
+        path.addLine(to: CGPoint(x: 13.2 * scale, y: fringeBaseY + 0.2 * scale))
+        path.addLine(to: CGPoint(x: 7.2 * scale, y: fringeTipY + 1.0 * scale))
+        path.addLine(to: CGPoint(x: 1.0 * scale, y: fringeBaseY - 0.7 * scale))
+        path.addLine(to: CGPoint(x: -5.4 * scale, y: fringeTipY + 0.3 * scale))
+        path.addLine(to: CGPoint(x: -10.8 * scale, y: fringeBaseY + 0.1 * scale))
+        path.addLine(to: CGPoint(x: -15.4 * scale, y: fringeTipY + 0.8 * scale))
         path.addLine(to: CGPoint(x: -halfWidth - 3.8 * scale, y: templeY - 2.6 * scale))
         path.closeSubpath()
 
