@@ -4,6 +4,13 @@ This file is the map of who is working on Rally, what they own, what guards them
 
 Use it when the project feels noisy. It is a visual index, not a replacement for the rules.
 
+For the live terminal view, run:
+
+```bash
+cd /Users/a14/Desktop/Rally
+scripts/rally_agent_status.sh
+```
+
 For the more immersive "little world" view of the agents, read `AGENT_WORLD.md`.
 
 For the autonomous Clash-style builder village, read `AGENT_VILLAGE_AUTONOMY.md`.

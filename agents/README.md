@@ -57,6 +57,16 @@ Screenshots still beat claims. If the app looks wrong, it is wrong.
 
 ## Visual Dashboard
 
+For a live terminal snapshot, run:
+
+```bash
+cd /Users/a14/Desktop/Rally
+scripts/rally_agent_status.sh
+```
+
+It prints the current branch, latest commit, dirty files, active locks, village board,
+North Star priorities, open backlog, and suggested next move.
+
 Use `AGENT_VISUALIZER.md` when you need the whole operating model at once: named agents, Codex/Claude lanes, hook coverage, hot zones, and handoff flow.
 
 Use `AGENT_WORLD.md` when you want the agents to operate like a small command-center world: Rafa in the Court Lab, Sinner in the Locker Atelier, and Carlos in the Atlas Room.
