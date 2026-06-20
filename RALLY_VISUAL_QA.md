@@ -851,3 +851,32 @@ Findings:
 - Manual non-autoplay launch lands cleanly on the Home/Loadout screen with the sound toggle visible and muted.
 - The avatar has visible eyes, brows, mouth, ears, hair, racket, and slot controls, but still reads too toy-like/muppet-like in proportions. The head/neck/shoulder/shorts/feet silhouette remains the highest-impact avatar craft gap.
 - This proof does not replace the needed manual PLAY tap-through proof. The current shell tooling can screenshot the simulator but cannot tap the PLAY button directly, so the next visual QA should either be human-driven or use a simulator-control/browser mirror path.
+
+## 2026-06-20 — Debug StartGame Gameplay Proof
+
+Build:
+
+```text
+xcodebuild -project Rally.xcodeproj -scheme Rally -configuration Debug -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build
+Result: BUILD SUCCEEDED
+```
+
+Simulator:
+
+```text
+iPhone 16 Pro, iOS 18.6
+Bundle: com.marcelozap.rally
+Launch arguments: -RallyGuestMode -RallyStartGame
+```
+
+Screenshot:
+
+```text
+/tmp/rally_visual_qa/startgame_161520.png
+```
+
+Findings:
+
+- Added a DEBUG-only `-RallyStartGame` launch argument that opens `GameSessionView` without enabling autoplay, giving Rafa a repeatable non-autoplay gameplay proof path when shell tapping is unavailable.
+- The proof frame lands in gameplay with visible wall-rally HUD, visible ball/feed, and readable miss coaching (`MISS` + `READ THE FEED`), so the current branch is not globally stuck on an empty court.
+- The screenshot still confirms the owner-visible avatar craft problem: face/head/shoulder/leg proportions read too toy-like. The next high-impact visual patch should be avatar anatomy, not another ball-feed rescue, unless a human tap-through proves the feed fails differently from `-RallyStartGame`.

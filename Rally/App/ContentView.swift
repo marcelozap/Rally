@@ -22,8 +22,9 @@ struct ContentView: View {
     @AppStorage("shopHasUnseenUnlock") private var shopHasUnseenUnlock = false
 
     #if DEBUG
-    private var shouldAutoStartGameplay: Bool {
-        ProcessInfo.processInfo.arguments.contains("-RallyAutoPlay")
+    private var shouldDebugStartGameplay: Bool {
+        let arguments = ProcessInfo.processInfo.arguments
+        return arguments.contains("-RallyAutoPlay") || arguments.contains("-RallyStartGame")
     }
     #endif
 
@@ -61,7 +62,7 @@ struct ContentView: View {
                 hasAppeared = true
             }
             #if DEBUG
-            if shouldAutoStartGameplay {
+            if shouldDebugStartGameplay {
                 // Delay long enough for SwiftData @Query + mainTabs to render
                 // so the fullScreenCover modifier is already attached when we flip isPlaying.
                 DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
