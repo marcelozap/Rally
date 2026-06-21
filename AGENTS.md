@@ -7,7 +7,8 @@ Before doing any work in this repository, read the agent system in `agents/`.
 1. Read `RALLY_REPO_GUARD.md`.
 2. Read `RALLY_AGENT_LOCK.md`.
 3. Read `agents/session-handshake.md`.
-4. Run the handshake commands from `agents/session-handshake.md`.
+4. Read `agents/credit-saving.md`.
+5. Run the handshake commands from `agents/session-handshake.md`.
 
 If the repo path is not `/Users/a14/Desktop/Rally`, stop. Do not inspect, edit, build, or commit from any other Rally copy.
 
@@ -27,6 +28,7 @@ If anything conflicts, priority order is:
 ## Agent Operating Docs
 
 - `agents/README.md` — overview and reading order
+- `agents/credit-saving.md` — fast boot, targeted reading, smaller builds, and low-credit workflow
 - `AGENT_VISUALIZER.md` — visual map of agents, lanes, hooks, and handoffs
 - `AGENT_WORLD.md` — immersive operating world for Rafa, Sinner, and Carlos
 - `AGENT_VILLAGE_AUTONOMY.md` — Clash-style autonomous builder village for Codex/Claude sync

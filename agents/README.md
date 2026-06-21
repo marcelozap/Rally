@@ -7,22 +7,17 @@ Root `AGENTS.md` is still the automatic boot file. Keep it short. It points here
 ## Required Reading Order
 
 1. `AGENTS.md`
-2. `AGENT_VISUALIZER.md`
-3. `AGENT_WORLD.md`
-4. `AGENT_VILLAGE_AUTONOMY.md`
-5. `AGENT_VILLAGE_ROLES.md`
-6. `RALLY_VILLAGE_STATE.md`
-7. `agents/session-handshake.md`
-8. `agents/locks.md`
-9. `agents/lanes.md`
-10. `agents/rally-pro-coach.md`
-11. the relevant named agent file:
+2. `agents/session-handshake.md`
+3. `agents/credit-saving.md`
+4. `RALLY_NORTH_STAR.md` current priority section
+5. `RALLY_AGENT_LOCK.md` active-lock table
+6. `RALLY_PROGRESS.md` active task/backlog area
+7. the relevant named agent file:
    - `agents/rafa-gameplay.md` for gameplay
    - `agents/sinner-store.md` for Shop / Locker
    - `agents/carlos-world.md` for World / Courts
-12. `RALLY_NORTH_STAR.md`
-13. `RALLY_PROGRESS.md`
-14. `agents/current-priority.md`
+
+Only deep-read the visual/world/village docs when the task is about agents, docs, lanes, locks, or project planning. Normal code sessions should stay lean.
 
 ## Why This Exists
 
@@ -57,7 +52,14 @@ Screenshots still beat claims. If the app looks wrong, it is wrong.
 
 ## Visual Dashboard
 
-For a live terminal snapshot, run:
+For a compact terminal snapshot, run:
+
+```bash
+cd /Users/a14/Desktop/Rally
+scripts/rally_agent_fast_status.sh
+```
+
+For the full live terminal snapshot, run:
 
 ```bash
 cd /Users/a14/Desktop/Rally
@@ -67,7 +69,7 @@ scripts/rally_agent_status.sh
 It prints the current branch, latest commit, dirty files, active locks, village board,
 North Star priorities, open backlog, and suggested next move.
 
-Use `AGENT_VISUALIZER.md` when you need the whole operating model at once: named agents, Codex/Claude lanes, hook coverage, hot zones, and handoff flow.
+Use `AGENT_VISUALIZER.md` only when you need the whole operating model at once: named agents, Codex/Claude lanes, hook coverage, hot zones, and handoff flow.
 
 Use `AGENT_WORLD.md` when you want the agents to operate like a small command-center world: Rafa in the Court Lab, Sinner in the Locker Atelier, and Carlos in the Atlas Room.
 
