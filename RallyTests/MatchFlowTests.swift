@@ -15,8 +15,8 @@ final class MatchFlowTests: XCTestCase {
 
     func testExchangeAfterWarmUpClockMark() {
         let c = MatchFlowCoordinator(sessionDurationSeconds: 180)
-        // 0.20 of session is past the 0.15 warm-up mark — clock alone is enough.
-        c.update(trackTime: 36, combo: 0)
+        // Clock alone is enough once the tunable warm-up floor has elapsed.
+        c.update(trackTime: 180 * (Tunables.MatchFlow.warmUpProgress + 0.01), combo: 0)
         XCTAssertEqual(c.currentPhase, .exchange)
     }
 
@@ -76,7 +76,7 @@ final class MatchFlowTests: XCTestCase {
         var transitions: [(MatchFlowPhase, MatchFlowPhase)] = []
         c.onPhaseChange = { from, to in transitions.append((from, to)) }
         c.update(trackTime: 5, combo: 0)
-        c.update(trackTime: 36, combo: 0)
+        c.update(trackTime: 180 * (Tunables.MatchFlow.warmUpProgress + 0.01), combo: 0)
         XCTAssertFalse(transitions.isEmpty)
         XCTAssertEqual(transitions.last?.1, .exchange)
     }
