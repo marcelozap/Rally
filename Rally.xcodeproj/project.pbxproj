@@ -47,6 +47,7 @@
 		3B5ED5A7ABD2F4480E6B4EF8 /* RemoteTunables.swift in Sources */ = {isa = PBXBuildFile; fileRef = A09FD90A857F3D4040CF3D7A /* RemoteTunables.swift */; };
 		3C76C0D63513653412C379FA /* JournalPromptLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14B239410687A69AFA0799E1 /* JournalPromptLibrary.swift */; };
 		3CAD6CE7F6C885156B0B7494 /* AvatarModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 751C4EC6ECE2262FBEE6AB80 /* AvatarModels.swift */; };
+		3C5ED332CF194FDFB9B8F570 /* RallyDefaultsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDC20C6A220342A5BD7B21B0 /* RallyDefaultsTests.swift */; };
 		3DA73D1D05D5B30351481DDF /* PlayerProgress.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19B9540F48A06D3217BA03F5 /* PlayerProgress.swift */; };
 		4492CC0771F7E775D51EFC2D /* StrikeLinePulse.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6FA3CF9C65C4E05497EDC20 /* StrikeLinePulse.swift */; };
 		4E7C213773943E76E7E283C1 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88FB6AB7F6EAF7D9373D8FEA /* RootView.swift */; };
@@ -154,6 +155,7 @@
 		F5B00F75CCFC4D41B2835BFE /* JournalEntrySources.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JournalEntrySources.swift; sourceTree = "<group>"; };
 		379DA97B8C58687215605C0B /* LogsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogsView.swift; sourceTree = "<group>"; };
 		3F8DC4F6380B63E3BC7E6652 /* CompetitionViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompetitionViews.swift; sourceTree = "<group>"; };
+		FDC20C6A220342A5BD7B21B0 /* RallyDefaultsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RallyDefaultsTests.swift; sourceTree = "<group>"; };
 		446B15BB8FE53901E8CCAC3D /* RallyTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = RallyTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		4565569C11AFDE663466D6F9 /* cosmetics.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = cosmetics.json; sourceTree = "<group>"; };
 		4675C61EBF543F8D31C57935 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -381,6 +383,7 @@
 				707002AAB0C609EE49FAA4D1 /* HitQualityTests.swift */,
 				FB90CCD37FEC5580BDA74365 /* MatchFlowTests.swift */,
 				B930D3F395CCB54159AC82A2 /* ProgressMergeTests.swift */,
+				FDC20C6A220342A5BD7B21B0 /* RallyDefaultsTests.swift */,
 				D8CEDAD6E64A2A13DCE5BDBD /* RemoteTunablesTests.swift */,
 				162E97FEF5B42181857E22F4 /* RhythmSpawnerTests.swift */,
 				5E415C7F8BB889E45B50472A /* SyncPayloadCodingTests.swift */,
@@ -685,6 +688,7 @@
 				B7C0EEE585B8701B78124A90 /* HitQualityTests.swift in Sources */,
 				E33D4125508B73663AA07A62 /* MatchFlowTests.swift in Sources */,
 				5E517627E805E761E926734B /* ProgressMergeTests.swift in Sources */,
+				3C5ED332CF194FDFB9B8F570 /* RallyDefaultsTests.swift in Sources */,
 				6F031884A1F85F9B11EA9FE1 /* RemoteTunablesTests.swift in Sources */,
 				3ACC84A5C05B9A0529940A5B /* RhythmSpawnerTests.swift in Sources */,
 				B64A1FFC930F7B6FEF4F69D8 /* SyncPayloadCodingTests.swift in Sources */,
