@@ -918,3 +918,35 @@ Findings:
 - Added a DEBUG-only `-RallyStartGame` launch argument that opens `GameSessionView` without enabling autoplay, giving Rafa a repeatable non-autoplay gameplay proof path when shell tapping is unavailable.
 - The proof frame lands in gameplay with visible wall-rally HUD, visible ball/feed, and readable miss coaching (`MISS` + `READ THE FEED`), so the current branch is not globally stuck on an empty court.
 - The screenshot still confirms the owner-visible avatar craft problem: face/head/shoulder/leg proportions read too toy-like. The next high-impact visual patch should be avatar anatomy, not another ball-feed rescue, unless a human tap-through proves the feed fails differently from `-RallyStartGame`.
+
+## 2026-06-22 — Avatar Gameplay Anatomy Readability Proof
+
+Build:
+
+```text
+xcodebuild -project Rally.xcodeproj -scheme Rally -configuration Debug -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build
+Result: BUILD SUCCEEDED
+```
+
+Simulator:
+
+```text
+iPhone 16 Pro, iOS 18.6
+Bundle: com.marcelozap.rally
+Home launch arguments: default
+Gameplay launch arguments: -RallyAutoPlay
+```
+
+Screenshots:
+
+```text
+Home:     /tmp/rally_visual_qa/avatar_readability_home_125529.png
+Gameplay: /tmp/rally_visual_qa/avatar_readability_game_125538.png
+```
+
+Findings:
+
+- Home and gameplay now share the same visible identity and outfit in the proof frames: Wimbledon court, neon top, black shorts, white tennis shoes, black hair, visible eyes, ears, brows, mouth, and racket.
+- The gameplay-scale face is materially more readable than the previous proof: eyes/mouth survive the camera distance, hair sits connected to the crown instead of floating, and the ears/neck are visible enough to avoid the bald-mask look.
+- Shoulder and shoe silhouettes were softened after the first proof in this pass: sleeve caps are less like glowing puppet balls, and shoes are slimmer/more tennis-like with reduced inward toe rotation.
+- Remaining craft gap: the figure is usable for playtesting but still stylized. A future avatar art pass should focus on torso/arm anatomy and clothing detail, not identity sync or ball-feed rescue.

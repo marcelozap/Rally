@@ -297,7 +297,7 @@ enum Tunables {
     static let gameplayPlayerVisualScale: CGFloat = 0.67
     /// SpriteKit gameplay needs shoes smaller than the locker hero view because
     /// the court camera compresses the feet near the bottom of the frame.
-    static let gameplayShoeVisualScale: CGFloat = 0.86
+    static let gameplayShoeVisualScale: CGFloat = 0.78
     static let spawnLineYRatio:       CGFloat = 1.05
     static let cullBelowStrikePoints: CGFloat = 40
     static let horizonLaneInsetRatio: CGFloat = 0.12
@@ -646,9 +646,9 @@ enum Tunables {
     /// Extra compression at the exact contact stomp.
     static let footworkContactCompressionScale: CGFloat = 0.050  // body squats at contact moment
     /// Toe-out angle for the planted outside shoe.
-    static let footworkOutsideToeOutRadians: CGFloat = 0.46
+    static let footworkOutsideToeOutRadians: CGFloat = 0.36
     /// Neutral ready-stance toe-out so both shoes angle away from centre.
-    static let footworkReadyToeOutRadians: CGFloat = 0.42
+    static let footworkReadyToeOutRadians: CGFloat = 0.31
     /// Trail-foot drag/toe angle during recovery.
     static let footworkRecoveryToeDragRadians: CGFloat = 0.16
     /// Blend speed for side-to-side weight transfer.

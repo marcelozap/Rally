@@ -1569,7 +1569,7 @@ final class GameScene: SKScene {
 
         // Sloped sleeve panel over the shoulder joint. Round caps read like puppet pins at game scale.
         let leadSleeve = SKShapeNode(path: RallyAvatarGeometry.sleeveCapPath(scale: bodyScale, side: 1))
-        leadSleeve.fillColor = top.blended(withFraction: 0.12, of: .white) ?? top
+        leadSleeve.fillColor = top.blended(withFraction: 0.03, of: .white) ?? top
         leadSleeve.strokeColor = .clear
         leadSleeve.lineWidth = 0
         leadSleeve.position = CGPoint(x: 10 * bodyScale, y: layout.torsoY + 30 * bodyScale)
@@ -1590,7 +1590,7 @@ final class GameScene: SKScene {
         )
 
         let trailSleeve = SKShapeNode(path: RallyAvatarGeometry.sleeveCapPath(scale: bodyScale, side: -1))
-        trailSleeve.fillColor = top.blended(withFraction: 0.08, of: .white) ?? top
+        trailSleeve.fillColor = top.blended(withFraction: 0.04, of: .black) ?? top
         trailSleeve.strokeColor = .clear
         trailSleeve.lineWidth = 0
         trailSleeve.position = CGPoint(x: -10 * bodyScale, y: layout.torsoY + 30 * bodyScale)

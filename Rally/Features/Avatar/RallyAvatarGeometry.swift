@@ -20,18 +20,18 @@ enum RallyAvatarGeometry {
     static let hairHighlightHex = "#2A2A30"
     static let faceInkHex = "#1C1C1E"
     static let eyeCenterXRatio: CGFloat = 0.225
-    static let eyeCenterFromTopRatio: CGFloat = 0.535
-    static let browAboveEyeRatio: CGFloat = 0.135
+    static let eyeCenterFromTopRatio: CGFloat = 0.512
+    static let browAboveEyeRatio: CGFloat = 0.124
     static let noseFromTopRatio: CGFloat = 0.62
-    static let mouthFromTopRatio: CGFloat = 0.725
-    static let mouthWidthRatio: CGFloat = 0.34
-    static let shoulderWidening: CGFloat = 1.34
+    static let mouthFromTopRatio: CGFloat = 0.748
+    static let mouthWidthRatio: CGFloat = 0.38
+    static let shoulderWidening: CGFloat = 1.42
     static let jawNarrowing: CGFloat = 0.12
-    static let minGameplayEyeWidth: CGFloat = 5.6
-    static let minGameplayEyeHeight: CGFloat = 3.7
-    static let minGameplayBrowWidth: CGFloat = 6.8
-    static let minGameplayMouthHalfWidth: CGFloat = 8.4
-    static let minGameplayMouthCurve: CGFloat = 1.10
+    static let minGameplayEyeWidth: CGFloat = 6.2
+    static let minGameplayEyeHeight: CGFloat = 4.0
+    static let minGameplayBrowWidth: CGFloat = 7.4
+    static let minGameplayMouthHalfWidth: CGFloat = 9.6
+    static let minGameplayMouthCurve: CGFloat = 1.38
 
     static func headTop(scale: CGFloat) -> CGFloat { headHeight * 0.5 * scale }
     static func headBottom(scale: CGFloat) -> CGFloat { -headHeight * 0.5 * scale }
@@ -58,13 +58,13 @@ enum RallyAvatarGeometry {
     }
 
     static func neckSize(scale: CGFloat) -> CGSize {
-        CGSize(width: headWidth * 0.36 * scale, height: 17 * scale)
+        CGSize(width: headWidth * 0.42 * scale, height: 18.5 * scale)
     }
 
     /// Small vertical lift applied to the FRONT hair. The hair path is authored
     /// around the head ellipse, so this must stay subtle: too high reads bald /
     /// disconnected, too low covers the face. Both renderers call this value.
-    static func hairFringeLift(scale: CGFloat) -> CGFloat { 1.15 * scale }
+    static func hairFringeLift(scale: CGFloat) -> CGFloat { 0.72 * scale }
 
     static func handRadius(scale: CGFloat, armThickness: CGFloat = 13.2) -> CGFloat {
         armThickness * 0.58 * scale
@@ -178,10 +178,10 @@ enum RallyAvatarGeometry {
     }
 
     static func earPath(side: CGFloat, scale: CGFloat) -> CGPath {
-        let width = max(headWidth * 0.20 * scale, 5.8)
-        let height = max(headHeight * 0.27 * scale, 8.4)
+        let width = max(headWidth * 0.22 * scale, 6.7)
+        let height = max(headHeight * 0.29 * scale, 9.4)
         let rect = CGRect(
-            x: side * (headHalfWidth(scale: scale) + 0.8 * scale) - (side > 0 ? width * 0.12 : width * 0.88),
+            x: side * (headHalfWidth(scale: scale) + 0.35 * scale) - (side > 0 ? width * 0.12 : width * 0.88),
             y: eyeCenterY(scale: scale) - height * 0.40,
             width: width,
             height: height
@@ -446,9 +446,9 @@ enum RallyAvatarGeometry {
 
     /// Full shoe upper silhouette: low toe box, slightly elevated heel.
     static func shoeBodyPath(scale: CGFloat) -> CGPath {
-        let w: CGFloat = 40 * scale
-        let h: CGFloat = 12.8 * scale
-        let heelLift: CGFloat = 2.4 * scale
+        let w: CGFloat = 35.5 * scale
+        let h: CGFloat = 11.2 * scale
+        let heelLift: CGFloat = 1.6 * scale
         let path = CGMutablePath()
         path.move(to: CGPoint(x: -w * 0.50, y: heelLift))
         path.addCurve(to: CGPoint(x: -w * 0.51, y: -h * 0.42),
@@ -468,8 +468,8 @@ enum RallyAvatarGeometry {
 
     /// Midsole/outsole strip — slightly wider than upper, flat bottom.
     static func shoeSolePath(scale: CGFloat) -> CGPath {
-        let w: CGFloat = 40 * scale
-        let h: CGFloat = 5.6 * scale
+        let w: CGFloat = 37 * scale
+        let h: CGFloat = 4.8 * scale
         let corner = min(3 * scale, w * 0.5, h * 0.5)   // never exceed half-dimension
         let path = CGMutablePath()
         path.addSafeRoundedRect(
@@ -481,8 +481,8 @@ enum RallyAvatarGeometry {
 
     /// Tongue: visible above lace area.
     static func shoeTonguePath(scale: CGFloat) -> CGPath {
-        let w: CGFloat = 11 * scale
-        let h: CGFloat = 9 * scale
+        let w: CGFloat = 9.4 * scale
+        let h: CGFloat = 7.6 * scale
         let path = CGMutablePath()
         path.addSafeRoundedRect(
             in: CGRect(x: -w * 0.5, y: 1.2 * scale, width: w, height: h),
@@ -530,27 +530,27 @@ enum RallyAvatarGeometry {
     /// Sloped shoulder panel at the sleeve junction.
     static func sleeveCapPath(scale: CGFloat, side: CGFloat) -> CGPath {
         let path = CGMutablePath()
-        let innerTop = CGPoint(x: side * 10.2 * scale, y: 4.8 * scale)
-        let outerTop = CGPoint(x: side * 22.0 * scale, y: 1.8 * scale)
-        let outerLow = CGPoint(x: side * 23.4 * scale, y: -5.2 * scale)
-        let innerLow = CGPoint(x: side * 12.0 * scale, y: -6.8 * scale)
+        let innerTop = CGPoint(x: side * 11.0 * scale, y: 4.2 * scale)
+        let outerTop = CGPoint(x: side * 20.6 * scale, y: 1.4 * scale)
+        let outerLow = CGPoint(x: side * 21.2 * scale, y: -4.2 * scale)
+        let innerLow = CGPoint(x: side * 13.0 * scale, y: -5.8 * scale)
 
         path.move(to: innerTop)
         path.addQuadCurve(
             to: outerTop,
-            control: CGPoint(x: side * 15.8 * scale, y: 6.2 * scale)
+            control: CGPoint(x: side * 15.4 * scale, y: 5.0 * scale)
         )
         path.addQuadCurve(
             to: outerLow,
-            control: CGPoint(x: side * 24.4 * scale, y: -1.2 * scale)
+            control: CGPoint(x: side * 21.8 * scale, y: -1.3 * scale)
         )
         path.addQuadCurve(
             to: innerLow,
-            control: CGPoint(x: side * 18.0 * scale, y: -8.0 * scale)
+            control: CGPoint(x: side * 17.2 * scale, y: -6.8 * scale)
         )
         path.addQuadCurve(
             to: innerTop,
-            control: CGPoint(x: side * 7.8 * scale, y: -1.0 * scale)
+            control: CGPoint(x: side * 9.2 * scale, y: -0.8 * scale)
         )
         path.closeSubpath()
         return path

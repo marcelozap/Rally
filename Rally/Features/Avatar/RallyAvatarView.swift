@@ -202,7 +202,7 @@ struct RallyAvatarView: View {
             baseline: baseline,
             x: 0,
             y: layout.torsoY + 28 * scale,
-            fill: Color(uiColor: appearance.topUIColor.rallyBlended(withFraction: 0.08, of: .white)),
+            fill: Color(uiColor: appearance.topUIColor.rallyBlended(withFraction: 0.02, of: .white)),
             stroke: .clear,
             lineWidth: 0
         )
