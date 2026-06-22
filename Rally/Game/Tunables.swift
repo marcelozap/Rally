@@ -175,8 +175,22 @@ enum Tunables {
         static let lives = 3
         /// Opening mercy: a wall-rally should never dump the player into a
         /// zero-score Game Over before the first feed is visually legible.
-        static let openingNoLifeLossSeconds: TimeInterval = 4.2
-        static let openingNoLifeLossMisses = 2
+        static let openingNoLifeLossSeconds: TimeInterval = 7.0
+        static let openingNoLifeLossMisses = 3
+        static let openingForgivenMissCue = "WARM UP"
+
+        static func shouldForgiveOpeningMiss(
+            sessionTime: TimeInterval,
+            score: Int,
+            previousCombo: Int,
+            forgivenMissesUsed: Int
+        ) -> Bool {
+            enabled
+                && score == 0
+                && previousCombo == 0
+                && forgivenMissesUsed < openingNoLifeLossMisses
+                && sessionTime <= openingNoLifeLossSeconds
+        }
         /// Difficulty ramp: the return ball comes back faster as score climbs.
         /// The travel-time scalar lerps from 1.0 (base) at `rampStartScore`
         /// down to `rampMinTravelScalar` at `rampFullScore`.

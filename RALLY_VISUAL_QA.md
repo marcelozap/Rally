@@ -218,6 +218,35 @@ Findings:
 - Home launch screenshot is valid and no longer a black crash frame.
 - Gameplay autoplay reaches live contact with score/combo visible, confirming the app survives the debug run path.
 - Wall-contact sparks now use lower alpha, fewer particles, smaller cores, and an outward origin offset so the payoff stays around the ball/racket instead of washing over the avatar silhouette.
+
+## 2026-06-22 — Opening Rally Mercy Pass
+
+Build:
+
+```text
+xcodebuild -project Rally.xcodeproj -scheme Rally -configuration Debug -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build
+Result: BUILD SUCCEEDED
+```
+
+Regression test:
+
+```text
+xcodebuild test -project Rally.xcodeproj -scheme Rally -destination 'platform=iOS Simulator,id=CA3029AB-A788-4370-BD71-E556B01C8FE6' -only-testing:RallyTests/WallRallyEscalationTests CODE_SIGNING_ALLOWED=NO
+Result: TEST SUCCEEDED — 16 tests, 0 failures
+```
+
+Screenshot:
+
+```text
+Opening mercy proof: /tmp/rally_visual_qa/opening_mercy_170249_5s.png
+```
+
+Findings:
+
+- First zero-score warm-up misses now use a named survival mercy contract: 3 misses over 7 seconds do not spend lives.
+- Forgiven opening misses show `WARM UP` and feed the next ball quickly, making the first run feel like onboarding instead of instant punishment.
+- The mercy ends once time/miss budget is consumed or the player has a score/combo, preserving survival stakes.
+- Remaining task: visual/manual test on real phone to tune whether 7s/3 misses feels generous enough or too soft.
 - Remaining visual issue: the avatar still looks stylized and toy-like at gameplay scale; the next meaningful pass should be anatomy/face/stance quality, not more wall spark shaving.
 
 Recommended next Rafa task:

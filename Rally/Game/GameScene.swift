@@ -4657,7 +4657,7 @@ final class GameScene: SKScene {
                     openingNoLifeMissesUsed += 1
                     stageResetBeat(duration: 0.08, soft: true)
                     GameEventBus.shared.publish(.miss(lane: lane))
-                    showWallMissInstruction("READ THE FEED", comboWasLive: false)
+                    showWallMissInstruction(Tunables.Survival.openingForgivenMissCue, comboWasLive: false)
                     scheduleWallBall(after: Tunables.wallOpeningFeedDelaySeconds)
                     return
                 }
@@ -4706,14 +4706,13 @@ final class GameScene: SKScene {
     }
 
     private func shouldForgiveOpeningWallMiss(previousCombo: Int) -> Bool {
-        guard sessionMode == .wallRally,
-              Tunables.Survival.enabled,
-              score == 0,
-              previousCombo == 0,
-              openingNoLifeMissesUsed < Tunables.Survival.openingNoLifeLossMisses
-        else { return false }
-
-        return currentTrackTime <= Tunables.Survival.openingNoLifeLossSeconds
+        guard sessionMode == .wallRally else { return false }
+        return Tunables.Survival.shouldForgiveOpeningMiss(
+            sessionTime: currentTrackTime,
+            score: score,
+            previousCombo: previousCombo,
+            forgivenMissesUsed: openingNoLifeMissesUsed
+        )
     }
 
     private func wallMissCue(

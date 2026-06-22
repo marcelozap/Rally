@@ -290,4 +290,60 @@ final class WallRallyEscalationTests: XCTestCase {
         XCTAssertFalse(priority.showResetBanner)
         XCTAssertTrue(priority.showMissInstruction)
     }
+
+    // MARK: - opening rally mercy
+
+    func testOpeningMissMercyForgivesZeroScoreWarmupMisses() {
+        XCTAssertTrue(
+            Tunables.Survival.shouldForgiveOpeningMiss(
+                sessionTime: Tunables.Survival.openingNoLifeLossSeconds * 0.5,
+                score: 0,
+                previousCombo: 0,
+                forgivenMissesUsed: 0
+            )
+        )
+        XCTAssertTrue(
+            Tunables.Survival.shouldForgiveOpeningMiss(
+                sessionTime: Tunables.Survival.openingNoLifeLossSeconds,
+                score: 0,
+                previousCombo: 0,
+                forgivenMissesUsed: Tunables.Survival.openingNoLifeLossMisses - 1
+            )
+        )
+    }
+
+    func testOpeningMissMercyEndsAfterLimitOrRealRally() {
+        XCTAssertFalse(
+            Tunables.Survival.shouldForgiveOpeningMiss(
+                sessionTime: Tunables.Survival.openingNoLifeLossSeconds + 0.01,
+                score: 0,
+                previousCombo: 0,
+                forgivenMissesUsed: 0
+            )
+        )
+        XCTAssertFalse(
+            Tunables.Survival.shouldForgiveOpeningMiss(
+                sessionTime: 1,
+                score: 0,
+                previousCombo: 0,
+                forgivenMissesUsed: Tunables.Survival.openingNoLifeLossMisses
+            )
+        )
+        XCTAssertFalse(
+            Tunables.Survival.shouldForgiveOpeningMiss(
+                sessionTime: 1,
+                score: 10,
+                previousCombo: 0,
+                forgivenMissesUsed: 0
+            )
+        )
+        XCTAssertFalse(
+            Tunables.Survival.shouldForgiveOpeningMiss(
+                sessionTime: 1,
+                score: 0,
+                previousCombo: 1,
+                forgivenMissesUsed: 0
+            )
+        )
+    }
 }
