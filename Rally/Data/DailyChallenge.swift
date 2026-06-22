@@ -123,6 +123,13 @@ enum ChallengeTemplate: String, CaseIterable {
 
 /// Helper to generate and manage daily challenges
 struct DailyChallengeMgr {
+    static func accuracyPercent(perfectHits: Int, greatHits: Int, totalHits: Int) -> Int {
+        guard totalHits > 0 else { return 0 }
+        let accuracy = Double(perfectHits + greatHits) / Double(totalHits)
+        guard accuracy.isFinite else { return 0 }
+        return Int(accuracy * 100)
+    }
+
     /// Generate challenges for today (call once per app session)
     static func generateDailyIfNeeded(modelContext: ModelContext) {
         do {
@@ -158,7 +165,11 @@ struct DailyChallengeMgr {
                 .filter { Calendar.current.isDateInToday($0.createdDate) && !$0.isCompleted }
 
             for i in challenges.indices {
-                let accuracy = Double(result.perfectHits + result.greatHits) / Double(result.totalHits)
+                let accuracyPercent = accuracyPercent(
+                    perfectHits: result.perfectHits,
+                    greatHits: result.greatHits,
+                    totalHits: result.totalHits
+                )
 
                 switch challenges[i].challengeId {
                 case ChallengeTemplate.score250.rawValue:
@@ -170,7 +181,7 @@ struct DailyChallengeMgr {
                 case ChallengeTemplate.combo30.rawValue:
                     challenges[i].currentProgress = max(challenges[i].currentProgress, result.maxCombo)
                 case ChallengeTemplate.accuracy85.rawValue:
-                    challenges[i].currentProgress = max(challenges[i].currentProgress, Int(accuracy * 100))
+                    challenges[i].currentProgress = max(challenges[i].currentProgress, accuracyPercent)
                 case ChallengeTemplate.twoGames.rawValue:
                     challenges[i].currentProgress += 1
                 case ChallengeTemplate.threePerfects.rawValue:

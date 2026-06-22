@@ -950,3 +950,42 @@ Findings:
 - The gameplay-scale face is materially more readable than the previous proof: eyes/mouth survive the camera distance, hair sits connected to the crown instead of floating, and the ears/neck are visible enough to avoid the bald-mask look.
 - Shoulder and shoe silhouettes were softened after the first proof in this pass: sleeve caps are less like glowing puppet balls, and shoes are slimmer/more tennis-like with reduced inward toe rotation.
 - Remaining craft gap: the figure is usable for playtesting but still stylized. A future avatar art pass should focus on torso/arm anatomy and clothing detail, not identity sync or ball-feed rescue.
+
+## 2026-06-22 — Manual Start Zero-Hit Crash Fix
+
+Build:
+
+```text
+xcodebuild -project Rally.xcodeproj -scheme Rally -configuration Debug -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build
+Result: BUILD SUCCEEDED
+```
+
+Regression test:
+
+```text
+xcodebuild test -project Rally.xcodeproj -scheme Rally -destination 'platform=iOS Simulator,id=CA3029AB-A788-4370-BD71-E556B01C8FE6' -only-testing:RallyTests/MatchFlowTests/testDailyChallengeAccuracyTreatsZeroHitsAsZeroPercent CODE_SIGNING_ALLOWED=NO
+Result: TEST SUCCEEDED
+```
+
+Simulator:
+
+```text
+iPhone 16 Pro, iOS 18.6
+Bundle: com.marcelozap.rally
+Launch arguments: -RallyGuestMode -RallyStartGame
+```
+
+Screenshots:
+
+```text
+Pre-fix zero-hit crash fallback to iOS Home Screen: /tmp/rally_visual_qa/manual_startgame_134707_14s.png
+Post-fix live ball proof:                         /tmp/rally_visual_qa/startgame_dailychallenge_fix_140457_8s.png
+Post-fix zero-hit Game Over proof:                /tmp/rally_visual_qa/startgame_dailychallenge_fix_140504_14s.png
+```
+
+Findings:
+
+- The "no balls coming through" manual-start report was reproducible as a zero-hit post-run crash, not a dead feed. The app fell back to the iOS Home Screen after `DailyChallengeMgr.updateChallenges` converted a NaN zero-hit accuracy value to `Int`.
+- `DailyChallengeMgr.accuracyPercent(perfectHits:greatHits:totalHits:)` now treats zero total hits as `0%` and guards non-finite values before integer conversion.
+- Post-fix proof reaches a normal Rally Game Over screen after a zero-hit opening run instead of crashing to SpringBoard, and the 8-second proof confirms the ball/feed is visible during the run.
+- Remaining gameplay feel issue: the opening manual run is still too punishing and can end at zero quickly. The next Rafa pass should make first-rally onboarding more forgiving/addictive rather than chasing another spawn crash.

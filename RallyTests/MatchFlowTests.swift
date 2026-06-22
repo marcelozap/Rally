@@ -122,6 +122,13 @@ final class MatchFlowTests: XCTestCase {
         XCTAssertEqual(r.narrativeHeadline, "Run complete")
     }
 
+    func testDailyChallengeAccuracyTreatsZeroHitsAsZeroPercent() {
+        XCTAssertEqual(
+            DailyChallengeMgr.accuracyPercent(perfectHits: 0, greatHits: 0, totalHits: 0),
+            0
+        )
+    }
+
     func testSubheadCallsOutPeakSegment() {
         let r = GameResult(
             finalScore: 0, maxCombo: 0,
