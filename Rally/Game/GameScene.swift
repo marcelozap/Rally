@@ -5314,7 +5314,8 @@ final class GameScene: SKScene {
         }
         if sparkCount > 0 {
             let outboundDirection: CGFloat = lane == .right ? 1 : -1
-            for i in 0..<sparkCount {
+            let wallSparkCount = max(1, Int(ceil(CGFloat(sparkCount) * 0.58)))
+            for i in 0..<wallSparkCount {
                 let spark = SKShapeNode(
                     rectOf: CGSize(
                         width: Tunables.wallContactSparkStreakWidth,
@@ -5322,14 +5323,17 @@ final class GameScene: SKScene {
                     ),
                     cornerRadius: Tunables.wallContactSparkStreakHeight * 0.5
                 )
-                spark.fillColor = color.withAlphaComponent(0.92)
+                spark.fillColor = color.withAlphaComponent(0.92 * Tunables.wallContactSparkAlphaMultiplier)
                 spark.strokeColor = .clear
                 spark.glowWidth = (quality == .perfect ? 10 : 7) * Tunables.wallContactSparkGlowMultiplier
-                spark.position = point
+                spark.position = CGPoint(
+                    x: point.x + outboundDirection * Tunables.wallDirectionalSparkOriginOutwardOffset,
+                    y: point.y + CGFloat(i % 2) * 2
+                )
                 spark.zRotation = outboundDirection * 0.18
                 spark.zPosition = 65
                 addChild(spark)
-                let spread = CGFloat(i) - CGFloat(sparkCount - 1) * 0.5
+                let spread = CGFloat(i) - CGFloat(wallSparkCount - 1) * 0.5
                 let dist: CGFloat = quality == .perfect ? 62 : (quality == .great ? 52 : 42)
                 let forward = dist * (0.82 + CGFloat(i % 3) * 0.08)
                 let lateral = spread * 4.2
@@ -5362,7 +5366,7 @@ final class GameScene: SKScene {
 
         let direction: CGFloat = lane == .right ? 1 : -1
         let count = quality == .perfect
-            ? Tunables.wallDirectionalSparkCount + 2
+            ? Tunables.wallDirectionalSparkCount + 1
             : Tunables.wallDirectionalSparkCount
         let travel = Tunables.wallDirectionalSparkTravel * (quality == .good ? 0.82 : 1)
         let coreSize = Tunables.wallDirectionalSparkCoreSize
@@ -5378,10 +5382,12 @@ final class GameScene: SKScene {
                 cornerRadius: coreSize * 0.36
             )
             spark.position = CGPoint(
-                x: point.x - direction * CGFloat(index % 3) * 1.8,
+                x: point.x + direction * Tunables.wallDirectionalSparkOriginOutwardOffset - direction * CGFloat(index % 3) * 1.6,
                 y: point.y + spread * 0.75
             )
-            spark.fillColor = color.withAlphaComponent(index.isMultiple(of: 2) ? 0.88 : 0.62)
+            spark.fillColor = color.withAlphaComponent(
+                (index.isMultiple(of: 2) ? 0.88 : 0.62) * Tunables.wallDirectionalSparkAlphaMultiplier
+            )
             spark.strokeColor = .clear
             spark.glowWidth = index.isMultiple(of: 2) ? 0.9 : 0.35
             spark.zRotation = direction * (0.12 + CGFloat(index % 4) * 0.045)

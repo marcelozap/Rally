@@ -23,7 +23,24 @@ import AVFoundation
 /// - Music tier is set _on_ the bus thread; gate fades happen on the music
 ///   timer thread inside `MusicEngine`.
 final class AudioManager {
-    static let shared = AudioManager()
+    private static var sharedInstance: AudioManager?
+
+    static var shared: AudioManager {
+        if let sharedInstance {
+            return sharedInstance
+        }
+        let manager = AudioManager()
+        sharedInstance = manager
+        return manager
+    }
+
+    /// Applies a persisted mute value without forcing AVAudioEngine creation
+    /// while sound is off. This keeps launch/test runs silent and avoids
+    /// waking the audio stack until the player explicitly opts in.
+    static func applySoundEnabledIfLoaded(_ enabled: Bool) {
+        guard enabled || sharedInstance != nil else { return }
+        shared.applySoundEnabled(enabled)
+    }
 
     private(set) var isEnabled: Bool = false
     /// True between `.sessionStart` and `.sessionEnd` — used to resume the

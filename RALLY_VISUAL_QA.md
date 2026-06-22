@@ -188,6 +188,44 @@ Recommended next Rafa task:
 Tune the contact glow shape: keep the hit aura bright around the ball/racket, but reduce the broad beige/white cloud spilling over the avatar silhouette.
 ```
 
+## 2026-06-22 — Lazy Audio Launch + Wall Spark Readability Pass
+
+Build:
+
+```text
+xcodebuild -project Rally.xcodeproj -scheme Rally -configuration Debug -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build
+Result: BUILD SUCCEEDED
+```
+
+Simulator:
+
+```text
+iPhone 16 Pro, iOS 18.6
+Bundle: com.marcelozap.rally
+Autoplay argument: -RallyAutoPlay
+```
+
+Screenshots:
+
+```text
+Home launch after lazy audio: /tmp/rally_visual_qa/launch_after_lazy_audio_013154.png
+Gameplay autoplay after contact-spark tuning: /tmp/rally_visual_qa/autoplay_after_lazy_audio_contact_013559.png
+```
+
+Findings:
+
+- Rally now launches silently with the sound toggle off; the previous AVAudioEngine launch abort was fixed by making AudioManager lazy until the player explicitly enables sound.
+- Home launch screenshot is valid and no longer a black crash frame.
+- Gameplay autoplay reaches live contact with score/combo visible, confirming the app survives the debug run path.
+- Wall-contact sparks now use lower alpha, fewer particles, smaller cores, and an outward origin offset so the payoff stays around the ball/racket instead of washing over the avatar silhouette.
+- Remaining visual issue: the avatar still looks stylized and toy-like at gameplay scale; the next meaningful pass should be anatomy/face/stance quality, not more wall spark shaving.
+
+Recommended next Rafa task:
+
+```text
+Run a focused avatar anatomy pass against the current gameplay screenshot: improve face/ears/neck/shoulders/feet at gameplay scale while preserving the now-working launch/audio and ball-feed paths.
+```
+
 ## 2026-06-16 — Autoplay Contact Clutter Pass
 
 Build:

@@ -513,15 +513,18 @@ enum Tunables {
     static let wallContactBurstAlphaMultiplier: CGFloat = 0.020
     static let wallContactBurstGlowMultiplier: CGFloat = 0.010
     static let wallContactSparkGlowMultiplier: CGFloat = 0.030
+    static let wallContactSparkAlphaMultiplier: CGFloat = 0.52
     static let wallContactSparkStreakWidth: CGFloat = 10
     static let wallContactSparkStreakHeight: CGFloat = 2
     /// Replaces the old broad wall-contact cloud with small directional
     /// tennis-dust flecks that travel away from the avatar.
-    static let wallDirectionalSparkCount: Int = 9
-    static let wallDirectionalSparkTravel: CGFloat = 74
+    static let wallDirectionalSparkCount: Int = 6
+    static let wallDirectionalSparkAlphaMultiplier: CGFloat = 0.62
+    static let wallDirectionalSparkOriginOutwardOffset: CGFloat = 14
+    static let wallDirectionalSparkTravel: CGFloat = 82
     static let wallDirectionalSparkSpread: CGFloat = 5.4
     static let wallDirectionalSparkLift: CGFloat = 22
-    static let wallDirectionalSparkCoreSize: CGFloat = 3.2
+    static let wallDirectionalSparkCoreSize: CGFloat = 2.6
     static let wallDirectionalSparkDuration: TimeInterval = 0.18
     static let wallContactPocketMaxAlpha: CGFloat = 0.12
     static let wallContactPocketBaseAlpha: CGFloat = 0.018

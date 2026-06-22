@@ -38,15 +38,17 @@ struct RallyApp: App {
         // builds where sound may have been left enabled.
         RallyDefaults.applyQuietSoundDefaultIfNeeded()
 
-        // Wire managers to the event bus. Order is irrelevant.
+        // Wire quiet managers to the event bus. Audio stays lazy until the
+        // player explicitly opts in from the sound toggle.
         _ = HapticManager.shared
-        _ = AudioManager.shared
         _ = ParticleManager.shared
 
-        // Eliminate first-touch latency: prime the audio I/O graph and the
-        // haptic engine before the player even sees the menu.
-        AudioManager.shared.prewarm()
+        // Eliminate first-touch latency for haptics without waking the audio
+        // stack while Rally is muted by default.
         HapticManager.shared.prewarm()
+        if RallyDefaults.resolvedSoundEnabled() {
+            AudioManager.shared.prewarm()
+        }
 
         // Request notification permissions and schedule recurring reminders
         // Skip during automated testing/autoplay to avoid blocking the UI
