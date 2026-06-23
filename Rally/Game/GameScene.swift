@@ -3818,9 +3818,12 @@ final class GameScene: SKScene {
 
     private func stageWallFeedCue(for ball: BallNode) {
         guard sessionMode == .wallRally else { return }
-        let openingStrength = max(0, 1 - wallOpeningProgress())
-        let cueStrength = max(0.18, openingStrength * 0.82)
-        guard spawnedBallCount <= 4 || openingStrength > 0.42 else { return }
+        let openingProgress = wallOpeningProgress()
+        let cueStrength = Tunables.wallOpeningFeedCueStrength(openingProgress: openingProgress)
+        guard Tunables.shouldShowWallOpeningFeedCue(
+            spawnedBallCount: spawnedBallCount,
+            openingProgress: openingProgress
+        ) else { return }
 
         let feedColor = UIColor(red: 0.93, green: 0.97, blue: 0.36, alpha: 1)
         let pocketPoint = racketContactPoint(for: ball.lane)

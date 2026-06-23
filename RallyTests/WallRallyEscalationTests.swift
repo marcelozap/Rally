@@ -245,6 +245,39 @@ final class WallRallyEscalationTests: XCTestCase {
         )
     }
 
+    func testOpeningFeedCueStaysVisibleThroughLearningWindow() {
+        XCTAssertTrue(
+            Tunables.shouldShowWallOpeningFeedCue(
+                spawnedBallCount: Tunables.wallOpeningFeedCueBallCount,
+                openingProgress: 1
+            )
+        )
+        XCTAssertFalse(
+            Tunables.shouldShowWallOpeningFeedCue(
+                spawnedBallCount: Tunables.wallOpeningFeedCueBallCount + 1,
+                openingProgress: 1
+            )
+        )
+        XCTAssertTrue(
+            Tunables.shouldShowWallOpeningFeedCue(
+                spawnedBallCount: Tunables.wallOpeningFeedCueBallCount + 1,
+                openingProgress: 0.2
+            ),
+            "early opening progress should keep the path guide visible even if a replay/rescue increments the feed count"
+        )
+    }
+
+    func testOpeningFeedCueStrengthHasReadableFloor() {
+        XCTAssertGreaterThanOrEqual(
+            Tunables.wallOpeningFeedCueStrength(openingProgress: 1),
+            Tunables.wallOpeningFeedCueMinStrength
+        )
+        XCTAssertGreaterThan(
+            Tunables.wallOpeningFeedCueStrength(openingProgress: 0),
+            Tunables.wallOpeningFeedCueStrength(openingProgress: 1)
+        )
+    }
+
     // MARK: - survival miss copy priority
 
     func testSurvivalMissCopyShowsResetForMeaningfulNonLastLifeBreak() {

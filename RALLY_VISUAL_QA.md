@@ -1018,3 +1018,41 @@ Findings:
 - `DailyChallengeMgr.accuracyPercent(perfectHits:greatHits:totalHits:)` now treats zero total hits as `0%` and guards non-finite values before integer conversion.
 - Post-fix proof reaches a normal Rally Game Over screen after a zero-hit opening run instead of crashing to SpringBoard, and the 8-second proof confirms the ball/feed is visible during the run.
 - Remaining gameplay feel issue: the opening manual run is still too punishing and can end at zero quickly. The next Rafa pass should make first-rally onboarding more forgiving/addictive rather than chasing another spawn crash.
+
+## 2026-06-22 — Opening Feed Cue Readability Pass
+
+Build:
+
+```text
+xcodebuild -project Rally.xcodeproj -scheme Rally -configuration Debug -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build
+Result: BUILD SUCCEEDED
+```
+
+Regression test:
+
+```text
+xcodebuild test -project Rally.xcodeproj -scheme Rally -destination 'platform=iOS Simulator,id=CA3029AB-A788-4370-BD71-E556B01C8FE6' -only-testing:RallyTests/WallRallyEscalationTests CODE_SIGNING_ALLOWED=NO
+Result: TEST SUCCEEDED — 18 tests, 0 failures
+```
+
+Simulator:
+
+```text
+iPhone 16 Pro, iOS 18.6
+Bundle: com.marcelozap.rally
+Launch arguments: -RallyGuestMode -RallyStartGame
+```
+
+Screenshot:
+
+```text
+Opening feed cue proof: /tmp/rally_visual_qa/opening_feed_cue_213655.png
+```
+
+Findings:
+
+- Opening wall-rally feed cues now use named tunables instead of hardcoded values in GameScene.
+- The path guide stays visible through the first 6 feeds and remains available while opening progress is still early, so a rescue/replay cannot make the learning cue disappear immediately.
+- Cue strength has a readable floor and an opening peak, making the first seconds feel less like an empty or broken court.
+- The proof screenshot shows the live ball, path cue, avatar, and simple score HUD in the first-run gameplay frame.
+- Remaining task: real-phone visual check to tune whether the guide is too loud or too quiet during the first 10 seconds.

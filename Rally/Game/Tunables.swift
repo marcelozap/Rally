@@ -102,6 +102,12 @@ enum Tunables {
     /// Opening spatial-assist multiplier layered on top of the normal wall
     /// assist radius. This fades out through `wallOpeningForgivenessBoost()`.
     static let wallOpeningContactAssistMultiplier: CGFloat = 0.24
+    /// Keep the first feeds visually loud long enough for a new player to
+    /// learn "ball path -> contact pocket" before the normal rally read takes over.
+    static let wallOpeningFeedCueBallCount = 6
+    static let wallOpeningFeedCueMinStrength: CGFloat = 0.22
+    static let wallOpeningFeedCuePeakStrength: CGFloat = 0.88
+    static let wallOpeningFeedCueProgressCutoff: CGFloat = 0.36
     /// If the court stays empty this long, feed almost immediately instead of
     /// waiting through another normal delay. This protects the "one more try"
     /// loop from ever feeling frozen after a lifecycle hiccup.
@@ -129,6 +135,22 @@ enum Tunables {
         deadline: TimeInterval
     ) -> Bool {
         currentTime > deadline
+    }
+
+    static func shouldShowWallOpeningFeedCue(
+        spawnedBallCount: Int,
+        openingProgress: CGFloat
+    ) -> Bool {
+        spawnedBallCount <= wallOpeningFeedCueBallCount
+            || (1 - openingProgress) > wallOpeningFeedCueProgressCutoff
+    }
+
+    static func wallOpeningFeedCueStrength(openingProgress: CGFloat) -> CGFloat {
+        let openingStrength = max(0, 1 - openingProgress)
+        return max(
+            wallOpeningFeedCueMinStrength,
+            openingStrength * wallOpeningFeedCuePeakStrength
+        )
     }
 
     static let wallContactRingRadius: CGFloat = 38
