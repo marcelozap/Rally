@@ -345,6 +345,45 @@ final class WallRallyEscalationTests: XCTestCase {
         XCTAssertEqual(openingScalars[5], 1.0, accuracy: 1e-9)
     }
 
+    func testOpeningTravelScalarStepsIntoNormalSpeedRamp() {
+        XCTAssertEqual(
+            Tunables.wallOpeningTravelScalar(spawnedBallCount: 0),
+            Tunables.wallOpeningTravelScalarFirstTwo,
+            accuracy: 1e-9
+        )
+        XCTAssertEqual(
+            Tunables.wallOpeningTravelScalar(spawnedBallCount: 1),
+            Tunables.wallOpeningTravelScalarFirstTwo,
+            accuracy: 1e-9
+        )
+        XCTAssertEqual(
+            Tunables.wallOpeningTravelScalar(spawnedBallCount: 2),
+            Tunables.wallOpeningTravelScalarThird,
+            accuracy: 1e-9
+        )
+        XCTAssertEqual(
+            Tunables.wallOpeningTravelScalar(spawnedBallCount: 3),
+            Tunables.wallOpeningTravelScalarFourth,
+            accuracy: 1e-9
+        )
+        XCTAssertEqual(
+            Tunables.wallOpeningTravelScalar(spawnedBallCount: 4),
+            1.0,
+            accuracy: 1e-9
+        )
+    }
+
+    func testOpeningTravelScalarAvoidsSpeedingUpBeforeNormalRamp() {
+        // First feeds may be slower, but should never make the opening rally
+        // faster than the normal combo tier before the player has settled.
+        for feedCount in 0...4 {
+            XCTAssertGreaterThanOrEqual(
+                Tunables.wallOpeningTravelScalar(spawnedBallCount: feedCount),
+                Tunables.wallOpeningTravelScalarFourth
+            )
+        }
+    }
+
     // MARK: - survival miss copy priority
 
     func testSurvivalMissCopyShowsResetForMeaningfulNonLastLifeBreak() {

@@ -6184,15 +6184,8 @@ final class GameScene: SKScene {
     }
 
     private func wallTravelSeconds() -> Double {
-        // First 3 balls get a slower on-ramp so the player can settle in.
-        let openingScalar: Double
-        switch spawnedBallCount {
-        case ..<2: openingScalar = 1.06
-        case 2:    openingScalar = 1.02
-        case 3:    openingScalar = 0.99
-        default:   openingScalar = 1.0
-        }
         // Flappy-Bird-style escalation: speed climbs with combo via Tunables tiers.
+        let openingScalar = Tunables.wallOpeningTravelScalar(spawnedBallCount: spawnedBallCount)
         let comboScalar = Tunables.wallSpeedScalar(forCombo: combo)
         return Tunables.ballTravelSeconds * matchPace.travelScalar * openingScalar * comboScalar
     }

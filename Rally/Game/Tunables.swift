@@ -183,6 +183,25 @@ enum Tunables {
         }
     }
 
+    /// Outbound ball travel starts slightly slower, then settles into the
+    /// normal combo speed ramp once the player has seen the first feeds.
+    static let wallOpeningTravelScalarFirstTwo: Double = 1.06
+    static let wallOpeningTravelScalarThird: Double = 1.02
+    static let wallOpeningTravelScalarFourth: Double = 0.99
+
+    static func wallOpeningTravelScalar(spawnedBallCount: Int) -> Double {
+        switch spawnedBallCount {
+        case ..<2:
+            return wallOpeningTravelScalarFirstTwo
+        case 2:
+            return wallOpeningTravelScalarThird
+        case 3:
+            return wallOpeningTravelScalarFourth
+        default:
+            return 1.0
+        }
+    }
+
     static let wallContactRingRadius: CGFloat = 38
     static let wallApproachWindowRatio: CGFloat = 0.50
     static let wallSurfaceHeight: CGFloat = 20
@@ -775,7 +794,8 @@ enum Tunables {
     // MARK: - Wall rally escalation (Flappy Bird speed ramp)
     //
     // The ball gets faster as combo grows — generous on-ramp, terrifying by 55.
-    // Travel time = ballTravelSeconds × matchPace.travelScalar × wallSpeedScalar(combo).
+    // Travel time = ballTravelSeconds × matchPace.travelScalar
+    // × wallOpeningTravelScalar(spawnedBallCount) × wallSpeedScalar(combo).
     //
     // Tier 0: combo 0–4    → 1.04× (forgiving on-ramp)
     // Tier 1: combo 5–11   → 0.92× ("oh, it's a bit faster")
