@@ -227,6 +227,27 @@ final class WallRallyEscalationTests: XCTestCase {
         )
     }
 
+    func testStalePendingFeedRescueWaitsUntilThreshold() {
+        XCTAssertFalse(
+            Tunables.isWallStalePendingFeedExpired(
+                emptyDuration: Tunables.wallStalePendingFeedRescueSeconds - 0.001
+            ),
+            "pending spawn tokens should not be cleared before the stale-feed threshold"
+        )
+        XCTAssertTrue(
+            Tunables.isWallStalePendingFeedExpired(
+                emptyDuration: Tunables.wallStalePendingFeedRescueSeconds
+            ),
+            "a pending token on an empty court must clear exactly at the stale-feed threshold"
+        )
+        XCTAssertTrue(
+            Tunables.isWallStalePendingFeedExpired(
+                emptyDuration: Tunables.wallStalePendingFeedRescueSeconds + 0.25
+            ),
+            "a stale pending feed must not keep blocking balls once the court has been empty too long"
+        )
+    }
+
     func testWallEmptyCourtRescueFeedIsFasterThanNormalFeed() {
         XCTAssertGreaterThan(
             Tunables.wallEmptyCourtRescueSeconds,

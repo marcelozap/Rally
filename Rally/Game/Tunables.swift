@@ -140,6 +140,10 @@ enum Tunables {
         currentTime > deadline
     }
 
+    static func isWallStalePendingFeedExpired(emptyDuration: TimeInterval) -> Bool {
+        emptyDuration >= wallStalePendingFeedRescueSeconds
+    }
+
     static func shouldShowWallOpeningFeedCue(
         spawnedBallCount: Int,
         openingProgress: CGFloat

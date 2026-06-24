@@ -3672,7 +3672,7 @@ final class GameScene: SKScene {
 
         let emptyDuration = currentTime - emptySince
         if pendingWallSpawnToken != nil {
-            guard emptyDuration >= Tunables.wallStalePendingFeedRescueSeconds else { return }
+            guard Tunables.isWallStalePendingFeedExpired(emptyDuration: emptyDuration) else { return }
             #if DEBUG
             recordWallFeedDebugEvent(String(format: "rescue pending %.2fs", emptyDuration))
             #endif
