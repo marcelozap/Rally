@@ -297,6 +297,54 @@ final class WallRallyEscalationTests: XCTestCase {
         )
     }
 
+    func testOpeningCadenceScalarStepsDownToNormalRallyCadence() {
+        XCTAssertEqual(
+            Tunables.wallOpeningCadenceScalar(spawnedBallCount: 0),
+            Tunables.wallOpeningCadenceScalarFirstTwo,
+            accuracy: 1e-9
+        )
+        XCTAssertEqual(
+            Tunables.wallOpeningCadenceScalar(spawnedBallCount: 1),
+            Tunables.wallOpeningCadenceScalarFirstTwo,
+            accuracy: 1e-9
+        )
+        XCTAssertEqual(
+            Tunables.wallOpeningCadenceScalar(spawnedBallCount: 2),
+            Tunables.wallOpeningCadenceScalarThird,
+            accuracy: 1e-9
+        )
+        XCTAssertEqual(
+            Tunables.wallOpeningCadenceScalar(spawnedBallCount: 3),
+            Tunables.wallOpeningCadenceScalarFourth,
+            accuracy: 1e-9
+        )
+        XCTAssertEqual(
+            Tunables.wallOpeningCadenceScalar(spawnedBallCount: 4),
+            Tunables.wallOpeningCadenceScalarFifth,
+            accuracy: 1e-9
+        )
+        XCTAssertEqual(
+            Tunables.wallOpeningCadenceScalar(spawnedBallCount: 5),
+            1.0,
+            accuracy: 1e-9
+        )
+    }
+
+    func testOpeningCadenceScalarMonotonicallyReturnsTowardOne() {
+        let openingScalars = (0...5).map {
+            Tunables.wallOpeningCadenceScalar(spawnedBallCount: $0)
+        }
+
+        for (earlier, later) in zip(openingScalars, openingScalars.dropFirst()) {
+            XCTAssertGreaterThanOrEqual(
+                earlier,
+                later,
+                "opening cadence scalar should step down gently toward normal rally cadence"
+            )
+        }
+        XCTAssertEqual(openingScalars[5], 1.0, accuracy: 1e-9)
+    }
+
     // MARK: - survival miss copy priority
 
     func testSurvivalMissCopyShowsResetForMeaningfulNonLastLifeBreak() {

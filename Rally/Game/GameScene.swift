@@ -6488,18 +6488,7 @@ final class GameScene: SKScene {
     }
 
     private func wallOpeningCadenceScalar() -> Double {
-        switch spawnedBallCount {
-        case ..<2:
-            return 1.14
-        case 2:
-            return 1.08
-        case 3:
-            return 1.04
-        case 4:
-            return 1.02
-        default:
-            return 1.0
-        }
+        Tunables.wallOpeningCadenceScalar(spawnedBallCount: spawnedBallCount)
     }
 
     private func wallOpeningProgress() -> Double {

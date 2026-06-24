@@ -161,6 +161,28 @@ enum Tunables {
         return min(1, Double(learnedFeeds) / Double(wallOpeningProgressFeedCount))
     }
 
+    /// The first few feeds breathe slightly longer so a new player can read
+    /// the wall path before the normal cadence takes over.
+    static let wallOpeningCadenceScalarFirstTwo: Double = 1.14
+    static let wallOpeningCadenceScalarThird: Double = 1.08
+    static let wallOpeningCadenceScalarFourth: Double = 1.04
+    static let wallOpeningCadenceScalarFifth: Double = 1.02
+
+    static func wallOpeningCadenceScalar(spawnedBallCount: Int) -> Double {
+        switch spawnedBallCount {
+        case ..<2:
+            return wallOpeningCadenceScalarFirstTwo
+        case 2:
+            return wallOpeningCadenceScalarThird
+        case 3:
+            return wallOpeningCadenceScalarFourth
+        case 4:
+            return wallOpeningCadenceScalarFifth
+        default:
+            return 1.0
+        }
+    }
+
     static let wallContactRingRadius: CGFloat = 38
     static let wallApproachWindowRatio: CGFloat = 0.50
     static let wallSurfaceHeight: CGFloat = 20
