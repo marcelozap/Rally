@@ -278,6 +278,25 @@ final class WallRallyEscalationTests: XCTestCase {
         )
     }
 
+    func testOpeningProgressFadesAcrossNamedFeedCount() {
+        XCTAssertEqual(Tunables.wallOpeningProgress(spawnedBallCount: 0), 0, accuracy: 1e-9)
+        XCTAssertEqual(Tunables.wallOpeningProgress(spawnedBallCount: 1), 0, accuracy: 1e-9)
+        XCTAssertEqual(
+            Tunables.wallOpeningProgress(spawnedBallCount: Tunables.wallOpeningProgressFeedCount + 1),
+            1,
+            accuracy: 1e-9
+        )
+        XCTAssertEqual(
+            Tunables.wallOpeningProgress(spawnedBallCount: Tunables.wallOpeningProgressFeedCount + 4),
+            1,
+            accuracy: 1e-9
+        )
+        XCTAssertGreaterThan(
+            Tunables.wallOpeningProgress(spawnedBallCount: 4),
+            Tunables.wallOpeningProgress(spawnedBallCount: 3)
+        )
+    }
+
     // MARK: - survival miss copy priority
 
     func testSurvivalMissCopyShowsResetForMeaningfulNonLastLifeBreak() {

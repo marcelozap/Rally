@@ -108,6 +108,9 @@ enum Tunables {
     static let wallOpeningFeedCueMinStrength: CGFloat = 0.22
     static let wallOpeningFeedCuePeakStrength: CGFloat = 0.88
     static let wallOpeningFeedCueProgressCutoff: CGFloat = 0.36
+    /// Number of spawned feeds over which the first-run assist fades from
+    /// full tutorial help to normal rally reads.
+    static let wallOpeningProgressFeedCount = 7
     /// If the court stays empty this long, feed almost immediately instead of
     /// waiting through another normal delay. This protects the "one more try"
     /// loop from ever feeling frozen after a lifecycle hiccup.
@@ -151,6 +154,11 @@ enum Tunables {
             wallOpeningFeedCueMinStrength,
             openingStrength * wallOpeningFeedCuePeakStrength
         )
+    }
+
+    static func wallOpeningProgress(spawnedBallCount: Int) -> Double {
+        let learnedFeeds = max(0, spawnedBallCount - 1)
+        return min(1, Double(learnedFeeds) / Double(wallOpeningProgressFeedCount))
     }
 
     static let wallContactRingRadius: CGFloat = 38

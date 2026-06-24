@@ -6503,7 +6503,7 @@ final class GameScene: SKScene {
     }
 
     private func wallOpeningProgress() -> Double {
-        min(1, Double(max(0, spawnedBallCount - 1)) / 7)
+        Tunables.wallOpeningProgress(spawnedBallCount: spawnedBallCount)
     }
 
     private func wallOpeningForgivenessBoost() -> CGFloat {
