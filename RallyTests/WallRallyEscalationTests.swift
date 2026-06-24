@@ -248,6 +248,23 @@ final class WallRallyEscalationTests: XCTestCase {
         )
     }
 
+    func testClearedStalePendingFeedUsesImmediateRescueDelay() {
+        XCTAssertTrue(
+            Tunables.shouldUseWallFeedRescueDelay(
+                emptyDuration: Tunables.wallStalePendingFeedRescueSeconds,
+                clearedStalePendingFeed: true
+            ),
+            "once a stale pending token is cleared, the next feed must use the near-immediate rescue delay"
+        )
+        XCTAssertFalse(
+            Tunables.shouldUseWallFeedRescueDelay(
+                emptyDuration: Tunables.wallStalePendingFeedRescueSeconds,
+                clearedStalePendingFeed: false
+            ),
+            "ordinary empty-court waits should still respect the longer rescue threshold"
+        )
+    }
+
     func testWallEmptyCourtRescueFeedIsFasterThanNormalFeed() {
         XCTAssertGreaterThan(
             Tunables.wallEmptyCourtRescueSeconds,

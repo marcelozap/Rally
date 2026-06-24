@@ -144,6 +144,13 @@ enum Tunables {
         emptyDuration >= wallStalePendingFeedRescueSeconds
     }
 
+    static func shouldUseWallFeedRescueDelay(
+        emptyDuration: TimeInterval,
+        clearedStalePendingFeed: Bool
+    ) -> Bool {
+        clearedStalePendingFeed || emptyDuration >= wallEmptyCourtRescueSeconds
+    }
+
     static func shouldShowWallOpeningFeedCue(
         spawnedBallCount: Int,
         openingProgress: CGFloat

@@ -3671,15 +3671,20 @@ final class GameScene: SKScene {
         wallEmptyCourtSince = emptySince
 
         let emptyDuration = currentTime - emptySince
+        var clearedStalePendingFeed = false
         if pendingWallSpawnToken != nil {
             guard Tunables.isWallStalePendingFeedExpired(emptyDuration: emptyDuration) else { return }
             #if DEBUG
             recordWallFeedDebugEvent(String(format: "rescue pending %.2fs", emptyDuration))
             #endif
             clearPendingWallSpawnToken()
+            clearedStalePendingFeed = true
         }
 
-        let needsRescue = emptyDuration >= Tunables.wallEmptyCourtRescueSeconds
+        let needsRescue = Tunables.shouldUseWallFeedRescueDelay(
+            emptyDuration: emptyDuration,
+            clearedStalePendingFeed: clearedStalePendingFeed
+        )
         #if DEBUG
         if needsRescue {
             recordWallFeedDebugEvent(String(format: "rescue %.2fs", emptyDuration))
