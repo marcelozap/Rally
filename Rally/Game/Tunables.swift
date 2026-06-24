@@ -659,6 +659,22 @@ enum Tunables {
     static let wallTimingPopupPeakScale: CGFloat = 1.02
     static let wallTimingPopupLabelAlpha: CGFloat = 0.76
     static let wallTimingPopupShadowAlpha: CGFloat = 0.24
+    static let wallTimingPopupScreenInset: CGFloat = 18
+    static let wallTimingPopupPerfectHalfWidth: CGFloat = 58
+    static let wallTimingPopupDefaultHalfWidth: CGFloat = 44
+
+    static func wallTimingPopupClampedX(
+        rawX: CGFloat,
+        sceneWidth: CGFloat,
+        isPerfect: Bool
+    ) -> CGFloat {
+        let halfWidth = isPerfect
+            ? wallTimingPopupPerfectHalfWidth
+            : wallTimingPopupDefaultHalfWidth
+        let minX = wallTimingPopupScreenInset + halfWidth
+        let maxX = max(minX, sceneWidth - wallTimingPopupScreenInset - halfWidth)
+        return min(max(rawX, minX), maxX)
+    }
     static let wallMomentBannerYRatio: CGFloat = 0.755
     static let wallMomentBannerStartScale: CGFloat = 0.76
     static let wallMomentBannerPeakScale: CGFloat = 0.92

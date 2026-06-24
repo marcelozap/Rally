@@ -5523,7 +5523,15 @@ final class GameScene: SKScene {
         let sideOffsetMagnitude = wallMode ? Tunables.wallTimingPopupSideOffset : 20
         let sideOffset: CGFloat = strokeSide == .backhand ? -sideOffsetMagnitude : sideOffsetMagnitude
         let yOffset = wallMode ? Tunables.wallTimingPopupYOffset : 18
-        label.position = CGPoint(x: point.x + sideOffset, y: point.y + yOffset)
+        let rawLabelX = point.x + sideOffset
+        let labelX = wallMode
+            ? Tunables.wallTimingPopupClampedX(
+                rawX: rawLabelX,
+                sceneWidth: size.width,
+                isPerfect: quality == .perfect
+            )
+            : rawLabelX
+        label.position = CGPoint(x: labelX, y: point.y + yOffset)
         label.zPosition = 20
         label.alpha = 0
         addChild(label)
@@ -5532,7 +5540,7 @@ final class GameScene: SKScene {
         shadow.text = label.text
         shadow.fontSize = label.fontSize
         shadow.fontColor = UIColor.black.withAlphaComponent(0.3)
-        shadow.position = CGPoint(x: point.x + sideOffset, y: point.y + yOffset - 2)
+        shadow.position = CGPoint(x: label.position.x + 2, y: label.position.y - 2)
         shadow.zPosition = 19
         shadow.alpha = 0
         addChild(shadow)

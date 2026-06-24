@@ -183,6 +183,45 @@ final class WallRallyEscalationTests: XCTestCase {
         XCTAssertGreaterThan(late.speedScalar, 0.80)
     }
 
+    // MARK: - wall timing popup placement
+
+    func testWallTimingPopupClampsInsidePhoneSafeEdges() {
+        let sceneWidth: CGFloat = 393
+        let minPerfectX = Tunables.wallTimingPopupScreenInset
+            + Tunables.wallTimingPopupPerfectHalfWidth
+        let maxPerfectX = sceneWidth
+            - Tunables.wallTimingPopupScreenInset
+            - Tunables.wallTimingPopupPerfectHalfWidth
+
+        XCTAssertEqual(
+            Tunables.wallTimingPopupClampedX(
+                rawX: -40,
+                sceneWidth: sceneWidth,
+                isPerfect: true
+            ),
+            minPerfectX,
+            accuracy: 1e-6
+        )
+        XCTAssertEqual(
+            Tunables.wallTimingPopupClampedX(
+                rawX: sceneWidth + 40,
+                sceneWidth: sceneWidth,
+                isPerfect: true
+            ),
+            maxPerfectX,
+            accuracy: 1e-6
+        )
+        XCTAssertEqual(
+            Tunables.wallTimingPopupClampedX(
+                rawX: 210,
+                sceneWidth: sceneWidth,
+                isPerfect: true
+            ),
+            210,
+            accuracy: 1e-6
+        )
+    }
+
     // MARK: - wall spawn watchdog
 
     func testWallSpawnWatchdogDeadlineRespectsScheduledDelayPlusGrace() {
