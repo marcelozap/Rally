@@ -289,6 +289,20 @@ final class WallRallyEscalationTests: XCTestCase {
         )
     }
 
+    func testOpeningFeedWatchdogExpiresBeforeStalePendingThreshold() {
+        let requestedAt: TimeInterval = 250
+        let deadline = Tunables.wallSpawnWatchdogDeadline(
+            requestedAt: requestedAt,
+            delay: Tunables.wallOpeningFeedDelaySeconds
+        )
+
+        XCTAssertLessThan(
+            deadline - requestedAt,
+            Tunables.wallStalePendingFeedRescueSeconds,
+            "the first post-countdown ball should recover by watchdog before the player can read the court as broken"
+        )
+    }
+
     func testStalePendingFeedRescueWaitsUntilThreshold() {
         XCTAssertFalse(
             Tunables.isWallStalePendingFeedExpired(

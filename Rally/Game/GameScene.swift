@@ -3660,6 +3660,7 @@ final class GameScene: SKScene {
         guard sessionMode == .wallRally, !sessionEnded, !isCountingDown else { return }
 
         pruneStrandedWallExchanges(currentTime: currentTime)
+        clearExpiredWallSpawnToken()
 
         let courtIsEmpty = activeBalls.isEmpty && activeExchanges.isEmpty
         guard courtIsEmpty else {
