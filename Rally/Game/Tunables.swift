@@ -586,10 +586,10 @@ enum Tunables {
     static let wallContactProxyBallAuraAlpha: CGFloat = 0.002
     static let wallContactProxyBallCoreAlpha: CGFloat = 0.58
     static let wallContactProxyBallFocusAlpha: CGFloat = 0.006
-    static let wallRacketContactLegacyHaloAlpha: CGFloat = 0.035
-    static let wallRacketContactLegacyHaloGlow: CGFloat = 0.22
-    static let wallRacketContactLegacyHaloScaleX: CGFloat = 0.62
-    static let wallRacketContactLegacyHaloScaleY: CGFloat = 0.34
+    static let wallRacketContactLegacyHaloAlpha: CGFloat = 0.022
+    static let wallRacketContactLegacyHaloGlow: CGFloat = 0.14
+    static let wallRacketContactLegacyHaloScaleX: CGFloat = 0.50
+    static let wallRacketContactLegacyHaloScaleY: CGFloat = 0.28
     static let wallRacketContactBurstZPosition: CGFloat = 13.20
     static let standardRacketContactBurstZPosition: CGFloat = 13.45
     static let standardRacketContactRingZPosition: CGFloat = 13.40
@@ -609,18 +609,18 @@ enum Tunables {
     static let wallContactBurstAlphaMultiplier: CGFloat = 0.020
     static let wallContactBurstGlowMultiplier: CGFloat = 0.010
     static let wallContactSparkGlowMultiplier: CGFloat = 0.030
-    static let wallContactSparkAlphaMultiplier: CGFloat = 0.52
-    static let wallContactSparkStreakWidth: CGFloat = 10
-    static let wallContactSparkStreakHeight: CGFloat = 2
+    static let wallContactSparkAlphaMultiplier: CGFloat = 0.42
+    static let wallContactSparkStreakWidth: CGFloat = 8
+    static let wallContactSparkStreakHeight: CGFloat = 1.6
     /// Replaces the old broad wall-contact cloud with small directional
     /// tennis-dust flecks that travel away from the avatar.
-    static let wallDirectionalSparkCount: Int = 6
-    static let wallDirectionalSparkAlphaMultiplier: CGFloat = 0.62
+    static let wallDirectionalSparkCount: Int = 4
+    static let wallDirectionalSparkAlphaMultiplier: CGFloat = 0.48
     static let wallDirectionalSparkOriginOutwardOffset: CGFloat = 14
-    static let wallDirectionalSparkTravel: CGFloat = 82
-    static let wallDirectionalSparkSpread: CGFloat = 5.4
-    static let wallDirectionalSparkLift: CGFloat = 22
-    static let wallDirectionalSparkCoreSize: CGFloat = 2.6
+    static let wallDirectionalSparkTravel: CGFloat = 70
+    static let wallDirectionalSparkSpread: CGFloat = 4.2
+    static let wallDirectionalSparkLift: CGFloat = 16
+    static let wallDirectionalSparkCoreSize: CGFloat = 2.1
     static let wallDirectionalSparkDuration: TimeInterval = 0.18
     static let wallContactPocketMaxAlpha: CGFloat = 0.12
     static let wallContactPocketBaseAlpha: CGFloat = 0.018

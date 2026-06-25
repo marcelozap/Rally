@@ -222,6 +222,29 @@ final class WallRallyEscalationTests: XCTestCase {
         )
     }
 
+    func testWallContactFxStaysBelowAvatarWashoutThresholds() {
+        XCTAssertLessThanOrEqual(
+            Tunables.wallRacketContactLegacyHaloAlpha,
+            0.025,
+            "wall contact halo must stay subtle enough not to wash over the gameplay avatar"
+        )
+        XCTAssertLessThanOrEqual(
+            Tunables.wallRacketContactLegacyHaloGlow,
+            0.16,
+            "wall contact glow should read as a tight racket beat, not a broad cloud"
+        )
+        XCTAssertLessThanOrEqual(
+            Tunables.wallDirectionalSparkCount,
+            4,
+            "wall sparks should be a few tennis-dust flecks, not a fireworks stack"
+        )
+        XCTAssertLessThanOrEqual(
+            Tunables.wallDirectionalSparkAlphaMultiplier,
+            0.5,
+            "spark alpha should keep the player silhouette readable through contact"
+        )
+    }
+
     // MARK: - wall spawn watchdog
 
     func testWallSpawnWatchdogDeadlineRespectsScheduledDelayPlusGrace() {

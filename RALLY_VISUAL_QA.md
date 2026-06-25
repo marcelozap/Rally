@@ -219,6 +219,42 @@ Findings:
 - Gameplay autoplay reaches live contact with score/combo visible, confirming the app survives the debug run path.
 - Wall-contact sparks now use lower alpha, fewer particles, smaller cores, and an outward origin offset so the payoff stays around the ball/racket instead of washing over the avatar silhouette.
 
+## 2026-06-25 — Tight Wall Contact FX Proof
+
+Build:
+
+```text
+xcodebuild -project Rally.xcodeproj -scheme Rally -configuration Debug -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build
+Result: BUILD SUCCEEDED
+```
+
+Tests:
+
+```text
+WallRallyEscalationTests: 27 passed, 0 failed
+```
+
+Simulator:
+
+```text
+iPhone 16 Pro, iOS 18.6
+Bundle: com.marcelozap.rally
+Autoplay argument: -RallyAutoPlay
+```
+
+Screenshot:
+
+```text
+Gameplay autoplay after tight contact FX: /tmp/rally_visual_qa/tight_contact_fx_003117.png
+```
+
+Findings:
+
+- Wall contact halo, spark count, spark alpha, and spark size are lower so contact reads as a tight tennis beat instead of a broad flash cloud.
+- The contact frame reached a live rally state (`335`, x4), confirming ball feed and scoring are active after the FX pass.
+- `PERFECT` text remains fully on-screen after the prior clamp, and the player silhouette remains visible through contact.
+- Remaining issue: the avatar still reads too puppet-like at gameplay scale, but that belongs to the avatar/geometry lane rather than this Rafa FX pass.
+
 ## 2026-06-22 — Opening Rally Mercy Pass
 
 Build:
