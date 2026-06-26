@@ -1360,21 +1360,21 @@ final class GameScene: SKScene {
         // hides hair/face and reads like a different player after tapping Play.
         let showsRearAvatar = false
 
+        let headAnchorY = layout.headY
         let head = SKShapeNode(path: RallyAvatarGeometry.premiumHeadPath(scale: layout.headPathScale * 0.96))
         head.fillColor = skin
         head.strokeColor = .clear
         head.lineWidth = 0
-        head.position = CGPoint(x: 0, y: layout.headY + 2 * bodyScale)
+        head.position = CGPoint(x: 0, y: headAnchorY)
         head.zPosition = 6
         root.addChild(head)
         playerHead = head
 
         // IDENTITY LOCK: hair shares the head's exact anchor + scale (see the head
-        // node above: y = headY + 2*bodyScale, scale = headPathScale * 0.96). The
+        // node above: y = headY, scale = headPathScale * 0.96). The
         // hair paths are authored in the head's local frame, so co-anchoring keeps
         // the crown attached and the fringe off the eyes — and keeps gameplay
         // matching Home, where RallyAvatarView uses the identical rule.
-        let headAnchorY = layout.headY + 2 * bodyScale
         let hairScale = layout.headPathScale * 0.96
         // Shared with RallyAvatarView: lifts the front fringe off the eyes only.
         let hairFringeLift = RallyAvatarGeometry.hairFringeLift(scale: hairScale)
@@ -1401,7 +1401,7 @@ final class GameScene: SKScene {
         leftEar.fillColor = skin.mixed(with: .black, ratio: 0.025)
         leftEar.strokeColor = .clear
         leftEar.lineWidth = 0
-        leftEar.position = CGPoint(x: 0, y: layout.headY + 2 * bodyScale)
+        leftEar.position = CGPoint(x: 0, y: headAnchorY)
         leftEar.zPosition = 6.05
         leftEar.alpha = 0.92
         root.addChild(leftEar)
@@ -1411,7 +1411,7 @@ final class GameScene: SKScene {
         rightEar.fillColor = skin.mixed(with: .black, ratio: 0.025)
         rightEar.strokeColor = .clear
         rightEar.lineWidth = 0
-        rightEar.position = CGPoint(x: 0, y: layout.headY + 2 * bodyScale)
+        rightEar.position = CGPoint(x: 0, y: headAnchorY)
         rightEar.zPosition = 6.05
         rightEar.alpha = 0.92
         root.addChild(rightEar)
@@ -1432,7 +1432,7 @@ final class GameScene: SKScene {
         leftEye.fillColor = eyeFill
         leftEye.strokeColor = UIColor.white.withAlphaComponent(0.10)
         leftEye.lineWidth = max(0.36 * bodyScale, 0.28)
-        leftEye.position = CGPoint(x: 0, y: layout.headY + 2 * bodyScale)
+        leftEye.position = CGPoint(x: 0, y: headAnchorY)
         leftEye.zPosition = 8
         leftEye.isHidden = !showsFrontFace
         root.addChild(leftEye)
@@ -1442,7 +1442,7 @@ final class GameScene: SKScene {
         rightEye.fillColor = eyeFill
         rightEye.strokeColor = UIColor.white.withAlphaComponent(0.10)
         rightEye.lineWidth = max(0.36 * bodyScale, 0.28)
-        rightEye.position = CGPoint(x: 0, y: layout.headY + 2 * bodyScale)
+        rightEye.position = CGPoint(x: 0, y: headAnchorY)
         rightEye.zPosition = 8
         rightEye.isHidden = !showsFrontFace
         root.addChild(rightEye)
@@ -1452,7 +1452,7 @@ final class GameScene: SKScene {
             let spec = SKShapeNode(path: RallyAvatarGeometry.eyeSpecularPath(side: side, scale: faceScale))
             spec.fillColor = UIColor.white.withAlphaComponent(0.46)
             spec.strokeColor = .clear
-            spec.position = CGPoint(x: 0, y: layout.headY + 2 * bodyScale)
+            spec.position = CGPoint(x: 0, y: headAnchorY)
             spec.zPosition = 8.1
             spec.isHidden = !showsFrontFace
             root.addChild(spec)
@@ -1463,7 +1463,7 @@ final class GameScene: SKScene {
         let leftBrow = SKShapeNode(path: RallyAvatarGeometry.browPath(side: -1, scale: faceScale))
         leftBrow.fillColor = browColor
         leftBrow.strokeColor = .clear
-        leftBrow.position = CGPoint(x: 0, y: layout.headY + 2 * bodyScale)
+        leftBrow.position = CGPoint(x: 0, y: headAnchorY)
         leftBrow.zRotation = 0.0
         leftBrow.zPosition = 8
         leftBrow.isHidden = !showsFrontFace
@@ -1473,7 +1473,7 @@ final class GameScene: SKScene {
         let rightBrow = SKShapeNode(path: RallyAvatarGeometry.browPath(side: 1, scale: faceScale))
         rightBrow.fillColor = browColor
         rightBrow.strokeColor = .clear
-        rightBrow.position = CGPoint(x: 0, y: layout.headY + 2 * bodyScale)
+        rightBrow.position = CGPoint(x: 0, y: headAnchorY)
         rightBrow.zRotation = 0.0
         rightBrow.zPosition = 8
         rightBrow.isHidden = !showsFrontFace
@@ -1485,7 +1485,7 @@ final class GameScene: SKScene {
         nose.strokeColor = skin.mixed(with: .black, ratio: 0.18).withAlphaComponent(0.64)
         nose.lineWidth = max(1.70 * bodyScale, 1.38)
         nose.lineCap = .round
-        nose.position = CGPoint(x: 0, y: layout.headY + 2 * bodyScale)
+        nose.position = CGPoint(x: 0, y: headAnchorY)
         nose.zPosition = 8
         nose.isHidden = !showsFrontFace
         root.addChild(nose)
@@ -1548,7 +1548,7 @@ final class GameScene: SKScene {
         mouth.fillColor = .clear
         mouth.lineWidth = max(1.88 * bodyScale, 1.44)
         mouth.lineCap = .round
-        mouth.position = CGPoint(x: 0, y: layout.headY + 2 * bodyScale + RallyAvatarGeometry.mouthCenterY(scale: faceScale))
+        mouth.position = CGPoint(x: 0, y: headAnchorY + RallyAvatarGeometry.mouthCenterY(scale: faceScale))
         mouth.zRotation = RallyAvatarRebuildDefaults.Face.smileRotationDegrees * .pi / 180
         mouth.zPosition = 8.35
         mouth.alpha = showsFrontFace ? 0.95 : 0
@@ -2373,7 +2373,7 @@ final class GameScene: SKScene {
         let gameplayScale: CGFloat = courtAvatarScale
         let faceScale = (courtAvatarLayout?.headPathScale ?? gameplayScale) * 0.96
         let headAnchorX = targets.headX
-        let headAnchorY = (courtAvatarLayout?.headY ?? 186) + 2 * gameplayScale + idleHeadLift
+        let headAnchorY = (courtAvatarLayout?.headY ?? 186) + idleHeadLift
         let hairFringeLift = RallyAvatarGeometry.hairFringeLift(scale: faceScale)
         playerHead.position.y += (headAnchorY - playerHead.position.y) * 0.12
         playerNeck.zRotation += (targets.headRotation * 0.6 - playerNeck.zRotation) * 0.16

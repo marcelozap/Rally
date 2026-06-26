@@ -1121,3 +1121,33 @@ Findings:
 - Cue strength has a readable floor and an opening peak, making the first seconds feel less like an empty or broken court.
 - The proof screenshot shows the live ball, path cue, avatar, and simple score HUD in the first-run gameplay frame.
 - Remaining task: real-phone visual check to tune whether the guide is too loud or too quiet during the first 10 seconds.
+
+## 2026-06-26 — Gameplay Head/Neck Anchor Pass
+
+Build:
+
+```text
+xcodebuild -project Rally.xcodeproj -scheme Rally -configuration Debug -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build
+Result: BUILD SUCCEEDED
+```
+
+Simulator:
+
+```text
+iPhone 16 Pro, iOS 18.6
+Bundle: com.marcelozap.rally
+Launch arguments: -RallyAutoPlay
+```
+
+Screenshot:
+
+```text
+Gameplay proof: /tmp/rally_visual_qa/head_anchor_gameplay_193707.png
+```
+
+Findings:
+
+- Gameplay head, hair, ears, eyes, brows, nose, and mouth now share the layout head anchor instead of the previous gameplay-only `+2 * bodyScale` lift.
+- This removes a small but compounding head/neck offset that made the face stack read more puppet-like in motion.
+- The proof frame reaches live scoring (`335`, `x4`, `PERFECT`) after the change, so wall-rally autoplay still runs.
+- Remaining visible issue: at exact contact, the ball/glow can still cover the face. Next Rafa pass should move/scale contact payoff away from the avatar face or fade it behind the racket/head stack.
