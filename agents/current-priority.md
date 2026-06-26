@@ -28,11 +28,15 @@ Install on a real iPhone and test:
 - gameplay avatar identity match
 - touch timing
 - haptics
-- audio balance
+- audio balance after manually enabling Sound (Rally is intentionally quiet by default)
 - Shop links
 - Journal/session logging
 
 Write bugs down. Do not fix during the test.
+
+## Quiet Audio Policy
+
+Sound is intentionally **off by default** so autoplay, simulator runs, and late-night testing do not wake the room. The player can opt in from the visible sound toggles on Home/Locker and Game Settings. Do not re-enable launch audio or prewarm the audio engine unless `RallyDefaults.resolvedSoundEnabled()` returns true.
 
 ## Priority 2: Avatar Identity
 
