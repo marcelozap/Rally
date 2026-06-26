@@ -255,6 +255,35 @@ Findings:
 - `PERFECT` text remains fully on-screen after the prior clamp, and the player silhouette remains visible through contact.
 - Remaining issue: the avatar still reads too puppet-like at gameplay scale, but that belongs to the avatar/geometry lane rather than this Rafa FX pass.
 
+## 2026-06-26 — Wall Feed Watchdog Visual Verify
+
+Build:
+
+```text
+xcodebuild -project Rally.xcodeproj -scheme Rally -configuration Debug -destination 'platform=iOS Simulator,name=iPhone 16 Pro' CODE_SIGNING_ALLOWED=NO build
+Result: BUILD SUCCEEDED
+```
+
+Simulator:
+
+```text
+iPhone 16 Pro, iOS 18.6
+Bundle: com.marcelozap.rally
+Autoplay argument: -RallyAutoPlay
+```
+
+Screenshot:
+
+```text
+Gameplay autoplay after wall-feed watchdog hardening: /tmp/rally_visual_qa/wall_feed_watchdog_verify_041220.png
+```
+
+Findings:
+
+- Wall rally reached live scoring (`335`, x4), so the post-countdown / empty-court feed path is not stuck in the captured run.
+- Ball, racket, score, best marker, and `PERFECT` feedback are visible in the same frame, confirming contact and timing feedback are active after the watchdog recovery patch.
+- The broad gameplay issue is unchanged: the player still reads toy-like/puppet-like at device scale. Next work should claim the avatar hot zone and improve head/shoulders/feet/anatomy through the shared avatar pipeline, not through more contact-FX tuning.
+
 ## 2026-06-22 — Opening Rally Mercy Pass
 
 Build:
