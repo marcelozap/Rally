@@ -5267,22 +5267,33 @@ final class GameScene: SKScene {
             return
         }
 
+        let outwardDirection: CGFloat = lane == .right ? 1 : -1
+        let burstPoint = CGPoint(
+            x: point.x + outwardDirection * Tunables.wallContactBurstSafeOutwardOffset,
+            y: point.y - Tunables.wallContactBurstSafeDownOffset
+        )
+        let burstZ = (playerRoot?.zPosition ?? 14) + Tunables.wallContactBurstBehindPlayerZOffset
+
         let ring = SKShapeNode(circleOfRadius: Tunables.ballRadiusPoints * 0.68)
-        ring.position = point
+        ring.position = burstPoint
         ring.strokeColor = UIColor.white.withAlphaComponent(0.98 * Tunables.wallContactBurstAlphaMultiplier)
         ring.fillColor = .clear
         ring.lineWidth = 2.8 * Tunables.wallContactBurstGlowMultiplier
         ring.glowWidth = 14 * Tunables.wallContactBurstGlowMultiplier
-        ring.zPosition = 64
+        ring.zPosition = burstZ
         addChild(ring)
 
-        let flash = SKShapeNode(circleOfRadius: Tunables.ballRadiusPoints * 0.52)
-        flash.position = point
+        let flash = SKShapeNode(
+            circleOfRadius: Tunables.ballRadiusPoints
+                * 0.52
+                * Tunables.wallContactBurstSafeFlashRadiusScalar
+        )
+        flash.position = burstPoint
         flash.fillColor = color.withAlphaComponent(0.50 * Tunables.wallContactBurstAlphaMultiplier)
         flash.strokeColor = .white.withAlphaComponent(0.46 * Tunables.wallContactBurstAlphaMultiplier)
         flash.lineWidth = 0.8
         flash.glowWidth = 14 * Tunables.wallContactBurstGlowMultiplier
-        flash.zPosition = 63
+        flash.zPosition = burstZ + 0.02
         addChild(flash)
 
         let driftX: CGFloat = lane == .right ? 8 : -8

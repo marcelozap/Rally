@@ -570,6 +570,10 @@ enum Tunables {
     static let wallBallTailXScaleMultiplier: CGFloat = 0.18
     static let wallBallTailYScaleMultiplier: CGFloat = 0.24
     static let wallBallTailOffsetMultiplier: CGFloat = 0.50
+    static let wallContactBurstSafeOutwardOffset: CGFloat = 24
+    static let wallContactBurstSafeDownOffset: CGFloat = 9
+    static let wallContactBurstSafeFlashRadiusScalar: CGFloat = 0.76
+    static let wallContactBurstBehindPlayerZOffset: CGFloat = -0.28
     static let wallLaneGlowBaseAlpha: CGFloat = 0.006
     static let wallLaneGlowRestAlpha: CGFloat = 0.008
     static let wallLaneGlowPeakPerfect: CGFloat = 0.034

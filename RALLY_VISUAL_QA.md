@@ -1151,3 +1151,33 @@ Findings:
 - This removes a small but compounding head/neck offset that made the face stack read more puppet-like in motion.
 - The proof frame reaches live scoring (`335`, `x4`, `PERFECT`) after the change, so wall-rally autoplay still runs.
 - Remaining visible issue: at exact contact, the ball/glow can still cover the face. Next Rafa pass should move/scale contact payoff away from the avatar face or fade it behind the racket/head stack.
+
+## 2026-06-27 — Rafa Contact Glow Face-Clear Pass
+
+Build:
+
+```text
+xcodebuild -project Rally.xcodeproj -scheme Rally -configuration Debug -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build
+Result: BUILD SUCCEEDED
+```
+
+Simulator:
+
+```text
+iPhone 16 Pro, iOS 18.6
+Bundle: com.marcelozap.rally
+Launch arguments: -RallyAutoPlay
+```
+
+Screenshot:
+
+```text
+Gameplay proof: /tmp/rally_visual_qa/contact_glow_face_clear_031152.png
+```
+
+Findings:
+
+- Wall-rally contact payoff still fires on a live PERFECT frame with score/combo visible (`335`, `x4`, `PERFECT`).
+- The large yellow-white wall strike burst now blooms outward/down from the ball and behind the player layer, instead of covering the avatar's eyes/mouth at contact.
+- The racket-side contact remains readable because the ball/racket are still at the true contact point while the decorative flash is protected from the face stack.
+- Remaining task: tune the avatar anatomy itself (head/face/hair/feet/shoulders) separately; this pass only fixed contact-effect occlusion.
