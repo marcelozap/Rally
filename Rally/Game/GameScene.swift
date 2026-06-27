@@ -2749,25 +2749,25 @@ final class GameScene: SKScene {
                                 + (faceAtContact + Tunables.wristPronateFinal) * follow
             return PlayerPoseTargets(
                 torsoRotation: Tunables.forehandLoadTorsoRotation * load
-                    + 0.48 * contact                                     // chest drives explosively through ball
+                    + 0.34 * contact                                     // chest drives through ball without over-rotating at phone scale
                     + Tunables.forehandFollowTorsoRotation * follow,
-                headRotation: -0.05 * load + 0.05 * contact + 0.07 * follow,  // head stays level, eyes on ball
-                headX: -10 * load + 14 * contact + 18 * follow,
+                headRotation: -0.04 * load + 0.02 * contact + 0.035 * follow,  // head stays level, eyes on ball
+                headX: -8 * load + 5 * contact + 10 * follow,
                 // Legs: deep knee bend on load, weight drives powerfully into front foot at contact
                 leadLegRotation: 0.18 + 0.22 * load + 0.22 * contact - 0.05 * follow,
                 trailLegRotation: -0.26 - 0.22 * load + 0.18 * follow,         // trail foot pivots through on follow
                 leadLegX: 31 + 10 * load + 16 * contact + 4 * follow,
                 trailLegX: -28 - 12 * load + 14 * follow,                      // trail foot sweeps through
                 // Lead arm: coils behind torso on load, whips explosively through contact, dips into follow
-                leadArmRotation: Tunables.forehandLeadArmLoadRotation * load + 0.34 * contact + 0.68 * follow + reach * 0.0013,
+                leadArmRotation: Tunables.forehandLeadArmLoadRotation * load + 0.24 * contact + 0.48 * follow + reach * 0.0010,
                 // Trail arm: balance arm — extends dramatically OUT and UP during follow (key pro signature)
-                trailArmRotation: 0.32 * load + 0.04 * contact - 0.58 * follow,  // sweeps wide for balance
-                leadArmX: 36 + armReach * (0.28 * load + 0.66 * contact + 0.44 * follow),
-                leadArmY: 128 + reach * (0.03 * load + 0.07 * contact + 0.11 * follow) + Tunables.forehandLeadShoulderFollowDip * follow,
-                trailArmX: -38 + reach * 0.04 * contact - 44 * follow,          // balance arm sweeps far out
-                trailArmY: 118 + reach * 0.02 + 32 * follow,                    // and lifts — classic pro balance
-                racketHandleRotation: (-0.68 * load + 0.32 * contact + 0.88 * follow + reach * 0.0015) * rl,
-                racketHeadRotation: -0.50 * load + 0.62 * contact + 1.08 * follow + reach * 0.0012,  // full wrist roll-over
+                trailArmRotation: 0.26 * load + 0.02 * contact - 0.38 * follow,  // balance arm opens without pinwheeling
+                leadArmX: 36 + armReach * (0.24 * load + 0.56 * contact + 0.34 * follow),
+                leadArmY: 128 + reach * (0.025 * load + 0.055 * contact + 0.08 * follow) + Tunables.forehandLeadShoulderFollowDip * follow,
+                trailArmX: -38 + reach * 0.035 * contact - 30 * follow,          // balance arm sweeps wide, not off-body
+                trailArmY: 118 + reach * 0.018 + 22 * follow,                    // and lifts — classic pro balance
+                racketHandleRotation: (-0.64 * load + 0.24 * contact + 0.58 * follow + reach * 0.0011) * rl,
+                racketHeadRotation: -0.48 * load + 0.48 * contact + 0.72 * follow + reach * 0.0009,  // wrist rolls but stays readable
                 racketHandleX: ((50 - 26 * load) * rl) * (1 - contact) * (1 - follow)
                     + handleContactX * contact
                     + Tunables.forehandFollowHandleX * follow,
@@ -2776,10 +2776,10 @@ final class GameScene: SKScene {
                     + Tunables.forehandFollowHandleY * follow,
                 racketHeadX: (74 - 40 * load) * (1 - contact) * (1 - follow)
                     + contactHeadX * contact
-                    + (Tunables.forehandFollowHandleX - 28) * follow,
+                    + (Tunables.forehandFollowHandleX - 18) * follow,
                 racketHeadY: (162 + 26 * load) * (1 - contact) * (1 - follow)
                     + contactHeadY * contact
-                    + (Tunables.forehandFollowHandleY + 52) * follow,           // racket finishes high over opposite shoulder
+                    + (Tunables.forehandFollowHandleY + 36) * follow,           // racket finishes high over opposite shoulder
                 shadowXScale: 1.14 + 0.12 * contact,
                 shadowYScale: 0.93,
                 shadowAlpha: 0.36,
@@ -2810,23 +2810,23 @@ final class GameScene: SKScene {
             return PlayerPoseTargets(
                 // Two-hander: full shoulder coil behind ball, explosive through-rotation, high finish
                 torsoRotation: Tunables.backhandLoadTorsoRotation * load
-                    - 0.56 * contact                                     // drives chest through target
+                    - 0.38 * contact                                     // drives chest through target
                     + Tunables.backhandFollowTorsoRotation * follow,
-                headRotation: -0.05 * load - 0.03 * contact + 0.02 * follow,  // head level, watches ball
-                headX: -28 * load - 18 * contact - 6 * follow,
+                headRotation: -0.04 * load - 0.015 * contact + 0.01 * follow,  // head level, watches ball
+                headX: -22 * load - 6 * contact - 3 * follow,
                 leadLegRotation: -0.26 - 0.10 * load + 0.12 * follow,
                 trailLegRotation: 0.40 + 0.20 * load - 0.10 * follow,
                 leadLegX: -16 - 6 * load + 8 * contact + 10 * follow,
                 trailLegX: -48 - 12 * load - 6 * contact + 14 * follow,
                 // Both arms drive through together (two-hander unit), then lead arm extends to finish
-                leadArmRotation: -1.62 * load - 1.18 * contact - 0.48 * follow - reach * 0.0011,
-                trailArmRotation: -1.48 * load - 1.08 * contact - 0.42 * follow - reach * 0.0009,
-                leadArmX: -18 - armReach * (0.72 * load + 0.62 * contact + 0.58 * follow),
-                leadArmY: 144 + 20 * load + reach * (0.09 * contact + 0.06 * follow),
-                trailArmX: -14 - armReach * (0.62 * load + 0.52 * contact + 0.62 * follow),
-                trailArmY: 148 + 18 * load + reach * (0.09 * contact + 0.06 * follow),
-                racketHandleRotation: -1.74 * load - 1.38 * contact - 0.52 * follow - reach * 0.0012,
-                racketHeadRotation: -1.38 * load - 0.98 * contact - 0.18 * follow - reach * 0.0010,
+                leadArmRotation: -1.40 * load - 0.82 * contact - 0.34 * follow - reach * 0.0008,
+                trailArmRotation: -1.28 * load - 0.76 * contact - 0.30 * follow - reach * 0.0007,
+                leadArmX: -18 - armReach * (0.60 * load + 0.48 * contact + 0.42 * follow),
+                leadArmY: 144 + 18 * load + reach * (0.070 * contact + 0.045 * follow),
+                trailArmX: -14 - armReach * (0.50 * load + 0.42 * contact + 0.46 * follow),
+                trailArmY: 148 + 16 * load + reach * (0.068 * contact + 0.044 * follow),
+                racketHandleRotation: -1.48 * load - 1.02 * contact - 0.36 * follow - reach * 0.0009,
+                racketHeadRotation: -1.14 * load - 0.74 * contact - 0.12 * follow - reach * 0.0008,
                 racketHandleX: (-22 - armReach * 0.98 * load) * (1 - contact) * (1 - follow)
                     + handleContactX * contact
                     + Tunables.backhandFollowHandleX * follow,

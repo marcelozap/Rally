@@ -698,17 +698,17 @@ enum Tunables {
     static let forehandLoadTorsoRotation: CGFloat = -0.46   // deeper shoulder coil on backswing
     static let backhandLoadTorsoRotation: CGFloat = 0.80   // stronger two-hander load
     static let torsoContactUncoilMultiplier: CGFloat = 5.2  // explosive torso release at contact — drives through ball
-    static let forehandFollowTorsoRotation: CGFloat = 0.74  // full chest-to-target rotation through shot
-    static let backhandFollowTorsoRotation: CGFloat = 0.18  // backhand rotates through more
+    static let forehandFollowTorsoRotation: CGFloat = 0.58  // chest opens through target without folding over face
+    static let backhandFollowTorsoRotation: CGFloat = 0.12  // two-hander opens, but stays compact at phone scale
 
     static let forehandLeadArmLoadRotation: CGFloat = -0.82 // arm coils deeper behind torso on load
-    static let forehandLeadShoulderFollowDip: CGFloat = -28.0 // hitting shoulder dips hard into follow (pro tilt)
-    static let forehandFollowHandleX: CGFloat = -64.0       // racket wraps far over opposite shoulder
-    static let forehandFollowHandleY: CGFloat = 182.0       // high finish — racket over left shoulder
-    static let backhandFollowHandleX: CGFloat = -82.0
-    static let backhandFollowHandleY: CGFloat = 182.0
-    static let backhandFollowHeadX: CGFloat = -110.0
-    static let backhandFollowHeadY: CGFloat = 216.0
+    static let forehandLeadShoulderFollowDip: CGFloat = -14.0 // visible shoulder tilt without collapsing the torso
+    static let forehandFollowHandleX: CGFloat = -46.0       // racket wraps across body, clear of face stack
+    static let forehandFollowHandleY: CGFloat = 166.0       // high finish — readable without covering head
+    static let backhandFollowHandleX: CGFloat = -62.0
+    static let backhandFollowHandleY: CGFloat = 166.0
+    static let backhandFollowHeadX: CGFloat = -78.0
+    static let backhandFollowHeadY: CGFloat = 190.0
     static let backhandSupportHandGripSeparation: CGFloat = 12.5
     static let backhandContactGripLockBlend: CGFloat = 0.72
 
@@ -725,7 +725,7 @@ enum Tunables {
     static let torsoVelocityDecayRate: CGFloat = 0.62       // faster uncoil burst at contact
 
     /// Racket-head overshoot amplitude on contact wrist-snap (points).
-    static let wristSnapAmplitude: CGFloat = 24.0           // more visible snap through ball
+    static let wristSnapAmplitude: CGFloat = 15.0           // crisp snap without throwing racket across face
     static let wristSnapHoldSeconds: Double = 0.042
     /// Exponential decay rate for wrist snap (units: 1/second).
     static let wristSnapDecayRate: CGFloat  = 22.0          // slower decay = snap lingers longer
@@ -735,7 +735,7 @@ enum Tunables {
     static let backhandWristSnapAxisY: CGFloat = 0.38
 
     /// Exponent for easeOut on follow-through positions: pow(1−t, exp).
-    static let followEaseOutPow: CGFloat = 2.4              // snaps through faster, decelerates more smoothly
+    static let followEaseOutPow: CGFloat = 1.65             // smoother deceleration; avoids puppet snap-stop
 
     // MARK: - Footwork system (TopSpin 2K25 model)
 

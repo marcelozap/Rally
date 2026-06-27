@@ -1244,3 +1244,34 @@ Findings:
 - At 22 seconds, the rally is still live with score `3139`, combo `x18`, and a ball/contact payoff visible near the player.
 - Existing wall-feed watchdogs are active and covered by tests; do not add another rescue layer unless a new screenshot shows an actual stuck feed on this build.
 - Remaining visible task: the swing/contact pose still reads puppet-like during contact. Next Rafa work should target body mechanics and racket/arm pose, not spawn lifecycle.
+
+## 2026-06-27 — Rafa Swing Pose Softening Pass
+
+Build:
+
+```text
+xcodebuild -project Rally.xcodeproj -scheme Rally -configuration Debug -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build
+Result: BUILD SUCCEEDED
+```
+
+Simulator:
+
+```text
+iPhone 16 Pro, iOS 18.6
+Bundle: com.marcelozap.rally
+Launch arguments: -RallyAutoPlay
+```
+
+Screenshots:
+
+```text
+10-second proof: /tmp/rally_visual_qa/swing_pose_softening_2031_10s.png
+22-second proof: /tmp/rally_visual_qa/swing_pose_softening_2031_22s.png
+```
+
+Findings:
+
+- Feed remained live with score/combo visible (`543`, `x6` at 10 seconds; `3139`, `x18` at 22 seconds).
+- Forehand/backhand follow-through targets were softened so the racket, hands, and torso do not fold across the face stack as aggressively at phone scale.
+- Wrist snap amplitude was reduced and follow easing softened to reduce puppet-like snap-stop while preserving a high tennis finish.
+- Remaining: this is an incremental pose readability pass, not the final anatomy/camera fix. Next Rafa work should make the contact frame route the ball slightly wider from the face and add cleaner two-handed backhand support-hand spacing if screenshots still feel crowded.
