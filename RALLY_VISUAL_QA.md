@@ -1181,3 +1181,34 @@ Findings:
 - The large yellow-white wall strike burst now blooms outward/down from the ball and behind the player layer, instead of covering the avatar's eyes/mouth at contact.
 - The racket-side contact remains readable because the ball/racket are still at the true contact point while the decorative flash is protected from the face stack.
 - Remaining task: tune the avatar anatomy itself (head/face/hair/feet/shoulders) separately; this pass only fixed contact-effect occlusion.
+
+## 2026-06-27 — Avatar Anatomy Readability Pass
+
+Build:
+
+```text
+xcodebuild -project Rally.xcodeproj -scheme Rally -configuration Debug -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build
+Result: BUILD SUCCEEDED
+```
+
+Simulator:
+
+```text
+iPhone 16 Pro, iOS 18.6
+Bundle: com.marcelozap.rally
+Home launch + -RallyAutoPlay gameplay launch
+```
+
+Screenshots:
+
+```text
+Home proof: /tmp/rally_visual_qa/avatar_anatomy_home_061824.png
+Gameplay proof: /tmp/rally_visual_qa/avatar_anatomy_game_061832.png
+```
+
+Findings:
+
+- Home avatar no longer reads as bald or faceless: hair stays attached to the head, eyes and mouth are visible, ears have inner definition, and shoulders connect more cleanly into the torso.
+- Gameplay avatar carries the same shared head/face/hair geometry; live proof frame reaches scoring contact (`335`, `x4`, `PERFECT`) after the change.
+- Tennis shoes now include toe-cap strokes in both renderers, which helps them read less like flat dress shoes or blocks.
+- Remaining task: contact animation poses can still look awkward during swing follow-through; handle that separately as a motion/pose pass, not another static head-geometry pass.

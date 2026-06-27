@@ -221,6 +221,17 @@ struct RallyAvatarView: View {
             lineWidth: 0.35 * scale
         )
         drawPath(
+            RallyAvatarGeometry.earInnerPath(side: -1, scale: faceScale),
+            in: &context,
+            centerX: centerX,
+            baseline: baseline,
+            x: 0,
+            y: layout.headY + idleLift,
+            fill: .clear,
+            stroke: Color(uiColor: appearance.skinUIColor.rallyBlended(withFraction: 0.18, of: .black)).opacity(0.46),
+            lineWidth: max(0.72 * scale, 0.62)
+        )
+        drawPath(
             RallyAvatarGeometry.earPath(side: 1, scale: faceScale),
             in: &context,
             centerX: centerX,
@@ -230,6 +241,17 @@ struct RallyAvatarView: View {
             fill: appearance.skinColor,
             stroke: Color.black.opacity(0.06),
             lineWidth: 0.35 * scale
+        )
+        drawPath(
+            RallyAvatarGeometry.earInnerPath(side: 1, scale: faceScale),
+            in: &context,
+            centerX: centerX,
+            baseline: baseline,
+            x: 0,
+            y: layout.headY + idleLift,
+            fill: .clear,
+            stroke: Color(uiColor: appearance.skinUIColor.rallyBlended(withFraction: 0.18, of: .black)).opacity(0.46),
+            lineWidth: max(0.72 * scale, 0.62)
         )
         drawPath(
             RallyAvatarGeometry.premiumHeadPath(scale: faceScale),
@@ -378,6 +400,18 @@ struct RallyAvatarView: View {
             fill: accent.opacity(0.82),
             stroke: .clear,
             lineWidth: 0
+        )
+        drawMirroredPath(
+            RallyAvatarGeometry.shoeToeCapPath(scale: scale),
+            in: &context,
+            centerX: centerX,
+            baseline: baseline,
+            x: x,
+            y: y,
+            xFlip: xFlip,
+            fill: .clear,
+            stroke: accent.opacity(0.72),
+            lineWidth: max(0.90 * scale, 0.72)
         )
         drawMirroredPath(
             RallyAvatarGeometry.shoeTonguePath(scale: scale),
@@ -618,7 +652,7 @@ struct RallyAvatarView: View {
             y: headY + RallyAvatarGeometry.mouthCenterY(scale: scale),
             fill: .clear,
             stroke: Color.black.opacity(0.58),
-            lineWidth: max(1.12 * scale, 0.92)
+            lineWidth: max(1.34 * scale, 1.06)
         )
     }
 

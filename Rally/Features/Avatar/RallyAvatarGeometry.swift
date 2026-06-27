@@ -19,19 +19,19 @@ enum RallyAvatarGeometry {
     static let hairColorHex = "#0A0A0C"
     static let hairHighlightHex = "#2A2A30"
     static let faceInkHex = "#1C1C1E"
-    static let eyeCenterXRatio: CGFloat = 0.225
+    static let eyeCenterXRatio: CGFloat = 0.205
     static let eyeCenterFromTopRatio: CGFloat = 0.512
     static let browAboveEyeRatio: CGFloat = 0.124
     static let noseFromTopRatio: CGFloat = 0.62
     static let mouthFromTopRatio: CGFloat = 0.748
-    static let mouthWidthRatio: CGFloat = 0.38
-    static let shoulderWidening: CGFloat = 1.42
+    static let mouthWidthRatio: CGFloat = 0.42
+    static let shoulderWidening: CGFloat = 1.50
     static let jawNarrowing: CGFloat = 0.12
-    static let minGameplayEyeWidth: CGFloat = 6.2
-    static let minGameplayEyeHeight: CGFloat = 4.0
+    static let minGameplayEyeWidth: CGFloat = 5.6
+    static let minGameplayEyeHeight: CGFloat = 3.5
     static let minGameplayBrowWidth: CGFloat = 7.4
-    static let minGameplayMouthHalfWidth: CGFloat = 9.6
-    static let minGameplayMouthCurve: CGFloat = 1.38
+    static let minGameplayMouthHalfWidth: CGFloat = 10.8
+    static let minGameplayMouthCurve: CGFloat = 1.62
 
     static func headTop(scale: CGFloat) -> CGFloat { headHeight * 0.5 * scale }
     static func headBottom(scale: CGFloat) -> CGFloat { -headHeight * 0.5 * scale }
@@ -64,7 +64,7 @@ enum RallyAvatarGeometry {
     /// Small vertical lift applied to the FRONT hair. The hair path is authored
     /// around the head ellipse, so this must stay subtle: too high reads bald /
     /// disconnected, too low covers the face. Both renderers call this value.
-    static func hairFringeLift(scale: CGFloat) -> CGFloat { 0.72 * scale }
+    static func hairFringeLift(scale: CGFloat) -> CGFloat { 0.56 * scale }
 
     static func handRadius(scale: CGFloat, armThickness: CGFloat = 13.2) -> CGFloat {
         armThickness * 0.58 * scale
@@ -191,6 +191,23 @@ enum RallyAvatarGeometry {
         return path
     }
 
+    static func earInnerPath(side: CGFloat, scale: CGFloat) -> CGPath {
+        let path = CGMutablePath()
+        let x = side * (headHalfWidth(scale: scale) + 2.5 * scale)
+        let y = eyeCenterY(scale: scale) - 0.8 * scale
+        path.move(to: CGPoint(x: x, y: y + 3.1 * scale))
+        path.addQuadCurve(
+            to: CGPoint(x: x + side * 0.4 * scale, y: y - 3.2 * scale),
+            control: CGPoint(x: x - side * 2.2 * scale, y: y - 0.3 * scale)
+        )
+        return path.copy(
+            strokingWithWidth: max(0.70 * scale, 0.62),
+            lineCap: .round,
+            lineJoin: .round,
+            miterLimit: 2
+        )
+    }
+
     static func premiumHairPath(scale: CGFloat) -> CGPath {
         let path = CGMutablePath()
 
@@ -209,12 +226,12 @@ enum RallyAvatarGeometry {
             control: CGPoint(x: -halfWidth - 7.2 * scale, y: browY + 6.6 * scale)
         )
         path.addQuadCurve(
-            to: CGPoint(x: -4.8 * scale, y: top + 13.4 * scale),
-            control: CGPoint(x: -halfWidth * 0.88, y: top + 11.0 * scale)
+            to: CGPoint(x: -4.8 * scale, y: top + 11.2 * scale),
+            control: CGPoint(x: -halfWidth * 0.88, y: top + 9.8 * scale)
         )
         path.addQuadCurve(
             to: CGPoint(x: halfWidth + 3.8 * scale, y: top - 2.0 * scale),
-            control: CGPoint(x: halfWidth * 0.88, y: top + 12.6 * scale)
+            control: CGPoint(x: halfWidth * 0.88, y: top + 10.4 * scale)
         )
         path.addQuadCurve(
             to: CGPoint(x: halfWidth + 2.8 * scale, y: templeY - 2.4 * scale),
@@ -513,6 +530,25 @@ enum RallyAvatarGeometry {
                          lineCap: .round, lineJoin: .round, miterLimit: 2)
     }
 
+    static func shoeToeCapPath(scale: CGFloat) -> CGPath {
+        let path = CGMutablePath()
+        path.move(to: CGPoint(x: 9.5 * scale, y: -4.4 * scale))
+        path.addQuadCurve(
+            to: CGPoint(x: 22.0 * scale, y: 0.4 * scale),
+            control: CGPoint(x: 18.5 * scale, y: -5.1 * scale)
+        )
+        path.addQuadCurve(
+            to: CGPoint(x: 10.2 * scale, y: 4.0 * scale),
+            control: CGPoint(x: 19.2 * scale, y: 4.4 * scale)
+        )
+        return path.copy(
+            strokingWithWidth: max(1.15 * scale, 0.95),
+            lineCap: .round,
+            lineJoin: .round,
+            miterLimit: 2
+        )
+    }
+
     // MARK: - Clothing details
 
     /// V-neck collar opening on torso front.
@@ -530,10 +566,10 @@ enum RallyAvatarGeometry {
     /// Sloped shoulder panel at the sleeve junction.
     static func sleeveCapPath(scale: CGFloat, side: CGFloat) -> CGPath {
         let path = CGMutablePath()
-        let innerTop = CGPoint(x: side * 11.0 * scale, y: 4.2 * scale)
-        let outerTop = CGPoint(x: side * 20.6 * scale, y: 1.4 * scale)
-        let outerLow = CGPoint(x: side * 21.2 * scale, y: -4.2 * scale)
-        let innerLow = CGPoint(x: side * 13.0 * scale, y: -5.8 * scale)
+        let innerTop = CGPoint(x: side * 9.4 * scale, y: 5.0 * scale)
+        let outerTop = CGPoint(x: side * 23.0 * scale, y: 1.9 * scale)
+        let outerLow = CGPoint(x: side * 23.8 * scale, y: -5.0 * scale)
+        let innerLow = CGPoint(x: side * 12.4 * scale, y: -6.6 * scale)
 
         path.move(to: innerTop)
         path.addQuadCurve(
