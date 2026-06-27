@@ -1212,3 +1212,35 @@ Findings:
 - Gameplay avatar carries the same shared head/face/hair geometry; live proof frame reaches scoring contact (`335`, `x4`, `PERFECT`) after the change.
 - Tennis shoes now include toe-cap strokes in both renderers, which helps them read less like flat dress shoes or blocks.
 - Remaining task: contact animation poses can still look awkward during swing follow-through; handle that separately as a motion/pose pass, not another static head-geometry pass.
+
+## 2026-06-27 — Wall-Rally Feed Liveness Verification
+
+Build:
+
+```text
+xcodebuild -project Rally.xcodeproj -scheme Rally -configuration Debug -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build
+Result: BUILD SUCCEEDED
+```
+
+Simulator:
+
+```text
+iPhone 16 Pro, iOS 18.6
+Bundle: com.marcelozap.rally
+Launch arguments: -RallyAutoPlay
+```
+
+Screenshots:
+
+```text
+10-second proof: /tmp/rally_visual_qa/feed_verify_1301_10s.png
+22-second proof: /tmp/rally_visual_qa/feed_verify_1301_22s.png
+```
+
+Findings:
+
+- The current fresh build does not reproduce the empty-court/no-ball complaint under autoplay.
+- At 10 seconds, the rally is live with score `543`, combo `x6`, and an active contact cue.
+- At 22 seconds, the rally is still live with score `3139`, combo `x18`, and a ball/contact payoff visible near the player.
+- Existing wall-feed watchdogs are active and covered by tests; do not add another rescue layer unless a new screenshot shows an actual stuck feed on this build.
+- Remaining visible task: the swing/contact pose still reads puppet-like during contact. Next Rafa work should target body mechanics and racket/arm pose, not spawn lifecycle.
