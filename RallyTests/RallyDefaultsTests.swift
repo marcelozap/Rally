@@ -46,6 +46,16 @@ final class RallyDefaultsTests: XCTestCase {
         XCTAssertTrue(RallyDefaults.resolvedSoundEnabled(defaults))
     }
 
+    func testAutoplayLaunchForcesSoundOffEvenAfterOptIn() {
+        RallyDefaults.applyQuietSoundDefaultIfNeeded(defaults)
+        defaults.set(true, forKey: UserDefaultsKeys.soundEnabled)
+        defaults.set(true, forKey: UserDefaultsKeys.soundPreferenceExplicitlySet)
+
+        XCTAssertFalse(
+            RallyDefaults.resolvedSoundEnabled(defaults, arguments: ["Rally", "-RallyAutoPlay"])
+        )
+    }
+
     private func clearSoundKeys() {
         defaults.removeObject(forKey: UserDefaultsKeys.soundEnabled)
         defaults.removeObject(forKey: UserDefaultsKeys.soundPreferenceExplicitlySet)

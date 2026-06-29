@@ -29,9 +29,12 @@ enum RallyDefaults {
 
     /// Sound should stay quiet by default so test/autoplay launches never
     /// surprise the room. The player can still opt in from the sound toggle.
-    static func resolvedSoundEnabled(_ defaults: UserDefaults = .standard) -> Bool {
+    static func resolvedSoundEnabled(
+        _ defaults: UserDefaults = .standard,
+        arguments: [String] = ProcessInfo.processInfo.arguments
+    ) -> Bool {
         #if DEBUG
-        if ProcessInfo.processInfo.arguments.contains("-RallyAutoPlay") {
+        if arguments.contains("-RallyAutoPlay") {
             return false
         }
         #endif
