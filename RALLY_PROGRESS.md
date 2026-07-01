@@ -10,6 +10,7 @@ Governing priority: RALLY_NORTH_STAR.md > CLAUDE_CODE_PARALLEL_PLAN.md > RALLY_O
 
 | Date       | Commit     | Lane | Work                              | Notes                                           |
 |------------|------------|------|-----------------------------------|-------------------------------------------------|
+| 2026-06-29 | 129a120    | [CX] | Rafa contact pocket visual proof | Widened/lowered wall-rally contact pocket; xcodebuild generic iOS Simulator Debug BUILD SUCCEEDED; autoplay proof screenshots recorded in `RALLY_VISUAL_QA.md` at `/tmp/rally_visual_qa/contact_pocket_widen_1402_10s.png` and `/tmp/rally_visual_qa/contact_pocket_widen_1402_22s.png`. |
 | 2026-06-16 | (pending)  | [CX] | Avatar readability: face, hair, ears, feet | Gameplay-scale face features strengthened in shared geometry and both renderers: larger eyes/brows/mouth minimums, more visible nose/mouth strokes, ears exposed, connected fringe lowered, and ready/outside foot toe-out increased. xcodebuild generic iOS Simulator Debug BUILD SUCCEEDED. |
 | 2026-06-16 | (pending)  | [CC] | RallyTab rename + wall-rally test coverage | `RallyTab.journal` → `.world` (ContentView.swift) to match the actual "World" tab label/icon (Courts map) — was naming debt from T7 golden-file routing, confirmed single-file blast radius via grep before renaming. Added `RallyTests/WallRallyEscalationTests.swift`: full coverage of `Tunables.wallSpeedTier`/`wallSpeedScalar`/`wallTimingScalar` (tier boundaries, monotonic taper, openingBoost confined to tier 0 only). Surveyed `RallySyncCoordinator`/`RallySyncTriggers`/`RemoteTunables`/`RallyAPIClient` for live-ops risk — found one real bug (see BLOCKED/NOTES), did not touch it. Files: `Rally/App/ContentView.swift`, `RallyTests/WallRallyEscalationTests.swift` (new), `RALLY_PROGRESS.md`. BUILD NOT RUN, TESTS NOT RUN — no Xcode/simulator in this sandbox. |
 | 2026-06-16 | d355b86    | [CX] | Timing taper + multiplier banners  | wallTimingScalar tapers with combo tier (1.78→1.62→1.44→1.26→1.10→0.96) matching speed ramp so tier-5 is genuinely harder. wallStreakLabel punched on each hit (comboLabel hidden in wall mode). ×2/×3 multiplier-bump banners (gold→platinum) when combo/5 steps up and no speed-tier fires same hit. xcodebuild generic iOS Simulator Debug BUILD SUCCEEDED. |
@@ -104,7 +105,7 @@ Commit: `[CC] World marketplace: listings, live referral links, declutter, safe 
 - [x] contact payoff: perfect banners now live (combo ≤3 + every 5th); stroke-aware label text (aac00cc)
 - [x] miss clarity: popup red/amber by reason; wallMissCue coaching text filled in (aac00cc)
 - [x] VERIFY (compile): xcodebuild sim Debug BUILD SUCCEEDED for all 2026-06-12/13 [CC] changes (2026-06-13)
-- [ ] VERIFY (visual): boot sim, play a rally, screenshot — confirm depth shrink at wall,
+- [x] VERIFY (visual): boot sim, play a rally, screenshot — confirm depth shrink at wall,
       return urgency, colored miss popups, perfect banners read on screen (North Star Law 10)
 
 ---
