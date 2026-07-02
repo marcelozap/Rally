@@ -616,6 +616,16 @@ enum Tunables {
     static let wallContactSparkAlphaMultiplier: CGFloat = 0.42
     static let wallContactSparkStreakWidth: CGFloat = 8
     static let wallContactSparkStreakHeight: CGFloat = 1.6
+    /// Contact-frame face-occlusion guard: both spark systems render BEHIND
+    /// the player (relative z offset from playerRoot), matching the burst
+    /// ring/flash treatment via `wallContactBurstBehindPlayerZOffset`. Sparks
+    /// still travel outward past the silhouette, so payoff stays readable
+    /// without ever crossing the face at the exact hit frame.
+    static let wallContactSparkBehindPlayerZOffset: CGFloat = -0.20
+    static let wallDirectionalSparkBehindPlayerZOffset: CGFloat = -0.16
+    /// Vertical drift of the streak sparks (was a hardcoded +18 that climbed
+    /// across the head at hit time).
+    static let wallContactSparkLift: CGFloat = 8
     /// Replaces the old broad wall-contact cloud with small directional
     /// tennis-dust flecks that travel away from the avatar.
     static let wallDirectionalSparkCount: Int = 4
@@ -623,7 +633,7 @@ enum Tunables {
     static let wallDirectionalSparkOriginOutwardOffset: CGFloat = 14
     static let wallDirectionalSparkTravel: CGFloat = 70
     static let wallDirectionalSparkSpread: CGFloat = 4.2
-    static let wallDirectionalSparkLift: CGFloat = 16
+    static let wallDirectionalSparkLift: CGFloat = 7
     static let wallDirectionalSparkCoreSize: CGFloat = 2.1
     static let wallDirectionalSparkDuration: TimeInterval = 0.18
     static let wallContactPocketMaxAlpha: CGFloat = 0.12

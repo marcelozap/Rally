@@ -5378,7 +5378,8 @@ final class GameScene: SKScene {
                     y: point.y + CGFloat(i % 2) * 2
                 )
                 spark.zRotation = outboundDirection * 0.18
-                spark.zPosition = 65
+                spark.zPosition = (playerRoot?.zPosition ?? 14)
+                    + Tunables.wallContactSparkBehindPlayerZOffset
                 addChild(spark)
                 let spread = CGFloat(i) - CGFloat(wallSparkCount - 1) * 0.5
                 let dist: CGFloat = quality == .perfect ? 62 : (quality == .great ? 52 : 42)
@@ -5388,7 +5389,7 @@ final class GameScene: SKScene {
                     .group([
                         .moveBy(
                             x: outboundDirection * forward,
-                            y: 18 + lateral,
+                            y: Tunables.wallContactSparkLift + lateral,
                             duration: ringDuration * 1.08
                         ),
                         .rotate(byAngle: outboundDirection * 0.16, duration: ringDuration * 1.08),
@@ -5438,7 +5439,8 @@ final class GameScene: SKScene {
             spark.strokeColor = .clear
             spark.glowWidth = index.isMultiple(of: 2) ? 0.9 : 0.35
             spark.zRotation = direction * (0.12 + CGFloat(index % 4) * 0.045)
-            spark.zPosition = 65.5
+            spark.zPosition = (playerRoot?.zPosition ?? 14)
+                + Tunables.wallDirectionalSparkBehindPlayerZOffset
             addChild(spark)
 
             let stagger = CGFloat(index % 4) * 0.045
