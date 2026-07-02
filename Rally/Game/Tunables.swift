@@ -704,11 +704,11 @@ enum Tunables {
     static let forehandLeadArmLoadRotation: CGFloat = -0.82 // arm coils deeper behind torso on load
     static let forehandLeadShoulderFollowDip: CGFloat = -14.0 // visible shoulder tilt without collapsing the torso
     static let forehandFollowHandleX: CGFloat = -46.0       // racket wraps across body, clear of face stack
-    static let forehandFollowHandleY: CGFloat = 166.0       // high finish — readable without covering head
+    static let forehandFollowHandleY: CGFloat = 150.0       // high finish, but below the face stack at phone scale
     static let backhandFollowHandleX: CGFloat = -62.0
-    static let backhandFollowHandleY: CGFloat = 166.0
+    static let backhandFollowHandleY: CGFloat = 150.0
     static let backhandFollowHeadX: CGFloat = -78.0
-    static let backhandFollowHeadY: CGFloat = 190.0
+    static let backhandFollowHeadY: CGFloat = 174.0
     static let backhandSupportHandGripSeparation: CGFloat = 12.5
     static let backhandContactGripLockBlend: CGFloat = 0.72
 

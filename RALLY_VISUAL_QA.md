@@ -1305,3 +1305,33 @@ Findings:
 - Wall-rally feed stayed live under autoplay with score/combo continuing across both proof frames.
 - Contact pocket moved farther outside and lower than the previous face stack, so the bright ball/glow/racket read less crowded around the avatar head.
 - Remaining: the racket still finishes high through the head area during some swing frames. Next Rafa pass should address swing-arc/camera composition rather than spawn lifecycle.
+
+## 2026-07-01 — Rafa Follow-Through Finish Lowering Pass
+
+Build:
+
+```text
+xcodebuild -project Rally.xcodeproj -scheme Rally -configuration Debug -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build
+Result: BUILD SUCCEEDED
+```
+
+Simulator:
+
+```text
+iPhone 16 Pro, iOS 18.6
+Bundle: com.marcelozap.rally
+Launch arguments: -RallyAutoPlay
+```
+
+Screenshots:
+
+```text
+10-second proof: /tmp/rally_visual_qa/follow_finish_lower_0112_10s.png
+22-second proof: /tmp/rally_visual_qa/follow_finish_lower_0112_22s.png
+```
+
+Findings:
+
+- Wall-rally feed stayed live under autoplay, with score/combo visible at both proof points.
+- Forehand/backhand follow-through endpoints are lower, so the racket finish no longer smothers the avatar's face as aggressively at phone scale.
+- Remaining: the player anatomy and camera still need a larger form pass, but this keeps the existing rally loop stable and improves contact-frame readability.
