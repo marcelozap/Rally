@@ -10,6 +10,7 @@ Governing priority: RALLY_NORTH_STAR.md > CLAUDE_CODE_PARALLEL_PLAN.md > RALLY_O
 
 | Date       | Commit     | Lane | Work                              | Notes                                           |
 |------------|------------|------|-----------------------------------|-------------------------------------------------|
+| 2026-07-02 | (verify)   | [CX] | VERIFY — Fable wall spark face-occlusion fix | Verified commit `339d4e2`: xcodebuild generic iOS Simulator Debug **BUILD SUCCEEDED**; autoplay proof screenshots recorded in `RALLY_VISUAL_QA.md` at `/tmp/rally_visual_qa/fable_sparks_fix_0812_10s.png` and `/tmp/rally_visual_qa/fable_sparks_fix_0812_22s.png`. |
 | 2026-07-01 | (pending)  | [CC] | Wall contact sparks behind player | Closes the 2026-06-26 open item "contact glow can still cover face at exact hit frame": both wall spark systems (streak sparks in `stageWallStrikeBurst`, directional sparks in `stageWallDirectionalContactSparks`) moved from hardcoded zPosition 65/65.5 (in front of player, z=14) to behind `playerRoot` via new named tunables `wallContactSparkBehindPlayerZOffset`/`wallDirectionalSparkBehindPlayerZOffset`, matching the existing ring/flash `wallContactBurstBehindPlayerZOffset` treatment. Hardcoded +18 streak lift → `wallContactSparkLift` 8; `wallDirectionalSparkLift` 16→7 so sparks drift outward, not up across the head. BUILD NOT RUN — no Xcode in this sandbox; needs local xcodebuild + autoplay proof frame at contact. |
 | 2026-07-01 | (pending)  | [CX] | Rafa follow-through finish readability | Lowered forehand/backhand follow-through endpoints in `Tunables.swift` so the racket finish clears the avatar face better at phone scale; xcodebuild generic iOS Simulator Debug BUILD SUCCEEDED; autoplay proof screenshots recorded in `RALLY_VISUAL_QA.md` at `/tmp/rally_visual_qa/follow_finish_lower_0112_10s.png` and `/tmp/rally_visual_qa/follow_finish_lower_0112_22s.png`. |
 | 2026-06-29 | 129a120    | [CX] | Rafa contact pocket visual proof | Widened/lowered wall-rally contact pocket; xcodebuild generic iOS Simulator Debug BUILD SUCCEEDED; autoplay proof screenshots recorded in `RALLY_VISUAL_QA.md` at `/tmp/rally_visual_qa/contact_pocket_widen_1402_10s.png` and `/tmp/rally_visual_qa/contact_pocket_widen_1402_22s.png`. |
@@ -111,6 +112,8 @@ Commit: `[CC] World marketplace: listings, live referral links, declutter, safe 
       return urgency, colored miss popups, perfect banners read on screen (North Star Law 10)
 - [x] follow-through readability: forehand/backhand finish endpoints lowered so the racket
       clears the avatar face better in autoplay proof frames (2026-07-01)
+- [x] contact-effect face occlusion: verified `339d4e2` wall sparks render behind/outside
+      the player silhouette under autoplay proof (2026-07-02)
 
 ---
 

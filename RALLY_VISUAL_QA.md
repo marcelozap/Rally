@@ -3,6 +3,36 @@
 This file records screenshot-backed visual checks. Do not commit screenshot binaries unless the
 owner explicitly asks; store paths are evidence for the current machine/session.
 
+## 2026-07-02 — Fable Wall Spark Face-Occlusion Proof
+
+Build:
+
+```text
+xcodebuild -project Rally.xcodeproj -scheme Rally -configuration Debug -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build
+Result: BUILD SUCCEEDED
+```
+
+Simulator:
+
+```text
+iPhone 16 Pro, iOS 18.6
+Bundle: com.marcelozap.rally
+Autoplay argument: -RallyAutoPlay
+```
+
+Screenshots:
+
+```text
+10-second proof: /tmp/rally_visual_qa/fable_sparks_fix_0812_10s.png
+22-second proof: /tmp/rally_visual_qa/fable_sparks_fix_0812_22s.png
+```
+
+Findings:
+
+- Verified commit `339d4e2`: autoplay stayed live, score/combo advanced, and the player remained visible through contact frames.
+- Wall contact sparks now sit behind/outside the player silhouette instead of washing over the avatar face.
+- Remaining issue is broader Rafa quality, not this regression: the player still needs the larger gameplay anatomy/camera pass for premium feel.
+
 ## 2026-06-16 — Replay Theater Check
 
 Build:
