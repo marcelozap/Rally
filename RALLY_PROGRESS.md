@@ -10,6 +10,7 @@ Governing priority: RALLY_NORTH_STAR.md > CLAUDE_CODE_PARALLEL_PLAN.md > RALLY_O
 
 | Date       | Commit     | Lane | Work                              | Notes                                           |
 |------------|------------|------|-----------------------------------|-------------------------------------------------|
+| 2026-07-04 | (docs)     | [CX] | Real phone install guide          | Added `RALLY_REAL_PHONE_INSTALL.md` and routed current-priority/village docs to the install -> test -> results flow. Docs-only; build not required. |
 | 2026-07-04 | 12a24f3    | [CX] | BUILD VERIFY — current rally/dev  | xcodebuild generic iOS Simulator Debug **BUILD SUCCEEDED** at `2bc4dcb`; no code changes. Confirms the real-phone checklist starts from a compiling tree while preserving the existing dirty `agents/handoff.md`. |
 | 2026-07-03 | 2bc4dcb    | [CX] | Real phone test checklist         | Added `RALLY_REAL_PHONE_TEST.md` for the next device run: launch quiet defaults, avatar identity, outfit slot isolation, gameplay feed, tennis feel, audio toggle, Shop/Journal/World, final 1-10 scores, and top-three bug capture. Docs-only; build not required. |
 | 2026-07-02 | (verify)   | [CX] | VERIFY — Fable wall spark face-occlusion fix | Verified commit `339d4e2`: xcodebuild generic iOS Simulator Debug **BUILD SUCCEEDED**; autoplay proof screenshots recorded in `RALLY_VISUAL_QA.md` at `/tmp/rally_visual_qa/fable_sparks_fix_0812_10s.png` and `/tmp/rally_visual_qa/fable_sparks_fix_0812_22s.png`. |

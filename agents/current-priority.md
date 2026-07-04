@@ -20,6 +20,7 @@ Primary lane right now: **Rafa Gameplay**. Finish the addictive wall-rally loop 
 
 Use these two files:
 
+- `RALLY_REAL_PHONE_INSTALL.md` — install/run guide for putting `rally/dev` on a physical iPhone
 - `RALLY_REAL_PHONE_TEST.md` — step-by-step device checklist
 - `RALLY_REAL_PHONE_RESULTS.md` — scorecard, top-three bugs, and patch order
 
