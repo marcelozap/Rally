@@ -1,6 +1,6 @@
 # Current Priority
 
-Last updated: 2026-06-16
+Last updated: 2026-07-04
 
 Rally is close enough for real-device testing. The next work should reduce risk and improve what the player immediately feels.
 
@@ -12,11 +12,16 @@ Canonical repo: `/Users/a14/Desktop/Rally`
 
 Do not use or reference the old `cursor/init-rally-ios-scaffold` branch as the active lane.
 
-There are active gameplay edits in `Rally/Game/GameScene.swift`, `Rally/Game/Tunables.swift`, and `RALLY_PROGRESS.md` from the timing taper / streak punch / multiplier banner pass. Do not overwrite, revert, or commit those files unless the user explicitly asks.
+The tree is build-verified on `rally/dev`. If `agents/handoff.md` is dirty, preserve it unless the user explicitly asks to resolve that handoff.
 
 Primary lane right now: **Rafa Gameplay**. Finish the addictive wall-rally loop before starting new Shop, World, or Journal feature work.
 
 ## Priority 1: Real Phone Test
+
+Use these two files:
+
+- `RALLY_REAL_PHONE_TEST.md` — step-by-step device checklist
+- `RALLY_REAL_PHONE_RESULTS.md` — scorecard, top-three bugs, and patch order
 
 Install on a real iPhone and test:
 
@@ -32,7 +37,9 @@ Install on a real iPhone and test:
 - Shop links
 - Journal/session logging
 
-Write bugs down. Do not fix during the test.
+Write bugs down in `RALLY_REAL_PHONE_RESULTS.md`. Do not fix during the test.
+
+After the test, fix only the top three observed bugs in score-impact order.
 
 ## Quiet Audio Policy
 
