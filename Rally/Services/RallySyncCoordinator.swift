@@ -165,19 +165,24 @@ enum RallySyncCoordinator {
         )
     }
 
-    // MARK: - Apply (replace collections)
+    // MARK: - Apply (id-based merge)
 
+    /// Merges the server envelope into local rows by `id`.
+    ///
+    /// This used to delete every local TrainingSession/MatchEntry/JournalEntry
+    /// and re-insert the server's copy wholesale, which had two data-loss modes:
+    /// 1. A `pull()` racing ahead of a not-yet-pushed local save (e.g. a
+    ///    foreground refresh right after writing a journal entry) silently
+    ///    discarded that row.
+    /// 2. Fields the payload doesn't carry (`photoData`, journal rally metrics,
+    ///    `courtName`/`gearCSV`, `sourceRaw`) were wiped even for rows the
+    ///    server already knew.
+    ///
+    /// Now: matching ids are updated in place (payload-covered fields only),
+    /// unknown ids are inserted, and local rows the server hasn't seen are
+    /// kept — the next `push()` uploads them. Trade-off: server-side deletions
+    /// no longer propagate; doing that safely needs tombstones in the API.
     private static func apply(_ envelope: SyncEnvelope, modelContext: ModelContext) throws {
-        for row in try modelContext.fetch(FetchDescriptor<TrainingSession>()) {
-            modelContext.delete(row)
-        }
-        for row in try modelContext.fetch(FetchDescriptor<MatchEntry>()) {
-            modelContext.delete(row)
-        }
-        for row in try modelContext.fetch(FetchDescriptor<JournalEntry>()) {
-            modelContext.delete(row)
-        }
-
         let avatarRows = try modelContext.fetch(FetchDescriptor<AvatarConfig>())
         let avatar = avatarRows.first ?? AvatarConfig()
         if avatarRows.isEmpty {
@@ -192,48 +197,90 @@ enum RallySyncCoordinator {
         }
         applyProgress(envelope.progress, to: progress)
 
+        let trainingByID = firstWinsByID(try modelContext.fetch(FetchDescriptor<TrainingSession>()), id: \.id)
         for dto in envelope.trainingSessions {
-            let row = TrainingSession(
-                date: dto.date,
-                durationMinutes: dto.durationMinutes,
-                drillType: dto.drillType,
-                intensity: dto.intensity,
-                notes: dto.notes
-            )
-            row.id = dto.id
-            modelContext.insert(row)
+            if let row = trainingByID[dto.id] {
+                row.date = dto.date
+                row.durationMinutes = dto.durationMinutes
+                row.drillType = dto.drillType
+                row.intensity = dto.intensity
+                row.notes = dto.notes
+            } else {
+                let row = TrainingSession(
+                    date: dto.date,
+                    durationMinutes: dto.durationMinutes,
+                    drillType: dto.drillType,
+                    intensity: dto.intensity,
+                    notes: dto.notes
+                )
+                row.id = dto.id
+                modelContext.insert(row)
+            }
         }
 
+        let matchByID = firstWinsByID(try modelContext.fetch(FetchDescriptor<MatchEntry>()), id: \.id)
         for dto in envelope.matchEntries {
-            let row = MatchEntry(
-                date: dto.date,
-                opponentName: dto.opponentName,
-                location: dto.location,
-                surface: CourtSurface(rawValue: dto.surfaceRaw) ?? .hard,
-                resultWon: dto.resultWon,
-                sets: SetScore.decode(dto.setsCSV),
-                notes: dto.notes
-            )
-            row.id = dto.id
-            modelContext.insert(row)
+            if let row = matchByID[dto.id] {
+                row.date = dto.date
+                row.opponentName = dto.opponentName
+                row.location = dto.location
+                row.surfaceRaw = (CourtSurface(rawValue: dto.surfaceRaw) ?? .hard).rawValue
+                row.resultWon = dto.resultWon
+                row.setsCSV = SetScore.encode(SetScore.decode(dto.setsCSV))
+                row.notes = dto.notes
+                // photoData is local-only (not in MatchPayload) — leave untouched.
+            } else {
+                let row = MatchEntry(
+                    date: dto.date,
+                    opponentName: dto.opponentName,
+                    location: dto.location,
+                    surface: CourtSurface(rawValue: dto.surfaceRaw) ?? .hard,
+                    resultWon: dto.resultWon,
+                    sets: SetScore.decode(dto.setsCSV),
+                    notes: dto.notes
+                )
+                row.id = dto.id
+                modelContext.insert(row)
+            }
         }
 
+        let journalByID = firstWinsByID(try modelContext.fetch(FetchDescriptor<JournalEntry>()), id: \.id)
         for dto in envelope.journalEntries {
-            let row = JournalEntry(
-                date: dto.date,
-                title: dto.title,
-                body: dto.body,
-                mood: dto.mood,
-                tags: dto.tagsCSV
-                    .split(separator: ",")
-                    .map { $0.trimmingCharacters(in: .whitespaces) }
-                    .filter { !$0.isEmpty },
-                focus: JournalFocus(rawValue: dto.focusRaw) ?? .general,
-                promptId: dto.promptId
-            )
-            row.id = dto.id
-            modelContext.insert(row)
+            let tags = dto.tagsCSV
+                .split(separator: ",")
+                .map { $0.trimmingCharacters(in: .whitespaces) }
+                .filter { !$0.isEmpty }
+            if let row = journalByID[dto.id] {
+                row.date = dto.date
+                row.title = dto.title
+                row.body = dto.body
+                row.mood = dto.mood
+                row.tagsCSV = tags.joined(separator: ",")
+                row.focusRaw = (JournalFocus(rawValue: dto.focusRaw) ?? .general).rawValue
+                row.promptId = dto.promptId
+                // photoData, sourceRaw, rallyScore/rallyMaxCombo/rallyAccuracyPct,
+                // courtName, gearCSV are local-only (not in JournalPayload) —
+                // leave untouched.
+            } else {
+                let row = JournalEntry(
+                    date: dto.date,
+                    title: dto.title,
+                    body: dto.body,
+                    mood: dto.mood,
+                    tags: tags,
+                    focus: JournalFocus(rawValue: dto.focusRaw) ?? .general,
+                    promptId: dto.promptId
+                )
+                row.id = dto.id
+                modelContext.insert(row)
+            }
         }
+    }
+
+    /// Index rows by id, tolerating (impossible-in-practice) duplicate ids
+    /// instead of crashing like `Dictionary(uniqueKeysWithValues:)` would.
+    private static func firstWinsByID<Row>(_ rows: [Row], id: KeyPath<Row, UUID>) -> [UUID: Row] {
+        Dictionary(rows.map { ($0[keyPath: id], $0) }, uniquingKeysWith: { first, _ in first })
     }
 
     private static func applyAvatar(_ dto: AvatarPayload, to avatar: AvatarConfig) {
