@@ -10,6 +10,7 @@ Governing priority: RALLY_NORTH_STAR.md > CLAUDE_CODE_PARALLEL_PLAN.md > RALLY_O
 
 | Date       | Commit     | Lane | Work                              | Notes                                           |
 |------------|------------|------|-----------------------------------|-------------------------------------------------|
+| 2026-07-12 | (verify)   | [CX] | BUILD VERIFY — sync data-loss fix | xcodebuild generic iOS Simulator Debug **BUILD SUCCEEDED** at `f502a1f`; no code changes. Confirms the `[CC]` id-based merge fix compiles before pushing the two local commits, while preserving dirty `agents/handoff.md` and untracked `home_after_launch.textClipping`. |
 | 2026-07-04 | (verify)   | [CX] | BUILD VERIFY — real-phone install baseline | xcodebuild generic iOS Simulator Debug **BUILD SUCCEEDED** at `e1228d1`; no code changes. Confirms the install -> test -> results docs are sitting on a compiling `rally/dev` tree while preserving the existing dirty `agents/handoff.md`. |
 | 2026-07-04 | (docs)     | [CX] | Real phone install guide          | Added `RALLY_REAL_PHONE_INSTALL.md` and routed current-priority/village docs to the install -> test -> results flow. Docs-only; build not required. |
 | 2026-07-04 | 12a24f3    | [CX] | BUILD VERIFY — current rally/dev  | xcodebuild generic iOS Simulator Debug **BUILD SUCCEEDED** at `2bc4dcb`; no code changes. Confirms the real-phone checklist starts from a compiling tree while preserving the existing dirty `agents/handoff.md`. |
