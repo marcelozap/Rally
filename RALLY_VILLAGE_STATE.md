@@ -23,7 +23,7 @@ This is an interface metaphor over real repo facts. The agents are not magic. Th
 | Sinner Locker Atelier | Sleeping | No active Shop/Locker task should begin until gameplay loop stabilizes or user explicitly routes to Sinner. |
 | Carlos Atlas Room | Sleeping | No active World/Courts task should begin until gameplay loop stabilizes or user explicitly routes to Carlos. |
 | Replay Theater | Proof captured | `RALLY_VISUAL_QA.md` records Home + autoplay gameplay screenshots; proof shows camera/effect/player-readability work remains. |
-| Phone Court | Ready for test | `RALLY_REAL_PHONE_INSTALL.md` now leads into `RALLY_REAL_PHONE_TEST.md` and `RALLY_REAL_PHONE_RESULTS.md` for install, real-device pass/fail testing, and top-three bug capture. Current tree build passed at `e1228d1` on 2026-07-04. |
+| Phone Court | Ready for test | `RALLY_REAL_PHONE_INSTALL.md` now leads into `RALLY_REAL_PHONE_TEST.md` and `RALLY_REAL_PHONE_RESULTS.md` for install, real-device pass/fail testing, and top-three bug capture. Current tree build passed at `04de65e` on 2026-07-12 after the sync data-loss fix verification. |
 
 ---
 
