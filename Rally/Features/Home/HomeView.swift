@@ -14,12 +14,34 @@ struct HomeView: View {
     @State private var selectedCourt: CourtVenue = CourtVenue.current
     @State private var selectedLoadoutCategory: ShopItem.Category = .racket
     @State private var showsJournal = false
+    @State private var activeAINoteID: String = "note-001"
+    @State private var hoveredAINoteID: String?
 
     private var avatar: AvatarConfig? { avatarConfigs.first }
     private let editableLoadoutCategories: [ShopItem.Category] = [.racket, .top, .bottom, .shoes]
     private let featuredCourtVenues: [CourtVenue] = [.wimbledonGrass, .miamiHard, .barcelonaClay]
+    private let aiNotes: [HomeAINote] = [
+        .init(
+            id: "note-001",
+            label: "NOTE 001",
+            title: "Camera ready",
+            summary: "Full body, feet, and racket need to stay inside frame before the coaching layer trusts the clip.",
+            layers: ["Framing", "Pose confidence", "Serve setup"]
+        ),
+        .init(
+            id: "note-002",
+            label: "NOTE 002",
+            title: "Explain the read",
+            summary: "Every coaching cue should show the pose or timing evidence that created it.",
+            layers: ["AI layers", "Rule evidence", "Practice log"]
+        )
+    ]
     private var selectedLoadoutItem: ShopItem? {
         equippedItem(for: selectedLoadoutCategory)
+    }
+    private var activeAINote: HomeAINote {
+        let visibleID = hoveredAINoteID ?? activeAINoteID
+        return aiNotes.first { $0.id == visibleID } ?? aiNotes[0]
     }
 
     var body: some View {
@@ -353,6 +375,8 @@ struct HomeView: View {
 
                 ZStack {
                     rhythmAvatar
+                        .contentShape(Rectangle())
+                        .gesture(stageSwipeGesture)
 
                     HStack {
                         stageArrow(systemName: "chevron.left") {
@@ -365,21 +389,16 @@ struct HomeView: View {
                     }
                     .padding(.horizontal, 10)
                     .offset(y: 16)
+
+                    aiLayerCallout
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .trailing)
+                        .padding(.trailing, 62)
+                        .padding(.top, 22)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
         .clipShape(RoundedRectangle(cornerRadius: HomeCraft.largeRadius, style: .continuous))
-        .gesture(
-            DragGesture(minimumDistance: 24)
-                .onEnded { value in
-                    if value.translation.width < -28 {
-                        cycleCourt(1)
-                    } else if value.translation.width > 28 {
-                        cycleCourt(-1)
-                    }
-                }
-        )
     }
 
     private var stageStatusStrip: some View {
@@ -398,6 +417,8 @@ struct HomeView: View {
             }
 
             Spacer(minLength: 8)
+
+            aiNoteRail
 
             SoundToggleButton(showsLabel: false)
                 .buttonStyle(LoadoutPlayButtonStyle())
@@ -430,6 +451,102 @@ struct HomeView: View {
             RoundedRectangle(cornerRadius: 22, style: .continuous)
                 .stroke(Color.white.opacity(0.08), lineWidth: 1)
         )
+    }
+
+    private var aiNoteRail: some View {
+        HStack(spacing: 6) {
+            ForEach(aiNotes) { note in
+                Button {
+                    withAnimation(.spring(response: 0.22, dampingFraction: 0.82)) {
+                        activeAINoteID = note.id
+                    }
+                } label: {
+                    Text(note.label)
+                        .font(.system(size: 9, weight: .black, design: .rounded))
+                        .tracking(0.8)
+                        .foregroundStyle((hoveredAINoteID ?? activeAINoteID) == note.id ? RallyUIKit.Palette.obsidian : RallyUIKit.Palette.frost)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 6)
+                        .background(
+                            Capsule(style: .continuous)
+                                .fill((hoveredAINoteID ?? activeAINoteID) == note.id ? RallyUIKit.Palette.champagne.opacity(0.94) : Color.white.opacity(0.08))
+                        )
+                        .overlay(
+                            Capsule(style: .continuous)
+                                .stroke(Color.white.opacity(0.16), lineWidth: 1)
+                        )
+                }
+                .buttonStyle(LoadoutPlayButtonStyle())
+                .onHover { isHovering in
+                    withAnimation(.spring(response: 0.20, dampingFraction: 0.86)) {
+                        hoveredAINoteID = isHovering ? note.id : nil
+                    }
+                }
+                .accessibilityLabel("\(note.label), \(note.title)")
+            }
+        }
+    }
+
+    private var aiLayerCallout: some View {
+        let note = activeAINote
+
+        return VStack(alignment: .leading, spacing: 9) {
+            HStack(spacing: 7) {
+                Image(systemName: "sparkles")
+                    .font(.system(size: 10, weight: .black))
+                Text("AI LAYERS")
+                    .font(.system(size: 9, weight: .black, design: .rounded))
+                    .tracking(1.2)
+            }
+            .foregroundStyle(RallyUIKit.Palette.cyan)
+
+            Text(note.title)
+                .font(.system(size: 15, weight: .black, design: .rounded))
+                .foregroundStyle(.white)
+                .lineLimit(1)
+                .minimumScaleFactor(0.72)
+
+            Text(note.summary)
+                .font(RallyUIKit.Typography.body(.caption, weight: .semibold))
+                .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.76))
+                .fixedSize(horizontal: false, vertical: true)
+
+            VStack(alignment: .leading, spacing: 5) {
+                ForEach(note.layers, id: \.self) { layer in
+                    HStack(spacing: 6) {
+                        Circle()
+                            .fill(RallyUIKit.Palette.lime)
+                            .frame(width: 5, height: 5)
+                        Text(layer)
+                            .font(.system(size: 10, weight: .bold, design: .rounded))
+                            .foregroundStyle(RallyUIKit.Palette.frost.opacity(0.82))
+                    }
+                }
+            }
+        }
+        .padding(13)
+        .frame(width: 174, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(Color.black.opacity(0.46))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .stroke(RallyUIKit.Palette.cyan.opacity(0.28), lineWidth: 1)
+        )
+        .shadow(color: Color.black.opacity(0.26), radius: 16, y: 8)
+        .allowsHitTesting(false)
+    }
+
+    private var stageSwipeGesture: some Gesture {
+        DragGesture(minimumDistance: 24)
+            .onEnded { value in
+                if value.translation.width < -28 {
+                    cycleCourt(1)
+                } else if value.translation.width > 28 {
+                    cycleCourt(-1)
+                }
+            }
     }
 
     private var movingStageLight: some View {
@@ -873,6 +990,14 @@ private struct LoadoutPlayButtonStyle: ButtonStyle {
             .brightness(configuration.isPressed ? -0.08 : 0)
             .animation(.spring(response: 0.18, dampingFraction: 0.72), value: configuration.isPressed)
     }
+}
+
+private struct HomeAINote: Identifiable {
+    let id: String
+    let label: String
+    let title: String
+    let summary: String
+    let layers: [String]
 }
 
 private struct LoadoutShortsGlyph: View {

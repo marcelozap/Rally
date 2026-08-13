@@ -60,6 +60,12 @@ scripts/
 /*.mp4
 /PASTE_THIS_INTO_CURSOR.md
 
+# Free coaching local media
+data/raw-videos/*
+data/processed-videos/*
+!data/raw-videos/.gitkeep
+!data/processed-videos/.gitkeep
+
 # Node backend
 backend/node_modules/
 backend/data/*
@@ -78,6 +84,8 @@ Config/Local.xcconfig
 .resume-venv/
 venv/
 .venv/
+__pycache__/
+*.pyc
 *.docx
 
 # Unrelated nested repo that lives in this workspace by accident
