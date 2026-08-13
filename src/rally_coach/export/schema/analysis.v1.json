@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://xiv.dev/schemas/analysis.v1.json",
+  "title": "Rally Coach Analysis v1",
+  "description": "The contract between rally-coach (writer) and rally-app (reader). FROZEN — breaking changes become analysis.v2.",
+  "type": "object",
+  "required": ["schema_version", "clip", "fps", "frame_count", "duration_s", "swings", "metrics", "notes"],
+  "properties": {
+    "schema_version": { "const": "analysis.v1" },
+    "clip": { "type": "string" },
+    "fps": { "type": "number", "exclusiveMinimum": 0 },
+    "frame_count": { "type": "integer", "minimum": 0 },
+    "duration_s": { "type": "number", "minimum": 0 },
+    "handedness": { "enum": ["right", "left", "unknown"] },
+    "swings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "type", "start_frame", "contact_frame", "end_frame"],
+        "properties": {
+          "id": { "type": "integer" },
+          "type": { "enum": ["forehand", "backhand", "serve", "unknown"] },
+          "start_frame": { "type": "integer" },
+          "contact_frame": { "type": "integer" },
+          "end_frame": { "type": "integer" },
+          "start_t": { "type": "number" },
+          "contact_t": { "type": "number" },
+          "end_t": { "type": "number" },
+          "peak_wrist_speed": { "type": "number" },
+          "confidence": { "type": "number", "minimum": 0, "maximum": 1 }
+        }
+      }
+    },
+    "metrics": { "type": "object", "additionalProperties": { "type": "number" } },
+    "notes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["code", "title", "detail", "severity", "confidence"],
+        "properties": {
+          "code": { "type": "string" },
+          "title": { "type": "string" },
+          "detail": { "type": "string" },
+          "severity": { "enum": ["info", "suggest", "fix"] },
+          "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+          "swing_ids": { "type": "array", "items": { "type": "integer" } }
+        }
+      }
+    }
+  }
+}

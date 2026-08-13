@@ -1,0 +1,27 @@
+# rally-coach pipeline configuration
+video:
+  target_fps: 60          # resample to this; null = keep source rate
+  max_dimension: 1280     # downscale longest edge before inference
+
+pose:
+  backend: mediapipe      # mediapipe | movenet
+  model_complexity: 1     # 0 fast / 1 balanced / 2 accurate
+  min_detection_confidence: 0.5
+  min_tracking_confidence: 0.5
+
+smoothing:
+  filter: one_euro
+  min_cutoff: 2.0         # see tracking/smoothing.py tuning note
+  beta: 0.5               # UNIT-DEPENDENT. Below ~0.5 on normalised coords the
+                          # contact spike is smoothed flat and NO swings are found.
+  d_cutoff: 1.0
+
+events:
+  swing:
+    min_wrist_speed: 2.5      # normalised units/sec — peak detection floor
+    min_separation_frames: 12 # refractory period between swings
+    contact_search_window: 8  # frames either side of peak to find contact
+
+advice:
+  max_notes: 3            # never overwhelm — top N issues only
+  min_confidence: 0.6

@@ -1,0 +1,44 @@
+# --- rally-coach ---
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+build/
+dist/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+.coverage
+htmlcov/
+
+.env
+.env.*
+!.env.example
+
+# model weights: commit POINTERS only
+models/**
+!models/**/*.dvc
+!models/.gitkeep
+
+# media never goes in git
+*.mp4
+*.mov
+*.avi
+*.mkv
+data/raw/
+data/clips/
+data/annotations/
+data/processed/
+!data/raw/.gitkeep
+frames/
+artifacts/
+!artifacts/.gitkeep
+
+# exception: tiny test fixtures (keep clips under ~3 seconds)
+!tests/fixtures/**
+
+_to_delete/
+Thumbs.db
+desktop.ini

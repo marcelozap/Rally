@@ -1,0 +1,13 @@
+# Court calibration per capture setup.
+# Populate once per physical camera position, then reference by id.
+default:
+  id: default
+  description: "handheld / uncalibrated — metrics stay in normalised units"
+  calibrated: false
+
+baseline_tripod:
+  id: baseline_tripod
+  description: "tripod behind baseline, ~2.5m high"
+  calibrated: false
+  # court_points_px: [[x,y], ...]   # 4 corners, clockwise from near-left
+  # court_points_m:  [[0,0], [10.97,0], [10.97,23.77], [0,23.77]]

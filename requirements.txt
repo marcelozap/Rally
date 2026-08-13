@@ -1,0 +1,10 @@
+# Pinned floor versions. `pip install -e ".[dev]"` is preferred; this is the
+# fallback if the editable install gives you trouble on Windows.
+opencv-python>=4.10
+mediapipe>=0.10.14
+numpy>=1.26
+scipy>=1.13
+pydantic>=2.7
+typer>=0.12
+rich>=13.7
+pyyaml>=6.0
