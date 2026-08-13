@@ -5,6 +5,7 @@
 - Gather user stories from real practice sessions.
 - Use `docs/post-intake-system.md` whenever a new source post or journal entry arrives.
 - Decide prototype target: web app, mobile app, or local demo.
+- Define the coaching data model: session, clip, analysis, cue, drill, recovery note, activity import.
 - Collect example serve videos from different angles.
 - Research pose estimation options for browser/mobile.
 - Define first serve-analysis checklist.
@@ -24,6 +25,7 @@
 - Generate first coaching summary.
 - Add FPS and pose-confidence diagnostics to the prototype.
 - Add a practice-event log: detected setup, toss, contact estimate, follow-through, and confidence.
+- Connect a coaching analysis result to a practice log entry.
 - Test whether visible court lines can improve serve-location and landing feedback.
 - Prototype a cached two-pass video pipeline: analysis pass first, drawing/playback pass second.
 - Define a simple two-phone recording setup: side view plus back view.
@@ -35,6 +37,8 @@
 - Rally footwork analysis.
 - Family profiles.
 - Progress tracking.
+- Garmin-style activity history import.
+- Practice dashboard combining logs, activity data, recovery, and video-coaching trends.
 - Multi-person tracking for shared courts or doubles clips.
 - Offline mode.
 - Community drill library.
@@ -59,3 +63,5 @@
 - Can two phones be synchronized accurately enough without special hardware?
 - Which tennis technique angles are worth measuring in 3D versus explaining visually?
 - What should Rally log for each practice clip without making users feel surveilled?
+- Which practice-memory fields should be local-first SwiftData models versus backend sync payloads?
+- Which Garmin/activity metrics are actually useful for coaching context instead of noise?

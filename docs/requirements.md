@@ -2,7 +2,7 @@
 
 ## Mission
 
-Make tennis coaching more accessible by giving players useful, free feedback from video recorded on a normal phone.
+Make sports practice more useful and accessible by combining training memory, activity data, and free coaching feedback from video recorded on a normal phone.
 
 ## Primary Users
 
@@ -10,6 +10,7 @@ Make tennis coaching more accessible by giving players useful, free feedback fro
 - Beginners who need simple, non-judgmental feedback
 - Recreational players trying to improve one stroke at a time
 - Families, siblings, and friends practicing together
+- Multi-sport athletes who want one place for practice logs, matches, recovery notes, and progress review
 
 ## First Use Case
 
@@ -23,19 +24,21 @@ The serve is a good first target because:
 
 ## Core Flow
 
-1. Player chooses a stroke, starting with serve.
-2. App shows simple recording guidance.
-3. Player records a short clip using a phone camera.
-4. App detects key body positions and timing.
-5. App returns 1-3 clear coaching notes.
-6. App suggests one drill or cue for the next attempt.
-7. Player can compare the next attempt with the previous one.
+1. Player opens the daily practice loop.
+2. Player logs a session, match, recovery note, activity, or video clip.
+3. For coaching clips, the app shows simple recording guidance.
+4. Player records or uploads a short clip using a phone camera.
+5. App detects key body positions and timing.
+6. App returns 1-3 clear coaching notes.
+7. App suggests one drill or cue for the next attempt.
+8. The result becomes part of practice memory so progress can be reviewed later.
 
 ## MVP Requirements
 
 - Works with a normal phone camera.
 - Supports uploaded or freshly recorded video.
 - Starts with serve analysis.
+- Connects coaching feedback to training logs and practice history.
 - Gives plain-language feedback rather than expert jargon.
 - Prioritizes safety and injury-risk cues.
 - Keeps feedback short enough to use on court.
@@ -63,6 +66,9 @@ The serve is a good first target because:
 - Free practice plans
 - Coach-style audio summary
 - Explainable event timeline for each practice clip
+- Daily practice loop
+- Practice memory across logs, matches, recovery notes, activity data, and coaching clips
+- Wearable/activity import direction for Garmin-style training history
 - Match shot maps from a single camera
 - Return-depth trends over a match
 - Point-breakdown moments where positioning or shot selection changed the rally
@@ -76,6 +82,8 @@ The serve is a good first target because:
 - Should the app require a court, or work in a driveway/backyard setup?
 - Should the first version save videos, or delete them after analysis for privacy?
 - Do we want this to be fully free forever, or free for players with optional paid services later?
+- Should coaching clips attach to existing training logs, or create a new kind of practice entry?
+- Should Garmin/activity data stay as later context, or influence coaching recommendations early?
 - Should match analytics be a separate mode from coaching feedback?
 - Can we use single-camera court geometry to make feedback more tactical without making the MVP too complex?
 - Should Rally eventually support two-phone recording for families who want more accurate 3D technique feedback?

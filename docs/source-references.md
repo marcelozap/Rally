@@ -154,3 +154,36 @@ For serve analysis, start with a transparent rules layer over pose landmarks:
 ### Notes
 
 The architecture is more important than the activities themselves. Rally does not need standing/sitting/walking labels, but it does need explainable tennis-specific events.
+
+## Rally Portfolio Practice System Entry
+
+URL: https://www.marcelozapata.dev/rally
+
+Status: User-provided product framing and stack reference.
+
+### What It Describes
+
+The portfolio entry frames Rally as a practice app for sports, sessions, activity data, training logs, match history, recovery notes, wearable data, and progress review. The core loop is daily practice, with local-first iOS architecture and optional account sync.
+
+### Useful Ideas For Rally
+
+- The free coach should plug into Rally's broader practice-memory system.
+- Coaching analysis should create durable practice records, not isolated one-off video reports.
+- Training logs, matches, recovery notes, activity data, and video feedback should become one improvement timeline.
+- Wearable data, especially Garmin-style activity history, can give recovery and workload context.
+- Local-first SwiftData remains a good default for privacy and free access.
+- Optional Node sync can preserve progress without forcing every user into an account.
+
+### Possible Rally Adaptation
+
+Treat the coach as another practice input:
+
+- A serve clip becomes a practice entry.
+- Pose analysis becomes an event timeline.
+- Coaching cues become improvement markers.
+- Drills become next-session suggestions.
+- Activity and recovery data become context for whether the player should push, maintain, or recover.
+
+### Notes
+
+The current game stack can support this direction, but computer vision should stay modular at first. The safest path is Python/OpenCV/MediaPipe for local experiments, then iOS integration or backend service only after the coaching loop is proven useful.

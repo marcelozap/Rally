@@ -13,10 +13,26 @@ The iPhone game remains the main Rally app effort. Coaching work should stay mod
 
 For repeatable source capture, use `docs/post-intake-system.md` and `docs/templates/source-post.md`.
 
+For the coaching/practice architecture, use `docs/coaching-architecture.md`.
+
 ## Current Split
 
 - MacBook: active Rally game development and App Store path.
 - This PC: free coaching research, requirements, and computer-vision prototypes.
+
+## Product Frame
+
+Rally should be treated as a practice system first:
+
+- daily practice loop
+- training logs
+- match history
+- recovery notes
+- activity data
+- improvement markers
+- optional video coaching
+
+The coach should not become a separate disconnected tool. It should feed the same practice memory: what the player worked on, what changed, what to try next, and what patterns are showing up over time.
 
 ## First Coaching Prototype
 
