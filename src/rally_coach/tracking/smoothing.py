@@ -61,14 +61,17 @@ class _Scalar:
 class OneEuroPoseFilter:
     """Applies an independent One Euro filter to every joint's x and y."""
 
+    # The ONLY place these numbers live in code. pipeline.py reads them for its
+    # config fallbacks rather than repeating the literals.
     DEFAULT_MIN_CUTOFF = 2.0
     DEFAULT_BETA = 0.5
+    DEFAULT_D_CUTOFF = 1.0
 
     def __init__(
         self,
         min_cutoff: float = DEFAULT_MIN_CUTOFF,
         beta: float = DEFAULT_BETA,
-        d_cutoff: float = 1.0,
+        d_cutoff: float = DEFAULT_D_CUTOFF,
     ) -> None:
         self._cfg = (min_cutoff, beta, d_cutoff)
         self._filters: dict[tuple[Joint, str], _Scalar] = {}

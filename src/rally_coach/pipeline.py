@@ -1,6 +1,7 @@
 """End-to-end orchestration: video -> pose -> smooth -> events -> metrics -> advice."""
 from __future__ import annotations
 
+import logging
 from collections.abc import Callable
 from pathlib import Path
 
@@ -14,12 +15,31 @@ from rally_coach.metrics.summary import summarize
 from rally_coach.pose.base import PoseEstimator, get_backend
 from rally_coach.tracking.smoothing import OneEuroPoseFilter
 
+log = logging.getLogger(__name__)
+
+# NOTE: this resolves against the source checkout. Installed as a wheel there is
+# no `config/` two directories up from the package, so this path does not exist
+# and load_config() returns {} — see the warning it emits.
 DEFAULT_CONFIG = Path(__file__).resolve().parents[2] / "config" / "pipeline.yaml"
 
 
 def load_config(path: str | Path | None = None) -> dict:
+    """Load pipeline config, or return {} — loudly — if it isn't there.
+
+    A missing config is not fatal: every caller falls back to the in-code
+    defaults. But it must never be silent. The defaults it falls back to decide
+    whether the swing detector finds anything at all, and a config that quietly
+    failed to load looks identical, from the outside, to a clip with no swings
+    in it.
+    """
     p = Path(path) if path else DEFAULT_CONFIG
     if not p.exists():
+        log.warning(
+            "pipeline config not found at %s — falling back to in-code defaults. "
+            "(DEFAULT_CONFIG resolves relative to the source tree, so this is expected "
+            "when running from an installed wheel; pass config= or a path explicitly.)",
+            p,
+        )
         return {}
     return yaml.safe_load(p.read_text(encoding="utf-8")) or {}
 
@@ -53,10 +73,14 @@ def analyze(
         min_detection_confidence=pose_cfg.get("min_detection_confidence", 0.5),
         min_tracking_confidence=pose_cfg.get("min_tracking_confidence", 0.5),
     )
+    # One source of truth: the fallbacks ARE the class defaults. Literals here
+    # were how the pre-tuning values (min_cutoff=1.0, beta=0.007) survived the
+    # fix in smoothing.py and came back whenever the config failed to load —
+    # which silently returns zero swings. Do not re-inline them.
     smoother = OneEuroPoseFilter(
-        min_cutoff=smooth_cfg.get("min_cutoff", 1.0),
-        beta=smooth_cfg.get("beta", 0.007),
-        d_cutoff=smooth_cfg.get("d_cutoff", 1.0),
+        min_cutoff=smooth_cfg.get("min_cutoff", OneEuroPoseFilter.DEFAULT_MIN_CUTOFF),
+        beta=smooth_cfg.get("beta", OneEuroPoseFilter.DEFAULT_BETA),
+        d_cutoff=smooth_cfg.get("d_cutoff", OneEuroPoseFilter.DEFAULT_D_CUTOFF),
     )
 
     poses: list[PoseFrame] = []
