@@ -17,7 +17,8 @@ def test_right_angle():
         Joint.R_ELBOW: Keypoint(x=0.0, y=1.0),
         Joint.R_WRIST: Keypoint(x=1.0, y=1.0),
     })
-    assert math.isclose(angle_at(p, Joint.R_SHOULDER, Joint.R_ELBOW, Joint.R_WRIST), 90.0, abs_tol=1e-6)
+    angle = angle_at(p, Joint.R_SHOULDER, Joint.R_ELBOW, Joint.R_WRIST)
+    assert math.isclose(angle, 90.0, abs_tol=1e-6)
 
 
 def test_straight_arm_is_180():
@@ -26,7 +27,8 @@ def test_straight_arm_is_180():
         Joint.R_ELBOW: Keypoint(x=0.0, y=1.0),
         Joint.R_WRIST: Keypoint(x=0.0, y=2.0),
     })
-    assert math.isclose(angle_at(p, Joint.R_SHOULDER, Joint.R_ELBOW, Joint.R_WRIST), 180.0, abs_tol=1e-6)
+    angle = angle_at(p, Joint.R_SHOULDER, Joint.R_ELBOW, Joint.R_WRIST)
+    assert math.isclose(angle, 180.0, abs_tol=1e-6)
 
 
 def test_missing_joint_returns_none():

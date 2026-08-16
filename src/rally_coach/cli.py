@@ -13,7 +13,8 @@ from rich.console import Console
 from rich.table import Table
 
 from rally_coach.export.writer import read, write
-from rally_coach.pipeline import analyze as run_analysis, load_config
+from rally_coach.pipeline import analyze as run_analysis
+from rally_coach.pipeline import load_config
 
 app = typer.Typer(add_completion=False, help="Tennis movement analysis and coaching advice.")
 console = Console()
@@ -63,7 +64,8 @@ def _render(result) -> None:
 
     if result.metrics:
         m = Table(title="Metrics", header_style="cyan")
-        m.add_column("metric"); m.add_column("value", justify="right")
+        m.add_column("metric")
+        m.add_column("value", justify="right")
         for k, v in result.metrics.items():
             m.add_row(k, f"{v:g}")
         console.print(m)

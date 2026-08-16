@@ -36,7 +36,7 @@ class MediaPipePose:
         min_detection_confidence: float = 0.5,
         min_tracking_confidence: float = 0.5,
     ) -> None:
-        import mediapipe as mp  # noqa: PLC0415 — deliberately lazy
+        import mediapipe as mp
 
         self._mp = mp
         self._pose = mp.solutions.pose.Pose(
@@ -47,7 +47,7 @@ class MediaPipePose:
         )
 
     def estimate(self, frame: np.ndarray, index: int, t: float) -> PoseFrame | None:
-        import cv2  # noqa: PLC0415
+        import cv2
 
         result = self._pose.process(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
         landmarks = getattr(result, "pose_landmarks", None)

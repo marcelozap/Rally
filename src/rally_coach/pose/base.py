@@ -32,8 +32,7 @@ def get_backend(name: str, **kwargs: object) -> PoseEstimator:
 
         return MediaPipePose(**kwargs)  # type: ignore[arg-type]
     if name == "movenet":
-        raise NotImplementedError(
-            "movenet backend not implemented yet — implement PoseEstimator in "
-            "rally_coach/pose/movenet_backend.py and register it here"
-        )
+        from rally_coach.pose.movenet_backend import MoveNetPose
+
+        return MoveNetPose(**kwargs)  # raises NotImplementedError, with instructions
     raise ValueError(f"unknown pose backend: {name!r}")

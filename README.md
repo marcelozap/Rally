@@ -24,6 +24,22 @@ rally-coach analyze data/raw/practice.mp4 -o artifacts/runs/practice.json
 rally-coach show artifacts/runs/practice.json
 ```
 
+## Develop
+
+```powershell
+.\tasks.ps1 check      # lint + types + tests — everything that must be green
+.\tasks.ps1 fix        # let ruff fix what it safely can
+.\tasks.ps1 int        # just the integration tests
+pre-commit install     # once, so lint runs on every commit
+```
+
+51 tests, ~1 second.
+
+The integration tests need neither mediapipe nor a video file on disk: the rally
+is scripted in `tests/fixtures/synthetic.py` and replayed through the
+`PoseEstimator` protocol, and the clip they run against is rendered to a tmp dir
+at test time. That is why the suite is deterministic and finishes in a second.
+
 ## How it works
 
 ```
@@ -45,31 +61,24 @@ video ──► pose ──► smooth ──► events ──► metrics ──�
    that fired it. Capped at 3 — a list of twelve corrections is not coaching.
 7. **`export/`** — `analysis.v1.json`, the frozen contract with `rally-app`.
 
-## Status: scaffold, 17 tests passing
+## Status: scaffold
 
-Pipeline wired end to end. `analyze_poses()` is split out from `analyze()` so all
-the logic is testable without a video file, cv2, or mediapipe — that split is
-what let the contract tests find the bug below.
+The pipeline is wired end to end, unit tested, and covered by an integration test
+that drives the whole chain. What is **not** done, worst first:
 
-**A real bug the tests caught, already fixed:** the One Euro filter shipped with
-`beta=0.007`, a value borrowed from the paper's pixel-space examples. On
-normalised `[0,1]` coordinates that smooths the swing completely flat and the
-detector finds **zero** swings. Measured sweep is in `tracking/smoothing.py`;
-defaults are now `min_cutoff=2.0, beta=0.5` (all swings found, 60% of jitter
-rejected). `tests/integration/test_pipeline_contract.py` guards the regression.
-
-What is still **not** done:
-
+- **The shipped smoothing and the shipped swing threshold contradict each other.**
+  `min_cutoff: 1.0` / `beta: 0.007` retains only ~44% of peak wrist speed, which
+  puts a real swing under `min_wrist_speed: 2.5` — so on the current defaults the
+  detector finds **nothing**. Measured, with numbers, in `docs/TUNING.md`; pinned
+  by an xfail-strict regression test. Fix this before any threshold work.
 - **Thresholds in `advice/rules.py` are untuned guesses.** They need calibrating
-  against real footage before anyone acts on the advice. See `docs/TUNING.md`.
-  This is the top of the list.
-- Swing classification is position-based, not trajectory-based. A two-handed
-  backhand confuses handedness; a high volley trips serve detection.
-- `geometry/court.py` exists but no calibration is wired in, so metrics are
-  normalised units, not metres — only compare clips shot from the same position.
-- `pose/movenet_backend.py` is a stub with the keypoint map filled in.
-- No test uses real footage. Drop a 2–3 second clip in `tests/fixtures/` and
-  write one integration test against it.
+  against real footage before anyone should act on the advice. See `docs/TUNING.md`.
+- Swing classification is coarse — position-based, not trajectory-based. A
+  two-handed backhand confuses handedness; a high volley trips serve detection.
+  Design for the fix is in `docs/NEXT_SESSION.md`.
+- No court calibration, so all metrics are in normalised units, not metres.
+- `movenet` backend is a stub — `pose/movenet_backend.py` has the joint map and
+  the implementation notes, and fails loudly at construction until it is filled in.
 
 ## Migrating the existing code
 

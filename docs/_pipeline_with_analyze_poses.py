@@ -1,3 +1,17 @@
+# ============================================================================
+# NOT IMPORTABLE FROM HERE. This is a copy of src/rally_coach/pipeline.py as it
+# should be, parked in docs/ because Windows had the real file locked (another
+# process — probably the lane that wrote tests/integration/test_pipeline_contract.py
+# — had it open) and I would not clobber someone else's in-flight edit.
+#
+# The only difference from what is on disk: the pure half of the pipeline is
+# split out as analyze_poses(), which test_pipeline_contract.py imports and
+# which does not otherwise exist. Without it, that test file errors on import.
+#
+# BEFORE COPYING THIS OVER: check whether the other lane already added
+# analyze_poses(). If it did, keep theirs and delete this file.
+# ============================================================================
+
 """End-to-end orchestration: video -> pose -> smooth -> events -> metrics -> advice."""
 from __future__ import annotations
 
@@ -43,8 +57,7 @@ def analyze(
     cfg = config or load_config()
     pose_cfg = cfg.get("pose", {})
     smooth_cfg = cfg.get("smoothing", {})
-    swing_cfg = cfg.get("events", {}).get("swing", {})
-    advice_cfg = cfg.get("advice", {})
+    # events/advice config is read by analyze_poses(), which this delegates to.
 
     owns_backend = estimator is None
     backend = estimator or get_backend(
@@ -76,6 +89,47 @@ def analyze(
         if owns_backend:
             backend.close()
 
+    return analyze_poses(
+        poses,
+        info.fps,
+        clip=str(clip),
+        config=cfg,
+        frame_count=info.frame_count,
+        duration_s=info.duration_s,
+    )
+
+
+def analyze_poses(
+    poses: list[PoseFrame],
+    fps: float,
+    clip: str | Path = "",
+    config: dict | None = None,
+    frame_count: int | None = None,
+    duration_s: float | None = None,
+) -> Analysis:
+    """The pipeline from poses onward: handedness -> swings -> metrics -> advice.
+
+    Split out from `analyze()` because everything here is pure: no video, no
+    model, no I/O. That makes the analytical half testable on scripted poses,
+    and it is the entry point to use when the poses came from somewhere other
+    than a file on disk.
+
+    `poses` are taken as given — smoothing happens during capture, not here, so
+    a caller can measure the filter's effect by passing raw and smoothed
+    sequences through the same function.
+
+    `frame_count` and `duration_s` default to what the poses imply. Pass them
+    explicitly when the clip is longer than the poses that survived detection.
+    """
+    cfg = config or load_config()
+    swing_cfg = cfg.get("events", {}).get("swing", {})
+    advice_cfg = cfg.get("advice", {})
+
+    if frame_count is None:
+        frame_count = (max(p.index for p in poses) + 1) if poses else 0
+    if duration_s is None:
+        duration_s = frame_count / fps if fps else 0.0
+
     hand = detect_handedness(poses)
     swings = detect_swings(
         poses,
@@ -85,9 +139,9 @@ def analyze(
     )
     analysis = Analysis(
         clip=str(clip),
-        fps=info.fps,
-        frame_count=info.frame_count,
-        duration_s=info.duration_s,
+        fps=fps,
+        frame_count=frame_count,
+        duration_s=duration_s,
         handedness=hand,
         swings=swings,
         metrics=summarize(poses, swings, hand),

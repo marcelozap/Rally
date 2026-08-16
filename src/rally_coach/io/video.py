@@ -1,9 +1,9 @@
 """Video reading. The only place cv2.VideoCapture is allowed to appear."""
 from __future__ import annotations
 
+from collections.abc import Iterator
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterator
 
 import cv2
 import numpy as np
@@ -38,7 +38,7 @@ class VideoSource:
         self.max_dimension = max_dimension
         self._cap: cv2.VideoCapture | None = None
 
-    def __enter__(self) -> "VideoSource":
+    def __enter__(self) -> VideoSource:
         self._cap = cv2.VideoCapture(str(self.path))
         if not self._cap.isOpened():
             raise RuntimeError(f"could not open video: {self.path}")

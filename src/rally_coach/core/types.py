@@ -5,8 +5,8 @@ be swapped without touching geometry, events, metrics, or advice.
 """
 from __future__ import annotations
 
+from collections.abc import Sequence
 from enum import Enum
-from typing import Sequence
 
 from pydantic import BaseModel, Field
 

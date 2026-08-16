@@ -9,7 +9,7 @@ Adding a rule: write a function returning Note | None, add it to RULES.
 """
 from __future__ import annotations
 
-from typing import Callable
+from collections.abc import Callable
 
 from rally_coach.core.types import Analysis, Note
 

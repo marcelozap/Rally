@@ -1,0 +1,35 @@
+# Install once:  pre-commit install
+# Run on everything: pre-commit run --all-files
+#
+# Deliberately NOT here: ruff-format. It stays opt-in via `.\tasks.ps1 fmt`,
+# because a format-on-commit hook would bury the migration diffs from
+# Documents\ChatGPT\Rally under whitespace noise. Promote it to a hook once the
+# migration has settled.
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.6.9
+    hooks:
+      - id: ruff
+        args: [--fix]
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-json
+      - id: check-toml
+      - id: check-merge-conflict
+      - id: check-added-large-files
+        # Model weights and clips must never reach a commit. .gitignore is the
+        # first line of defence; this is the second.
+        args: [--maxkb=2048]
+
+  - repo: https://github.com/kynan/nbstripout
+    rev: 0.7.1
+    hooks:
+      - id: nbstripout
+        # notebooks/ is for exploration. Outputs (frame dumps, overlays) are
+        # exactly what "never commit" means.
+        files: \.ipynb$

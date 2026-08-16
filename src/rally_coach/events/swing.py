@@ -37,10 +37,10 @@ def detect_handedness(poses: list[PoseFrame]) -> Handedness:
                 total += math.hypot(b.x - a.x, b.y - a.y)
         return total
 
-    r, l = travel(Joint.R_WRIST), travel(Joint.L_WRIST)
-    if max(r, l) < 1e-6:
+    right, left = travel(Joint.R_WRIST), travel(Joint.L_WRIST)
+    if max(right, left) < 1e-6:
         return Handedness.UNKNOWN
-    return Handedness.RIGHT if r >= l else Handedness.LEFT
+    return Handedness.RIGHT if right >= left else Handedness.LEFT
 
 
 def _local_minimum(speeds: list[float], start: int, step: int, limit: int = 45) -> int:

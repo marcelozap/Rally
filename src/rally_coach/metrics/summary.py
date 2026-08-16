@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import statistics
-from typing import Iterable
+from collections.abc import Iterable
 
 from rally_coach.core.types import Handedness, PoseFrame, Swing
 from rally_coach.geometry.angles import (

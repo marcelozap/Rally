@@ -15,7 +15,15 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8.2", "pytest-cov", "ruff", "mypy", "nbstripout"]
+dev = [
+  "pytest>=8.2",
+  "pytest-cov",
+  "jsonschema>=4.22",   # validates output against export/schema/analysis.v1.json
+  "ruff",
+  "mypy",
+  "nbstripout",
+  "pre-commit",
+]
 
 [project.scripts]
 rally-coach = "rally_coach.cli:app"
@@ -31,6 +39,40 @@ packages = ["src/rally_coach"]
 line-length = 100
 src = ["src", "tests"]
 
+# Pinned explicitly. Ruff's DEFAULT rule set changes between releases, so
+# leaving this unset means the repo lints clean on your machine and red on the
+# next one — or after any `pip install -U ruff`.
+[tool.ruff.lint]
+select = [
+  "E",    # pycodestyle
+  "F",    # pyflakes
+  "I",    # import sorting
+  "UP",   # pyupgrade
+  "B",    # bugbear
+  "SIM",  # simplify
+  "RUF",
+]
+ignore = [
+  # The enums in core/types.py are `str, Enum` on purpose. Switching them to
+  # StrEnum changes str(Joint.NOSE) from "Joint.NOSE" to "nose" — a silent
+  # serialisation change inside a FROZEN schema. Not worth the tidiness.
+  "UP042",
+]
+
+[tool.ruff.lint.per-file-ignores]
+# typer's whole API is function calls in argument defaults.
+"src/rally_coach/cli.py" = ["B008"]
+
+[tool.mypy]
+python_version = "3.11"
+files = ["src"]
+# mediapipe, cv2, typer and rich ship no type information. Without this, mypy's
+# entire output is "module is installed but missing stubs" and nobody reads it.
+ignore_missing_imports = true
+
 [tool.pytest.ini_options]
 pythonpath = ["src"]
 testpaths = ["tests"]
+markers = [
+  "integration: drives the whole pipeline over a generated clip",
+]
