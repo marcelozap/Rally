@@ -5,7 +5,11 @@ description = "Computer-vision and pose-estimation pipeline for tennis movement 
 requires-python = ">=3.11"
 dependencies = [
   "opencv-python>=4.10",
-  "mediapipe>=0.10.14",
+  # PINNED EXACTLY, not a floor. 0.10.32 removed `mp.solutions` entirely, which
+  # is the API pose/mediapipe_backend.py is written against — an unbounded `>=`
+  # resolves to it on a fresh install and raises AttributeError on the first
+  # frame. Unpin only together with the port to mediapipe.tasks.PoseLandmarker.
+  "mediapipe==0.10.14",
   "numpy>=1.26",
   "scipy>=1.13",
   "pydantic>=2.7",
