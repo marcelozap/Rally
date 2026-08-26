@@ -1,0 +1,549 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Movement check — free, private, runs on your device</title>
+<style>
+  :root{--plane:#0d0d0d;--surface:#101014;--ink:#fff;--ink-2:#c3c2b7;--muted:#898781;
+        --grid:#2c2c2a;--ring:rgba(255,255,255,.10);--good:#0ca30c;--accent:#3987e5}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--plane);color:var(--ink);
+       font:15px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif;padding:32px 20px 72px}
+  .wrap{max-width:900px;margin:0 auto}
+  h1{font-size:26px;margin:0 0 6px;letter-spacing:-.01em}
+  .sub{color:var(--muted);font-size:14px;margin:0 0 6px}
+  .privacy{display:inline-flex;align-items:center;gap:8px;font-size:13px;color:var(--good);
+           border:1px solid rgba(12,163,12,.35);background:rgba(12,163,12,.08);
+           border-radius:999px;padding:5px 12px;margin:10px 0 26px}
+  .stage{position:relative;background:var(--surface);border:1px solid var(--ring);
+         border-radius:12px;overflow:hidden;aspect-ratio:4/3;max-height:62vh;
+         display:grid;place-items:center}
+  video,canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
+  video{visibility:hidden}
+  .placeholder{color:var(--muted);font-size:14px;text-align:center;padding:0 24px;z-index:1}
+  .controls{display:flex;gap:10px;flex-wrap:wrap;margin:16px 0 24px}
+  button,label.file{background:var(--surface);color:var(--ink);border:1px solid var(--ring);
+    border-radius:9px;padding:10px 16px;font:inherit;font-size:14px;cursor:pointer}
+  button:hover,label.file:hover{border-color:rgba(255,255,255,.28)}
+  button[disabled]{opacity:.45;cursor:default}
+  button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+  input[type=file]{display:none}
+  .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+  .tile{background:var(--surface);border:1px solid var(--ring);border-radius:10px;padding:14px 16px}
+  .tile .k{color:var(--muted);font-size:11.5px;text-transform:uppercase;letter-spacing:.06em}
+  .tile .v{font-size:28px;margin-top:5px;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+  .tile .d{font-size:12.5px;color:var(--ink-2);margin-top:2px}
+  .note{color:var(--muted);font-size:12.5px;margin-top:30px;line-height:1.65;
+        border-top:1px solid var(--grid);padding-top:20px}
+  .note b{color:var(--ink-2);font-weight:600}
+  .status{color:var(--muted);font-size:13px;margin-top:12px;min-height:20px}
+  .goals{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:8px}
+  .goal{background:var(--surface);border:1px solid var(--ring);border-radius:12px;
+        padding:18px 18px 16px;cursor:pointer;text-align:left;font:inherit;color:var(--ink);
+        transition:border-color .12s,transform .12s}
+  .goal:hover{border-color:rgba(255,255,255,.3);transform:translateY(-1px)}
+  .goal svg{color:var(--accent);margin-bottom:10px;display:block}
+  .goal .gn{font-size:16px;font-weight:600}
+  .goal .gb{color:var(--muted);font-size:13px;margin-top:5px;line-height:1.45}
+  .bar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+  .bar .now{font-size:17px;font-weight:600}
+  .bar .facing{color:var(--muted);font-size:13px}
+  .back{background:none;border:none;color:var(--muted);font:inherit;font-size:13px;
+        cursor:pointer;padding:4px 0;text-decoration:underline;text-underline-offset:3px}
+  .cues{margin:16px 0 4px;display:flex;flex-direction:column;gap:8px}
+  .cue{display:flex;align-items:flex-start;gap:10px;background:var(--surface);
+       border:1px solid var(--ring);border-left-width:3px;border-radius:9px;padding:11px 14px;font-size:14px}
+  .cue.ok{border-left-color:var(--good)} .cue.watch{border-left-color:#fab219}
+  .cue.off{border-left-color:#d03b3b}
+  .cue .ic{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);
+           min-width:52px;padding-top:2px}
+  .hidden{display:none!important}
+  .obs{color:var(--muted);font-size:12.5px;margin-top:14px;padding:11px 14px;
+       border:1px dashed var(--grid);border-radius:9px;line-height:1.55}
+</style></head><body><div class="wrap">
+
+<h1>Movement check</h1>
+<p class="sub">Pick what you're working on. Point a camera at yourself. It handles the rest.</p>
+<div class="privacy">
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4">
+    <rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 018 0v3"/></svg>
+  Runs entirely on your device. No video is uploaded. No account. Free.
+</div>
+
+<div id="picker">
+  <div class="goals" id="goals"></div>
+</div>
+
+<div id="app" class="hidden">
+<div class="bar">
+  <span class="now" id="goalName"></span>
+  <span class="facing" id="goalFacing"></span>
+  <button class="back" id="backBtn">change goal</button>
+</div>
+
+<div class="stage" id="stage">
+  <div class="placeholder" id="ph">Start the camera, or load a clip you already have.<br>
+    Stand back far enough that your whole body is in frame.</div>
+  <video id="vid" playsinline muted></video>
+  <canvas id="cv"></canvas>
+</div>
+
+<div class="controls">
+  <button class="primary" id="camBtn">Start camera</button>
+  <label class="file">Load a video<input type="file" id="fileIn" accept="video/*"></label>
+  <button id="stopBtn" disabled>Stop</button>
+</div>
+
+<div class="cues" id="cues"></div>
+<div class="obs hidden" id="obs">These are observations about what your body did — not a
+diagnosis and not treatment advice. If something hurts, they are worth showing to a physio.</div>
+
+<div class="tiles" id="tiles"></div>
+
+<div class="status" id="status"></div>
+</div>
+
+<p class="note">
+  <b>What this is.</b> Pose estimation running in your browser. It finds 33 points on your
+  body in each frame and computes angles between them. Everything you see is trigonometry on
+  those points.<br><br>
+  <b>What it isn't.</b> It does not diagnose anything and it does not know why something hurts.
+  There is no single correct way to move — good form varies with your anatomy, and the useful
+  comparison is against your own numbers over time, not against a template. If something hurts,
+  these numbers are worth showing to a physio. They are not a substitute for one.<br><br>
+  <b>Accuracy.</b> Depth from one camera is a guess, so everything here is measured in 2D. Keep
+  the camera in the same place between sessions or the sessions aren't comparable.
+</p>
+</div>
+
+<script type="module">
+// imported lazily: if the CDN is unreachable the page still renders and says so,
+// instead of dying silently with dead buttons.
+const CDN = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14";
+/* Goal profiles.
+ *
+ * The pipeline underneath is identical for every goal. What changes is a small
+ * config: which metrics matter, what counts as off, and what the cue says. That
+ * is what makes it feel like a black box without being four apps.
+ *
+ * Note the split on `observationsOnly`. Technique goals get coaching cues —
+ * that's sport, and telling someone their elbow drops is ordinary coaching.
+ * The pain goal gets observations about what the body did, and nothing about
+ * what to do for the pain. Same measurement, different sentence.
+ */
+
+const PROFILES = {
+  posture: {
+    name: "Back & posture",
+    blurb: "Sitting or standing at a desk. Tracks drift away from your own upright.",
+    icon: "M12 3v18M7 8h10",
+    calibrate: true,
+    observationsOnly: true,
+    facing: "Face the camera. Sit or stand the way you want to hold yourself.",
+    tiles: ["lean", "headDrop", "shoulderTilt", "hipTilt"],
+    cues(m, b) {
+      const out = [];
+      if (b.headDrop - m.headDrop > 0.05)
+        out.push(["off", "Head has come forward and down from where you started."]);
+      if (Math.abs(m.lean - b.lean) > 6)
+        out.push(["watch", `Trunk is ${(m.lean - b.lean).toFixed(0)}° off your own upright.`]);
+      if (Math.abs(m.shoulderTilt - b.shoulderTilt) > 5)
+        out.push(["watch", "One shoulder is sitting higher than it was at the start."]);
+      if (Math.abs(m.hipTilt - b.hipTilt) > 5)
+        out.push(["watch", "Weight has shifted onto one hip."]);
+      return out.length ? out : [["ok", "Holding close to your baseline."]];
+    },
+  },
+
+  tennis: {
+    name: "Tennis",
+    blurb: "Serve and groundstrokes. Measures how the shoulders lead the hips.",
+    icon: "M6 18L18 6M9 15a4 4 0 106 -6",
+    calibrate: false,
+    observationsOnly: false,
+    facing: "Camera side-on, whole body in frame. Hit three or four in a row.",
+    tiles: ["sep", "peakSep", "lean", "elb"],
+    cues(m, b, s) {
+      const out = [];
+      if (s.peakSep < 15)
+        out.push(["watch", "Shoulders and hips are turning together — very little separation stored."]);
+      else if (Math.abs(m.sep) > s.peakSep * 0.85)
+        out.push(["ok", "Good coil. This is near your best separation so far."]);
+      if (m.elb > 25)
+        out.push(["watch", "Big left/right elbow difference — check the non-hitting arm."]);
+      if (Math.abs(m.lean) > 25)
+        out.push(["watch", "Leaning a long way off vertical at contact."]);
+      return out.length ? out : [["ok", "Tracking. Keep going."]];
+    },
+  },
+
+  golf: {
+    name: "Golf",
+    blurb: "The swing. Separation between shoulder and hip turn — the X-factor.",
+    icon: "M12 3v14M12 17l7 3-7 3",
+    calibrate: false,
+    observationsOnly: false,
+    facing: "Camera face-on, whole body in frame. Take three or four swings.",
+    tiles: ["sep", "peakSep", "lean", "kne"],
+    cues(m, b, s) {
+      const out = [];
+      if (s.peakSep < 25)
+        out.push(["watch", "Limited shoulder turn against the hips. This is where distance comes from."]);
+      else if (Math.abs(m.sep) > s.peakSep * 0.85)
+        out.push(["ok", "Near your peak coil for this session."]);
+      if (Math.abs(m.lean) > 20)
+        out.push(["watch", "Trunk is swaying rather than rotating."]);
+      return out.length ? out : [["ok", "Tracking."]];
+    },
+  },
+
+  dance: {
+    name: "Dance",
+    blurb: "Any style. Watches how big, how even, and how smooth the movement is.",
+    icon: "M12 4a2 2 0 100-.1M12 7v6l-3 7M12 13l3 7M7 9l5 2 5-2",
+    calibrate: false,
+    observationsOnly: false,
+    facing: "Camera face-on, whole body in frame, room to move. Just dance.",
+    tiles: ["smoothScore", "rom", "bounce", "shoulderTilt"],
+    cues(m) {
+      const out = [];
+      if (m.smoothScore < 35)
+        out.push(["watch", "Movement is arriving in jerks rather than flowing between shapes."]);
+      else if (m.smoothScore > 70)
+        out.push(["ok", "Smooth — you're carrying momentum through the transitions."]);
+      if (m.rom < 40)
+        out.push(["watch", "Staying small. The arms aren't travelling far from the body."]);
+      else if (m.rom > 110)
+        out.push(["ok", "Big shapes. Using the whole space around you."]);
+      if (m.bounce < 6)
+        out.push(["watch", "Almost no change in level — everything is happening at one height."]);
+      return out.length ? out : [["ok", "Tracking."]];
+    },
+  },
+
+  running: {
+    name: "Running",
+    blurb: "Treadmill or a fixed camera. Cadence, bounce, and whether one side works harder.",
+    icon: "M13 4a1.5 1.5 0 100-.1M12 8l-3 4 3 3 1 5M12 8l4 2 2 4M9 12l-4 1",
+    calibrate: false,
+    observationsOnly: false,
+    facing: "Camera side-on or face-on, whole body in frame, ten seconds of running.",
+    tiles: ["cadence", "bounce", "lean", "kne"],
+    cues(m) {
+      const out = [];
+      if (m.cadence && m.cadence < 160)
+        out.push(["watch", `About ${m.cadence.toFixed(0)} steps/min — long, slow strides load the knees more.`]);
+      else if (m.cadence > 170)
+        out.push(["ok", `${m.cadence.toFixed(0)} steps/min. Quick, light turnover.`]);
+      if (m.bounce > 14)
+        out.push(["watch", "A lot of up-and-down. That energy isn't going forward."]);
+      if (m.kne > 12)
+        out.push(["watch", "The two legs are bending differently. Worth watching over a few runs."]);
+      return out.length ? out : [["ok", "Tracking."]];
+    },
+  },
+
+  swim: {
+    name: "Swimming",
+    blurb: "Poolside camera. Stroke rhythm and whether both arms do equal work.",
+    icon: "M3 17c2-1.5 3-1.5 5 0s3 1.5 5 0 3-1.5 5 0M6 10a2 2 0 100-.1M9 12l4-2 4 1",
+    calibrate: false,
+    observationsOnly: false,
+    facing: "Camera at the poolside, above water. Surface view only — this cannot see the catch.",
+    tiles: ["cadence", "rom", "shoulderTilt", "elb"],
+    cues(m) {
+      const out = [];
+      if (m.cadence)
+        out.push(["ok", `Stroke rhythm around ${(m.cadence/2).toFixed(0)} cycles/min.`]);
+      if (m.elb > 22)
+        out.push(["watch", "The two arms are moving through different shapes."]);
+      if (Math.abs(m.shoulderTilt) > 20)
+        out.push(["watch", "Strong roll to one side. Compare it to the other length."]);
+      return out.length ? out : [["ok", "Tracking. Above-water view only."]];
+    },
+  },
+
+  core: {
+    name: "Core & strength",
+    blurb: "Squats, planks, single-leg work. Watches for one side taking over.",
+    icon: "M4 12h16M8 8v8M16 8v8",
+    calibrate: true,
+    observationsOnly: false,
+    facing: "Camera face-on, whole body in frame. Move slowly through the range.",
+    tiles: ["hipTilt", "kne", "lean", "shoulderTilt"],
+    cues(m, b) {
+      const out = [];
+      if (Math.abs(m.hipTilt - b.hipTilt) > 7)
+        out.push(["off", "Hip is dropping on one side — that's the side not holding."]);
+      if (m.kne > 15)
+        out.push(["watch", "Knees are bending unevenly. One leg is doing more."]);
+      if (Math.abs(m.lean - b.lean) > 12)
+        out.push(["watch", "Trunk is folding forward through the movement."]);
+      return out.length ? out : [["ok", "Even, both sides."]];
+    },
+  },
+};
+
+const TILE_META = {
+  sep:          { label: "Separation",        unit: "°", hint: "shoulders vs hips" },
+  peakSep:      { label: "Peak separation",   unit: "°", hint: "best this session" },
+  lean:         { label: "Trunk lean",        unit: "°", hint: "from vertical" },
+  headDrop:     { label: "Head position",     unit: "",  hint: "lower = further forward", dp: 3 },
+  shoulderTilt: { label: "Shoulder tilt",     unit: "°", hint: "left vs right height" },
+  hipTilt:      { label: "Hip tilt",          unit: "°", hint: "left vs right height" },
+  elb:          { label: "Elbow asymmetry",   unit: "°", hint: "left vs right" },
+  kne:          { label: "Knee asymmetry",    unit: "°", hint: "left vs right" },
+  smoothScore:  { label: "Smoothness",        unit: "",  hint: "0–100, relative to you", dp: 0 },
+  rom:          { label: "Range of motion",   unit: "",  hint: "arm travel, % of shoulder width", dp: 0 },
+  bounce:       { label: "Vertical travel",   unit: "",  hint: "hip rise and fall", dp: 0 },
+  cadence:      { label: "Cadence",           unit: "",  hint: "steps per minute", dp: 0 },
+};
+
+let PROFILE = null, baseline = null, calibSamples = [], calibUntil = 0;
+const sess = { peakSep: 0 };
+
+const vid = document.getElementById('vid'), cv = document.getElementById('cv');
+const ctx = cv.getContext('2d'), ph = document.getElementById('ph');
+const statusEl = document.getElementById('status');
+const camBtn = document.getElementById('camBtn'), stopBtn = document.getElementById('stopBtn');
+let landmarker = null, running = false, stream = null, lastT = -1;
+
+const L = {LS:11,RS:12,LE:13,RE:14,LW:15,RW:16,LH:23,RH:24,LK:25,RK:26,LA:27,RA:28};
+const BONES = [[11,12],[11,23],[12,24],[23,24],[11,13],[13,15],[12,14],[14,16],
+               [23,25],[25,27],[24,26],[26,28]];
+const EMA = {}; const smooth = (k,v,a=0.25) =>
+  (EMA[k] = EMA[k]===undefined ? v : EMA[k]*(1-a)+v*a);
+
+const segAngle = (p,q) => Math.atan2(q.y-p.y, q.x-p.x)*180/Math.PI;
+const wrap = d => ((d+90)%180+180)%180-90;
+function angle3(a,b,c){
+  const v1={x:a.x-b.x,y:a.y-b.y}, v2={x:c.x-b.x,y:c.y-b.y};
+  const n1=Math.hypot(v1.x,v1.y), n2=Math.hypot(v2.x,v2.y);
+  if(n1<1e-9||n2<1e-9) return NaN;
+  return Math.acos(Math.max(-1,Math.min(1,(v1.x*v2.x+v1.y*v2.y)/(n1*n2))))*180/Math.PI;
+}
+
+async function init(){
+  statusEl.textContent = 'Loading the pose model… (once, then it is cached)';
+  const { PoseLandmarker, FilesetResolver } = await import(CDN);
+  const files = await FilesetResolver.forVisionTasks(CDN + "/wasm");
+  landmarker = await PoseLandmarker.createFromOptions(files, {
+    baseOptions: { modelAssetPath:
+      "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task",
+      delegate: "GPU" },
+    runningMode: "VIDEO", numPoses: 1 });
+  statusEl.textContent = '';
+}
+
+function draw(lm, w, h){
+  cv.width = w; cv.height = h;
+  ctx.clearRect(0,0,w,h);
+  ctx.lineWidth = 2.5; ctx.strokeStyle = '#3987e5';
+  BONES.forEach(([a,b])=>{
+    if(lm[a].visibility<0.4 || lm[b].visibility<0.4) return;
+    ctx.beginPath();
+    ctx.moveTo(lm[a].x*w, lm[a].y*h); ctx.lineTo(lm[b].x*w, lm[b].y*h); ctx.stroke();
+  });
+  ctx.fillStyle = '#d55181';
+  Object.values(L).forEach(i=>{
+    if(lm[i].visibility<0.4) return;
+    ctx.beginPath(); ctx.arc(lm[i].x*w, lm[i].y*h, 4.5, 0, 6.284); ctx.fill();
+  });
+}
+
+/* Rolling window. Rhythm, smoothness and range don't exist in a single frame —
+   they're properties of a few seconds of movement, so they need history. */
+const WIN = 3.0;                       // seconds
+const hist = [];
+
+function pushHistory(lm, t){
+  const midS = {x:(lm[L.LS].x+lm[L.RS].x)/2, y:(lm[L.LS].y+lm[L.RS].y)/2};
+  const midH = {x:(lm[L.LH].x+lm[L.RH].x)/2, y:(lm[L.LH].y+lm[L.RH].y)/2};
+  const sw = Math.hypot(lm[L.RS].x-lm[L.LS].x, lm[L.RS].y-lm[L.LS].y) || 1e-6;
+  hist.push({ t, sw, midH, midS,
+    wl:{x:lm[L.LW].x,y:lm[L.LW].y}, wr:{x:lm[L.RW].x,y:lm[L.RW].y},
+    al:{x:lm[L.LA].x,y:lm[L.LA].y}, ar:{x:lm[L.RA].x,y:lm[L.RA].y} });
+  while(hist.length && t - hist[0].t > WIN) hist.shift();
+}
+
+const ptp = xs => xs.length ? Math.max(...xs) - Math.min(...xs) : 0;
+
+/* Mean absolute jerk of the hips, scale- and rate-normalised, mapped to 0-100
+   where higher = smoother. Relative index, not a standard unit — it is only
+   meaningful compared against yourself. */
+function smoothness(){
+  if(hist.length < 8) return NaN;
+  const sw = hist[hist.length-1].sw;
+  const p = hist.map(h=>h.midH.y/sw), dt = (hist[hist.length-1].t - hist[0].t)/(hist.length-1);
+  if(!(dt>0)) return NaN;
+  let acc = 0, n = 0;
+  for(let i=3;i<p.length;i++){
+    const j = (p[i] - 3*p[i-1] + 3*p[i-2] - p[i-3]) / (dt*dt*dt);
+    acc += Math.abs(j); n++;
+  }
+  if(!n) return NaN;
+  return 100 * Math.exp(-(acc/n) / 900);
+}
+
+/* Steps per minute from the alternation of the two ankles. */
+function cadence(){
+  if(hist.length < 12) return NaN;
+  const sig = hist.map(h => (h.al.y - h.ar.y)/h.sw);
+  const mean = sig.reduce((a,b)=>a+b,0)/sig.length;
+  let crossings = 0;
+  for(let i=1;i<sig.length;i++)
+    if((sig[i-1]-mean) * (sig[i]-mean) < 0) crossings++;
+  const span = hist[hist.length-1].t - hist[0].t;
+  return span > 0.5 ? (crossings/2) * (60/span) * 2 : NaN;   // 2 steps per full cycle
+}
+
+function windowed(){
+  if(!hist.length) return {};
+  const sw = hist[hist.length-1].sw;
+  return {
+    smoothScore: smoothness(),
+    cadence: cadence(),
+    bounce: ptp(hist.map(h=>h.midH.y))/sw * 100,
+    rom: (ptp(hist.map(h=>h.wl.x)) + ptp(hist.map(h=>h.wr.x)) +
+          ptp(hist.map(h=>h.wl.y)) + ptp(hist.map(h=>h.wr.y))) / (4*sw) * 100,
+  };
+}
+
+function metrics(lm){
+  const core=[L.LS,L.RS,L.LH,L.RH];
+  if(core.some(i=>lm[i].visibility<0.5)) return null;
+  const sep = wrap(segAngle(lm[L.LS],lm[L.RS]) - segAngle(lm[L.LH],lm[L.RH]));
+  const midS={x:(lm[L.LS].x+lm[L.RS].x)/2,y:(lm[L.LS].y+lm[L.RS].y)/2};
+  const midH={x:(lm[L.LH].x+lm[L.RH].x)/2,y:(lm[L.LH].y+lm[L.RH].y)/2};
+  const shoulderW = Math.hypot(lm[L.RS].x-lm[L.LS].x, lm[L.RS].y-lm[L.LS].y) || 1e-6;
+  pushHistory(lm, performance.now()/1000);
+  return {
+    ...windowed(),
+    sep: smooth('sep', sep),
+    lean: smooth('lean', segAngle(midH,midS)+90),
+    shoulderTilt: smooth('st', wrap(segAngle(lm[L.LS],lm[L.RS]))),
+    hipTilt: smooth('ht', wrap(segAngle(lm[L.LH],lm[L.RH]))),
+    // normalised by shoulder width so moving nearer the camera doesn't fake a change
+    headDrop: smooth('hd', (midS.y - lm[0].y) / shoulderW),
+    elb: smooth('elb', Math.abs(angle3(lm[L.LS],lm[L.LE],lm[L.LW]) - angle3(lm[L.RS],lm[L.RE],lm[L.RW]))),
+    kne: smooth('kne', Math.abs(angle3(lm[L.LH],lm[L.LK],lm[L.LA]) - angle3(lm[L.RH],lm[L.RK],lm[L.RA]))),
+  };
+}
+
+function buildTiles(){
+  document.getElementById('tiles').innerHTML = PROFILE.tiles.map(k=>{
+    const t = TILE_META[k];
+    return `<div class="tile"><div class="k">${t.label}</div>
+      <div class="v" id="t-${k}">—</div><div class="d">${t.hint}</div></div>`;
+  }).join('');
+}
+
+function renderTiles(m){
+  PROFILE.tiles.forEach(k=>{
+    const el = document.getElementById('t-'+k); if(!el) return;
+    const t = TILE_META[k];
+    const v = k === 'peakSep' ? sess.peakSep : m[k];
+    el.textContent = (v==null || Number.isNaN(v)) ? '—' : v.toFixed(t.dp ?? 1) + t.unit;
+  });
+}
+
+function renderCues(list){
+  document.getElementById('cues').innerHTML = list.map(([lvl,txt])=>
+    `<div class="cue ${lvl}"><span class="ic">${lvl==='ok'?'ok':lvl==='watch'?'watch':'off'}</span>
+     <span>${txt}</span></div>`).join('');
+}
+
+function loop(){
+  if(!running) return;
+  if(vid.readyState >= 2 && vid.currentTime !== lastT){
+    lastT = vid.currentTime;
+    const res = landmarker.detectForVideo(vid, performance.now());
+    if(res.landmarks && res.landmarks.length){
+      const lm = res.landmarks[0];
+      draw(lm, vid.videoWidth, vid.videoHeight);
+      const m = metrics(lm);
+      if(m){
+        sess.peakSep = Math.max(sess.peakSep, Math.abs(m.sep));
+        renderTiles(m);
+
+        if(PROFILE.calibrate && !baseline){
+          calibSamples.push(m);
+          const left = Math.max(0,(calibUntil - performance.now())/1000);
+          renderCues([["ok", `Hold still — learning your baseline. ${left.toFixed(1)}s`]]);
+          if(performance.now() > calibUntil && calibSamples.length > 20){
+            baseline = {};
+            Object.keys(calibSamples[0]).forEach(k=>{
+              const xs = calibSamples.map(s=>s[k]).filter(v=>!Number.isNaN(v)).sort((a,b)=>a-b);
+              baseline[k] = xs[Math.floor(xs.length/2)];      // median, not mean
+            });
+            statusEl.textContent = 'Baseline set from your own posture. Everything below is drift from it.';
+          }
+        } else {
+          renderCues(PROFILE.cues(m, baseline || m, sess));
+        }
+      }
+    }
+  }
+  requestAnimationFrame(loop);
+}
+
+async function start(src){
+  if(!landmarker) await init();
+  ph.style.display='none'; vid.style.visibility='visible';
+  sess.peakSep = 0; baseline = null; calibSamples = []; hist.length = 0;
+  calibUntil = performance.now() + 5000;
+  Object.keys(EMA).forEach(k=>delete EMA[k]);
+  renderCues(PROFILE.calibrate
+    ? [["ok","Hold still for five seconds so it can learn your baseline."]]
+    : [["ok","Go — it picks up your best rep as you go."]]);
+  running = true; stopBtn.disabled = false;
+  if(src==='cam'){
+    stream = await navigator.mediaDevices.getUserMedia({video:{width:1280,height:960}});
+    vid.srcObject = stream; vid.loop = false;
+  }
+  await vid.play(); loop();
+}
+
+function fail(e){
+  statusEl.textContent = /import|fetch|network/i.test(e.message)
+    ? 'Could not load the pose model — check your connection and reload.'
+    : e.message;
+  running = false; stopBtn.disabled = true;
+}
+
+document.getElementById('goals').innerHTML = Object.entries(PROFILES).map(([k,p])=>
+  `<button class="goal" data-k="${k}">
+     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="2" stroke-linecap="round"><path d="${p.icon}"/></svg>
+     <div class="gn">${p.name}</div><div class="gb">${p.blurb}</div>
+   </button>`).join('');
+
+document.querySelectorAll('.goal').forEach(b=> b.onclick = () => {
+  PROFILE = PROFILES[b.dataset.k];
+  document.getElementById('goalName').textContent = PROFILE.name;
+  document.getElementById('goalFacing').textContent = PROFILE.facing;
+  document.getElementById('obs').classList.toggle('hidden', !PROFILE.observationsOnly);
+  document.getElementById('picker').classList.add('hidden');
+  document.getElementById('app').classList.remove('hidden');
+  buildTiles(); renderCues([]);
+});
+
+document.getElementById('backBtn').onclick = () => {
+  running = false; vid.pause();
+  if(stream){ stream.getTracks().forEach(t=>t.stop()); stream=null; }
+  stopBtn.disabled = true; statusEl.textContent = '';
+  document.getElementById('app').classList.add('hidden');
+  document.getElementById('picker').classList.remove('hidden');
+};
+
+camBtn.onclick = async () => { try { await start('cam'); } catch(e){ fail(e); } };
+document.getElementById('fileIn').onchange = async e => {
+  const f = e.target.files[0]; if(!f) return;
+  if(stream){ stream.getTracks().forEach(t=>t.stop()); stream=null; }
+  vid.srcObject = null; vid.src = URL.createObjectURL(f); vid.loop = true;
+  try { await start('file'); } catch(err){ fail(err); }
+};
+stopBtn.onclick = () => {
+  running = false; stopBtn.disabled = true; vid.pause();
+  if(stream){ stream.getTracks().forEach(t=>t.stop()); stream=null; }
+};
+</script></body></html>

@@ -1,0 +1,9 @@
+.venv/
+__pycache__/
+*.mp4
+*.mov
+*.tflite
+*.pth
+artifacts/
+data/raw*/
+*.zip
