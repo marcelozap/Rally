@@ -60,11 +60,9 @@ def analyze(
     startup per clip. An injected estimator is owned by the caller, so this
     function does not close it.
     """
-    cfg = config or load_config()
+    cfg = load_config() if config is None else config
     pose_cfg = cfg.get("pose", {})
     smooth_cfg = cfg.get("smoothing", {})
-    swing_cfg = cfg.get("events", {}).get("swing", {})
-    advice_cfg = cfg.get("advice", {})
 
     owns_backend = estimator is None
     backend = estimator or get_backend(
@@ -100,6 +98,37 @@ def analyze(
         if owns_backend:
             backend.close()
 
+    return analyze_poses(
+        poses,
+        info.fps,
+        clip=str(clip),
+        config=cfg,
+        frame_count=info.frame_count,
+        duration_s=info.duration_s,
+    )
+
+
+def analyze_poses(
+    poses: list[PoseFrame],
+    fps: float,
+    clip: str | Path = "",
+    config: dict | None = None,
+    frame_count: int | None = None,
+    duration_s: float | None = None,
+) -> Analysis:
+    """Analyze an existing pose sequence without opening a video or model.
+
+    Poses are used as supplied; callers that want smoothing apply it first.
+    Pass source metadata when detection gaps would otherwise shorten the clip.
+    """
+    cfg = load_config() if config is None else config
+    swing_cfg = cfg.get("events", {}).get("swing", {})
+    advice_cfg = cfg.get("advice", {})
+    if frame_count is None:
+        frame_count = max((p.index for p in poses), default=-1) + 1
+    if duration_s is None:
+        duration_s = frame_count / fps if fps else 0.0
+
     hand = detect_handedness(poses)
     swings = detect_swings(
         poses,
@@ -109,9 +138,9 @@ def analyze(
     )
     analysis = Analysis(
         clip=str(clip),
-        fps=info.fps,
-        frame_count=info.frame_count,
-        duration_s=info.duration_s,
+        fps=fps,
+        frame_count=frame_count,
+        duration_s=duration_s,
         handedness=hand,
         swings=swings,
         metrics=summarize(poses, swings, hand),

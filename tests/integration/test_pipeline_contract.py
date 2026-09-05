@@ -34,15 +34,19 @@ def synthetic_rally(n_swings: int = 3, fps: float = FPS) -> list[PoseFrame]:
     i = 0
     for _ in range(n_swings):
         for _ in range(18):                       # ready stance
-            poses.append(_frame(i, i / fps, READY)); i += 1
+            poses.append(_frame(i, i / fps, READY))
+            i += 1
         for k in range(1, 9):                     # fast sweep to contact
             f = k / 8
-            poses.append(_frame(i, i / fps, _lerp(READY, FINISH, f))); i += 1
+            poses.append(_frame(i, i / fps, _lerp(READY, FINISH, f)))
+            i += 1
         for _ in range(10):                       # hold the finish
-            poses.append(_frame(i, i / fps, FINISH)); i += 1
+            poses.append(_frame(i, i / fps, FINISH))
+            i += 1
         for k in range(1, 25):                    # slow recovery, 3x the swing duration
             f = k / 24
-            poses.append(_frame(i, i / fps, _lerp(FINISH, READY, f))); i += 1
+            poses.append(_frame(i, i / fps, _lerp(FINISH, READY, f)))
+            i += 1
     return poses
 
 

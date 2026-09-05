@@ -195,19 +195,7 @@ def test_on_frame_fires_once_per_detected_frame(synthetic_clip):
     assert seen == sorted(seen)
 
 
-# --- known defect, encoded so it cannot be forgotten -------------------------
-@pytest.mark.xfail(
-    strict=True,
-    reason=(
-        "SHIPPED CONFIG IS SELF-INCONSISTENT. config/pipeline.yaml smooths with "
-        "min_cutoff=1.0 / beta=0.007, which retains only ~44% of peak wrist speed "
-        "at 60fps, while events.swing.min_wrist_speed=2.5 is a floor that reads "
-        "like it was picked against RAW speed. Net effect: a 3.8 units/s swing "
-        "arrives at the detector as 1.7 and NO swings are detected at all. "
-        "Fix the two together during calibration (docs/TUNING.md), then delete "
-        "this marker — strict=True will fail the suite once it starts passing."
-    ),
-)
+# --- shipped defaults must preserve the contact spike -----------------------
 def test_shipped_smoothing_preserves_the_contact_spike():
     cfg = load_config()
     smoothing = cfg["smoothing"]

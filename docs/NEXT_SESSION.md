@@ -1,5 +1,11 @@
 # Next session
 
+**Update, 2026-09-05:** `analyze_poses()` is now implemented in the live pipeline,
+the contact-spike regression passes with the already-shipped `2.0 / 0.5`
+smoothing defaults, and the complete check passes (59 tests). The missing
+function and obsolete strict-xfail notes below describe the earlier state.
+See `VERIFICATION.md` for the real MediaPipe smoke check and remaining limits.
+
 Written 2026-08-13 by a session that had repo access while you were out. Nothing
 here was tuned, nothing was deleted, and `analysis.v1.json` was not touched.
 
