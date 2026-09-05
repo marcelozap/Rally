@@ -5,6 +5,10 @@ rhythmic player-selection stance. The final roster is six fixed players: men and
 women with White/European, Asian and Black representation. Gameplay combines timed contact, deliberate
 flick gestures, and an escalating survival loop.
 
+## September 5 gameplay follow-up
+
+Mirror Rally is now the active prototype: 20 seconds against the same athlete and outfit. Both rigs use travel-driven steps and court-space support anchors; shots use projected contact poses, and completed runs offer immediate replay. See `RALLY_MIRROR_RALLY.md` for tests, animation evidence, and the outstanding live playtest.
+
 ## Character architecture
 
 - `RallyAvatarRig` is the only production character renderer. Home, Customizer,

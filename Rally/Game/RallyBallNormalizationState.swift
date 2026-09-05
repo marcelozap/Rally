@@ -84,6 +84,31 @@ struct RallyBallNormalizationState {
         self.config = config
     }
 
+    /// Carry the return's scheduled contact through a delayed display frame.
+    /// Sampling the original handoff instant makes the resulting trajectory
+    /// independent of whether this initializer runs before or after arrival.
+    init(reentry: RallyReentryBallState, at trackTime: TimeInterval, laneDirection: CGFloat? = nil) {
+        let handoffProgress = max(0, min(1, reentry.config.normalizationHandoffProgress))
+        let scheduledTime = reentry.startTime + reentry.travelSeconds * Double(handoffProgress)
+        let handoffTime = min(trackTime, scheduledTime)
+        let frame = reentry.frame(at: handoffTime)
+        var config = RallyBallNormalizationConfig.rallyDefault
+        config.travelDuration = max(0, reentry.arrivalTime - handoffTime)
+        config.settleDuration = min(0.12, config.travelDuration * 0.6)
+        config.armedDelay = max(0, reentry.rearmTime - handoffTime)
+
+        self.startTime = handoffTime
+        self.arrivalTime = reentry.arrivalTime
+        self.strikeTime = reentry.arrivalTime
+        self.startPoint = frame.point
+        self.strikePoint = reentry.strikePoint
+        self.laneDirection = laneDirection ?? (reentry.strikePoint.x < reentry.startPoint.x ? -1 : 1)
+        self.startXScale = frame.xScale
+        self.startYScale = frame.yScale
+        self.startShadowAlpha = frame.shadowAlpha
+        self.config = config
+    }
+
     var spawnTime: TimeInterval { startTime }
     var travelSeconds: TimeInterval { max(0.0001, strikeTime - startTime) }
     var normalizedSpawnTime: TimeInterval { startTime }

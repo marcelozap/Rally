@@ -51,9 +51,9 @@ final class RallyContinuousBallExchange {
     private let direction: CGFloat
     private let inboundSpeed: CGFloat
     private let offsetFromCenter: CGFloat
-    private let startTime: TimeInterval
+    /// System-uptime origin shared by the ball and the far player's preparation.
+    let startTime: TimeInterval
 
-    private var lastPhase: RallyContinuousExchangePhase = .racketApproach
     private var wallImpactTriggered = false
 
     init(
@@ -84,6 +84,14 @@ final class RallyContinuousBallExchange {
         config.racket.totalDuration + config.wall.totalDuration
     }
 
+    /// First touch at the far end: approach finishes and compression starts.
+    /// Dwell is later, after the ball has already contacted the racket plane.
+    var farContactTime: TimeInterval {
+        startTime + config.racket.totalDuration + config.wall.approachDuration
+    }
+
+    var farContactPoint: CGPoint { wallContactPoint }
+
     func isStranded(at currentTime: TimeInterval, grace: TimeInterval) -> Bool {
         ball.parent == nil || currentTime - startTime > totalDuration + grace
     }
@@ -103,7 +111,6 @@ final class RallyContinuousBallExchange {
                 offsetFromCenter: offsetFromCenter
             )
             let phase = map(racketFrame.phase)
-            lastPhase = phase
             return RallyContinuousBallExchangeFrame(
                 phase: phase,
                 point: racketFrame.contactPoint,
@@ -135,11 +142,13 @@ final class RallyContinuousBallExchange {
             progress: wallProgress
         )
         let phase = map(wallFrame.phase)
-        let didBeginWallImpact = !wallImpactTriggered && lastPhase != .wallDwell && phase == .wallDwell
+        // A display frame may skip compression or the entire brief dwell.
+        // Consume the scheduled contact once, even if this sample is already
+        // the terminal handoff frame; phase equality would lose the event.
+        let didBeginWallImpact = !wallImpactTriggered && currentTime >= farContactTime
         if didBeginWallImpact {
             wallImpactTriggered = true
         }
-        lastPhase = phase
 
         let reboundFade = max(0, wallProgress - (1 - config.reboundFadeOutLead)) / max(0.0001, config.reboundFadeOutLead)
         let alpha = phase == .wallRebound ? max(0.32, 1 - reboundFade * 0.68) : 1

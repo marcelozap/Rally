@@ -41,6 +41,7 @@ struct GameSessionView: View {
 
                 if let scene = scene {
                     SpriteView(scene: scene, options: [.ignoresSiblingOrder])
+                        .accessibilityLabel("Mirror Rally, 20 seconds against your double")
                         .frame(width: size.width, height: size.height)
                         .ignoresSafeArea()
                         .id(sessionKey)
@@ -131,7 +132,7 @@ struct GameSessionView: View {
 
     private var topInfoStrip: some View {
         VStack(alignment: .center, spacing: 8) {
-            Text("Wall Rally")
+            Text("Mirror Rally")
                 .font(RallyUIKit.Typography.label(.caption, weight: .bold))
                 .foregroundStyle(RallyUIKit.Palette.gold)
                 .frame(maxWidth: .infinity, alignment: .center)
@@ -210,9 +211,12 @@ struct GameSessionView: View {
         RallyUIKit.LuxePanel(tint: RallyUIKit.Palette.champagne) {
             VStack(spacing: 18) {
                 RallyUIKit.IconBadge(systemName: "tennisball.fill", tint: RallyUIKit.Palette.gold, size: 60)
-                Text("Stepping onto court")
+                Text("Mirror Rally")
                     .font(RallyUIKit.Typography.display(30, weight: .bold))
                     .foregroundStyle(RallyUIKit.Palette.frost)
+                Text("20 seconds against your double")
+                    .font(RallyUIKit.Typography.body(.subheadline, weight: .medium))
+                    .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.75))
                 ProgressView()
                     .tint(RallyUIKit.Palette.cyan)
             }
@@ -273,6 +277,7 @@ struct GameSessionView: View {
 
     private func makeScene(for size: CGSize) -> GameScene {
         let s = GameScene(size: size)
+        s.sessionDurationSeconds = RallyMirrorRules.durationSeconds
         s.scaleMode = .resizeFill
         if let avatar = avatarConfigs.first {
             let appearance = RallyAvatarAppearance(config: avatar)

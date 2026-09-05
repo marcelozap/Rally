@@ -46,6 +46,10 @@ struct GameResult: Sendable, Equatable {
     /// Empty `[]` for backwards-compatible call sites.
     var segments: [SegmentStats] = []
 
+    var isMirrorRally: Bool = false
+    var completedMirrorRally: Bool = false
+    var elapsedSeconds: Double = 0
+
     var totalHits: Int { perfectHits + greatHits + goodHits }
 
     /// Hits ÷ (hits + misses), 0…1. Returns 0 if there were no swings yet.

@@ -8,14 +8,16 @@ final class RallyFlickInputTests: XCTestCase {
         end: CGPoint = CGPoint(x: 90, y: 180),
         velocity: CGVector = CGVector(dx: 0, dy: 500),
         duration: TimeInterval = 0.2,
-        width: CGFloat = 390
+        width: CGFloat = 390,
+        incomingLane: Lane? = nil
     ) -> RallyFlickInput.Result? {
         RallyFlickInput.evaluate(
             start: start,
             end: end,
             velocity: velocity,
             duration: duration,
-            viewportWidth: width
+            viewportWidth: width,
+            incomingLane: incomingLane
         )
     }
 
@@ -139,6 +141,46 @@ final class RallyFlickInputTests: XCTestCase {
         let result = try XCTUnwrap(flick(end: CGPoint(x: 310, y: 210)))
         XCTAssertEqual(result.lane, .left)
         XCTAssertEqual(result.stroke, .drive)
+    }
+
+    func testIncomingLaneAcceptsFlickFromOppositeTouchSide() throws {
+        let rightIncoming = try XCTUnwrap(flick(incomingLane: .right))
+        XCTAssertEqual(rightIncoming.lane, .right)
+        XCTAssertEqual(rightIncoming.direction, 0)
+
+        let leftIncoming = try XCTUnwrap(flick(
+            start: CGPoint(x: 300, y: 100), end: CGPoint(x: 300, y: 180), incomingLane: .left
+        ))
+        XCTAssertEqual(leftIncoming.lane, .left)
+        XCTAssertEqual(leftIncoming.direction, 0)
+        XCTAssertEqual(try XCTUnwrap(flick()).lane, .left, "Omitting the incoming lane retains legacy selection")
+    }
+
+    func testIncomingLanePreservesMeasuredHorizontalAimAndStrength() throws {
+        for horizontal: CGFloat in [-70, 70] {
+            let end = CGPoint(x: 90 + horizontal, y: 180)
+            let original = try XCTUnwrap(flick(end: end))
+            let mirror = try XCTUnwrap(flick(end: end, incomingLane: .right))
+            XCTAssertEqual(mirror.lane, .right)
+            XCTAssertEqual(mirror.direction, original.direction, accuracy: 0.0001)
+            XCTAssertEqual(mirror.lift, original.lift, accuracy: 0.0001)
+            XCTAssertEqual(mirror.speed, original.speed, accuracy: 0.0001)
+            XCTAssertEqual(mirror.stroke, original.stroke)
+            let target = RallyFlickInput.wallTargetX(lane: mirror.lane, direction: mirror.direction, viewportWidth: 390)
+            let neutral = RallyFlickInput.wallTargetX(lane: .right, direction: 0, viewportWidth: 390)
+            if horizontal < 0 { XCTAssertLessThan(target, neutral) }
+            else { XCTAssertGreaterThan(target, neutral) }
+        }
+    }
+
+    func testIncomingLaneDoesNotBypassGestureValidation() {
+        for lane in [Lane.left, .right] {
+            XCTAssertNil(flick(end: CGPoint(x: 90, y: 119), incomingLane: lane))
+            XCTAssertNil(flick(end: CGPoint(x: 90, y: 20), incomingLane: lane))
+            XCTAssertNil(flick(end: CGPoint(x: 190, y: 100), incomingLane: lane))
+            XCTAssertNil(flick(duration: 0, incomingLane: lane))
+            XCTAssertNil(flick(width: .nan, incomingLane: lane))
+        }
     }
 
     func testRelativeScreenSizingPreservesAcceptanceAndStrength() throws {

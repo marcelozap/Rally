@@ -45,7 +45,8 @@ struct RallyFlickInput {
         end: CGPoint,
         velocity: CGVector,
         duration: TimeInterval,
-        viewportWidth: CGFloat
+        viewportWidth: CGFloat,
+        incomingLane: Lane? = nil
     ) -> Result? {
         guard start.x.isFinite, start.y.isFinite,
               end.x.isFinite, end.y.isFinite,
@@ -73,13 +74,17 @@ struct RallyFlickInput {
         let center = viewportWidth * 0.5
         let weightedSide = start.x * startSideWeight + end.x * (1 - startSideWeight)
         let lane: Lane
-        if abs(weightedSide - center) > viewportWidth * centerZoneRatio {
+        if let incomingLane {
+            // Mirror Rally follows the incoming ball; the flick still supplies
+            // its own horizontal aim, lift, speed and stroke classification.
+            lane = incomingLane
+        } else if abs(weightedSide - center) > viewportWidth * centerZoneRatio {
             lane = weightedSide < center ? .left : .right
         } else if end.x != center {
             lane = end.x < center ? .left : .right
         } else {
-            // There is no ball-dependent lane assistance. An exactly centered,
-            // vertical gesture always chooses right; diagonals keep their sign.
+            // Without an explicit incoming lane, retain the original stable
+            // fallback: centered vertical goes right; diagonals keep their sign.
             lane = dx < 0 ? .left : .right
         }
 

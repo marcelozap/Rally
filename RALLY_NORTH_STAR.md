@@ -4,7 +4,7 @@
 
 Rally is a premium tennis iOS game built around one tight loop:
 
-Create a player who feels like you, dress them in desirable real tennis gear, play a fast wall-rally loop that teaches timing and rhythm, then carry that identity into training logs, gear discovery, and court culture.
+Choose a fixed athlete, dress them in desirable real tennis gear, play a 20-second rally against your own double that teaches timing and rhythm, then carry that identity into training logs, gear discovery, and court culture.
 
 The game must feel professional, stylish, athletic, kid-safe, and alive. It cannot feel like a prototype, a puppet show, a dashboard, or a generic mobile skin shop.
 
@@ -14,7 +14,7 @@ This file is the repo's tiebreaker. If an old prompt, comment, branch, agent not
 
 Rally has six connected pillars:
 
-1. Gameplay: a wall-rally loop with readable depth, timing, contact, recovery, and body mechanics.
+1. Gameplay: a 20-second Mirror Rally with readable depth, timing, contact, recovery, and body mechanics.
 2. Avatar: one canonical player identity shared by Home, Locker, Shop try-on, World, and GameScene.
 3. Loadout: a Fortnite-style pregame surface where the player sees court, outfit, racket, handedness, and PLAY.
 4. Shop: real tennis gear, real product imagery, try-on first, referral commerce second.
@@ -86,12 +86,14 @@ Quality target:
 
 ## Gameplay Feel Contract
 
-The wall-rally loop should feel like a playable tennis rhythm, not a vertical bounce toy.
+The current build target is a 20-second Mirror Rally that feels satisfying enough to immediately play again. The far player uses your same athlete and outfit, automatically answering each successful shot. Swipe upward anywhere to time contact; horizontal flick direction aims the outgoing ball. Both players must step toward their next contact, plant, and recover.
+
+The implementation remains a prototype until a person validates its timing, legibility, and replay appeal on a phone. See `RALLY_MIRROR_RALLY.md` for the current build and verification status.
 
 The player must read:
 
-- ball traveling away to the wall
-- ball compressing or marking wall contact
+- ball traveling away to the player’s double
+- the double’s racket meeting and returning the ball
 - ball accelerating back toward the player
 - the avatar preparing before contact
 - forehand and two-handed backhand as distinct mechanics

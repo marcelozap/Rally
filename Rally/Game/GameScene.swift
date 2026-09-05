@@ -53,7 +53,7 @@ final class GameScene: SKScene {
 
     /// How long a single rally session lasts before `sessionEnd` is fired.
     /// The procedural beatmap is generated to match.
-    var sessionDurationSeconds: Double = 180
+    var sessionDurationSeconds: Double = RallyMirrorRules.durationSeconds
     var racketTuning: RacketGameplayTuning = .balanced
     var avatarAppearance: RallyAvatarAppearance?
     var dominantHand: GamePreferences.DominantHand = .right {
@@ -114,6 +114,7 @@ final class GameScene: SKScene {
     private var wallEmptyCourtSince: TimeInterval?
     private var isDying = false
     private var sessionEnded = false
+    private var completedMirrorRally = false
     private var betweenPointLiftUntil: TimeInterval = 0
     private var recentContactQuality: HitQuality?
     private var recentContactUntil: TimeInterval = 0
@@ -182,11 +183,17 @@ final class GameScene: SKScene {
     private var playerAvatarNode: SK3DNode?
     /// The rendered racket center, expressed in playerRoot coordinates.
     private var playerRacketContactAnchor: CGPoint?
+    private var playerContactOffsets: [Lane: CGPoint] = [:]
     private var playerShadow: SKShapeNode?
+    private var lastAvatarMovementTime: TimeInterval?
     private var opponentRoot: SKNode?
     private var opponentAvatarRig: RallyAvatarRig?
     private var opponentAvatarNode: SK3DNode?
     private var opponentHitTime: TimeInterval?
+    private var mirrorTargetX: CGFloat?
+    private var mirrorBackhand = false
+    private var mirrorReturnArrivalTime: TimeInterval?
+    private var mirrorFloorY: CGFloat { min(size.height * 0.59, size.height * 0.765 - 128) }
     private var currentBPM: Double = 120
     private var currentTravelSeconds: Double = Tunables.ballTravelSeconds
     private var lastBeatTime: TimeInterval = 0
@@ -228,6 +235,7 @@ final class GameScene: SKScene {
     private var swingVisualLane: Lane = .right
     private var swingVisualIntent: SwingIntent = .drive
     private var swingVisualImpactUntil: TimeInterval = 0
+    private var playerContactFollowThrough = false
     private var swingVisualReach: CGFloat = 0
     private var contactFlashUntil: TimeInterval = 0
     private var hitStopUntil: TimeInterval = 0
@@ -402,10 +410,7 @@ final class GameScene: SKScene {
             subtitle?.removeFromParent()
             ring?.removeFromParent()
             guard let self = self else { return }
-            self.isCountingDown = false
-            // Re-anchor trackTime so the timer starts fresh.
-            self.startTime = CACurrentMediaTime()
-            self.lastBeatTime = CACurrentMediaTime()
+            self.beginActiveRally(at: CACurrentMediaTime())
             CameraShake.nudge(self.cameraNode, dx: 0, dy: -8, outMs: 90, backMs: 220)
             self.background?.setMomentum(
                 tier: 0,
@@ -414,15 +419,28 @@ final class GameScene: SKScene {
             )
             self.showInstruction(
                 self.sessionMode == .wallRally
-                    ? "Flick up on the ball’s side. Release as the rings meet."
+                    ? "Swipe up anywhere. Release as the rings meet."
                     : "Meet the ball and release through contact.",
                 hold: Tunables.openingHintSeconds * 0.38
             )
-            if self.sessionMode == .wallRally {
-                self.scheduleWallBall(after: Tunables.wallOpeningFeedDelaySeconds)
-            }
+
         })
         label.run(.sequence(seq))
+    }
+
+    /// Countdown's GO boundary. The same clock starts the feed and run timer.
+    func beginActiveRally(at currentTime: TimeInterval) {
+        guard !sessionEnded else { return }
+        isCountingDown = false
+        startTime = currentTime
+        currentTimeSnapshot = currentTime
+        currentTrackTime = 0
+        lastAvatarMovementTime = nil
+        lastBeatTime = currentTime
+        currentTravelSeconds = wallTravelSeconds()
+        if sessionMode == .wallRally {
+            scheduleWallBall(after: Tunables.wallOpeningFeedDelaySeconds)
+        }
     }
 
     private func setupCamera() {
@@ -445,7 +463,7 @@ final class GameScene: SKScene {
         cameraNode?.removeAction(forKey: "drift")
         cameraNode?.position = cameraHomePosition
         background?.resize(to: size, strikeYRatio: Tunables.strikeLineYRatio)
-        opponentRoot?.position = CGPoint(x: size.width / 2, y: size.height * Tunables.gameplayCourtFarYRatio)
+        opponentRoot?.position = CGPoint(x: size.width / 2, y: mirrorFloorY)
 
         let strikeY = size.height * Tunables.strikeLineYRatio
         let wallY = size.height * Tunables.wallSurfaceYRatio
@@ -516,7 +534,9 @@ final class GameScene: SKScene {
         if !usesMinimalWallHUD {
             hudTopPlate?.position = CGPoint(x: size.width / 2, y: size.height * 0.885)
         }
-        hudCaptionLabel?.position = CGPoint(x: size.width / 2, y: size.height * 0.934)
+        if !usesMinimalWallHUD {
+            hudCaptionLabel?.position = CGPoint(x: size.width / 2, y: size.height * 0.934)
+        }
         hudPhaseLabel?.position = CGPoint(x: size.width * 0.27, y: size.height * 0.915)
         hudPhaseValueLabel?.position = CGPoint(x: size.width * 0.27, y: size.height * 0.889)
         if !usesMinimalWallHUD {
@@ -524,7 +544,7 @@ final class GameScene: SKScene {
             hudMaxValueLabel?.position = CGPoint(x: size.width * 0.73, y: size.height * 0.889)
             comboLabel?.position = CGPoint(x: size.width / 2, y: size.height * 0.838)
         }
-        if let time = timeLabel {
+        if !usesMinimalWallHUD, let time = timeLabel {
             time.position = CGPoint(x: size.width / 2, y: size.height * 0.918)
         }
         if let banner = phaseBannerLabel {
@@ -810,17 +830,25 @@ final class GameScene: SKScene {
 
     private func layoutWallHUDPositions() {
         guard usesMinimalWallHUD else { return }
-        let courtScoreY = size.height * Tunables.minimalHUDScoreYRatio
+        let courtScoreY = size.height * 0.795
+        hudCaptionLabel?.text = "MIRROR RALLY"
+        hudCaptionLabel?.alpha = 1
+        hudCaptionLabel?.isHidden = false
+        hudCaptionLabel?.position = CGPoint(x: size.width / 2, y: courtScoreY + 29)
+        timeLabel?.isHidden = false
+        timeLabel?.alpha = 1
+        timeLabel?.fontSize = 22
+        timeLabel?.position = CGPoint(x: size.width * 0.80, y: courtScoreY)
         scoreLabel?.position = CGPoint(x: size.width / 2, y: courtScoreY)
         hudTopPlate?.position = CGPoint(x: size.width / 2, y: courtScoreY)
         hudMaxLabel?.position = CGPoint(x: size.width * 0.78, y: courtScoreY)
         hudMaxValueLabel?.position = CGPoint(x: size.width * 0.78, y: courtScoreY)
         comboLabel?.position = CGPoint(x: size.width / 2, y: courtScoreY - 30)
         livesLabel?.position = CGPoint(x: size.width / 2, y: courtScoreY - 22)
-        survivalBestLabel?.position = CGPoint(x: size.width / 2, y: courtScoreY + 26)
+        survivalBestLabel?.position = CGPoint(x: size.width * 0.20, y: courtScoreY + 25)
         // Addictiveness HUD
         wallStreakLabel?.position = CGPoint(x: size.width * 0.22, y: courtScoreY)
-        wallBestLabel?.position = CGPoint(x: size.width * 0.78, y: courtScoreY - 16)
+        wallBestLabel?.position = CGPoint(x: size.width * 0.80, y: courtScoreY - 19)
         wallMomentLabel?.position = CGPoint(x: size.width / 2, y: size.height * Tunables.wallMomentBannerYRatio)
     }
 
@@ -945,16 +973,58 @@ final class GameScene: SKScene {
             presentation: .opponent
         )
         let root = SKNode()
-        root.position = CGPoint(x: size.width / 2, y: size.height * Tunables.gameplayCourtFarYRatio)
-        root.zPosition = -89
+        root.position = CGPoint(x: size.width / 2, y: mirrorFloorY)
+        root.zPosition = 12
         addChild(root)
         opponentRoot = root
         opponentAvatarRig = rig
-        opponentAvatarNode = makeAvatarNode(rig: rig, viewport: CGSize(width: 96, height: 90), parent: root)
+        let shadow = SKShapeNode(ellipseOf: CGSize(width: 58, height: 9))
+        shadow.fillColor = UIColor.black.withAlphaComponent(0.28)
+        shadow.strokeColor = .clear
+        shadow.zPosition = -1
+        root.addChild(shadow)
+        opponentAvatarNode = makeAvatarNode(rig: rig, viewport: CGSize(width: 160, height: 150), parent: root)
+        rig.animate(time: 0, leftHanded: dominantHand == .left)
     }
 
     private func animateOpponentHit() {
-        opponentHitTime = currentTimeSnapshot
+        opponentHitTime = currentTimeSnapshot - 0.18
+        guard let rig = opponentAvatarRig, let node = opponentAvatarNode, let opponentRoot else { return }
+        let scale = avatarPointsPerMeter(rig: rig, node: node)
+        rig.animate(time: currentTrackTime, swingProgress: 0.5, backhand: mirrorBackhand,
+                    leftHanded: dominantHand == .left,
+                    courtPosition: Float((opponentRoot.position.x - size.width / 2) / scale))
+        alignAvatarToCourt(rig: rig, node: node)
+    }
+
+    private func opponentRacketPoint() -> CGPoint {
+        guard let rig = opponentAvatarRig, let node = opponentAvatarNode,
+              let point = avatarPoint(rig.racketHeadWorldPosition, rig: rig, node: node) else {
+            return CGPoint(x: size.width / 2, y: mirrorFloorY + 100)
+        }
+        return node.convert(point, to: self)
+    }
+
+    /// Plan the ball and the double from the same projected racket pose.
+    /// The target is fixed for this exchange; it never chases a moving body.
+    private func prepareMirrorContact(targetX: CGFloat) -> CGPoint {
+        guard let rig = opponentAvatarRig, let node = opponentAvatarNode, let opponentRoot else {
+            return CGPoint(x: targetX, y: mirrorFloorY + 100)
+        }
+        mirrorBackhand = dominantHand == .right ? targetX > size.width / 2 : targetX < size.width / 2
+        let scale = avatarPointsPerMeter(rig: rig, node: node)
+        rig.animate(time: currentTrackTime, swingProgress: 0.5, backhand: mirrorBackhand,
+                    leftHanded: dominantHand == .left,
+                    courtPosition: Float((opponentRoot.position.x - size.width / 2) / scale))
+        alignAvatarToCourt(rig: rig, node: node)
+        let projected = opponentRacketPoint()
+        let reach = projected.x - opponentRoot.position.x
+        let desired = min(size.width * 0.62, max(size.width * 0.38, targetX - reach))
+        mirrorTargetX = desired
+        rig.animate(time: currentTrackTime, backhand: mirrorBackhand,
+                    leftHanded: dominantHand == .left,
+                    courtPosition: Float((opponentRoot.position.x - size.width / 2) / scale))
+        return CGPoint(x: desired + reach, y: projected.y)
     }
 
     private func setupCourtAvatar() {
@@ -1019,6 +1089,38 @@ final class GameScene: SKScene {
         // current swing pose, so foot planting survives camera/framing changes.
         guard let floor = avatarPoint(SCNVector3Zero, rig: rig, node: node) else { return }
         node.position = CGPoint(x: -floor.x, y: -floor.y)
+    }
+
+    /// Record both strokes in the actual SK3DNode projection. This removes
+    /// the old sprite-era contact height while keeping each ball's target fixed.
+    private func refreshPlayerContactOffsets() {
+        guard let rig = playerAvatarRig, let node = playerAvatarNode, let playerRoot else { return }
+        let scale = avatarPointsPerMeter(rig: rig, node: node)
+        for lane in [Lane.left, .right] {
+            rig.animate(time: currentTrackTime, swingProgress: 0.5,
+                        backhand: strokeSide(for: lane) == .backhand,
+                        leftHanded: dominantHand == .left,
+                        courtPosition: Float((playerRoot.position.x - size.width / 2) / scale))
+            alignAvatarToCourt(rig: rig, node: node)
+            if let point = avatarPoint(rig.racketHeadWorldPosition, rig: rig, node: node) {
+                let projected = node.convert(point, to: self)
+                playerContactOffsets[lane] = CGPoint(x: projected.x - playerRoot.position.x,
+                                                     y: projected.y - playerRoot.position.y)
+            }
+        }
+        rig.animate(time: currentTrackTime, backhand: strokeSide(for: swingVisualLane) == .backhand,
+                    leftHanded: dominantHand == .left,
+                    courtPosition: Float((playerRoot.position.x - size.width / 2) / scale))
+    }
+
+    private func avatarPointsPerMeter(rig: RallyAvatarRig, node: SK3DNode) -> CGFloat {
+        if let origin = avatarPoint(SCNVector3Zero, rig: rig, node: node),
+           let meter = avatarPoint(SCNVector3(1, 0, 0), rig: rig, node: node) {
+            let span = abs(node.convert(meter, to: self).x - node.convert(origin, to: self).x)
+            if span.isFinite, span > 1 { return span }
+        }
+        let visibleHeight = CGFloat(rig.camera.camera?.orthographicScale ?? 1.05) * 2
+        return max(1, node.viewportSize.height * abs(node.parent?.xScale ?? 1) / visibleHeight)
     }
 
     private func setupHUD() {
@@ -1239,7 +1341,7 @@ final class GameScene: SKScene {
         }
 
         let instruction = SKLabelNode(fontNamed: "AvenirNext-DemiBold")
-        instruction.text = "Swipe up on the side the ball is arriving"
+        instruction.text = "Swipe up anywhere as the rings meet"
         instruction.fontSize = 15
         instruction.fontColor = UIColor(white: 1, alpha: 0.82)
         instruction.position = CGPoint(x: size.width / 2, y: size.height * 0.14)
@@ -1308,6 +1410,7 @@ final class GameScene: SKScene {
     // MARK: - Update loop
 
     override func update(_ currentTime: TimeInterval) {
+        guard !sessionEnded else { return }
         if currentTime < frameStopUntil {
             speed = 0
             return
@@ -1318,6 +1421,16 @@ final class GameScene: SKScene {
         let trackTime = currentTime - startTime
         currentTimeSnapshot = currentTime
         currentTrackTime = max(0, trackTime)
+        // Finish before feed, input or miss processing. A ball in flight at the
+        // deadline cannot turn a completed twenty-second run into a late miss.
+        if sessionMode == .wallRally, !sessionEnded, !isCountingDown,
+           RallyMirrorRules.hasFinished(at: currentTrackTime) {
+            completedMirrorRally = true
+            currentTrackTime = RallyMirrorRules.durationSeconds
+            updateTimeLabel(trackTime: currentTrackTime)
+            completeSession()
+            return
+        }
 
         if !sessionEnded, !isCountingDown, sessionMode == .phasedMatch {
             flow?.update(trackTime: currentTrackTime, combo: combo)
@@ -1477,8 +1590,32 @@ final class GameScene: SKScene {
         }
     }
 
+    private func posePlayerAtContact(lane: Lane) -> CGPoint {
+        playerContactFollowThrough = true
+        swingVisualLane = lane
+        guard let rig = playerAvatarRig, let node = playerAvatarNode, let playerRoot else {
+            return authoredRacketContactPoint(for: lane)
+        }
+        let scale = avatarPointsPerMeter(rig: rig, node: node)
+        rig.animate(time: currentTrackTime, swingProgress: 0.5,
+                    backhand: strokeSide(for: lane) == .backhand,
+                    leftHanded: dominantHand == .left,
+                    courtPosition: Float((playerRoot.position.x - size.width / 2) / scale))
+        node.sceneTime = currentTrackTime
+        alignAvatarToCourt(rig: rig, node: node)
+        guard let point = avatarPoint(rig.racketHeadWorldPosition, rig: rig, node: node) else {
+            return authoredRacketContactPoint(for: lane)
+        }
+        playerRacketContactAnchor = node.convert(point, to: playerRoot)
+        return node.convert(point, to: self)
+    }
+
     private func resetSwingBodyMechanics() {
-        playerAvatarRig?.animate(time: currentTrackTime, leftHanded: dominantHand == .left)
+        if let rig = playerAvatarRig, let node = playerAvatarNode, let playerRoot {
+            let scale = avatarPointsPerMeter(rig: rig, node: node)
+            rig.animate(time: currentTrackTime, leftHanded: dominantHand == .left,
+                        courtPosition: Float((playerRoot.position.x - size.width / 2) / scale))
+        }
         playerRacketContactAnchor = nil
     }
 
@@ -1486,32 +1623,40 @@ final class GameScene: SKScene {
         guard let playerRoot, let rig = playerAvatarRig, let node = playerAvatarNode else { return }
         let activeTouch = swingCurrentScene ?? swingOriginScene
         let impactProgress = max(0, min(1, (swingVisualImpactUntil - currentTimeSnapshot) / 0.26))
-        let focusLane = sessionMode == .wallRally ? wallFocusLane() : swingVisualLane
-        let focusBall = sessionMode == .wallRally ? nearestBall(in: focusLane, around: currentTrackTime) : nil
-        let approachProgress = max(impactProgress, focusBall?.approachToStrike(at: currentTrackTime) ?? 0)
-        let footworkUrgency = sessionMode == .wallRally
-            ? min(1, approachProgress * 1.16 + wallOpeningForgivenessBoost() * 0.06)
-            : impactProgress
+        // Feet must start moving while the ball is approaching. The swing
+        // candidate filter requires a ball to be hittable and already in reach.
+        let focusBall = sessionMode == .wallRally ? primaryWallBall() : nil
+        // The double always answers to the other side. Begin crossing during
+        // the outbound flight, so a wide reply is physically reachable.
+        let plannedLane = activeExchanges.last?.ball.lane.opposite
+        let focusLane = focusBall?.lane ?? plannedLane ?? swingVisualLane
+        let deltaTime = lastAvatarMovementTime.map { max(0, trackTime - $0) } ?? 0
+        lastAvatarMovementTime = trackTime
+        let pointsPerMeter = avatarPointsPerMeter(rig: rig, node: node)
         let desiredX: CGFloat
-        if sessionMode == .wallRally {
-            let laneTarget = wallStanceTargetX(for: focusLane)
-            let center = size.width / 2
-            let laneBlend = min(Tunables.footworkLaneBlendMax, max(0, footworkUrgency - 0.20) * 0.62)
-            desiredX = center + (laneTarget - center) * laneBlend
+        if sessionMode == .wallRally, let focusBall {
+            desiredX = RallyCourtMovement.stanceX(
+                contactX: focusBall.effectiveStrikePoint.x,
+                reach: contactPocketOffsetX(for: focusLane), width: size.width
+            )
+        } else if sessionMode == .wallRally, let plannedLane {
+            desiredX = RallyCourtMovement.stanceX(
+                contactX: wallReturnContactPoint(for: plannedLane).x,
+                reach: contactPocketOffsetX(for: plannedLane), width: size.width
+            )
+        } else if sessionMode == .wallRally {
+            desiredX = size.width / 2
         } else if let activeTouch {
             desiredX = min(size.width * 0.78, max(size.width * 0.22, activeTouch.x))
         } else {
-            desiredX = size.width / 2 + recoveryOffsetX(at: trackTime) + sin(trackTime * 0.8) * 10
+            desiredX = size.width / 2 + recoveryOffsetX(at: trackTime)
         }
-        let sideCommit = max(
-            0,
-            min(1, (footworkUrgency - Tunables.footworkSideCommitTrigger) / max(0.001, 1 - Tunables.footworkSideCommitTrigger))
-        )
-        let committedSide: CGFloat = focusLane == .right ? 1 : -1
-        let footworkRootOffset = committedSide * Tunables.footworkRootLoadShiftPoints * sideCommit
         let anticipation = max(0, min(1, (betweenPointLiftUntil - currentTimeSnapshot) / 0.6))
-        let movementBlend: CGFloat = sessionMode == .wallRally ? 0.30 + footworkUrgency * 0.18 : 0.18
-        playerRoot.position.x += ((desiredX + footworkRootOffset) - playerRoot.position.x) * movementBlend
+        playerRoot.position.x = RallyCourtMovement.advance(
+            from: playerRoot.position.x, toward: desiredX, deltaTime: deltaTime,
+            pointsPerMeter: pointsPerMeter,
+            planted: currentTimeSnapshot < hitStopUntil || impactProgress > 0.20
+        )
         playerRoot.position.y = size.height * Tunables.gameplayPlayerRootYRatio - anticipation * 0.65
 
         if sessionMode == .wallRally, impactProgress < 0.08 {
@@ -1521,10 +1666,12 @@ final class GameScene: SKScene {
             let lateral = (playerRoot.position.x - size.width / 2) / max(1, size.width * 0.22)
             rig.animate(
                 time: trackTime,
-                swingProgress: impactProgress > 0.02 ? Float(1 - impactProgress) : nil,
+                swingProgress: impactProgress > 0.02
+                    ? Float(playerContactFollowThrough ? 0.5 + (1 - impactProgress) * 0.5 : 1 - impactProgress) : nil,
                 backhand: strokeSide(for: swingVisualLane) == .backhand,
                 lateral: Float(max(-1, min(1, lateral))),
-                leftHanded: dominantHand == .left
+                leftHanded: dominantHand == .left,
+                courtPosition: Float((playerRoot.position.x - size.width / 2) / pointsPerMeter)
             )
             node.sceneTime = trackTime
         }
@@ -1536,10 +1683,31 @@ final class GameScene: SKScene {
         playerShadow?.xScale = 1 + contactFlash * 0.16
         playerShadow?.alpha = 0.86 + contactFlash * 0.14
 
-        if let opponentRig = opponentAvatarRig, let opponentNode = opponentAvatarNode {
+        if let opponentRig = opponentAvatarRig, let opponentNode = opponentAvatarNode,
+           let opponentRoot {
             let elapsed = opponentHitTime.map { currentTimeSnapshot - $0 }
             let swing = elapsed.flatMap { $0 >= 0 && $0 < 0.36 ? Float($0 / 0.36) : nil }
-            opponentRig.animate(time: trackTime + 1.2, swingProgress: swing)
+            let scale = avatarPointsPerMeter(rig: opponentRig, node: opponentNode)
+            let contactIsPending = opponentHitTime.map { currentTimeSnapshot < $0 + 0.36 } ?? false
+            if contactIsPending, let elapsed {
+                if elapsed < 0.15 {
+                    opponentRoot.position.x = RallyCourtMovement.arrive(
+                        from: opponentRoot.position.x, toward: mirrorTargetX ?? size.width / 2,
+                        deltaTime: deltaTime, secondsRemaining: 0.15 - elapsed,
+                        pointsPerMeter: scale
+                    )
+                }
+            } else {
+                opponentRoot.position.x = RallyCourtMovement.advance(
+                    from: opponentRoot.position.x, toward: size.width / 2,
+                    deltaTime: deltaTime, pointsPerMeter: scale, planted: false
+                )
+            }
+            opponentRig.animate(
+                time: trackTime, swingProgress: swing, backhand: mirrorBackhand,
+                leftHanded: dominantHand == .left,
+                courtPosition: Float((opponentRoot.position.x - size.width / 2) / scale)
+            )
             opponentNode.sceneTime = trackTime
             alignAvatarToCourt(rig: opponentRig, node: opponentNode)
         }
@@ -1565,7 +1733,11 @@ final class GameScene: SKScene {
             cleanReturnPickups: cleanReturnPickups,
             changeupWinners: changeupWinners,
             pressureHolds: pressureHolds,
-            segments: segments
+            segments: segments,
+            isMirrorRally: sessionMode == .wallRally,
+            completedMirrorRally: completedMirrorRally,
+            elapsedSeconds: sessionMode == .wallRally
+                ? min(RallyMirrorRules.durationSeconds, max(0, currentTrackTime)) : currentTrackTime
         )
     }
 
@@ -1657,7 +1829,9 @@ final class GameScene: SKScene {
     private func updateTimeLabel(trackTime: Double) {
         guard let timeLabel = timeLabel else { return }
         if sessionMode == .wallRally {
-            timeLabel.text = "ENDLESS"
+            let remaining = RallyMirrorRules.remainingSeconds(at: isCountingDown ? 0 : trackTime)
+            timeLabel.text = "\(Int(ceil(remaining)))s"
+            timeLabel.fontColor = remaining <= 5 ? UIColor(red: 0.94, green: 0.98, blue: 0.42, alpha: 1) : .white
             return
         }
         // Freeze the timer at the full session length during the countdown
@@ -1693,17 +1867,20 @@ final class GameScene: SKScene {
                 let frame = reentryState.frame(at: trackTime)
                 if frame.handoffReady {
                     let laneDirection: CGFloat = ball.lane == .right ? 1 : -1
-                    let normalization = RallyBallNormalizationState(
-                        handoff: RallyBallNormalizationHandoff(
-                            startTime: trackTime,
-                            startPoint: frame.point,
-                            strikePoint: ball.effectiveStrikePoint,
-                            laneDirection: laneDirection,
-                            xScale: frame.xScale,
-                            yScale: frame.yScale,
-                            shadowAlpha: frame.shadowAlpha
+                    let normalization: RallyBallNormalizationState
+                    if sessionMode == .wallRally {
+                        normalization = RallyBallNormalizationState(
+                            reentry: reentryState, at: trackTime, laneDirection: laneDirection
                         )
-                    )
+                    } else {
+                        normalization = RallyBallNormalizationState(
+                            handoff: RallyBallNormalizationHandoff(
+                                startTime: trackTime, startPoint: frame.point,
+                                strikePoint: ball.effectiveStrikePoint, laneDirection: laneDirection,
+                                xScale: frame.xScale, yScale: frame.yScale, shadowAlpha: frame.shadowAlpha
+                            )
+                        )
+                    }
                     ball.beginNormalization(normalization)
                     _ = ball.updateNormalization(trackTime: trackTime)
                 } else if frame.isComplete {
@@ -1763,12 +1940,12 @@ final class GameScene: SKScene {
                 let quality = recentContactQuality ?? .good
                 let stroke = strokeSide(for: lane)
                 stageWallStrikeBurst(
-                    at: frame.point,
+                    at: exchange.farContactPoint,
                     lane: lane,
                     quality: quality
                 )
                 stageWallImpactPulse(
-                    at: frame.point,
+                    at: exchange.farContactPoint,
                     lane: lane,
                     quality: quality,
                     strokeSide: stroke
@@ -1790,12 +1967,19 @@ final class GameScene: SKScene {
         ball.lane = returnLane
         wallNextLane = returnLane.opposite
 
-        let strikePoint = racketContactPoint(for: returnLane)
+        refreshPlayerContactOffsets()
+        let strikePoint = wallReturnContactPoint(for: returnLane)
         let config = RallyReentryConfig.rallyDefault
         let start = currentTrackTime
         // Survival difficulty ramp: shorter return flight as the score climbs.
-        let travelDuration = config.returnTravelDuration * survivalReturnTravelScalar()
-        let arrival = start + travelDuration
+        let arrival = mirrorReturnArrivalTime.map { $0 - startTime }
+            ?? (start + RallyMirrorRules.beatSeconds(forCombo: combo))
+        let travelDuration = max(0.001, arrival - start)
+        guard !sessionEnded,
+              RallyMirrorRules.canStartIncoming(at: start, travelSeconds: travelDuration) else {
+            ball.removeFromParent()
+            return
+        }
 
         ball.beginReentry(
             RallyReentryBallState(
@@ -2005,7 +2189,7 @@ final class GameScene: SKScene {
         beatTargetRing?.fillColor = color.withAlphaComponent(perfect ? 0.08 : 0.015)
         beatTargetRing?.alpha = alpha
 
-        let side = focusLane == .left ? "LEFT ↑" : "RIGHT ↑"
+        let side = "SWIPE ↑"
         focusStrokeReadLabel?.text = perfect ? "RELEASE" : (remaining < -perfectWindow ? "LATE" : side)
         focusStrokeReadLabel?.position = CGPoint(x: target.x, y: target.y + 86)
         focusStrokeReadLabel?.fontSize = 12
@@ -2068,7 +2252,10 @@ final class GameScene: SKScene {
                 stillAlive.append(ball)
                 continue
             }
-            if ball.position.y < strikeY - Tunables.cullBelowStrikePoints {
+            let missedContact = sessionMode == .wallRally
+                ? RallyMirrorRules.hasMissedContact(at: currentTrackTime, arrivalTime: ball.effectiveArrivalTime)
+                : ball.position.y < strikeY - Tunables.cullBelowStrikePoints
+            if missedContact {
                 if resolveAutoPlayWallContact(for: ball) {
                     return
                 }
@@ -2087,6 +2274,12 @@ final class GameScene: SKScene {
     // MARK: - Spawning (called by RhythmSpawner)
 
     func spawnBall(_ note: BeatmapNote) {
+        guard !sessionEnded else { return }
+        if sessionMode == .wallRally,
+           !RallyMirrorRules.canStartIncoming(at: currentTrackTime, travelSeconds: note.arrivalTime - currentTrackTime) {
+            clearPendingWallSpawnToken()
+            return
+        }
         if sessionMode == .wallRally {
             clearPendingWallSpawnToken()
         }
@@ -2094,8 +2287,10 @@ final class GameScene: SKScene {
         let travelSeconds = currentTravelSeconds
         let spawnTime = note.arrivalTime - travelSeconds
         let strikeY = size.height * Tunables.strikeLineYRatio
+        if sessionMode == .wallRally { animateOpponentHit() }
+        let mirrorServe = opponentRacketPoint()
         let spawnY = sessionMode == .wallRally
-            ? size.height * Tunables.wallSurfaceYRatio - 16
+            ? mirrorServe.y
             : size.height * Tunables.spawnLineYRatio
         let horizonCenterX = size.width / 2
         let wallCenterBias: CGFloat = sessionMode == .wallRally ? 0.84 : 1.0
@@ -2103,8 +2298,9 @@ final class GameScene: SKScene {
         let strikeInset = size.width * Tunables.strikeLaneInsetRatio * racketTuning.strikeWidthScalar * (sessionMode == .wallRally ? 1.08 : 1.0)
         let spawnX = horizonCenterX + (note.lane == .left ? -horizonSpread : horizonSpread)
         let strikeX = note.lane == .left ? strikeInset : size.width - strikeInset
+        if sessionMode == .wallRally { refreshPlayerContactOffsets() }
         let strikePoint = sessionMode == .wallRally
-            ? authoredRacketContactPoint(for: note.lane)
+            ? wallReturnContactPoint(for: note.lane)
             : CGPoint(x: strikeX, y: strikeY)
         let shotShape = selectShotShape(for: note)
         let ballRole: BeatmapNote.Role = sessionMode == .wallRally ? .returnBall : note.role
@@ -2119,7 +2315,7 @@ final class GameScene: SKScene {
             arrivalTime: note.arrivalTime,
             spawnTime: spawnTime,
             travelSeconds: travelSeconds,
-            spawnPoint: CGPoint(x: spawnX, y: spawnY),
+            spawnPoint: CGPoint(x: sessionMode == .wallRally ? mirrorServe.x : spawnX, y: spawnY),
             strikePoint: strikePoint,
             spawnScale: Tunables.ballSpawnScale * racketTuning.spawnScaleScalar,
             strikeScale: sceneRelativeStrikeScale * racketTuning.strikeScaleScalar,
@@ -2138,7 +2334,6 @@ final class GameScene: SKScene {
                 .fadeIn(withDuration: 0.1),
                 .scale(to: 1.0, duration: 0.12)
             ]))
-            animateOpponentHit()
         }
         activeBalls.append(ball)
         if sessionMode == .wallRally {
@@ -2153,7 +2348,8 @@ final class GameScene: SKScene {
     }
 
     private func scheduleWallBall(after delay: Double) {
-        guard sessionMode == .wallRally, !sessionEnded else { return }
+        guard sessionMode == .wallRally, !sessionEnded,
+              RallyMirrorRules.canStartIncoming(at: currentTrackTime, travelSeconds: max(0, delay) + currentTravelSeconds) else { return }
         guard pendingWallSpawnToken == nil else {
             #if DEBUG
             recordWallFeedDebugEvent("skip pending")
@@ -2620,7 +2816,8 @@ final class GameScene: SKScene {
                         velocity: CGVector(dx: velocity.x, dy: -velocity.y),
                         // Coalesced began/ended delivery must still recognize
                         // a complete flick with measurable travel.
-                        duration: max(0.001, now - began), viewportWidth: size.width
+                        duration: max(0.001, now - began), viewportWidth: size.width,
+                        incomingLane: primaryWallBall()?.lane
                       ) else { return }
                 committedFlick = flick
                 lastCommittedFlickAt = now
@@ -2636,6 +2833,7 @@ final class GameScene: SKScene {
             }
             HapticManager.shared.playTouchDown()
             swingVisualLane = lane
+            playerContactFollowThrough = false
             swingVisualImpactUntil = currentTimeSnapshot + 0.26
             swingVisualReach = distance
             swingVisualIntent = intent
@@ -2985,7 +3183,8 @@ final class GameScene: SKScene {
         if isProofAutoPlayEnabled { recentTimingFeedback = quality == .perfect ? .perfect : nil }
         let hitLane = ball.lane
         let hitPosition = ball.position
-        let contactPoint = racketContactPoint(for: hitLane)
+        let contactPoint = sessionMode == .wallRally
+            ? posePlayerAtContact(lane: hitLane) : racketContactPoint(for: hitLane)
 
         combo += 1
         maxCombo = max(maxCombo, combo)
@@ -3350,11 +3549,11 @@ final class GameScene: SKScene {
         if usesMinimalWallHUD {
             layoutWallHUDPositions()
             applyMinimalWallScoreTypography()
-            hudCaptionLabel?.alpha = 0
+            hudCaptionLabel?.alpha = 1
             hudPhaseLabel?.alpha = 0
             hudPhaseValueLabel?.text = ""
             hudPhaseValueLabel?.alpha = 0
-            timeLabel?.alpha = 0
+            timeLabel?.alpha = 1
             hudTopPlate?.alpha = 0
             hudMaxLabel?.alpha = 0
             hudMaxValueLabel?.alpha = 0
@@ -4477,12 +4676,16 @@ final class GameScene: SKScene {
     ) {
         let aim = committedFlick?.direction ?? 0
         let lift = committedFlick?.lift ?? 0.5
-        let wallPoint = CGPoint(
-            x: RallyFlickInput.wallTargetX(lane: lane, direction: aim, viewportWidth: size.width),
-            y: size.height * Tunables.wallSurfaceYRatio - 24 + lift * 18
-        )
+        let rawTarget = RallyFlickInput.wallTargetX(lane: lane, direction: aim, viewportWidth: size.width)
+        let targetX = size.width / 2 + (rawTarget - size.width / 2) * 0.65
+        let wallPoint = prepareMirrorContact(targetX: targetX)
+        let beat = RallyMirrorRules.beatSeconds(forCombo: combo)
         var exchangeConfig = RallyExchangeConfig.rallyDefault
+        let contactTail = exchangeConfig.wall.compressionDuration + exchangeConfig.wall.dwellDuration
+            + exchangeConfig.wall.decompressionDuration + 0.05
+        exchangeConfig.wall.totalDuration = beat - exchangeConfig.racket.totalDuration + contactTail
         exchangeConfig.wall.reboundArcLift *= 0.75 + lift * 0.75
+        exchangeConfig.wall.reboundTravelDistance = 12
         let direction: CGFloat = lane == .right ? 1 : -1
         let inboundSpeed = max(
             280,
@@ -4505,6 +4708,8 @@ final class GameScene: SKScene {
             startTime: currentTimeSnapshot,
             config: exchangeConfig
         )
+        opponentHitTime = exchange.farContactTime - 0.18
+        mirrorReturnArrivalTime = exchange.farContactTime + beat
         ball.ownershipPhase = .racketExchange
         activeExchanges.append(exchange)
         stageRacketContactHalo(
@@ -4682,13 +4887,19 @@ final class GameScene: SKScene {
     }
 
     private func contactPocketOffsetX(for lane: Lane) -> CGFloat {
+        if sessionMode == .wallRally, let offset = playerContactOffsets[lane] { return offset.x }
         let forehand = strokeSide(for: lane) == .forehand
         let base = size.width * (forehand ? 0.165 : 0.125)
-        let wallOutwardOffset = sessionMode == .wallRally ? Tunables.wallContactPocketOutwardOffset : 0
-        return lane == .left ? -(base + wallOutwardOffset) : (base + wallOutwardOffset)
+        // The old +84pt padding was sized for the 2D renderer and placed the
+        // contact beyond the 3D arm's reach, cancelling most lateral travel.
+        return lane == .left ? -base : base
     }
 
     private func contactPocketLift(for lane: Lane) -> CGFloat {
+        if sessionMode == .wallRally, let offset = playerContactOffsets[lane] {
+            return size.height * Tunables.gameplayPlayerRootYRatio + offset.y
+                - size.height * Tunables.strikeLineYRatio
+        }
         let baseLift: CGFloat = strokeSide(for: lane) == .forehand ? 4 : -2
         let wallVerticalOffset = sessionMode == .wallRally ? Tunables.wallContactPocketVerticalOffset : 0
         return baseLift + wallVerticalOffset
@@ -4696,6 +4907,8 @@ final class GameScene: SKScene {
 
     private func refreshHandednessIfNeeded() {
         guard playerRoot != nil else { return }
+        playerContactOffsets.removeAll()
+        refreshPlayerContactOffsets()
         leftContactPocket?.position = racketContactPoint(for: .left)
         rightContactPocket?.position = racketContactPoint(for: .right)
     }
@@ -4731,10 +4944,8 @@ final class GameScene: SKScene {
     }
 
     private func wallTravelSeconds() -> Double {
-        // Flappy-Bird-style escalation: speed climbs with combo via Tunables tiers.
-        let openingScalar = Tunables.wallOpeningTravelScalar(spawnedBallCount: spawnedBallCount)
-        let comboScalar = Tunables.wallSpeedScalar(forCombo: combo)
-        return Tunables.ballTravelSeconds * matchPace.travelScalar * openingScalar * comboScalar
+        // A readable opening feed, then the same pulse as the mirrored reply.
+        return spawnedBallCount == 0 ? 1.10 : RallyMirrorRules.beatSeconds(forCombo: combo)
     }
 
     #if DEBUG
@@ -4926,13 +5137,11 @@ final class GameScene: SKScene {
         }
     }
 
-    private func wallStanceTargetX(for lane: Lane) -> CGFloat {
-        let base = lane == .left ? size.width * 0.36 : size.width * 0.64
-        guard sessionMode == .wallRally, let focusBall = primaryWallBall(), focusBall.lane == lane else {
-            return base
-        }
-        let ballBias = (focusBall.position.x - base) * 0.22
-        return min(size.width * 0.7, max(size.width * 0.3, base + ballBias))
+    private func wallReturnContactPoint(for lane: Lane) -> CGPoint {
+        CGPoint(
+            x: RallyCourtMovement.returnContactX(lane: lane, reach: contactPocketOffsetX(for: lane), width: size.width),
+            y: size.height * Tunables.strikeLineYRatio + contactPocketLift(for: lane)
+        )
     }
 
     private func wallStrikeFreezeScalar(for quality: HitQuality) -> Double {
@@ -5259,9 +5468,31 @@ final class GameScene: SKScene {
         ]))
     }
 
+    private func clearFinishedRally() {
+        clearPendingWallSpawnToken()
+        strikeLinePulse?.cancelAll()
+        if score > bestScore {
+            bestScore = score
+            UserDefaults.standard.set(bestScore, forKey: Self.bestScoreDefaultsKey)
+        }
+        let balls = activeBalls + activeExchanges.map(\.ball)
+        for ball in balls {
+            ball.removeAllActions()
+            ball.removeFromParent()
+        }
+        activeBalls.removeAll()
+        activeExchanges.removeAll()
+        mirrorTargetX = nil
+        mirrorReturnArrivalTime = nil
+        opponentHitTime = nil
+        fadeSwingTrail()
+    }
+
     private func completeSession() {
+        guard !sessionEnded else { return }
         resetSwingBodyMechanics()
         sessionEnded = true
+        clearFinishedRally()
         let finishColor = UIColor(red: 0.96, green: 0.88, blue: 0.74, alpha: 1)
         CameraShake.drift(
             cameraNode,
@@ -5280,14 +5511,14 @@ final class GameScene: SKScene {
             breaking: false
         )
         showMomentBanner(
-            text: "MATCH COMPLETE",
+            text: sessionMode == .wallRally ? "RALLY CLEAR" : "MATCH COMPLETE",
             color: finishColor,
             hold: 0.58,
             startScale: 0.9,
             peakScale: 1.04
         )
         stageStrikeTransition(color: finishColor, intensity: 1.0, duration: 0.44)
-        showInstruction("Strong finish. Review the match story.", hold: 0.7)
+        showInstruction(sessionMode == .wallRally ? "20 seconds. Go again." : "Strong finish. Review the match story.", hold: 0.7)
         GameEventBus.shared.publish(.sessionEnd(buildResult()))
     }
 
@@ -5298,21 +5529,7 @@ final class GameScene: SKScene {
         guard !sessionEnded else { return }
         resetSwingBodyMechanics()
         sessionEnded = true
-        clearPendingWallSpawnToken()
-
-        // Persist the run's score if it set a new best.
-        if score > bestScore {
-            bestScore = score
-            UserDefaults.standard.set(bestScore, forKey: Self.bestScoreDefaultsKey)
-        }
-
-        // Clear everything in flight so the frozen frame reads as "over".
-        strikeLinePulse?.cancelAll()
-        for ball in activeBalls {
-            ball.run(.sequence([.fadeOut(withDuration: 0.16), .removeFromParent()]))
-        }
-        activeBalls.removeAll()
-        activeExchanges.removeAll()
+        clearFinishedRally()
 
         let failColor = UIColor(red: 0.98, green: 0.42, blue: 0.40, alpha: 1)
         frameStopUntil = currentTimeSnapshot + Tunables.frameStopDeathMs.seconds

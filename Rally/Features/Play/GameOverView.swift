@@ -22,26 +22,106 @@ struct GameOverView: View {
 
     var body: some View {
         ZStack {
-            backdrop
-            ScrollView(showsIndicators: false) {
-                VStack(spacing: RallyUIKit.Spacing.xl - 2) {
-                    heroPanel
-                    runbackStrip
-                    matchIdentityStrip
-                    segmentedNarrative
-                    rewardsStrip
-                    newAchievementsStrip
-                    actionButtons
+            backdrop.ignoresSafeArea()
+            if result.isMirrorRally {
+                mirrorSummary
+            } else {
+                ScrollView(showsIndicators: false) {
+                    VStack(spacing: RallyUIKit.Spacing.xl - 2) {
+                        heroPanel
+                        runbackStrip
+                        matchIdentityStrip
+                        segmentedNarrative
+                        rewardsStrip
+                        newAchievementsStrip
+                        actionButtons
+                    }
+                    .padding(.horizontal, RallyUIKit.Spacing.lg + 2)
+                    .padding(.vertical, RallyUIKit.Spacing.xl + 6)
                 }
-                .padding(.horizontal, RallyUIKit.Spacing.lg + 2)
-                .padding(.vertical, RallyUIKit.Spacing.xl + 6)
+                .ignoresSafeArea()
             }
         }
-        .ignoresSafeArea()
-        .onAppear { runEntranceTimeline() }
+        .onAppear { if !result.isMirrorRally { runEntranceTimeline() } }
         .sheet(isPresented: $showingShareSheet) {
             shareSheet
         }
+    }
+
+    private var mirrorSummary: some View {
+        VStack(spacing: 26) {
+            VStack(spacing: 10) {
+                RallyUIKit.EditorialEyebrow(text: "Mirror Rally", tint: RallyUIKit.Palette.cyan)
+                Text(result.completedMirrorRally ? "CLEAR" : "RUN OVER")
+                    .font(RallyUIKit.Typography.display(42, weight: .bold))
+                    .foregroundStyle(result.completedMirrorRally ? RallyUIKit.Palette.cyan : RallyUIKit.Palette.frost)
+                    .accessibilityIdentifier("mirrorRally.resultTitle")
+                Text(mirrorDurationText)
+                    .font(RallyUIKit.Typography.body(.subheadline, weight: .medium))
+                    .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.7))
+            }
+
+            VStack(spacing: 4) {
+                Text("\(result.finalScore)")
+                    .font(RallyUIKit.Typography.display(76, weight: .bold))
+                    .foregroundStyle(RallyUIKit.Palette.frost)
+                    .monospacedDigit()
+                    .minimumScaleFactor(0.6)
+                    .lineLimit(1)
+                Text("SCORE")
+                    .font(RallyUIKit.Typography.label(.caption, weight: .bold))
+                    .tracking(2)
+                    .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.6))
+            }
+
+            HStack(spacing: 18) {
+                mirrorStat(value: "\(result.maxCombo)", label: "Best streak")
+                Rectangle().fill(RallyUIKit.Palette.line).frame(width: 1, height: 44)
+                mirrorStat(value: "\(Int((result.accuracy * 100).rounded()))%", label: "Timing accuracy")
+            }
+        }
+        .padding(.horizontal, 24)
+        .padding(.vertical, 24)
+        .frame(maxWidth: 460, maxHeight: .infinity)
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            VStack(spacing: 10) {
+                Button(action: onPlayAgain) {
+                    Label("Play Again", systemImage: "arrow.clockwise")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(PrimaryButtonStyle(tint: RallyUIKit.Palette.cyan))
+                .accessibilityIdentifier("mirrorRally.playAgain")
+
+                Button(action: onExit) {
+                    Text("Home").frame(maxWidth: .infinity)
+                }
+                .buttonStyle(GhostButtonStyle())
+                .accessibilityIdentifier("mirrorRally.home")
+            }
+            .padding(.horizontal, 24)
+            .padding(.top, 10)
+            .padding(.bottom, 20)
+            .frame(maxWidth: 460)
+        }
+    }
+
+    private var mirrorDurationText: String {
+        if result.completedMirrorRally { return "20 seconds complete" }
+        let elapsed = result.elapsedSeconds.isFinite ? min(20, max(0, result.elapsedSeconds)) : 0
+        return "\(String(format: "%.1f", elapsed)) of 20 seconds"
+    }
+
+    private func mirrorStat(value: String, label: String) -> some View {
+        VStack(spacing: 5) {
+            Text(value)
+                .font(RallyUIKit.Typography.display(32, weight: .bold))
+                .foregroundStyle(RallyUIKit.Palette.frost)
+                .monospacedDigit()
+            Text(label)
+                .font(RallyUIKit.Typography.label(.caption, weight: .semibold))
+                .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.65))
+        }
+        .frame(maxWidth: .infinity)
     }
 
     private var heroPanel: some View {

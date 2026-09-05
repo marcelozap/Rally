@@ -31,6 +31,7 @@ final class RallyAvatarRig {
     private var racketGripMaterial = SCNMaterial()
     private var headAccessories: [SCNNode] = []
     private var showsRacket = true
+    private var footwork = RallyAvatarFootwork()
     private(set) var assetError: String?
     var yaw: Float = -0.20
 
@@ -78,6 +79,7 @@ final class RallyAvatarRig {
     }
 
     private func rebuildModel(_ look: RallyAvatarAppearance) {
+        footwork.reset()
         // Keep the scene/camera stable when switching models, including rotation and zoom.
         root.isHidden = true
         root.childNodes.forEach { $0.removeFromParentNode() }
@@ -191,7 +193,7 @@ final class RallyAvatarRig {
     }
 
     /// Articulated movement leaves the character's body proportions intact.
-    func animate(time: TimeInterval, swingProgress: Float? = nil, backhand: Bool = false, lateral: Float = 0, leftHanded: Bool = false) {
+    func animate(time: TimeInterval, swingProgress: Float? = nil, backhand: Bool = false, lateral: Float = 0, leftHanded: Bool = false, courtPosition: Float? = nil) {
         guard !bones.isEmpty else { return }
         let breath = Float(sin(time * 1.65))
         let studio = presentation == .studio
@@ -203,10 +205,25 @@ final class RallyAvatarRig {
         for bone in bones { bone.eulerAngles = SCNVector3Zero }
         root.eulerAngles.y = studio ? yaw + Float(sin(time * 0.72)) * 0.018 : (presentation == .gameplay ? Float.pi - 0.22 : -0.15)
         root.position.y = groundOffset
-        let weightShift = studio ? Float(sin(time * 1.35)) * 0.035 : lateral * 0.018
-        let readyDrop: Float = studio ? 0.052 + Float(cos(time * 2.7)) * 0.010 : 0.028
+        let gait: RallyAvatarFootwork.Pose
+        if !studio, let courtPosition,
+           let left = bindPosition["foot.L"], let right = bindPosition["foot.R"] {
+            let leftRest = root.simdWorldOrientation.act(left + SIMD3<Float>(0.026, 0, 0)).x
+            let rightRest = root.simdWorldOrientation.act(right - SIMD3<Float>(0.026, 0, 0)).x
+            gait = footwork.sample(time: time, courtPosition: courtPosition,
+                                   leftRestX: leftRest, rightRestX: rightRest, scale: stature)
+        } else {
+            footwork.reset()
+            gait = RallyAvatarFootwork.Pose()
+        }
+        // The SK3DNode is translated outside this SCNScene. Convert its court
+        // movement back through the avatar's yaw, including the local Z term.
+        let courtToRoot = simd_inverse(root.simdWorldOrientation)
+        let pelvisTravel = courtToRoot.act(SIMD3<Float>(gait.pelvisOffset, 0, 0))
+        let weightShift = studio ? Float(sin(time * 1.35)) * 0.035 : lateral * 0.018 + pelvisTravel.x
+        let readyDrop: Float = studio ? 0.052 + Float(cos(time * 2.7)) * 0.010 : 0.028 + gait.pelvisDrop
         if let hip = boneByName["root"], let neutral = bindPosition["root"] {
-            hip.simdPosition = neutral + SIMD3<Float>(weightShift, -readyDrop - swing * 0.014 + breath * 0.002, 0)
+            hip.simdPosition = neutral + SIMD3<Float>(weightShift, -readyDrop - swing * 0.014 + breath * 0.002, pelvisTravel.z)
         }
         rotate("spine03", x: studio ? 0.075 : 0.035, y: turn * swing * 0.30, z: -weightShift * 0.7)
         rotate("spine01", x: breath * 0.006, y: turn * (swing * 0.34 - follow * 0.28))
@@ -259,10 +276,13 @@ final class RallyAvatarRig {
         poseRacketGrip(side: dominantSuffix, hand: hand, gripAngle: gripAngle)
         for side in ["L", "R"] {
             guard let ankle = bindPosition["foot.\(side)"] else { continue }
-            // A wider split stance with a fixed ankle target keeps both shoes on the ground.
+            // Studio/nil callers retain the planted split stance. During court
+            // travel the supporting shoe compensates for outer-root movement.
             let spread: Float = (side == "L" ? 1 : -1) * (studio ? 0.045 : 0.026)
+            let footPose = side == "L" ? gait.left : gait.right
+            let travel = courtToRoot.act(SIMD3<Float>(footPose.offset, 0, 0))
             solveChain(upperName: "upperleg01.\(side)", lowerName: "lowerleg01.\(side)",
-                       endName: "foot.\(side)", target: ankle + SIMD3<Float>(spread, 0, 0),
+                       endName: "foot.\(side)", target: ankle + SIMD3<Float>(spread, footPose.lift, 0) + travel,
                        pole: SIMD3<Float>(spread, 0, 1))
             if let foot = boneByName["foot.\(side)"], let parent = foot.parent {
                 foot.simdOrientation = simd_inverse(parent.simdWorldOrientation) * root.simdWorldOrientation
