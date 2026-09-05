@@ -139,20 +139,50 @@ final class RallyAvatarRig {
         appearance = newAppearance
         SCNTransaction.begin()
         SCNTransaction.animationDuration = 0
-        skinMaterial.multiply.contents = UIColor.white
-        skinMaterial.diffuse.intensity = 1
-        if Self.image(skinTextureName) == nil { skinMaterial.diffuse.contents = newAppearance.skinUIColor }
+        applySkinColor(newAppearance)
         // Two authored athletic models; old body-profile values are migration data only.
         root.scale = SCNVector3(1, 1, 1)
         racketMaterial.diffuse.contents = newAppearance.racketUIColor
         racketGripMaterial.diffuse.contents = newAppearance.racketAccentUIColor
-        if previous?.hairStyle != newAppearance.hairStyle || previous?.hairColorHex != newAppearance.hairColorHex || previous?.headband != newAppearance.headband {
+        if previous?.hairStyle != newAppearance.hairStyle || previous?.hairColorHex != newAppearance.hairColorHex || previous?.hairColorOverrideHex != newAppearance.hairColorOverrideHex || previous?.headband != newAppearance.headband {
             createHair(newAppearance)
         }
         if previous?.top != newAppearance.top || previous?.shorts != newAppearance.shorts || previous?.shoes != newAppearance.shoes || previous?.socks != newAppearance.socks || previous == nil {
             createWardrobe(newAppearance)
         }
         SCNTransaction.commit()
+    }
+
+    private func applySkinColor(_ look: RallyAvatarAppearance) {
+        skinMaterial.multiply.contents = UIColor.white
+        skinMaterial.diffuse.intensity = 1
+        skinMaterial.shaderModifiers = nil
+        let texture = look.skinToneOverrideHex == nil ? skinTextureName : (athleteModel == .female ? "female-skin-diffuse" : "skin-diffuse")
+        guard let image = Self.image(texture) else {
+            skinMaterial.diffuse.contents = look.skinUIColor
+            return
+        }
+        skinMaterial.diffuse.contents = image
+        guard look.skinToneOverrideHex != nil else { return }
+        // Recolor a shared light atlas in linear light, retaining its skin detail.
+        // The selected face, body, bind pose and garment fit never change.
+        let target = Self.linearRGB(look.skinUIColor)
+        let base = Self.linearRGB(UIColor(hexString: AvatarSkinTone.light.hex) ?? .white)
+        let ratio = target / simd_max(base, SIMD3<Float>(repeating: 0.001))
+        skinMaterial.shaderModifiers = [.surface: """
+        #pragma body
+        _surface.diffuse.rgb = clamp(_surface.diffuse.rgb * float3(\(ratio.x), \(ratio.y), \(ratio.z)), 0.0, 1.0);
+        """]
+    }
+
+    private static func linearRGB(_ color: UIColor) -> SIMD3<Float> {
+        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+        color.getRed(&r, green: &g, blue: &b, alpha: &a)
+        func linear(_ value: CGFloat) -> Float {
+            let v = Float(value)
+            return v <= 0.04045 ? v / 12.92 : pow((v + 0.055) / 1.055, 2.4)
+        }
+        return SIMD3(linear(r), linear(g), linear(b))
     }
 
     func setRacketVisible(_ visible: Bool) {
@@ -436,6 +466,17 @@ final class RallyAvatarRig {
             hairMaterial.specular.contents = UIColor.black
             hairMaterial.diffuse.contents = Self.image(hairAsset == "hair-short" ? "hair-diffuse" : hairAsset + "-diffuse") ?? look.hairUIColor
             hairMaterial.multiply.contents = look.hairUIColor.rallyMixed(with: .white, ratio: 0.14)
+            if look.hairColorOverrideHex != nil {
+                let tint = Self.linearRGB(look.hairUIColor)
+                hairMaterial.multiply.contents = UIColor.white
+                // The original dark atlas carries strand detail; multiplying alone
+                // cannot produce the lighter hair colors offered by the selector.
+                hairMaterial.shaderModifiers = [.surface: """
+                #pragma body
+                float strand = clamp(dot(_surface.diffuse.rgb, float3(0.2126, 0.7152, 0.0722)) / 0.04, 0.45, 1.6);
+                _surface.diffuse.rgb = clamp(float3(\(tint.x), \(tint.y), \(tint.z)) * strand, 0.0, 1.0);
+                """]
+            }
             hairMaterial.isDoubleSided = true
             hairMaterial.transparencyMode = .dualLayer
             if let alpha = Self.image("hair-alpha") {
@@ -489,21 +530,26 @@ final class RallyAvatarRig {
         skirtNode = nil
         root.isHidden = false
         assetError = nil
-        let topName = look.top?.id.lowercased() ?? "tee"
-        let tank = topName.contains("tank")
-        let polo = topName.contains("polo")
+        let catalog = RallyGarmentCatalog.shared
+        let topKind = catalog.garmentKind(for: look.top?.id, slot: .top)
+        let tank = topKind == .tank
+        let polo = topKind == .polo
+        let topReference = look.top.flatMap { catalog.reference(for: $0.id, slot: .top) }
+        let specificTop = topReference?.meshName(for: athleteModel).flatMap { try? assetLoader($0) }
         let authoredShirt = try? loadMesh(polo ? "polo" : "shirt")
-        var shirt = (tank ? nil : authoredShirt) ?? shell.selected { x, y, _ in
+        var shirt = specificTop ?? (tank ? nil : authoredShirt) ?? shell.selected { x, y, _ in
             y > 1.005 * stature && y < 1.495 * stature && (abs(x) < 0.21 * stature || (!tank && y > 1.27 * stature))
         }.inflated(0.013)
         // Let the shirt fall outside the waistband instead of intersecting the shorts.
-        for i in stride(from: 0, to: shirt.positions.count, by: 3) {
-            let ease = max(0, min(1, (1.16 * stature - shirt.positions[i + 1]) / (0.20 * stature)))
-            shirt.positions[i] *= 1 + 0.04 * ease
-            shirt.positions[i + 2] += shirt.normals[i + 2] * 0.006 * ease
+        if specificTop == nil {
+            for i in stride(from: 0, to: shirt.positions.count, by: 3) {
+                let ease = max(0, min(1, (1.16 * stature - shirt.positions[i + 1]) / (0.20 * stature)))
+                shirt.positions[i] *= 1 + 0.04 * ease
+                shirt.positions[i + 2] += shirt.normals[i + 2] * 0.006 * ease
+            }
         }
         let topMaterial = Self.fabric(look.topUIColor, knit: true)
-        if let normal = Self.image(polo ? "polo-normal" : "shirt-normal"), !tank {
+        if let normal = Self.image(polo ? "polo-normal" : "shirt-normal"), !tank, specificTop == nil {
             topMaterial.normal.contents = normal
             topMaterial.normal.contentsTransform = SCNMatrix4Identity
             topMaterial.normal.intensity = 0.6
@@ -512,7 +558,9 @@ final class RallyAvatarRig {
         top.name = tank ? "Tank" : (polo ? "Polo" : "Performance tee")
         wardrobe.addChildNode(top)
 
-        let shorts = (try? loadMesh("shorts")) ?? shell.selected { _, y, _ in y > 0.70 * stature && y < 0.98 * stature }.hemmed(lower: 0.70 * stature, upper: 0.98 * stature).inflated(0.008)
+        let bottomReference = look.shorts.flatMap { catalog.reference(for: $0.id, slot: .shorts) }
+        let specificBottom = bottomReference?.meshName(for: athleteModel).flatMap { try? assetLoader($0) }
+        let shorts = specificBottom ?? (try? loadMesh("shorts")) ?? shell.selected { _, y, _ in y > 0.70 * stature && y < 0.98 * stature }.hemmed(lower: 0.70 * stature, upper: 0.98 * stature).inflated(0.008)
         let bottom = skin(shorts, material: Self.fabric(look.shortsUIColor, knit: false))
         bottom.name = "Court shorts"
         wardrobe.addChildNode(bottom)
@@ -528,8 +576,8 @@ final class RallyAvatarRig {
         let socks = (try? loadMesh("socks")) ?? shell.selected { _, y, _ in y >= 0.08 * stature && y < 0.205 * stature }.inflated(0.004)
         let sockColor = look.socks.flatMap { UIColor(hexString: $0.colorwayHex) } ?? UIColor(white: 0.93, alpha: 1)
         wardrobe.addChildNode(skin(socks, material: Self.fabric(sockColor, knit: true)))
-        if look.shorts?.id.lowercased().contains("skort") == true { createSkort(look) }
-        if polo && authoredShirt == nil { createCollar(look) }
+        if catalog.garmentKind(for: look.shorts?.id, slot: .shorts) == .skort && specificBottom == nil { createSkort(look) }
+        if polo && authoredShirt == nil && specificTop == nil { createCollar(look) }
     }
 
     private func createCollar(_ look: RallyAvatarAppearance) {

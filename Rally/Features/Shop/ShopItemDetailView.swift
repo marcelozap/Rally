@@ -20,8 +20,13 @@ struct ShopItemDetailView: View {
 
     private var vendor: Vendor? { ShopCatalog.vendor(id: item.vendorID) }
     private var racketProfile: RacketProfile? { ShopCatalog.racketProfile(id: item.id) }
-    /// Live commerce data from the referral catalog, if this item has an entry.
-    private var referralItem: RallyGearItem? { RallyReferralCatalog.referralItem(matchingShopItemID: item.id) }
+    /// Use the same exact product/colorway lookup as shop and locker cards.
+    private var referralItem: RallyGearItem? { RallyMerchImageResolver.referralItem(for: item) }
+    private var productImageURL: URL? { RallyMerchImageResolver.productImageURL(for: item) }
+    private var garmentReference: RallyGarmentReference? {
+        guard item.category == .top || item.category == .bottom else { return nil }
+        return RallyGarmentCatalog.shared.reference(for: item.id, slot: item.category == .top ? .top : .shorts)
+    }
     private var relatedItems: [ShopItem] {
         ShopCatalog.allItems.filter {
             $0.id != item.id &&
@@ -83,6 +88,10 @@ struct ShopItemDetailView: View {
                 )
 
                 productVisualHero
+
+                if let garmentReference {
+                    garmentDetails(garmentReference)
+                }
 
                 if let racketProfile {
                     racketSpecsSection(racketProfile)
@@ -175,7 +184,7 @@ struct ShopItemDetailView: View {
                     .blur(radius: 40)
                     .offset(x: 80, y: -20)
 
-                if let imageURL = referralItem?.productImageURL {
+                if let imageURL = productImageURL {
                     AsyncImage(url: imageURL) { phase in
                         switch phase {
                         case .success(let image):
@@ -223,6 +232,27 @@ struct ShopItemDetailView: View {
             }
             .scrollClipDisabled()
         }
+    }
+
+    private func garmentDetails(_ garment: RallyGarmentReference) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(garment.colorwayName)
+                .font(RallyUIKit.Typography.title(.headline, weight: .semibold))
+                .foregroundStyle(RallyUIKit.Palette.frost)
+            Text("Style \(garment.styleID)")
+                .font(RallyUIKit.Typography.label(.caption, weight: .medium))
+                .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.65))
+            if let fabric = garment.fabric {
+                Text(fabric)
+                    .font(.subheadline)
+                    .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.82))
+            }
+            Text(garment.construction.joined(separator: " · "))
+                .font(.caption)
+                .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.7))
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     /// Branded gradient + category icon shown when no productImageURL is available.

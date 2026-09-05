@@ -532,7 +532,7 @@ struct ShopView: View {
             if let heroItem {
                 // Same S-3 rule as apparelSwatch: real imagery first,
                 // custom court-gear silhouette only while loading/failing.
-                if let imageURL = RallyMerchImageResolver.referralItem(for: heroItem)?.productImageURL {
+                if let imageURL = RallyMerchImageResolver.productImageURL(for: heroItem) {
                     AsyncImage(url: imageURL) { phase in
                         switch phase {
                         case .success(let image):
@@ -735,11 +735,10 @@ struct ShopView: View {
 
     private func apparelSwatch(_ item: ShopItem, width: CGFloat, height: CGFloat) -> some View {
         let accent = item.accentColor ?? categoryTint(item.category)
-        // S-3 audit gate: product imagery first. `ShopItem` IDs and the
-        // referral feed are not always 1:1 yet, so fall back by slot/brand
-        // before using the custom drawn tennis-gear silhouette.
+        // Photography must belong to this exact product and colorway.
+        // Unmatched items keep the drawn category silhouette.
         let referralItem = RallyMerchImageResolver.referralItem(for: item)
-        let productImageURL = referralItem?.productImageURL
+        let productImageURL = RallyMerchImageResolver.productImageURL(for: item)
         let productAccent = referralItem.flatMap { Color(hex: $0.accentColorHex) } ?? accent
         return ZStack {
             RoundedRectangle(cornerRadius: 24)
@@ -1007,26 +1006,26 @@ private struct FloatingKitFigure: View {
 }
 
 enum RallyMerchImageResolver {
-    static func referralItem(for item: ShopItem) -> RallyGearItem? {
-        if let exact = RallyReferralCatalog.referralItem(matchingShopItemID: item.id) {
-            return exact
-        }
-
+    static func productImageURL(
+        for item: ShopItem,
+        referenceImages: (String, RallyGearSlot) -> [URL] = { id, slot in
+            RallyGarmentCatalog.shared.reference(for: id, slot: slot)?.referenceImageURLs ?? []
+        },
+        referralCatalog: [RallyGearItem] = RallyReferralCatalog.allItems
+    ) -> URL? {
         guard let slot = referralSlot(for: item.category) else { return nil }
-        let candidates = RallyReferralCatalog.items(in: slot)
-        guard !candidates.isEmpty else { return nil }
+        if let photo = referenceImages(item.id, slot.avatarSlot).first { return photo }
+        return referralItem(for: item, in: referralCatalog)?.productImageURL
+    }
 
-        let itemBrand = normalized(item.brand)
-        if let brandMatch = candidates.first(where: { normalized($0.brand) == itemBrand }) {
-            return brandMatch
-        }
-
-        let nameTokens = tokenSet(item.name)
-        if let nameMatch = candidates.first(where: { !tokenSet($0.name).isDisjoint(with: nameTokens) }) {
-            return nameMatch
-        }
-
-        return candidates.first
+    /// Product images identify one item/colorway. A similar name, brand or
+    /// category cannot establish that the photograph depicts this product.
+    static func referralItem(
+        for item: ShopItem,
+        in catalog: [RallyGearItem] = RallyReferralCatalog.allItems
+    ) -> RallyGearItem? {
+        guard let slot = referralSlot(for: item.category) else { return nil }
+        return catalog.first { $0.id == item.id && $0.slot == slot }
     }
 
     static func referralSlot(for category: ShopItem.Category) -> ReferralGearSlot? {
@@ -1038,22 +1037,6 @@ enum RallyMerchImageResolver {
         case .accessory: return .headband
         case .bag: return nil
         }
-    }
-
-    private static func normalized(_ value: String) -> String {
-        value
-            .lowercased()
-            .filter { $0.isLetter || $0.isNumber }
-    }
-
-    private static func tokenSet(_ value: String) -> Set<String> {
-        let separators = CharacterSet.alphanumerics.inverted
-        return Set(
-            value
-                .lowercased()
-                .components(separatedBy: separators)
-                .filter { $0.count >= 4 }
-        )
     }
 }
 

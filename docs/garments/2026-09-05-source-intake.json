@@ -1,0 +1,678 @@
+{
+  "schemaVersion": 1,
+  "observedOn": "2026-09-05",
+  "scope": "Official public US product references; six candidates; no app data changes or media/model downloads",
+  "verificationNotes": [
+    "Exact product, colorway and photo URL associations come from the official product pages.",
+    "Photo pixels and front/back/side angles were not visually verified: web image fetches failed and the browser runtime returned no available browsers.",
+    "No downloadable exact-SKU mesh, CAD pattern, GLB, USDZ or redistribution license was linked in the inspected public product pages. This is a bounded finding, not proof that a brand has no private 3D files.",
+    "Official size charts describe body measurements and do not supply exact garment pattern dimensions.",
+    "Current app garment meshes are generic. These candidates are intake references, not completed or brand-approved digital garments.",
+    "Price observations exclude checkout promotions, tax and shipping; UNIQLO amount is deliberately null."
+  ],
+  "partnerEvidence": [
+    {
+      "url": "https://www.clo3d.com/en/company/clo-users/stories/10",
+      "finding": "CLO publishes an adidas designer user story; this does not provide this SKU or a downloadable asset/license."
+    },
+    {
+      "url": "https://www.emersya.com/3d-product-platform/",
+      "finding": "Emersya describes managed brand assets and protected viewer content, not a free source of these six garment models."
+    },
+    {
+      "url": "https://www.emersya.com/3d-product-configurator/",
+      "finding": "Emersya describes commissioned model creation using images, CAD, material samples, patterns or physical products. No partner outreach performed."
+    }
+  ],
+  "recommendedFirstPair": [
+    "newbalance-WT61K74KWT",
+    "newbalance-WB61S4JJWT"
+  ],
+  "nextModelingGate": "Inspect full-resolution front/back/side references and obtain measured garment construction or authorized supplier assets before calling an avatar render SKU-accurate.",
+  "candidates": [
+    {
+      "candidateId": "nike-FZ6910-010",
+      "brand": "Nike",
+      "title": "NikeCourt Advantage Men’s Dri-FIT Tennis Top",
+      "styleCode": "FZ6910-010",
+      "colorway": "Black/White",
+      "gender": "men",
+      "garmentKind": "shortSleeveTop",
+      "productURL": "https://www.nike.com/t/nikecourt-advantage-mens-dri-fit-tennis-top-TcVn1mOS/FZ6910-010",
+      "priceObservation": {
+        "currency": "USD",
+        "amount": 75,
+        "observedOn": "2026-09-05",
+        "meaning": "Displayed product price; not a guaranteed future price",
+        "promotionApplied": false
+      },
+      "catalog": {
+        "proposedItemId": "nike.advantage.top.fz6910.010",
+        "existingItemId": "nike.dri-fit.tee.cobalt",
+        "relationship": "replacement_required: Advantage black differs from existing Slam cobalt",
+        "existingReferralItemId": null
+      },
+      "representationStatus": "photo_reference_only_no_sku_specific_model",
+      "public3D": {
+        "found": false,
+        "checkedScope": "Linked content on official public product page",
+        "formatsFound": [],
+        "licenseForRedistributable3D": null
+      },
+      "referenceAngles": {
+        "front": "unverified",
+        "back": "unverified",
+        "side": "unverified"
+      },
+      "missingForExactFit": [
+        "graded garment measurements or pattern/tech pack",
+        "fabric thickness and mechanical properties",
+        "verified front/back/side orthographic reference set"
+      ],
+      "materials": [
+        "88% polyester / 12% spandex",
+        "At least 75% recycled polyester fibers"
+      ],
+      "construction": [
+        "Four-way stretch fabric",
+        "Shoulder seam layout supports swing movement",
+        "Longer back hem",
+        "NikeCourt chest mark"
+      ],
+      "fit": "Slim",
+      "sizesListed": [
+        "XS",
+        "S",
+        "M",
+        "L",
+        "XL",
+        "XXL"
+      ],
+      "sizeGuideURL": "https://www.nike.com/size-fit/mens_tops_alpha",
+      "sizeReference": {
+        "type": "body_measurements_not_garment_pattern",
+        "M_chest_inches": [
+          37.5,
+          41
+        ],
+        "M_waist_inches": [
+          32,
+          35
+        ]
+      },
+      "modelingNotes": [
+        "Author shoulder panels and curved extended back hem from verified images.",
+        "Use separate chest artwork placement; fabric maps remain to be authored."
+      ],
+      "photos": [
+        {
+          "url": "https://static.nike.com/a/images/t_web_pdp_535_v2/f_auto%2Cu_9ddf04c7-2a9a-4d76-add1-d15af8f0263d%2Cc_scale%2Cfl_relative%2Cw_1.0%2Ch_1.0%2Cfl_layer_apply/1271419f-6075-42ef-807d-f9b54a668afd/M%2BNKCT%2BDF%2BADVTG%2BTOP.png",
+          "sourceLabel": "selected SKU colorway",
+          "role": "reference_photo",
+          "angle": "unverified",
+          "verification": "source_link_verified_image_fetch_failed"
+        },
+        {
+          "url": "https://static.nike.com/a/images/t_PDP_144_v1/f_auto%2Cq_auto%3Aeco%2Cu_9ddf04c7-2a9a-4d76-add1-d15af8f0263d%2Cc_scale%2Cfl_relative%2Cw_1.0%2Ch_1.0%2Cfl_layer_apply/bd2f017b-45f3-4cb0-9454-a50b3af734dd/M%2BNKCT%2BDF%2BADVTG%2BTOP.png",
+          "sourceLabel": "product gallery",
+          "role": "reference_photo",
+          "angle": "unverified",
+          "verification": "source_link_verified_image_fetch_failed"
+        },
+        {
+          "url": "https://static.nike.com/a/images/t_PDP_144_v1/f_auto%2Cq_auto%3Aeco%2Cu_9ddf04c7-2a9a-4d76-add1-d15af8f0263d%2Cc_scale%2Cfl_relative%2Cw_1.0%2Ch_1.0%2Cfl_layer_apply/5f8b86c3-43ee-4b8e-8846-89acc9f06630/M%2BNKCT%2BDF%2BADVTG%2BTOP.png",
+          "sourceLabel": "product gallery",
+          "role": "reference_photo",
+          "angle": "unverified",
+          "verification": "source_link_verified_image_fetch_failed"
+        }
+      ]
+    },
+    {
+      "candidateId": "nike-FZ6913-010",
+      "brand": "Nike",
+      "title": "NikeCourt Advantage Men’s Dri-FIT 6-inch Tennis Shorts",
+      "styleCode": "FZ6913-010",
+      "colorway": "Black/White",
+      "gender": "men",
+      "garmentKind": "shorts",
+      "productURL": "https://www.nike.com/t/nikecourt-advantage-mens-dri-fit-6-tennis-shorts-cCYH6Bt5/FZ6913-010",
+      "priceObservation": {
+        "currency": "USD",
+        "amount": 75,
+        "observedOn": "2026-09-05",
+        "meaning": "Displayed product price; not a guaranteed future price",
+        "promotionApplied": false
+      },
+      "catalog": {
+        "proposedItemId": "nike.advantage.short.fz6913.010",
+        "existingItemId": "nike.court.short.black",
+        "relationship": "replacement_required: exact six-inch product differs from existing nine-inch name",
+        "existingReferralItemId": null
+      },
+      "representationStatus": "photo_reference_only_no_sku_specific_model",
+      "public3D": {
+        "found": false,
+        "checkedScope": "Linked content on official public product page",
+        "formatsFound": [],
+        "licenseForRedistributable3D": null
+      },
+      "referenceAngles": {
+        "front": "unverified",
+        "back": "unverified",
+        "side": "unverified"
+      },
+      "missingForExactFit": [
+        "graded garment measurements or pattern/tech pack",
+        "fabric thickness and mechanical properties",
+        "verified front/back/side orthographic reference set"
+      ],
+      "materials": [
+        "Body 89% polyester / 11% spandex",
+        "Pocket palm-side bag 100% polyester"
+      ],
+      "construction": [
+        "6-inch inseam",
+        "Side vents",
+        "Elastic waistband with drawcord",
+        "Tennis-ball pockets",
+        "Smooth finished hem"
+      ],
+      "fit": "Standard",
+      "sizesListed": [
+        "XS",
+        "S",
+        "M",
+        "L",
+        "XL",
+        "XXL"
+      ],
+      "sizeGuideURL": "https://www.nike.com/size-fit/mens_bottoms_alpha",
+      "sizeReference": {
+        "type": "body_measurements_not_garment_pattern",
+        "M_waist_inches": [
+          32,
+          35
+        ],
+        "M_hip_inches": [
+          37.5,
+          41
+        ]
+      },
+      "modelingNotes": [
+        "Model actual 6-inch hem and side vents, not the current generic long shorts.",
+        "Give pocket openings and waist gather independent geometry."
+      ],
+      "photos": [
+        {
+          "url": "https://static.nike.com/a/images/t_web_pdp_535_v2/f_auto%2Cu_9ddf04c7-2a9a-4d76-add1-d15af8f0263d%2Cc_scale%2Cfl_relative%2Cw_1.0%2Ch_1.0%2Cfl_layer_apply/2b7e3ce9-5868-4066-b0ef-7b99dab9acdc/M%2BNKCT%2BDF%2BADVTG%2B6IN%2BSHORT.png",
+          "sourceLabel": "selected SKU colorway",
+          "role": "reference_photo",
+          "angle": "unverified",
+          "verification": "source_link_verified_image_fetch_failed"
+        },
+        {
+          "url": "https://static.nike.com/a/images/t_PDP_144_v1/f_auto%2Cq_auto%3Aeco%2Cu_9ddf04c7-2a9a-4d76-add1-d15af8f0263d%2Cc_scale%2Cfl_relative%2Cw_1.0%2Ch_1.0%2Cfl_layer_apply/9ffb7f07-7db9-4198-a100-1a665affa2d3/M%2BNKCT%2BDF%2BADVTG%2B6IN%2BSHORT.png",
+          "sourceLabel": "product gallery",
+          "role": "reference_photo",
+          "angle": "unverified",
+          "verification": "source_link_verified_image_fetch_failed"
+        },
+        {
+          "url": "https://static.nike.com/a/images/t_PDP_144_v1/f_auto%2Cq_auto%3Aeco%2Cu_9ddf04c7-2a9a-4d76-add1-d15af8f0263d%2Cc_scale%2Cfl_relative%2Cw_1.0%2Ch_1.0%2Cfl_layer_apply/2c201f6a-4d6d-47e4-9e65-f6ce1ec4c03d/M%2BNKCT%2BDF%2BADVTG%2B6IN%2BSHORT.png",
+          "sourceLabel": "product gallery",
+          "role": "reference_photo",
+          "angle": "unverified",
+          "verification": "source_link_verified_image_fetch_failed"
+        },
+        {
+          "url": "https://static.nike.com/a/images/t_PDP_144_v1/f_auto%2Cq_auto%3Aeco%2Cu_9ddf04c7-2a9a-4d76-add1-d15af8f0263d%2Cc_scale%2Cfl_relative%2Cw_1.0%2Ch_1.0%2Cfl_layer_apply/209037f5-f77b-4c5e-94ad-1652af858a36/M%2BNKCT%2BDF%2BADVTG%2B6IN%2BSHORT.png",
+          "sourceLabel": "product gallery",
+          "role": "reference_photo",
+          "angle": "unverified",
+          "verification": "source_link_verified_image_fetch_failed"
+        }
+      ]
+    },
+    {
+      "candidateId": "adidas-KV4294",
+      "brand": "adidas",
+      "title": "Tennis Climacool Ergo Shorts Pro",
+      "styleCode": "KV4294",
+      "colorway": "White",
+      "gender": "men",
+      "garmentKind": "shorts",
+      "productURL": "https://www.adidas.com/us/tennis-climacool-ergo-shorts-pro/KV4294.html",
+      "priceObservation": {
+        "currency": "USD",
+        "amount": 65,
+        "observedOn": "2026-09-05",
+        "meaning": "Displayed product price; not a guaranteed future price",
+        "promotionApplied": false
+      },
+      "catalog": {
+        "proposedItemId": "adidas.ergo.pro.short.kv4294",
+        "existingItemId": "adidas.gameset.short.navy",
+        "relationship": "replacement_required: Ergo Pro white differs from existing Game-Set navy",
+        "existingReferralItemId": null
+      },
+      "representationStatus": "photo_reference_only_no_sku_specific_model",
+      "public3D": {
+        "found": false,
+        "checkedScope": "Linked content on official public product page",
+        "formatsFound": [],
+        "licenseForRedistributable3D": null
+      },
+      "referenceAngles": {
+        "front": "unverified",
+        "back": "unverified",
+        "side": "unverified"
+      },
+      "missingForExactFit": [
+        "graded garment measurements or pattern/tech pack",
+        "fabric thickness and mechanical properties",
+        "verified front/back/side orthographic reference set"
+      ],
+      "materials": [
+        "Main: 93% recycled polyester / 7% spandex",
+        "Pockets: 100% recycled polyester",
+        "Satin woven construction"
+      ],
+      "construction": [
+        "Mid-rise elastic waist",
+        "Bonded exposed waistband and exterior drawstrings",
+        "Mesh inner-leg gusset",
+        "Ergonomic panels",
+        "Pockets designed to retain tennis balls"
+      ],
+      "fit": "Regular; official page says true to size",
+      "sizesListed": null,
+      "sizeGuideURL": "https://www.adidas.com/us/help/size_charts",
+      "sizeReference": {
+        "status": "Dynamic product sizes did not resolve; verify actual size variant before intake"
+      },
+      "modelingNotes": [
+        "Preserve gusset, waistband construction and ball-pocket volume.",
+        "Capture smooth woven finish with subtle roughness variation."
+      ],
+      "photos": [
+        {
+          "url": "https://assets.adidas.com/images/w_500%2Cf_auto%2Cq_auto/fc6e5c9b0cb8452585699b3258717a37_9366/Tennis_Climacool_Ergo_Shorts_Pro_White_KV4294_21_model.jpg",
+          "sourceLabel": "21_model",
+          "role": "reference_photo",
+          "angle": "unverified",
+          "verification": "source_link_verified_image_fetch_failed"
+        },
+        {
+          "url": "https://assets.adidas.com/images/w_500%2Cf_auto%2Cq_auto/325d794fa802426c8a8b6eb18455e0f7_9366/Tennis_Climacool_Ergo_Shorts_Pro_White_KV4294_23_hover_model.jpg",
+          "sourceLabel": "23_hover_model",
+          "role": "reference_photo",
+          "angle": "unverified",
+          "verification": "source_link_verified_image_fetch_failed"
+        },
+        {
+          "url": "https://assets.adidas.com/images/w_500%2Cf_auto%2Cq_auto/4c73a42911064418adb056e4437a7506_9366/Tennis_Climacool_Ergo_Shorts_Pro_White_KV4294_25_model.jpg",
+          "sourceLabel": "25_model",
+          "role": "reference_photo",
+          "angle": "unverified",
+          "verification": "source_link_verified_image_fetch_failed"
+        },
+        {
+          "url": "https://assets.adidas.com/images/w_500%2Cf_auto%2Cq_auto/a1562ecea7154f778cf6b61f111c98ab_9366/Tennis_Climacool_Ergo_Shorts_Pro_White_KV4294_01_laydown.jpg",
+          "sourceLabel": "01_laydown",
+          "role": "reference_photo",
+          "angle": "unverified",
+          "verification": "source_link_verified_image_fetch_failed"
+        }
+      ]
+    },
+    {
+      "candidateId": "uniqlo-482306-00",
+      "brand": "UNIQLO",
+      "title": "DRY-EX Quarter-Zip Polo Shirt",
+      "styleCode": "482306",
+      "colorway": "00 WHITE",
+      "gender": "men",
+      "garmentKind": "quarterZipPolo",
+      "productURL": "https://www.uniqlo.com/us/en/products/E482306-000/00?colorDisplayCode=00",
+      "priceObservation": {
+        "currency": "USD",
+        "amount": null,
+        "observedOn": "2026-09-05",
+        "meaning": "US price unavailable in retrieved official page; do not reuse old catalog price",
+        "promotionApplied": false
+      },
+      "catalog": {
+        "proposedItemId": "uniqlo.dryex.quarterzip.482306.00",
+        "existingItemId": "uniqlo.dry.polo.white",
+        "relationship": "replacement_required: precise quarter-zip product is not established by existing generic polo",
+        "existingReferralItemId": null
+      },
+      "representationStatus": "photo_reference_only_no_sku_specific_model",
+      "public3D": {
+        "found": false,
+        "checkedScope": "Linked content on official public product page",
+        "formatsFound": [],
+        "licenseForRedistributable3D": null
+      },
+      "referenceAngles": {
+        "front": "unverified",
+        "back": "unverified",
+        "side": "unverified"
+      },
+      "missingForExactFit": [
+        "graded garment measurements or pattern/tech pack",
+        "fabric thickness and mechanical properties",
+        "verified front/back/side orthographic reference set"
+      ],
+      "materials": [
+        "Body: 65% polyester / 35% nylon",
+        "Collar: 93% polyester / 7% spandex"
+      ],
+      "construction": [
+        "Quarter-zip collar",
+        "Ventilating mesh at sides, underarms, center back and collar interior",
+        "Smooth fine fabric with subtle sheen",
+        "White version slightly sheer",
+        "No pockets"
+      ],
+      "fit": "Regular",
+      "sizesListed": [
+        "XXS",
+        "XS",
+        "S",
+        "M",
+        "L",
+        "XL",
+        "XXL",
+        "3XL"
+      ],
+      "sizeGuideURL": null,
+      "sizeReference": {
+        "status": "Sizes listed; finished-garment measurement chart was not exposed in retrieved page"
+      },
+      "modelingNotes": [
+        "Model a zipper placket rather than using a button polo mesh.",
+        "Separate mesh zones and rib collar material; verify gallery colors because some detail shots may show other variants."
+      ],
+      "photos": [
+        {
+          "url": "https://image.uniqlo.com/UQ/ST3/us/imagesgoods/482306/item/usgoods_00_482306_3x4.jpg?width=600",
+          "sourceLabel": "Selected 00 WHITE product image",
+          "role": "reference_photo",
+          "angle": "unverified",
+          "verification": "source_link_verified_image_fetch_failed"
+        },
+        {
+          "url": "https://image.uniqlo.com/UQ/ST3/us/imagesgoods/482306/sub/usgoods_482306_sub3_3x4.jpg?width=600",
+          "sourceLabel": "Shared product detail; color not visually verified",
+          "role": "reference_photo",
+          "angle": "unverified",
+          "verification": "source_link_verified_image_fetch_failed"
+        },
+        {
+          "url": "https://image.uniqlo.com/UQ/ST3/us/imagesgoods/482306/sub/usgoods_482306_sub4_3x4.jpg?width=600",
+          "sourceLabel": "Shared product detail; color not visually verified",
+          "role": "reference_photo",
+          "angle": "unverified",
+          "verification": "source_link_verified_image_fetch_failed"
+        },
+        {
+          "url": "https://image.uniqlo.com/UQ/ST3/us/imagesgoods/482306/feature/usgoods_482306_feature2.jpg",
+          "sourceLabel": "Fabric feature",
+          "role": "reference_photo",
+          "angle": "unverified",
+          "verification": "source_link_verified_image_fetch_failed"
+        },
+        {
+          "url": "https://image.uniqlo.com/UQ/ST3/us/imagesgoods/482306/feature/usgoods_482306_feature3.jpg",
+          "sourceLabel": "Mesh-zone feature",
+          "role": "reference_photo",
+          "angle": "unverified",
+          "verification": "source_link_verified_image_fetch_failed"
+        }
+      ]
+    },
+    {
+      "candidateId": "newbalance-WT61K74KWT",
+      "brand": "New Balance",
+      "title": "Tournament Tank",
+      "styleCode": "WT61K74KWT",
+      "colorway": "WHITE with GREY MATTER",
+      "gender": "women",
+      "garmentKind": "tank",
+      "productURL": "https://www.newbalance.com/pd/tournament-tank/WT61K74K-WT.html",
+      "priceObservation": {
+        "currency": "USD",
+        "amount": 59.99,
+        "observedOn": "2026-09-05",
+        "meaning": "Displayed product price; not a guaranteed future price",
+        "promotionApplied": false
+      },
+      "catalog": {
+        "proposedItemId": "newbalance.tournament.tank.white",
+        "existingItemId": "newbalance.tournament.tank.white",
+        "relationship": "exact_style_family_and_white_colorway_match; add explicit style code",
+        "existingReferralItemId": null
+      },
+      "representationStatus": "photo_reference_only_no_sku_specific_model",
+      "public3D": {
+        "found": false,
+        "checkedScope": "Linked content on official public product page",
+        "formatsFound": [],
+        "licenseForRedistributable3D": null
+      },
+      "referenceAngles": {
+        "front": "unverified",
+        "back": "unverified",
+        "side": "unverified"
+      },
+      "missingForExactFit": [
+        "graded garment measurements or pattern/tech pack",
+        "fabric thickness and mechanical properties",
+        "verified front/back/side orthographic reference set"
+      ],
+      "materials": [
+        "Midweight knit: 77% recycled polyester / 23% elastane"
+      ],
+      "construction": [
+        "Sleeveless",
+        "Bonded neckline and armhole edges",
+        "NB DRY",
+        "Heat-transfer NB logo"
+      ],
+      "fit": "Fitted",
+      "sizesListed": [
+        "XS",
+        "S",
+        "M",
+        "L",
+        "XL",
+        "2XL"
+      ],
+      "sizeGuideURL": "https://www.newbalance.com/pd/tournament-tank/WT61K74K-WT.html",
+      "sizeReference": {
+        "type": "body_measurements_not_garment_pattern",
+        "S_chest_cm": [
+          81,
+          89
+        ],
+        "S_waist_cm": [
+          66,
+          71
+        ],
+        "S_hips_cm": [
+          89,
+          97
+        ]
+      },
+      "modelingNotes": [
+        "Build correct neckline/armholes from photos; retain smooth bonded edges.",
+        "Exact photo stem is wt61k74kwt; existing mt61k74k image refers to another gender/style."
+      ],
+      "photos": [
+        {
+          "url": "https://nb.scene7.com/is/image/NB/wt61k74kwt_nb_70_i?%24pdpflexf2%24=&hei=440&wid=440",
+          "sourceLabel": "selected SKU product gallery",
+          "role": "reference_photo",
+          "angle": "unverified",
+          "verification": "source_link_verified"
+        },
+        {
+          "url": "https://nb.scene7.com/is/image/NB/wt61k74kwt_nb_50_i?%24pdpflexf2%24=&hei=440&wid=440",
+          "sourceLabel": "selected SKU product gallery",
+          "role": "reference_photo",
+          "angle": "unverified",
+          "verification": "source_link_verified"
+        },
+        {
+          "url": "https://nb.scene7.com/is/image/NB/wt61k74kwt_nb_73_i?%24pdpflexf2%24=&hei=440&wid=440",
+          "sourceLabel": "selected SKU product gallery",
+          "role": "reference_photo",
+          "angle": "unverified",
+          "verification": "source_link_verified"
+        },
+        {
+          "url": "https://nb.scene7.com/is/image/NB/wt61k74kwt_nb_72_i?%24pdpflexf2%24=&hei=440&wid=440",
+          "sourceLabel": "selected SKU product gallery",
+          "role": "reference_photo",
+          "angle": "unverified",
+          "verification": "source_link_verified"
+        },
+        {
+          "url": "https://nb.scene7.com/is/image/NB/wt61k74kwt_nb_71_i?%24pdpflexf2%24=&hei=440&wid=440",
+          "sourceLabel": "selected SKU product gallery",
+          "role": "reference_photo",
+          "angle": "unverified",
+          "verification": "source_link_verified"
+        },
+        {
+          "url": "https://nb.scene7.com/is/image/NB/wt61k74kwt_nb_74_i?%24pdpflexf2%24=&hei=440&wid=440",
+          "sourceLabel": "selected SKU product gallery",
+          "role": "reference_photo",
+          "angle": "unverified",
+          "verification": "source_link_verified"
+        }
+      ]
+    },
+    {
+      "candidateId": "newbalance-WB61S4JJWT",
+      "brand": "New Balance",
+      "title": "Tournament Skort",
+      "styleCode": "WB61S4JJWT",
+      "colorway": "WHITE with GREY MATTER",
+      "gender": "women",
+      "garmentKind": "skort",
+      "productURL": "https://www.newbalance.com/pd/tournament-skort/WB61S4JJ-WT.html",
+      "priceObservation": {
+        "currency": "USD",
+        "amount": 59.99,
+        "observedOn": "2026-09-05",
+        "meaning": "Displayed product price; not a guaranteed future price",
+        "promotionApplied": false
+      },
+      "catalog": {
+        "proposedItemId": "newbalance.tournament.skort.wb61s4jj.white",
+        "existingItemId": "newbalance.tournament.skort.white",
+        "relationship": "replacement_required: current WB61S4JJ is not legacy WK21434",
+        "existingReferralItemId": null
+      },
+      "representationStatus": "photo_reference_only_no_sku_specific_model",
+      "public3D": {
+        "found": false,
+        "checkedScope": "Linked content on official public product page",
+        "formatsFound": [],
+        "licenseForRedistributable3D": null
+      },
+      "referenceAngles": {
+        "front": "unverified",
+        "back": "unverified",
+        "side": "unverified"
+      },
+      "missingForExactFit": [
+        "graded garment measurements or pattern/tech pack",
+        "fabric thickness and mechanical properties",
+        "verified front/back/side orthographic reference set"
+      ],
+      "materials": [
+        "Midweight knit: 77% recycled polyester / 23% elastane"
+      ],
+      "construction": [
+        "Flared skirt over built-in shorts",
+        "Bonded Accelerate waistband",
+        "Drop-in side pockets on inner shorts",
+        "NB DRY",
+        "Heat-transfer NB logo"
+      ],
+      "fit": "Mid-rise",
+      "sizesListed": [
+        "XS",
+        "S",
+        "M",
+        "L",
+        "XL",
+        "2XL"
+      ],
+      "sizeGuideURL": "https://www.newbalance.com/pd/tournament-skort/WB61S4JJ-WT.html",
+      "sizeReference": {
+        "type": "body_measurements_not_garment_pattern",
+        "S_waist_cm": [
+          66,
+          71
+        ],
+        "S_hips_cm": [
+          89,
+          97
+        ]
+      },
+      "modelingNotes": [
+        "Create separate outer skirt, waist and fitted inner-shorts layers.",
+        "Use actual flared silhouette; current generic shorts are not a faithful representation."
+      ],
+      "photos": [
+        {
+          "url": "https://nb.scene7.com/is/image/NB/wb61s4jjwt_nb_70_i?%24pdpflexf2%24=&hei=440&wid=440",
+          "sourceLabel": "selected SKU product gallery",
+          "role": "reference_photo",
+          "angle": "unverified",
+          "verification": "source_link_verified"
+        },
+        {
+          "url": "https://nb.scene7.com/is/image/NB/wb61s4jjwt_nb_50_i?%24pdpflexf2%24=&hei=440&wid=440",
+          "sourceLabel": "selected SKU product gallery",
+          "role": "reference_photo",
+          "angle": "unverified",
+          "verification": "source_link_verified"
+        },
+        {
+          "url": "https://nb.scene7.com/is/image/NB/wb61s4jjwt_nb_73_i?%24pdpflexf2%24=&hei=440&wid=440",
+          "sourceLabel": "selected SKU product gallery",
+          "role": "reference_photo",
+          "angle": "unverified",
+          "verification": "source_link_verified"
+        },
+        {
+          "url": "https://nb.scene7.com/is/image/NB/wb61s4jjwt_nb_74_i?%24pdpflexf2%24=&hei=440&wid=440",
+          "sourceLabel": "selected SKU product gallery",
+          "role": "reference_photo",
+          "angle": "unverified",
+          "verification": "source_link_verified"
+        },
+        {
+          "url": "https://nb.scene7.com/is/image/NB/wb61s4jjwt_nb_75_i?%24pdpflexf2%24=&hei=440&wid=440",
+          "sourceLabel": "selected SKU product gallery",
+          "role": "reference_photo",
+          "angle": "unverified",
+          "verification": "source_link_verified"
+        },
+        {
+          "url": "https://nb.scene7.com/is/image/NB/wb61s4jjwt_nb_79_i?%24pdpflexf2%24=&hei=440&wid=440",
+          "sourceLabel": "selected SKU product gallery",
+          "role": "reference_photo",
+          "angle": "unverified",
+          "verification": "source_link_verified"
+        }
+      ]
+    }
+  ]
+}

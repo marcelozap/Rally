@@ -96,6 +96,8 @@ enum RallySyncCoordinator {
             hairColorHex: avatar.hairColorHex,
             bodyTypeRaw: avatar.bodyTypeRaw,
             athletePresetRaw: avatar.athletePresetRaw,
+            skinToneOverrideRaw: avatar.skinToneOverrideRaw,
+            hairColorOverrideHex: avatar.hairColorOverrideHex,
             equippedTopID: avatar.equippedTopID,
             equippedBottomID: avatar.equippedBottomID,
             equippedShoesID: avatar.equippedShoesID,
@@ -293,6 +295,13 @@ enum RallySyncCoordinator {
         avatar.bodyTypeRaw = dto.bodyTypeRaw
         if let raw = dto.athletePresetRaw, let preset = RallyAthletePreset(rawValue: raw) {
             avatar.athletePreset = preset
+        }
+        if let raw = dto.skinToneOverrideRaw, let tone = AvatarSkinTone(rawValue: raw) {
+            avatar.skinToneOverride = tone
+        }
+        if let hex = dto.hairColorOverrideHex,
+           hex.range(of: "^#[0-9A-Fa-f]{6}$", options: .regularExpression) != nil {
+            avatar.hairColorOverrideHex = hex.uppercased()
         }
         avatar.equippedTopID = dto.equippedTopID
         avatar.equippedBottomID = dto.equippedBottomID

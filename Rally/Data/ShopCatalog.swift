@@ -131,7 +131,8 @@ extension ShopItem {
         let f = NumberFormatter()
         f.numberStyle = .currency
         f.currencyCode = "USD"
-        f.maximumFractionDigits = 0
+        f.minimumFractionDigits = priceUSD.rounded() == priceUSD ? 0 : 2
+        f.maximumFractionDigits = 2
         return f.string(from: NSNumber(value: priceUSD)) ?? "$\(Int(priceUSD))"
     }
 
@@ -288,7 +289,7 @@ enum ShopCatalog {
             tintHex: "#E8D9B8",
             itemIDs: [
                 "newbalance.tournament.tank.white",
-                "newbalance.tournament.skort.white",
+                "newbalance.tournament.skort.wb61s4jj.white",
                 "newbalance.coco.cg2.sea.salt"
             ]
         ),
@@ -298,11 +299,11 @@ enum ShopCatalog {
             title: "Nike Night Session",
             eyebrow: "Match edit",
             subtitle: "Sharper contrast, faster silhouette",
-            body: "Cobalt up top, black below, clean white Vapor Pro finish.",
+            body: "Advantage top and six-inch shorts in black, with a white Vapor Pro finish.",
             tintHex: "#00E5FF",
             itemIDs: [
-                "nike.dri-fit.tee.cobalt",
-                "nike.court.short.black",
+                "nike.advantage.top.fz6910.010",
+                "nike.advantage.short.fz6913.010",
                 "nike.vapor.pro.white"
             ]
         ),
@@ -345,9 +346,14 @@ enum ShopCatalog {
               promoNote: "Rally-original — demo code for in-app cosmetics."),
 
         // Tops -----------------------------------------------------------
+        // Exact product/colorway references verified 2026-09-05. Their current
+        // avatar garments remain generic style previews; see RallyGarmentCatalog.
+        .init(id: "nike.advantage.top.fz6910.010", category: .top, name: "NikeCourt Advantage Top", brand: "Nike", vendorID: "nike",
+              productURL: URL(string: "https://www.nike.com/t/nikecourt-advantage-mens-dri-fit-tennis-top-TcVn1mOS/FZ6910-010")!,
+              priceUSD: 75, colorHex: "#171717", accentHex: "#FFFFFF"),
         .init(id: "newbalance.tournament.tank.white", category: .top, name: "Tournament Tank", brand: "New Balance", vendorID: "newbalance",
-              productURL: URL(string: "https://www.newbalance.com/pd/tournament-tank/WT61K74K.html")!,
-              priceUSD: 60, colorHex: "#F6F5F1", accentHex: "#C7CCD1"),
+              productURL: URL(string: "https://www.newbalance.com/pd/tournament-tank/WT61K74K-WT.html")!,
+              priceUSD: 59.99, colorHex: "#F6F5F1", accentHex: "#C7CCD1"),
         .init(id: "nike.dri-fit.tee.cobalt", category: .top, name: "Dri-FIT Slam Tee", brand: "Nike", vendorID: "nike",
               productURL: URL(string: "https://www.nike.com/w/tennis-tops-tshirts")!,
               priceUSD: 55, colorHex: "#0044AA", accentHex: "#FFFFFF",
@@ -363,6 +369,15 @@ enum ShopCatalog {
               priceUSD: 125, colorHex: "#0C5E2A", accentHex: "#FFFFFF"),
 
         // Bottoms --------------------------------------------------------
+        .init(id: "nike.advantage.short.fz6913.010", category: .bottom, name: "NikeCourt Advantage 6″ Shorts", brand: "Nike", vendorID: "nike",
+              productURL: URL(string: "https://www.nike.com/t/nikecourt-advantage-mens-dri-fit-6-tennis-shorts-cCYH6Bt5/FZ6913-010")!,
+              priceUSD: 75, colorHex: "#171717", accentHex: "#FFFFFF"),
+        .init(id: "adidas.ergo.pro.short.kv4294", category: .bottom, name: "Climacool Ergo Shorts Pro", brand: "adidas", vendorID: "adidas",
+              productURL: URL(string: "https://www.adidas.com/us/tennis-climacool-ergo-shorts-pro/KV4294.html")!,
+              priceUSD: 65, colorHex: "#F4F4F2", accentHex: "#262626"),
+        .init(id: "newbalance.tournament.skort.wb61s4jj.white", category: .bottom, name: "Tournament Skort", brand: "New Balance", vendorID: "newbalance",
+              productURL: URL(string: "https://www.newbalance.com/pd/tournament-skort/WB61S4JJ-WT.html")!,
+              priceUSD: 59.99, colorHex: "#F7F6F2", accentHex: "#C7CCD1"),
         .init(id: "newbalance.tournament.skort.white", category: .bottom, name: "Tournament Skort", brand: "New Balance", vendorID: "newbalance",
               productURL: URL(string: "https://www.newbalance.com/pd/tournament-skort/WK21434.html")!,
               priceUSD: 55, colorHex: "#F7F6F2", accentHex: "#D7DADF"),

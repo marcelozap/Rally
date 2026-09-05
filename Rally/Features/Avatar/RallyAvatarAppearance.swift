@@ -97,8 +97,21 @@ struct RallyGearReference: Codable, Equatable, Identifiable {
 }
 
 struct RallyAvatarAppearance: Codable, Equatable {
-    var athletePreset: RallyAthletePreset
+    var athletePreset: RallyAthletePreset {
+        didSet {
+            skinToneHex = skinToneOverrideHex ?? athletePreset.skinTone.hex
+            hairColorHex = hairColorOverrideHex ?? athletePreset.hairColorHex
+            hairStyle = RallyAvatarHairProfile(hairStyle: athletePreset.hairStyle, hairColorHex: athletePreset.hairColorHex)
+            bodyProfile = .athletic
+        }
+    }
     var athleteModel: RallyAthleteModel { athletePreset.athleteModel }
+    var skinToneOverrideHex: String? {
+        didSet { skinToneHex = skinToneOverrideHex ?? athletePreset.skinTone.hex }
+    }
+    var hairColorOverrideHex: String? {
+        didSet { hairColorHex = hairColorOverrideHex ?? athletePreset.hairColorHex }
+    }
     var skinToneHex: String
     var hairColorHex: String
     var hairStyle: RallyAvatarHairProfile
@@ -114,6 +127,8 @@ struct RallyAvatarAppearance: Codable, Equatable {
 
     init(
         athletePreset: RallyAthletePreset = .maleEuropean,
+        skinToneOverrideHex: String? = nil,
+        hairColorOverrideHex: String? = nil,
         skinToneHex: String? = nil,
         hairColorHex: String? = nil,
         hairStyle: RallyAvatarHairProfile? = nil,
@@ -127,8 +142,10 @@ struct RallyAvatarAppearance: Codable, Equatable {
         headband: RallyGearReference? = nil
     ) {
         self.athletePreset = athletePreset
-        self.skinToneHex = skinToneHex ?? athletePreset.skinTone.hex
-        self.hairColorHex = hairColorHex ?? athletePreset.hairColorHex
+        self.skinToneOverrideHex = skinToneOverrideHex
+        self.hairColorOverrideHex = hairColorOverrideHex
+        self.skinToneHex = skinToneOverrideHex ?? skinToneHex ?? athletePreset.skinTone.hex
+        self.hairColorHex = hairColorOverrideHex ?? hairColorHex ?? athletePreset.hairColorHex
         self.hairStyle = hairStyle ?? RallyAvatarHairProfile(hairStyle: athletePreset.hairStyle, hairColorHex: athletePreset.hairColorHex)
         self.bodyProfile = bodyProfile
         self.pose = pose
@@ -146,6 +163,8 @@ struct RallyAvatarAppearance: Codable, Equatable {
 
         self.init(
             athletePreset: preset,
+            skinToneOverrideHex: config.skinToneOverride?.hex,
+            hairColorOverrideHex: config.hairColorOverrideHex,
             skinToneHex: preset.skinTone.hex,
             hairColorHex: preset.hairColorHex,
             hairStyle: hair,
@@ -179,7 +198,7 @@ struct RallyAvatarAppearance: Codable, Equatable {
     }
 
     private enum CodingKeys: String, CodingKey {
-        case athletePreset, skinToneHex, hairColorHex, hairStyle, bodyProfile, pose
+        case athletePreset, skinToneOverrideHex, hairColorOverrideHex, skinToneHex, hairColorHex, hairStyle, bodyProfile, pose
         case racket, top, shorts, shoes, socks, headband
     }
 
@@ -187,8 +206,10 @@ struct RallyAvatarAppearance: Codable, Equatable {
         let values = try decoder.container(keyedBy: CodingKeys.self)
         // Appearances saved before the player roster contain no preset key.
         athletePreset = try values.decodeIfPresent(RallyAthletePreset.self, forKey: .athletePreset) ?? .maleEuropean
-        skinToneHex = try values.decode(String.self, forKey: .skinToneHex)
-        hairColorHex = try values.decode(String.self, forKey: .hairColorHex)
+        skinToneOverrideHex = try values.decodeIfPresent(String.self, forKey: .skinToneOverrideHex)
+        hairColorOverrideHex = try values.decodeIfPresent(String.self, forKey: .hairColorOverrideHex)
+        skinToneHex = try skinToneOverrideHex ?? values.decode(String.self, forKey: .skinToneHex)
+        hairColorHex = try hairColorOverrideHex ?? values.decode(String.self, forKey: .hairColorHex)
         hairStyle = try values.decode(RallyAvatarHairProfile.self, forKey: .hairStyle)
         bodyProfile = try values.decode(RallyAvatarBodyProfile.self, forKey: .bodyProfile)
         pose = try values.decode(RallyAvatarPose.self, forKey: .pose)

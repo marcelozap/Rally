@@ -13,10 +13,12 @@ flick gestures, and an escalating survival loop.
 - Two detailed athletic bodies, six authored head identities, real UV skin/eyes/hair,
   and 163 shared bones replace the previous disconnected 2D shapes. All three men
   share one garment fit, and all three women share another. Presets keep their
-  physique, skin and hair fixed; players select an athlete and equip clothing.
+  physique, face and hairstyle fixed; players choose a generic model, optionally
+  change skin/hair colors, and equip clothing. Color only affects materials.
 - `RallyAthletePreset` is persisted in local storage and included in sync payloads.
-  Older saves default to Alex, and older server payloads preserve local selection.
-  The former name/body/skin/hair editor is now a six-player selection screen.
+  Older saves default to Men Model 1, and older server payloads preserve local selection.
+  The selector uses Model 1/2/3 under Men and Women, with six skin and five hair colors.
+  Optional color overrides persist and sync without changing garment geometry.
 - Clothing has separate tee, polo, shorts/skort, footwear and sock surfaces.
   Color and gear selection remain in `RallyAvatarAppearance`. Product previews
   do not overwrite other equipped slots. These generic meshes illustrate style;
@@ -76,3 +78,26 @@ Current checkout: `/Users/a14/Desktop/_XIV Desktop System/99 Inbox - To Sort/Ral
 It is the relocated `rally/dev` repository verified against the Rally origin.
 The owner authorized this rebuild after locating it in this task. Existing
 `agents/handoff.md` and `home_after_launch.textClipping` edits were preserved.
+
+## Generic models and exact clothing intake — September 5 follow-up
+
+- Removed personal model names; skin and hair colors are the only editing controls.
+  Legacy creator settings stay inactive. Explicit color choices persist, round-trip
+  through sync payloads and leave body, skeleton, hairstyle and garment vertices unchanged.
+- Real clothing work now has six exact brand/style/colorway references and a validated
+  per-body asset registry. Five verified-price products are surfaced in Shop; the UNIQLO
+  polo remains a source reference pending its US price. See `RALLY_CLOTHING_MODELING.md`.
+- Shop/Locker photos require an exact product and slot; they never substitute another
+  brand or colorway. NB tank photo and product link corrected. Garment details show
+  style code, color, composition and construction. Current 3D clothes stay labeled
+  style previews until actual SKU geometry and materials are authored.
+- Full iOS test pass: 136 tests, zero failures. Final additional bundled-manifest
+  test passed in the focused eight-test garment suite (137 distinct tests covered).
+  Standard generic iOS Simulator build passed. Backend color-preservation tests:
+  seven passed, source change only; backend not deployed.
+- New render proof: `Proof/generic-models/` and refreshed `Proof/roster.html` under
+  `/Users/a14/Documents/ChatGPT/Rally/`. Before/after color renders were inspected;
+  generic roster filenames include model family so labels cannot overwrite each other.
+- App installed and launched in the iPhone 16 Pro simulator. Interactive manual
+  checks are still pending because the Mac session was locked; the renders above
+  come directly from the production rig through iOS SCNRenderer.

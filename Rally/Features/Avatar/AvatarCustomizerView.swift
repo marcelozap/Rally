@@ -1,8 +1,8 @@
 import SwiftUI
 import SwiftData
 
-/// Selects one of the six fixed tennis players and preserves the equipped outfit.
-/// First launch completes setup; subsequent visits save the player selection.
+/// Selects a generic model with simple skin and hair color choices.
+/// Model geometry, hairstyle and equipped clothing remain independent of color.
 struct AvatarCustomizerView: View {
     @Bindable var config: AvatarConfig
 
@@ -51,7 +51,7 @@ struct AvatarCustomizerView: View {
                 .padding(.vertical, 12)
                 .background(RallyUIKit.screenBackground)
         }
-        .navigationTitle(isFirstLaunch ? "" : "Choose your player")
+        .navigationTitle(isFirstLaunch ? "" : "Your model")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(isFirstLaunch ? .hidden : .visible, for: .navigationBar)
         .background(RallyUIKit.screenBackground.ignoresSafeArea())
@@ -59,6 +59,8 @@ struct AvatarCustomizerView: View {
             avatarAppearanceStore.sync(from: config)
         }
         .onChange(of: config.athletePresetRaw) { _, _ in avatarAppearanceStore.sync(from: config) }
+        .onChange(of: config.skinToneOverrideRaw) { _, _ in avatarAppearanceStore.sync(from: config) }
+        .onChange(of: config.hairColorOverrideHex) { _, _ in avatarAppearanceStore.sync(from: config) }
     }
 
     // MARK: - First-launch hero
@@ -66,7 +68,7 @@ struct AvatarCustomizerView: View {
     private var welcomeHero: some View {
         VStack(spacing: 6) {
             RallyUIKit.EditorialEyebrow(text: "Welcome to Rally", tint: RallyUIKit.Palette.cyan)
-            Text("Choose your player")
+            Text("Choose your model")
                 .font(RallyUIKit.Typography.display(28, weight: .bold))
                 .foregroundStyle(RallyUIKit.Palette.frost)
                 .multilineTextAlignment(.center)
@@ -110,7 +112,7 @@ struct AvatarCustomizerView: View {
 
     private var playerReadout: some View {
         HStack(alignment: .firstTextBaseline, spacing: 10) {
-            Text(config.athletePreset.displayName)
+            Text("\(config.athletePreset.athleteModel == .male ? "Men" : "Women") · \(config.athletePreset.displayName)")
                 .font(RallyUIKit.Typography.label(.headline, weight: .bold))
                 .foregroundStyle(RallyUIKit.Palette.frost)
             Text("Tennis athlete")
@@ -119,10 +121,10 @@ struct AvatarCustomizerView: View {
         }
     }
 
-    // MARK: - Player roster
+    // MARK: - Model and color selection
 
     private var athleteSection: some View {
-        sectionCard(title: "Players") {
+        sectionCard(title: "Models") {
             ForEach(RallyAthleteModel.allCases) { model in
                 VStack(alignment: .leading, spacing: 8) {
                     Text(model == .male ? "Men" : "Women")
@@ -137,14 +139,62 @@ struct AvatarCustomizerView: View {
                                 config.athletePreset = preset
                                 avatarAppearanceStore.sync(from: config)
                             }
-                            .accessibilityLabel("\(preset.displayName), \(preset.heritageDescription), \(model.displayName)")
+                            .accessibilityLabel("\(model == .male ? "Men" : "Women") \(preset.displayName.lowercased())")
                             .accessibilityIdentifier("athletePreset.\(preset.rawValue)")
                             .accessibilityAddTraits(config.athletePreset == preset ? .isSelected : [])
                         }
                     }
                 }
             }
+
+            Divider().overlay(RallyUIKit.Palette.line)
+
+            HStack(spacing: 2) {
+                colorRowLabel("Skin")
+                ForEach(AvatarSkinTone.allCases) { tone in
+                    colorSwatch(hex: tone.hex, label: "Skin, \(tone.displayName)",
+                                selected: config.skinToneOverride == tone) {
+                        config.skinToneOverride = tone
+                        avatarAppearanceStore.sync(from: config)
+                    }
+                    .accessibilityIdentifier("skinColor.\(tone.rawValue)")
+                }
+            }
+
+            HStack(spacing: 2) {
+                colorRowLabel("Hair")
+                ForEach(AvatarHairColor.allCases) { color in
+                    colorSwatch(hex: color.hex, label: "Hair, \(color.displayName)",
+                                selected: config.hairColorOverrideHex == color.hex) {
+                        config.hairColorOverrideHex = color.hex
+                        avatarAppearanceStore.sync(from: config)
+                    }
+                    .accessibilityIdentifier("hairColor.\(color.rawValue)")
+                }
+            }
         }
+    }
+
+    private func colorRowLabel(_ text: String) -> some View {
+        Text(text)
+            .font(RallyUIKit.Typography.label(.caption, weight: .semibold))
+            .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.72))
+            .frame(width: 34, alignment: .leading)
+    }
+
+    private func colorSwatch(hex: String, label: String, selected: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Circle()
+                .fill(Color(hex: hex) ?? .gray)
+                .frame(width: 28, height: 28)
+                .overlay(Circle().stroke(Color.white.opacity(0.3), lineWidth: 1))
+                .overlay(Circle().stroke(selected ? RallyUIKit.Palette.cyan : .clear, lineWidth: 2).padding(-3))
+                .frame(width: 40, height: 44)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(label)
+        .accessibilityAddTraits(selected ? .isSelected : [])
     }
 
     // MARK: - CTA
@@ -152,7 +202,7 @@ struct AvatarCustomizerView: View {
     private var ctaButton: some View {
         Button(action: save) {
             HStack(spacing: 8) {
-                Text(isFirstLaunch ? "Step onto the court" : "Select player")
+                Text(isFirstLaunch ? "Step onto the court" : "Save changes")
                 if isFirstLaunch {
                     Image(systemName: "arrow.right")
                 }

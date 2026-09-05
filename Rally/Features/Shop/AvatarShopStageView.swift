@@ -156,6 +156,11 @@ struct AvatarShopStageView: View {
                         showsRacket: preview?.slot == .racket
                     )
                     .frame(maxWidth: .infinity)
+                    if usesStylePreview {
+                        Text("Style preview · Garment details may differ")
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundStyle(.white.opacity(0.78))
+                    }
                     Text("Drag to rotate · Pinch to zoom")
                         .font(.system(size: 11, weight: .medium))
                         .foregroundStyle(.white.opacity(0.62))
@@ -172,6 +177,14 @@ struct AvatarShopStageView: View {
 
     private var currentAccent: Color {
         preview?.item.accentColor ?? preview?.item.color ?? RallyUIKit.Palette.cyan
+    }
+
+    private var usesStylePreview: Bool {
+        guard let preview, preview.slot == .top || preview.slot == .bottom else { return false }
+        let slot: RallyGearSlot = preview.slot == .top ? .top : .shorts
+        let representation = RallyGarmentCatalog.shared.reference(for: preview.item.id, slot: slot)?
+            .effectiveRepresentation(for: config.athletePreset.athleteModel) ?? .referenceOnly
+        return representation == .referenceOnly
     }
 
     private var emoteScale: CGFloat {

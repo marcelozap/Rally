@@ -496,7 +496,7 @@ struct LockerHubView: View {
     private func lockerApparelSwatch(_ item: ShopItem, tint: Color, width: CGFloat? = nil, height: CGFloat? = nil) -> some View {
         let accent = item.accentColor ?? tint
         let referralItem = RallyMerchImageResolver.referralItem(for: item)
-        let productImageURL = referralItem?.productImageURL
+        let productImageURL = RallyMerchImageResolver.productImageURL(for: item)
         let productAccent = referralItem.flatMap { Color(hex: $0.accentColorHex) } ?? accent
         let resolvedWidth = width ?? (item.category == .racket ? 220 : 72)
         let resolvedHeight = height ?? (item.category == .racket ? 100 : (item.category == .shoes ? 56 : 84))

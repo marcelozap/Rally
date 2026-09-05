@@ -63,6 +63,7 @@ final class RallyDefaultsTests: XCTestCase {
             let players = RallyAthletePreset.allCases.filter { $0.athleteModel == model }
             XCTAssertEqual(players.count, 3)
             XCTAssertEqual(Set(players.map(\.heritageDescription)), ["White / European", "Asian", "Black"])
+            XCTAssertEqual(players.map(\.displayName), ["Model 1", "Model 2", "Model 3"])
         }
     }
 
@@ -76,6 +77,8 @@ final class RallyDefaultsTests: XCTestCase {
         let decoded = try JSONDecoder().decode(RallyAvatarAppearance.self, from: legacyData)
 
         XCTAssertEqual(decoded.athletePreset, .maleEuropean)
+        XCTAssertNil(decoded.skinToneOverrideHex)
+        XCTAssertNil(decoded.hairColorOverrideHex)
         XCTAssertEqual(decoded.top, original.top)
         XCTAssertEqual(decoded.shorts, original.shorts)
         XCTAssertEqual(decoded.shoes, original.shoes)
@@ -84,10 +87,14 @@ final class RallyDefaultsTests: XCTestCase {
 
     func testEveryPlayerAppearanceRoundTrips() throws {
         for preset in RallyAthletePreset.allCases {
-            let appearance = RallyAvatarAppearance(athletePreset: preset)
-            let decoded = try JSONDecoder().decode(RallyAvatarAppearance.self, from: JSONEncoder().encode(appearance))
-            XCTAssertEqual(decoded, appearance)
-            XCTAssertEqual(decoded.athleteModel, preset.athleteModel)
+            for appearance in [
+                RallyAvatarAppearance(athletePreset: preset),
+                RallyAvatarAppearance(athletePreset: preset, skinToneOverrideHex: "#A06B40", hairColorOverrideHex: "#D9B477")
+            ] {
+                let decoded = try JSONDecoder().decode(RallyAvatarAppearance.self, from: JSONEncoder().encode(appearance))
+                XCTAssertEqual(decoded, appearance)
+                XCTAssertEqual(decoded.athleteModel, preset.athleteModel)
+            }
         }
     }
 
@@ -110,6 +117,8 @@ final class RallyDefaultsTests: XCTestCase {
             XCTAssertEqual(appearance.bodyProfile, .athletic)
             XCTAssertEqual(appearance.skinToneHex, preset.skinTone.hex)
             XCTAssertEqual(appearance.hairColorHex, preset.hairColorHex)
+            XCTAssertNil(appearance.skinToneOverrideHex)
+            XCTAssertNil(appearance.hairColorOverrideHex)
             XCTAssertEqual(appearance.hairStyle, RallyAvatarHairProfile(hairStyle: preset.hairStyle, hairColorHex: preset.hairColorHex))
             XCTAssertEqual(appearance.top?.id, "player.selected.top")
             XCTAssertEqual(appearance.shorts?.id, "player.selected.bottom")
@@ -130,6 +139,8 @@ final class RallyDefaultsTests: XCTestCase {
             let context = ModelContext(container)
             let config = AvatarConfig()
             config.athletePreset = .femaleBlack
+            config.skinToneOverride = .tan
+            config.hairColorOverrideHex = AvatarHairColor.blonde.hex
             config.equippedTopID = "persisted.top"
             context.insert(config)
             try context.save()
@@ -139,15 +150,87 @@ final class RallyDefaultsTests: XCTestCase {
         let reopenedContext = ModelContext(reopenedContainer)
         let savedConfig = try XCTUnwrap(reopenedContext.fetch(FetchDescriptor<AvatarConfig>()).first)
         XCTAssertEqual(savedConfig.athletePreset, .femaleBlack)
+        XCTAssertEqual(savedConfig.skinToneOverride, .tan)
+        XCTAssertEqual(savedConfig.hairColorOverrideHex, AvatarHairColor.blonde.hex)
         let store = RallyAvatarAppearanceStore()
         store.sync(from: savedConfig)
         XCTAssertEqual(store.appearance.athletePreset, .femaleBlack)
         XCTAssertEqual(store.appearance.top?.id, "persisted.top")
+        XCTAssertEqual(store.appearance.skinToneOverrideHex, AvatarSkinTone.tan.hex)
+        XCTAssertEqual(store.appearance.hairColorOverrideHex, AvatarHairColor.blonde.hex)
 
         savedConfig.athletePreset = .maleAsian
         store.sync(from: savedConfig)
         XCTAssertEqual(store.appearance.athletePreset, .maleAsian)
         XCTAssertEqual(store.appearance.top?.id, "persisted.top")
+        XCTAssertEqual(store.appearance.skinToneHex, AvatarSkinTone.tan.hex)
+        XCTAssertEqual(store.appearance.hairColorHex, AvatarHairColor.blonde.hex)
+    }
+
+    @MainActor
+    func testExplicitColorChoicesKeepModelHairShapeAndClothing() {
+        let config = AvatarConfig()
+        config.athletePreset = .femaleAsian
+        let original = RallyAvatarAppearance(config: config)
+
+        config.skinToneOverride = .rich
+        config.hairColorOverrideHex = AvatarHairColor.auburn.hex
+        let colored = RallyAvatarAppearance(config: config)
+
+        XCTAssertEqual(colored.skinToneOverrideHex, AvatarSkinTone.rich.hex)
+        XCTAssertEqual(colored.skinToneHex, AvatarSkinTone.rich.hex)
+        XCTAssertEqual(colored.hairColorOverrideHex, AvatarHairColor.auburn.hex)
+        XCTAssertEqual(colored.hairColorHex, AvatarHairColor.auburn.hex)
+        XCTAssertEqual(colored.athletePreset, original.athletePreset)
+        XCTAssertEqual(colored.hairStyle, original.hairStyle)
+        XCTAssertEqual(colored.bodyProfile, original.bodyProfile)
+        XCTAssertEqual(colored.top, original.top)
+        XCTAssertEqual(colored.shorts, original.shorts)
+        XCTAssertEqual(colored.shoes, original.shoes)
+        XCTAssertEqual(colored.racket, original.racket)
+    }
+
+    func testAppearanceOverrideMutationUpdatesEffectiveColors() {
+        var appearance = RallyAvatarAppearance(athletePreset: .maleAsian)
+        appearance.skinToneOverrideHex = AvatarSkinTone.fair.hex
+        appearance.hairColorOverrideHex = AvatarHairColor.silver.hex
+        XCTAssertEqual(appearance.skinToneHex, AvatarSkinTone.fair.hex)
+        XCTAssertEqual(appearance.hairColorHex, AvatarHairColor.silver.hex)
+        XCTAssertEqual(appearance.athletePreset, .maleAsian)
+        XCTAssertEqual(appearance.hairStyle, .short)
+    }
+
+    func testChangingModelRefreshesDefaultsAndRetainsExplicitColors() {
+        var appearance = RallyAvatarAppearance(athletePreset: .maleEuropean)
+        let originalTop = appearance.top
+        appearance.athletePreset = .femaleBlack
+        XCTAssertEqual(appearance.skinToneHex, RallyAthletePreset.femaleBlack.skinTone.hex)
+        XCTAssertEqual(appearance.hairColorHex, RallyAthletePreset.femaleBlack.hairColorHex)
+        XCTAssertEqual(appearance.hairStyle, .ponytail)
+        XCTAssertNil(appearance.skinToneOverrideHex)
+        XCTAssertNil(appearance.hairColorOverrideHex)
+
+        appearance.skinToneOverrideHex = AvatarSkinTone.fair.hex
+        appearance.hairColorOverrideHex = AvatarHairColor.blonde.hex
+        appearance.athletePreset = .maleAsian
+        XCTAssertEqual(appearance.skinToneHex, AvatarSkinTone.fair.hex)
+        XCTAssertEqual(appearance.hairColorHex, AvatarHairColor.blonde.hex)
+        XCTAssertEqual(appearance.hairStyle, .short)
+        XCTAssertEqual(appearance.top, originalTop)
+    }
+
+    func testExplicitDefaultHairColorSurvivesCodingAfterAnotherColor() throws {
+        var appearance = RallyAvatarAppearance(athletePreset: .maleAsian)
+        appearance.hairColorOverrideHex = AvatarHairColor.blonde.hex
+        appearance.hairColorOverrideHex = RallyAthletePreset.maleAsian.hairColorHex
+
+        let restored = try JSONDecoder().decode(RallyAvatarAppearance.self, from: JSONEncoder().encode(appearance))
+
+        XCTAssertEqual(restored.hairColorHex, RallyAthletePreset.maleAsian.hairColorHex)
+        XCTAssertEqual(restored.hairColorOverrideHex, RallyAthletePreset.maleAsian.hairColorHex)
+        XCTAssertEqual(restored.hairStyle, .short)
+        XCTAssertNotEqual(restored, RallyAvatarAppearance(athletePreset: .maleAsian),
+                          "An explicit color choice remains distinct from the untouched authored texture")
     }
 
     @MainActor

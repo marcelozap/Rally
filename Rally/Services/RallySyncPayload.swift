@@ -70,6 +70,8 @@ struct AvatarPayload: Codable {
     var bodyTypeRaw: String
     // Nil identifies older clients, which must not reset the local player choice.
     var athletePresetRaw: String?
+    var skinToneOverrideRaw: String?
+    var hairColorOverrideHex: String?
     var equippedTopID: String
     var equippedBottomID: String
     var equippedShoesID: String
@@ -78,6 +80,7 @@ struct AvatarPayload: Codable {
 
     enum CodingKeys: String, CodingKey {
         case id, playerName, skinToneRaw, hairStyleRaw, hairColorHex, bodyTypeRaw, athletePresetRaw
+        case skinToneOverrideRaw, hairColorOverrideHex
         case equippedTopID, equippedBottomID, equippedShoesID, equippedRacketID
         case hasCompletedSetup
     }
@@ -92,6 +95,8 @@ struct AvatarPayload: Codable {
         hairColorHex = try c.decode(String.self, forKey: .hairColorHex)
         bodyTypeRaw = try c.decode(String.self, forKey: .bodyTypeRaw)
         athletePresetRaw = try c.decodeIfPresent(String.self, forKey: .athletePresetRaw)
+        skinToneOverrideRaw = try c.decodeIfPresent(String.self, forKey: .skinToneOverrideRaw)
+        hairColorOverrideHex = try c.decodeIfPresent(String.self, forKey: .hairColorOverrideHex)
         equippedTopID = try c.decode(String.self, forKey: .equippedTopID)
         equippedBottomID = try c.decode(String.self, forKey: .equippedBottomID)
         equippedShoesID = try c.decode(String.self, forKey: .equippedShoesID)
@@ -108,6 +113,8 @@ struct AvatarPayload: Codable {
         try c.encode(hairColorHex, forKey: .hairColorHex)
         try c.encode(bodyTypeRaw, forKey: .bodyTypeRaw)
         try c.encodeIfPresent(athletePresetRaw, forKey: .athletePresetRaw)
+        try c.encodeIfPresent(skinToneOverrideRaw, forKey: .skinToneOverrideRaw)
+        try c.encodeIfPresent(hairColorOverrideHex, forKey: .hairColorOverrideHex)
         try c.encode(equippedTopID, forKey: .equippedTopID)
         try c.encode(equippedBottomID, forKey: .equippedBottomID)
         try c.encode(equippedShoesID, forKey: .equippedShoesID)
@@ -123,6 +130,8 @@ struct AvatarPayload: Codable {
         hairColorHex: String,
         bodyTypeRaw: String,
         athletePresetRaw: String? = nil,
+        skinToneOverrideRaw: String? = nil,
+        hairColorOverrideHex: String? = nil,
         equippedTopID: String,
         equippedBottomID: String,
         equippedShoesID: String,
@@ -136,6 +145,8 @@ struct AvatarPayload: Codable {
         self.hairColorHex = hairColorHex
         self.bodyTypeRaw = bodyTypeRaw
         self.athletePresetRaw = athletePresetRaw
+        self.skinToneOverrideRaw = skinToneOverrideRaw
+        self.hairColorOverrideHex = hairColorOverrideHex
         self.equippedTopID = equippedTopID
         self.equippedBottomID = equippedBottomID
         self.equippedShoesID = equippedShoesID

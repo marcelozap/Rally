@@ -10,6 +10,9 @@ final class AvatarConfig {
     var hairColorHex: String = "#050507"
     var bodyTypeRaw: String = AvatarBodyType.athletic.rawValue
     var athletePresetRaw: String = RallyAthletePreset.maleEuropean.rawValue
+    // Explicit choices only; legacy creator values must not recolor existing models.
+    var skinToneOverrideRaw: String?
+    var hairColorOverrideHex: String?
 
     var equippedTopID: String = ShopCatalog.defaultTopID
     var equippedBottomID: String = ShopCatalog.defaultBottomID
@@ -47,6 +50,11 @@ final class AvatarConfig {
     var athletePreset: RallyAthletePreset {
         get { RallyAthletePreset(rawValue: athletePresetRaw) ?? .maleEuropean }
         set { athletePresetRaw = newValue.rawValue }
+    }
+
+    var skinToneOverride: AvatarSkinTone? {
+        get { skinToneOverrideRaw.flatMap(AvatarSkinTone.init(rawValue:)) }
+        set { skinToneOverrideRaw = newValue?.rawValue }
     }
 
     func refreshForCurrentVisualSystem() {
@@ -91,7 +99,7 @@ enum RallyAthleteModel: String, Codable, CaseIterable, Identifiable {
     var displayName: String { self == .male ? "Man" : "Woman" }
 }
 
-/// Fixed player identities. Clothing and racket choices remain independent.
+/// Fixed model geometry; skin and hair color choices do not change its shape.
 enum RallyAthletePreset: String, Codable, CaseIterable, Identifiable {
     case maleEuropean, maleAsian, maleBlack
     case femaleEuropean, femaleAsian, femaleBlack
@@ -106,12 +114,9 @@ enum RallyAthletePreset: String, Codable, CaseIterable, Identifiable {
 
     var displayName: String {
         switch self {
-        case .maleEuropean: return "Alex"
-        case .maleAsian: return "Kai"
-        case .maleBlack: return "Miles"
-        case .femaleEuropean: return "Emma"
-        case .femaleAsian: return "Maya"
-        case .femaleBlack: return "Zoe"
+        case .maleEuropean, .femaleEuropean: return "Model 1"
+        case .maleAsian, .femaleAsian: return "Model 2"
+        case .maleBlack, .femaleBlack: return "Model 3"
         }
     }
 
@@ -142,6 +147,22 @@ enum RallyAthletePreset: String, Codable, CaseIterable, Identifiable {
         switch self {
         case .maleEuropean, .femaleEuropean: return "#4A3228"
         default: return "#080809"
+        }
+    }
+}
+
+enum AvatarHairColor: String, CaseIterable, Identifiable {
+    case black, brown, blonde, auburn, silver
+
+    var id: String { rawValue }
+    var displayName: String { rawValue.capitalized }
+    var hex: String {
+        switch self {
+        case .black: return "#080809"
+        case .brown: return "#5C3A20"
+        case .blonde: return "#D9B477"
+        case .auburn: return "#8F3F2C"
+        case .silver: return "#B3ADB0"
         }
     }
 }

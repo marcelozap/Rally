@@ -1,13 +1,14 @@
-/** Older clients must not erase a player selected by a roster-aware client. */
+/** Older clients must not erase model or color choices they do not understand. */
 export function preserveAthletePreset(serverAvatar, clientAvatar) {
-  if (
-    !clientAvatar ||
-    typeof clientAvatar !== "object" ||
-    clientAvatar.athletePresetRaw != null ||
-    !serverAvatar?.athletePresetRaw
-  ) {
+  if (!clientAvatar || typeof clientAvatar !== "object") {
     return clientAvatar;
   }
 
-  return { ...clientAvatar, athletePresetRaw: serverAvatar.athletePresetRaw };
+  const preserved = {};
+  for (const key of ["athletePresetRaw", "skinToneOverrideRaw", "hairColorOverrideHex"]) {
+    if (clientAvatar[key] == null && serverAvatar?.[key] != null) {
+      preserved[key] = serverAvatar[key];
+    }
+  }
+  return { ...clientAvatar, ...preserved };
 }

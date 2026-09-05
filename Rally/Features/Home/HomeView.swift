@@ -93,7 +93,7 @@ struct HomeView: View {
     }
 
     private var loadoutTopChrome: some View {
-        Text("\(avatar?.athletePreset.displayName.uppercased() ?? "ALEX") · LOADOUT")
+        Text("\(avatar?.athletePreset.displayName.uppercased() ?? "MODEL 1") · LOADOUT")
             .font(.system(size: 11, weight: .black, design: .rounded))
             .tracking(2.2)
             .foregroundStyle(RallyUIKit.Palette.cyan.opacity(0.82))

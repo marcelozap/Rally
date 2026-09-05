@@ -1,0 +1,231 @@
+{
+  "garments": [
+    {
+      "id": "nike.advantage.top.fz6910.010",
+      "brand": "Nike",
+      "productName": "NikeCourt Advantage Men’s Dri-FIT Tennis Top",
+      "slot": "top",
+      "styleID": "FZ6910-010",
+      "colorwayCode": "010",
+      "colorwayName": "Black/White",
+      "officialURL": "https://www.nike.com/t/nikecourt-advantage-mens-dri-fit-tennis-top-TcVn1mOS/FZ6910-010",
+      "verifiedAt": "2026-09-05",
+      "referenceImageURLs": [
+        "https://static.nike.com/a/images/t_web_pdp_535_v2/f_auto%2Cu_9ddf04c7-2a9a-4d76-add1-d15af8f0263d%2Cc_scale%2Cfl_relative%2Cw_1.0%2Ch_1.0%2Cfl_layer_apply/1271419f-6075-42ef-807d-f9b54a668afd/M%2BNKCT%2BDF%2BADVTG%2BTOP.png",
+        "https://static.nike.com/a/images/t_PDP_144_v1/f_auto%2Cq_auto%3Aeco%2Cu_9ddf04c7-2a9a-4d76-add1-d15af8f0263d%2Cc_scale%2Cfl_relative%2Cw_1.0%2Ch_1.0%2Cfl_layer_apply/bd2f017b-45f3-4cb0-9454-a50b3af734dd/M%2BNKCT%2BDF%2BADVTG%2BTOP.png",
+        "https://static.nike.com/a/images/t_PDP_144_v1/f_auto%2Cq_auto%3Aeco%2Cu_9ddf04c7-2a9a-4d76-add1-d15af8f0263d%2Cc_scale%2Cfl_relative%2Cw_1.0%2Ch_1.0%2Cfl_layer_apply/5f8b86c3-43ee-4b8e-8846-89acc9f06630/M%2BNKCT%2BDF%2BADVTG%2BTOP.png"
+      ],
+      "fabric": "88% polyester / 12% spandex; At least 75% recycled polyester fibers",
+      "construction": [
+        "Four-way stretch fabric",
+        "Shoulder seam layout supports swing movement",
+        "Longer back hem",
+        "NikeCourt chest mark"
+      ],
+      "sizes": [
+        "XS",
+        "S",
+        "M",
+        "L",
+        "XL",
+        "XXL"
+      ],
+      "garmentKind": "tee",
+      "representation": "referenceOnly",
+      "meshes": {
+        "male": null,
+        "female": null
+      }
+    },
+    {
+      "id": "nike.advantage.short.fz6913.010",
+      "brand": "Nike",
+      "productName": "NikeCourt Advantage Men’s Dri-FIT 6-inch Tennis Shorts",
+      "slot": "shorts",
+      "styleID": "FZ6913-010",
+      "colorwayCode": "010",
+      "colorwayName": "Black/White",
+      "officialURL": "https://www.nike.com/t/nikecourt-advantage-mens-dri-fit-6-tennis-shorts-cCYH6Bt5/FZ6913-010",
+      "verifiedAt": "2026-09-05",
+      "referenceImageURLs": [
+        "https://static.nike.com/a/images/t_web_pdp_535_v2/f_auto%2Cu_9ddf04c7-2a9a-4d76-add1-d15af8f0263d%2Cc_scale%2Cfl_relative%2Cw_1.0%2Ch_1.0%2Cfl_layer_apply/2b7e3ce9-5868-4066-b0ef-7b99dab9acdc/M%2BNKCT%2BDF%2BADVTG%2B6IN%2BSHORT.png",
+        "https://static.nike.com/a/images/t_PDP_144_v1/f_auto%2Cq_auto%3Aeco%2Cu_9ddf04c7-2a9a-4d76-add1-d15af8f0263d%2Cc_scale%2Cfl_relative%2Cw_1.0%2Ch_1.0%2Cfl_layer_apply/9ffb7f07-7db9-4198-a100-1a665affa2d3/M%2BNKCT%2BDF%2BADVTG%2B6IN%2BSHORT.png",
+        "https://static.nike.com/a/images/t_PDP_144_v1/f_auto%2Cq_auto%3Aeco%2Cu_9ddf04c7-2a9a-4d76-add1-d15af8f0263d%2Cc_scale%2Cfl_relative%2Cw_1.0%2Ch_1.0%2Cfl_layer_apply/2c201f6a-4d6d-47e4-9e65-f6ce1ec4c03d/M%2BNKCT%2BDF%2BADVTG%2B6IN%2BSHORT.png",
+        "https://static.nike.com/a/images/t_PDP_144_v1/f_auto%2Cq_auto%3Aeco%2Cu_9ddf04c7-2a9a-4d76-add1-d15af8f0263d%2Cc_scale%2Cfl_relative%2Cw_1.0%2Ch_1.0%2Cfl_layer_apply/209037f5-f77b-4c5e-94ad-1652af858a36/M%2BNKCT%2BDF%2BADVTG%2B6IN%2BSHORT.png"
+      ],
+      "fabric": "Body 89% polyester / 11% spandex; Pocket palm-side bag 100% polyester",
+      "construction": [
+        "6-inch inseam",
+        "Side vents",
+        "Elastic waistband with drawcord",
+        "Tennis-ball pockets",
+        "Smooth finished hem"
+      ],
+      "sizes": [
+        "XS",
+        "S",
+        "M",
+        "L",
+        "XL",
+        "XXL"
+      ],
+      "garmentKind": "shorts",
+      "representation": "referenceOnly",
+      "meshes": {
+        "male": null,
+        "female": null
+      }
+    },
+    {
+      "id": "adidas.ergo.pro.short.kv4294",
+      "brand": "adidas",
+      "productName": "Tennis Climacool Ergo Shorts Pro",
+      "slot": "shorts",
+      "styleID": "KV4294",
+      "colorwayCode": null,
+      "colorwayName": "White",
+      "officialURL": "https://www.adidas.com/us/tennis-climacool-ergo-shorts-pro/KV4294.html",
+      "verifiedAt": "2026-09-05",
+      "referenceImageURLs": [
+        "https://assets.adidas.com/images/w_500%2Cf_auto%2Cq_auto/fc6e5c9b0cb8452585699b3258717a37_9366/Tennis_Climacool_Ergo_Shorts_Pro_White_KV4294_21_model.jpg",
+        "https://assets.adidas.com/images/w_500%2Cf_auto%2Cq_auto/325d794fa802426c8a8b6eb18455e0f7_9366/Tennis_Climacool_Ergo_Shorts_Pro_White_KV4294_23_hover_model.jpg",
+        "https://assets.adidas.com/images/w_500%2Cf_auto%2Cq_auto/4c73a42911064418adb056e4437a7506_9366/Tennis_Climacool_Ergo_Shorts_Pro_White_KV4294_25_model.jpg",
+        "https://assets.adidas.com/images/w_500%2Cf_auto%2Cq_auto/a1562ecea7154f778cf6b61f111c98ab_9366/Tennis_Climacool_Ergo_Shorts_Pro_White_KV4294_01_laydown.jpg"
+      ],
+      "fabric": "Main: 93% recycled polyester / 7% spandex; Pockets: 100% recycled polyester; Satin woven construction",
+      "construction": [
+        "Mid-rise elastic waist",
+        "Bonded exposed waistband and exterior drawstrings",
+        "Mesh inner-leg gusset",
+        "Ergonomic panels",
+        "Pockets designed to retain tennis balls"
+      ],
+      "sizes": [],
+      "garmentKind": "shorts",
+      "representation": "referenceOnly",
+      "meshes": {
+        "male": null,
+        "female": null
+      }
+    },
+    {
+      "id": "uniqlo.dryex.quarterzip.482306.00",
+      "brand": "UNIQLO",
+      "productName": "DRY-EX Quarter-Zip Polo Shirt",
+      "slot": "top",
+      "styleID": "482306",
+      "colorwayCode": "00",
+      "colorwayName": "00 WHITE",
+      "officialURL": "https://www.uniqlo.com/us/en/products/E482306-000/00?colorDisplayCode=00",
+      "verifiedAt": "2026-09-05",
+      "referenceImageURLs": [
+        "https://image.uniqlo.com/UQ/ST3/us/imagesgoods/482306/item/usgoods_00_482306_3x4.jpg?width=600"
+      ],
+      "fabric": "Body: 65% polyester / 35% nylon; Collar: 93% polyester / 7% spandex",
+      "construction": [
+        "Quarter-zip collar",
+        "Ventilating mesh at sides, underarms, center back and collar interior",
+        "Smooth fine fabric with subtle sheen",
+        "White version slightly sheer",
+        "No pockets"
+      ],
+      "sizes": [
+        "XXS",
+        "XS",
+        "S",
+        "M",
+        "L",
+        "XL",
+        "XXL",
+        "3XL"
+      ],
+      "garmentKind": "polo",
+      "representation": "referenceOnly",
+      "meshes": {
+        "male": null,
+        "female": null
+      }
+    },
+    {
+      "id": "newbalance.tournament.tank.white",
+      "brand": "New Balance",
+      "productName": "Tournament Tank",
+      "slot": "top",
+      "styleID": "WT61K74KWT",
+      "colorwayCode": "WT",
+      "colorwayName": "WHITE with GREY MATTER",
+      "officialURL": "https://www.newbalance.com/pd/tournament-tank/WT61K74K-WT.html",
+      "verifiedAt": "2026-09-05",
+      "referenceImageURLs": [
+        "https://nb.scene7.com/is/image/NB/wt61k74kwt_nb_70_i?%24pdpflexf2%24=&hei=440&wid=440",
+        "https://nb.scene7.com/is/image/NB/wt61k74kwt_nb_50_i?%24pdpflexf2%24=&hei=440&wid=440",
+        "https://nb.scene7.com/is/image/NB/wt61k74kwt_nb_73_i?%24pdpflexf2%24=&hei=440&wid=440",
+        "https://nb.scene7.com/is/image/NB/wt61k74kwt_nb_72_i?%24pdpflexf2%24=&hei=440&wid=440",
+        "https://nb.scene7.com/is/image/NB/wt61k74kwt_nb_71_i?%24pdpflexf2%24=&hei=440&wid=440",
+        "https://nb.scene7.com/is/image/NB/wt61k74kwt_nb_74_i?%24pdpflexf2%24=&hei=440&wid=440"
+      ],
+      "fabric": "Midweight knit: 77% recycled polyester / 23% elastane",
+      "construction": [
+        "Sleeveless",
+        "Bonded neckline and armhole edges",
+        "NB DRY",
+        "Heat-transfer NB logo"
+      ],
+      "sizes": [
+        "XS",
+        "S",
+        "M",
+        "L",
+        "XL",
+        "2XL"
+      ],
+      "garmentKind": "tank",
+      "representation": "referenceOnly",
+      "meshes": {
+        "male": null,
+        "female": null
+      }
+    },
+    {
+      "id": "newbalance.tournament.skort.wb61s4jj.white",
+      "brand": "New Balance",
+      "productName": "Tournament Skort",
+      "slot": "shorts",
+      "styleID": "WB61S4JJWT",
+      "colorwayCode": "WT",
+      "colorwayName": "WHITE with GREY MATTER",
+      "officialURL": "https://www.newbalance.com/pd/tournament-skort/WB61S4JJ-WT.html",
+      "verifiedAt": "2026-09-05",
+      "referenceImageURLs": [
+        "https://nb.scene7.com/is/image/NB/wb61s4jjwt_nb_70_i?%24pdpflexf2%24=&hei=440&wid=440",
+        "https://nb.scene7.com/is/image/NB/wb61s4jjwt_nb_50_i?%24pdpflexf2%24=&hei=440&wid=440",
+        "https://nb.scene7.com/is/image/NB/wb61s4jjwt_nb_73_i?%24pdpflexf2%24=&hei=440&wid=440",
+        "https://nb.scene7.com/is/image/NB/wb61s4jjwt_nb_74_i?%24pdpflexf2%24=&hei=440&wid=440",
+        "https://nb.scene7.com/is/image/NB/wb61s4jjwt_nb_75_i?%24pdpflexf2%24=&hei=440&wid=440",
+        "https://nb.scene7.com/is/image/NB/wb61s4jjwt_nb_79_i?%24pdpflexf2%24=&hei=440&wid=440"
+      ],
+      "fabric": "Midweight knit: 77% recycled polyester / 23% elastane",
+      "construction": [
+        "Flared skirt over built-in shorts",
+        "Bonded Accelerate waistband",
+        "Drop-in side pockets on inner shorts",
+        "NB DRY",
+        "Heat-transfer NB logo"
+      ],
+      "sizes": [
+        "XS",
+        "S",
+        "M",
+        "L",
+        "XL",
+        "2XL"
+      ],
+      "garmentKind": "skort",
+      "representation": "referenceOnly",
+      "meshes": {
+        "male": null,
+        "female": null
+      }
+    }
+  ]
+}

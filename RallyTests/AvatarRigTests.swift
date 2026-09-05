@@ -129,7 +129,7 @@ final class AvatarRigTests: XCTestCase {
 
     func testSwitchingFromPoloToTeeRemovesItsCollar() {
         var look = RallyAvatarAppearance()
-        look.top = RallyGearReference(id: "preview.polo", colorwayHex: "#117755")
+        look.top = RallyGearReference(id: "uniqlo.dry.polo.white", colorwayHex: "#117755")
         let rig = RallyAvatarRig(appearance: look, assetLoader: { name in
             if name == "polo" { throw CocoaError(.fileNoSuchFile) }
             return try RallyHumanMesh.load(name)
@@ -291,6 +291,67 @@ final class AvatarRigTests: XCTestCase {
         }
     }
 
+    func testSkinAndHairColorOverridesChangeRenderingWithoutReplacingModelsOrClothes() throws {
+        let device = try XCTUnwrap(MTLCreateSystemDefaultDevice())
+        for preset in [RallyAthletePreset.maleBlack, .femaleEuropean] {
+            var look = RallyAvatarAppearance(athletePreset: preset)
+            let rig = RallyAvatarRig(appearance: look)
+            XCTAssertNil(rig.assetError)
+            rig.animate(time: 1.0)
+            rig.scene.background.contents = UIColor(white: 0.06, alpha: 1)
+            let body = try XCTUnwrap(rig.root.childNode(withName: "Human skin", recursively: true))
+            let skin = try XCTUnwrap(body.skinner)
+            let originalBones = skin.bones
+            let clothes = try ["Performance tee", "Court shorts", "Court shoes"].map { name in
+                try XCTUnwrap(rig.root.childNode(withName: name, recursively: true), name)
+            }
+            let garmentColors = try ["Performance tee", "Court shorts", "Court shoes"].map {
+                try materialColor($0, in: rig)
+            }
+            let renderer = SCNRenderer(device: device, options: nil)
+            renderer.scene = rig.scene
+            renderer.pointOfView = rig.camera
+            renderer.autoenablesDefaultLighting = false
+            let render = { () -> UIImage in
+                SCNTransaction.flush()
+                return renderer.snapshot(atTime: 1.0, with: CGSize(width: 384, height: 512),
+                                         antialiasingMode: .multisampling4X)
+            }
+            let before = render()
+            let unchanged = render()
+            let noise = try meanColorDifference(before, unchanged)
+            let originalGeometry = geometryVertices(in: rig.root)
+            look.skinToneOverrideHex = preset == .maleBlack ? "#E9C6A5" : "#633D2A"
+            rig.apply(look)
+            let skinChanged = render()
+            XCTAssertGreaterThan(try meanColorDifference(unchanged, skinChanged), max(0.0002, noise * 5),
+                                 "Skin color selection must visibly change the rendered material")
+            look.hairColorOverrideHex = "#E6BE62"
+            rig.apply(look)
+            let hairChanged = render()
+            XCTAssertGreaterThan(try meanColorDifference(skinChanged, hairChanged), max(0.0002, noise * 5),
+                                 "Hair color selection must visibly change the rendered material")
+
+            XCTAssertTrue(rig.root.childNode(withName: "Human skin", recursively: true) === body)
+            XCTAssertTrue(body.skinner === skin)
+            XCTAssertTrue(zip(skin.bones, originalBones).allSatisfy { $0 === $1 })
+            XCTAssertEqual(geometryVertices(in: rig.root), originalGeometry, "Color must not change the body or hair shape")
+            for (index, garment) in clothes.enumerated() {
+                let name = try XCTUnwrap(garment.name)
+                XCTAssertTrue(rig.root.childNode(withName: name, recursively: true) === garment)
+                XCTAssertEqual(try materialColor(name, in: rig), garmentColors[index])
+            }
+            let family = preset.athleteModel == .male ? "male" : "female"
+            let label = preset.displayName.lowercased().replacingOccurrences(of: " ", with: "-")
+            for (state, capture) in [("before", before), ("after", hairChanged)] {
+                let attachment = XCTAttachment(image: capture)
+                attachment.name = "colors-\(family)-\(label)-\(state)"
+                attachment.lifetime = .keepAlways
+                add(attachment)
+            }
+        }
+    }
+
     /// Produces inspectable iOS SceneKit evidence, not a pixel-based quality
     /// assertion. Run this method alone when refreshing the roster review.
     func testRasterizeRosterForVisualReview() throws {
@@ -299,7 +360,7 @@ final class AvatarRigTests: XCTestCase {
             try autoreleasepool {
                 let look = RallyAvatarAppearance(
                     athletePreset: spec.preset,
-                    top: RallyGearReference(id: "proof.polo", colorwayHex: "#F4F4F2"),
+                    top: RallyGearReference(id: "uniqlo.dry.polo.white", colorwayHex: "#F4F4F2"),
                     shorts: RallyGearReference(id: "proof.shorts", colorwayHex: "#15171B")
                 )
                 let rig = RallyAvatarRig(appearance: look, presentation: .studio)
@@ -318,7 +379,9 @@ final class AvatarRigTests: XCTestCase {
                 let capture = renderer.snapshot(atTime: 1.0, with: CGSize(width: 768, height: 1024),
                                                 antialiasingMode: .multisampling4X)
                 let attachment = XCTAttachment(image: capture)
-                attachment.name = "roster-\(spec.preset.displayName)"
+                let model = spec.preset.athleteModel == .male ? "male" : "female"
+                let label = spec.preset.displayName.lowercased().replacingOccurrences(of: " ", with: "-")
+                attachment.name = "roster-\(model)-\(label)"
                 attachment.lifetime = .keepAlways
                 add(attachment)
             }
@@ -329,5 +392,37 @@ final class AvatarRigTests: XCTestCase {
         let node = try XCTUnwrap(rig.root.childNode(withName: name, recursively: true), name)
         let material = try XCTUnwrap(node.geometry?.firstMaterial, name)
         return try XCTUnwrap((material.diffuse.contents as? UIColor) ?? (material.multiply.contents as? UIColor), name)
+    }
+
+    private func geometryVertices(in root: SCNNode) -> [Data] {
+        var vertices: [Data] = []
+        root.enumerateChildNodes { node, _ in
+            if let data = node.geometry?.sources(for: .vertex).first?.data { vertices.append(data) }
+        }
+        return vertices
+    }
+
+    private func meanColorDifference(_ first: UIImage, _ second: UIImage) throws -> Double {
+        func rgba(_ image: UIImage) throws -> [UInt8] {
+            let cgImage = try XCTUnwrap(image.cgImage)
+            var pixels = [UInt8](repeating: 0, count: cgImage.width * cgImage.height * 4)
+            try pixels.withUnsafeMutableBytes { bytes in
+                let context = try XCTUnwrap(CGContext(
+                    data: bytes.baseAddress, width: cgImage.width, height: cgImage.height,
+                    bitsPerComponent: 8, bytesPerRow: cgImage.width * 4,
+                    space: CGColorSpaceCreateDeviceRGB(),
+                    bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue | CGBitmapInfo.byteOrder32Big.rawValue
+                ))
+                context.draw(cgImage, in: CGRect(x: 0, y: 0, width: CGFloat(cgImage.width), height: CGFloat(cgImage.height)))
+            }
+            return pixels
+        }
+        let a = try rgba(first)
+        let b = try rgba(second)
+        XCTAssertEqual(a.count, b.count)
+        guard !a.isEmpty, a.count == b.count else { return 0 }
+        var total: Double = 0
+        for i in a.indices where i % 4 != 3 { total += Double(abs(Int(a[i]) - Int(b[i]))) }
+        return total / (Double(a.count / 4 * 3) * 255)
     }
 }
