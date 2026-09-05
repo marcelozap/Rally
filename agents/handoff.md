@@ -66,9 +66,16 @@ If screenshots look wrong, prioritize the screenshot over the implementation cla
 Path: /Users/a14/Desktop/Rally
 Branch: rally/dev
 Last commit: d355b86 [CX] Wall rally timing taper and multiplier banners
-Dirty files: RALLY_PROGRESS.md (M), Rally/App/ContentView.swift (M),
+Dirty files (as of d355b86): RALLY_PROGRESS.md (M), Rally/App/ContentView.swift (M),
              RallyTests/WallRallyEscalationTests.swift (new, untracked),
              archive/ (new, untracked), shop-art-direction.md (untracked, CX spec — not mine)
+             — ADDENDUM: a live [CX] session was committing in parallel with this one. By the
+             time this note was written, all four of the above had already been picked up and
+             committed for real (RallyTab rename → 23509a8, progress row → 70125b8,
+             WallRallyEscalationTests.swift extended with wallMissCopyPriority coverage and
+             build-verified → 804ecb9). Current real dirty files are just
+             Rally/Game/GameScene.swift and Rally/Game/Tunables.swift, mid-edit by that live
+             session — not mine, do not assume they're safe to revert.
 Files intentionally left untouched: Rally/Services/RallySyncCoordinator.swift (real bug found,
              not fixed — see Known risks), RallyAvatarView.swift nose stroke (CX lane, logged
              not fixed), HomeView.swift dead code (CX lane, logged not fixed),
@@ -89,8 +96,16 @@ What changed:
   6. Added RallyTests/WallRallyEscalationTests.swift — full coverage of Tunables.wallSpeedTier /
      wallSpeedScalar / wallTimingScalar (tier boundaries, monotonic taper, openingBoost confined to
      tier 0). Confirmed via read of existing test files that no prior test covered these.
-Build result: NOT RUN — no Xcode/simulator available in this sandbox all session.
-Simulator result: NOT RUN — same reason.
+Build result: NOT RUN by me (no Xcode/simulator in this sandbox) — ADDENDUM: the live [CX]
+             session has since real-built this tree repeatedly (commits d355b86, 70125b8,
+             804ecb9, and others after it all say "xcodebuild ... BUILD SUCCEEDED"), and
+             extended WallRallyEscalationTests.swift itself with a build-verified note
+             ("Verified 2026-06-16 with xcodebuild ... -only-testing:RallyTests/
+             WallRallyEscalationTests test"). My specific test logic was written cold and
+             never independently confirmed by me — treat the [CX] verification as the real
+             signal, not my original "BUILD NOT RUN" framing.
+Simulator result: NOT RUN by me — see addendum above; [CX] also recorded autoplay gameplay
+             proof in later commits (f991e0e, faf984d, 63d8089).
 Next recommended task: (a) run a real build + the new WallRallyEscalationTests, confirm pass;
   (b) fix RallySyncCoordinator.apply() per the Known risks note below; (c) real-phone Priority 1
   test per agents/current-priority.md once (a) is green.
