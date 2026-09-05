@@ -1,4 +1,7 @@
 # ============================================================================
+# HISTORICAL COPY: analyze_poses() is now in src/rally_coach/pipeline.py.
+# Do not copy this over the live pipeline: its smoothing defaults are obsolete.
+# ============================================================================
 # NOT IMPORTABLE FROM HERE. This is a copy of src/rally_coach/pipeline.py as it
 # should be, parked in docs/ because Windows had the real file locked (another
 # process — probably the lane that wrote tests/integration/test_pipeline_contract.py

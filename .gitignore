@@ -38,6 +38,9 @@ artifacts/
 
 # exception: tiny test fixtures (keep clips under ~3 seconds)
 !tests/fixtures/**
+# The fixture exception must not re-include generated Python bytecode.
+tests/fixtures/**/__pycache__/
+tests/fixtures/**/*.py[cod]
 
 _to_delete/
 Thumbs.db

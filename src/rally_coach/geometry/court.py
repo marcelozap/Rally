@@ -35,8 +35,8 @@ class CourtCalibration:
         image_points: list[tuple[float, float]],
         court_points: list[tuple[float, float]] | None = None,
         doubles: bool = False,
-    ) -> "CourtCalibration":
-        import cv2  # noqa: PLC0415
+    ) -> CourtCalibration:
+        import cv2
 
         if len(image_points) != 4:
             raise ValueError("need exactly 4 image points, clockwise from near-left")

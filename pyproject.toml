@@ -2,7 +2,7 @@
 name = "rally-coach"
 version = "0.1.0"
 description = "Computer-vision and pose-estimation pipeline for tennis movement analytics and coaching advice."
-requires-python = ">=3.11"
+requires-python = ">=3.11,<3.13"
 dependencies = [
   "opencv-python>=4.10",
   # PINNED EXACTLY, not a floor. 0.10.32 removed `mp.solutions` entirely, which
@@ -68,7 +68,8 @@ ignore = [
 "src/rally_coach/cli.py" = ["B008"]
 
 [tool.mypy]
-python_version = "3.11"
+# Use the running interpreter's version, matching the installed dependency
+# stubs (for example, NumPy on Python 3.12 uses Python 3.12 type syntax).
 files = ["src"]
 # mediapipe, cv2, typer and rich ship no type information. Without this, mypy's
 # entire output is "module is installed but missing stubs" and nobody reads it.

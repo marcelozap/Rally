@@ -14,7 +14,8 @@ python -m venv .venv
 pip install -e ".[dev]"
 ```
 
-MediaPipe needs Python 3.11 or 3.12 — it does not yet ship wheels for 3.13.
+Use Python 3.11 or 3.12. This project pins MediaPipe 0.10.14 for its legacy
+Solutions API; that pinned release has no Python 3.13 wheels.
 
 ## Run
 
@@ -33,7 +34,7 @@ rally-coach show artifacts/runs/practice.json
 pre-commit install     # once, so lint runs on every commit
 ```
 
-51 tests, ~1 second.
+59 tests, ~1 second for the deterministic suite.
 
 The integration tests need neither mediapipe nor a video file on disk: the rally
 is scripted in `tests/fixtures/synthetic.py` and replayed through the
@@ -66,11 +67,9 @@ video ──► pose ──► smooth ──► events ──► metrics ──�
 The pipeline is wired end to end, unit tested, and covered by an integration test
 that drives the whole chain. What is **not** done, worst first:
 
-- **The shipped smoothing and the shipped swing threshold contradict each other.**
-  `min_cutoff: 1.0` / `beta: 0.007` retains only ~44% of peak wrist speed, which
-  puts a real swing under `min_wrist_speed: 2.5` — so on the current defaults the
-  detector finds **nothing**. Measured, with numbers, in `docs/TUNING.md`; pinned
-  by an xfail-strict regression test. Fix this before any threshold work.
+- The shipped smoothing defaults (`min_cutoff: 2.0` / `beta: 0.5`) preserve the
+  contact spike in the synthetic regression fixtures. The earlier smoothing
+  defect is fixed; these settings still need validation on real tennis footage.
 - **Thresholds in `advice/rules.py` are untuned guesses.** They need calibrating
   against real footage before anyone should act on the advice. See `docs/TUNING.md`.
 - Swing classification is coarse — position-based, not trajectory-based. A
