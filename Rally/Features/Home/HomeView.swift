@@ -55,7 +55,7 @@ struct HomeView: View {
                             topChromeIcon(systemName: "person.crop.circle")
                         }
                         .buttonStyle(LoadoutPlayButtonStyle())
-                        .accessibilityLabel("Edit look")
+                        .accessibilityLabel("Choose player")
                     }
                 }
             }
@@ -93,7 +93,7 @@ struct HomeView: View {
     }
 
     private var loadoutTopChrome: some View {
-        Text("LOADOUT")
+        Text("\(avatar?.athletePreset.displayName.uppercased() ?? "ALEX") · LOADOUT")
             .font(.system(size: 11, weight: .black, design: .rounded))
             .tracking(2.2)
             .foregroundStyle(RallyUIKit.Palette.cyan.opacity(0.82))
@@ -370,16 +370,7 @@ struct HomeView: View {
             }
         }
         .clipShape(RoundedRectangle(cornerRadius: HomeCraft.largeRadius, style: .continuous))
-        .gesture(
-            DragGesture(minimumDistance: 24)
-                .onEnded { value in
-                    if value.translation.width < -28 {
-                        cycleCourt(1)
-                    } else if value.translation.width > 28 {
-                        cycleCourt(-1)
-                    }
-                }
-        )
+
     }
 
     private var stageStatusStrip: some View {
@@ -456,114 +447,27 @@ struct HomeView: View {
     }
 
     private var rhythmAvatar: some View {
-        TimelineView(.animation) { timeline in
-            let t = timeline.date.timeIntervalSinceReferenceDate
-            let splitStep = CGFloat(sin(t * 2.05))
-            let lookBeat = CGFloat(sin(t * 0.72))
-            let swingBeat = CGFloat((sin(t * 3.2) + 1.0) * 0.5)
-            let ballBounce = abs(CGFloat(sin(t * 4.4)))
-            let handScale: CGFloat = gamePreferences.dominantHand == .left ? -1 : 1
-
-            ZStack {
-                Capsule(style: .continuous)
-                    .fill(courtAccent(for: selectedCourt).opacity(0.36))
-                    .frame(width: 176, height: 4)
-                    .blur(radius: 0.5)
-                    .offset(y: 132)
-
+        GeometryReader { proxy in
+            let height = max(180, min(340, proxy.size.height - 12))
+            ZStack(alignment: .bottom) {
                 Ellipse()
-                    .fill(Color.black.opacity(0.54))
-                    .frame(width: 188 + swingBeat * 5, height: 25)
-                    .blur(radius: 9)
-                    .offset(y: 134)
-
-                HStack(spacing: 20) {
-                    Capsule(style: .continuous)
-                        .fill(RallyUIKit.Palette.cyan.opacity(0.42))
-                        .frame(width: 38, height: 5)
-                    Capsule(style: .continuous)
-                        .fill(RallyUIKit.Palette.cyan.opacity(0.42))
-                        .frame(width: 38, height: 5)
-                }
-                .offset(x: splitStep * 1.4, y: 121)
+                    .fill(Color.black.opacity(0.36))
+                    .frame(width: 110, height: 12)
+                    .blur(radius: 6)
+                    .offset(y: -height * 0.04)
 
                 if avatar != nil {
                     RallyAvatarView(
                         appearance: avatarAppearanceStore.appearance,
-                        targetHeight: 318,
+                        targetHeight: height,
                         showsRacket: true,
-                        breathingPhase: t * 2.05
+                        leftHanded: gamePreferences.dominantHand == .left
                     )
-                    .scaleEffect(x: handScale, y: 1.0)
-                    .rotationEffect(.degrees(lookBeat * 1.2 + splitStep * 0.34))
-                    .offset(x: splitStep * 1.2, y: 8)
-                    .scaleEffect(1.025)
-                    .frame(width: 278, height: 318)
-                    .shadow(color: .black.opacity(0.24), radius: 16, y: 10)
-                    .transition(.opacity.combined(with: .scale(scale: 0.98)))
-
-                    tennisRhythmCue(
-                        handScale: handScale,
-                        swingBeat: swingBeat,
-                        ballBounce: ballBounce
-                    )
-                } else {
-                    Image(systemName: "figure.tennis")
-                        .font(.system(size: 142, weight: .black))
-                        .foregroundStyle(.white.opacity(0.74))
-                        .rotationEffect(.degrees(lookBeat * 1.2 + splitStep * 0.34))
-                        .offset(y: 8)
-                        .frame(width: 302, height: 330)
+                    .frame(width: min(290, proxy.size.width), height: height)
                 }
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+            .frame(width: proxy.size.width, height: proxy.size.height, alignment: .center)
         }
-    }
-
-    private func tennisRhythmCue(handScale: CGFloat, swingBeat: CGFloat, ballBounce: CGFloat) -> some View {
-        let accent = courtAccent(for: selectedCourt)
-        let racketSide = handScale * 96
-        let ballY = CGFloat(-18) + ballBounce * 52
-
-        return ZStack {
-            ForEach(0..<3) { index in
-                let lineIndex = CGFloat(index)
-                Capsule(style: .continuous)
-                    .fill(accent.opacity(0.36 - lineIndex * 0.08))
-                    .frame(width: 58 - lineIndex * 9, height: 3)
-                    .blur(radius: 0.4)
-                    .rotationEffect(.degrees(handScale > 0 ? -24 : 24))
-                    .offset(
-                        x: handScale * (74 + swingBeat * 15 - lineIndex * 8),
-                        y: -10 + swingBeat * 18 + lineIndex * 12
-                    )
-            }
-
-            Circle()
-                .fill(
-                    RadialGradient(
-                        colors: [
-                            Color.white,
-                            RallyUIKit.Palette.lime,
-                            RallyUIKit.Palette.lime.opacity(0.55)
-                        ],
-                        center: .topLeading,
-                        startRadius: 1,
-                        endRadius: 11
-                    )
-                )
-                .frame(width: 17, height: 17)
-                .overlay(Circle().stroke(Color.white.opacity(0.72), lineWidth: 1))
-                .shadow(color: RallyUIKit.Palette.lime.opacity(0.55), radius: 10)
-                .offset(x: racketSide + swingBeat * handScale * 10, y: ballY)
-
-            Circle()
-                .fill(accent.opacity(0.16))
-                .frame(width: 42 + swingBeat * 8, height: 42 + swingBeat * 8)
-                .blur(radius: 12)
-                .offset(x: racketSide + handScale * 4, y: 8)
-        }
-        .allowsHitTesting(false)
     }
 
     private var wardrobeRail: some View {
@@ -990,9 +894,9 @@ private enum HomeCraft {
     static let largeRadius: CGFloat = 30
     static let smallRadius: CGFloat = 18
     static let loadoutTileHeight: CGFloat = 52
-    static let stageHeightShare: CGFloat = 0.36
-    static let stageMinHeight: CGFloat = 268
-    static let stageMaxHeight: CGFloat = 304
+    static let stageHeightShare: CGFloat = 0.49
+    static let stageMinHeight: CGFloat = 300
+    static let stageMaxHeight: CGFloat = 370
 }
 
 private struct PerspectiveCourtPlate: Shape {

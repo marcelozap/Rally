@@ -64,10 +64,14 @@ The avatar must never read as:
 
 Current ground truth:
 
-- Avatar geometry lives in `Rally/Features/Avatar/RallyAvatarGeometry.swift`.
+- Production character geometry is the CC0 anatomical mesh in `Rally/Resources/Avatar3D/`; `RallyAvatarRig.swift` owns its shared skeleton, garment materials, and articulated poses.
+- The roster is six fixed adult tennis athletes: three men and three women, each with White/European, Asian and Black representation. Players choose an athlete and equip clothes; body, skin and hair editing are disabled for consistent garment fit.
+- `scripts/prepare_avatar_assets.py` reproducibly fits garments to two lean athletic bodies (one per sex), with distinct authored faces and textures for the six presets. Source hashes and licensing are recorded beside the assets.
 - Defaults live in `Rally/Features/Avatar/RallyAvatarRebuildDefaults.swift`.
 - SwiftUI surfaces render through `RallyAvatarView`.
-- Gameplay assembles the sprite player in `Rally/Game/GameScene.swift` from shared geometry and appearance values.
+- Gameplay embeds the same `RallyAvatarRig` with `SK3DNode` for player and opponent. It uses the projected racket for contact placement; character shape does not change input timing grades.
+- Home presents a grounded, rhythmic tennis-ready stance. Shop/Locker support rotation and zoom for garment inspection.
+- Generic silhouettes are illustrative try-on assets. Exact products require their own supplied garment meshes and textures.
 
 Quality target:
 

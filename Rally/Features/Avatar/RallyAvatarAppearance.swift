@@ -97,6 +97,8 @@ struct RallyGearReference: Codable, Equatable, Identifiable {
 }
 
 struct RallyAvatarAppearance: Codable, Equatable {
+    var athletePreset: RallyAthletePreset
+    var athleteModel: RallyAthleteModel { athletePreset.athleteModel }
     var skinToneHex: String
     var hairColorHex: String
     var hairStyle: RallyAvatarHairProfile
@@ -111,9 +113,10 @@ struct RallyAvatarAppearance: Codable, Equatable {
     var headband: RallyGearReference?
 
     init(
-        skinToneHex: String = RallyAvatarRebuildDefaults.Identity.skinToneHex,
-        hairColorHex: String = RallyAvatarRebuildDefaults.Identity.hairColorHex,
-        hairStyle: RallyAvatarHairProfile = RallyAvatarRebuildDefaults.Identity.hairStyle,
+        athletePreset: RallyAthletePreset = .maleEuropean,
+        skinToneHex: String? = nil,
+        hairColorHex: String? = nil,
+        hairStyle: RallyAvatarHairProfile? = nil,
         bodyProfile: RallyAvatarBodyProfile = RallyAvatarRebuildDefaults.Identity.bodyProfile,
         pose: RallyAvatarPose = RallyAvatarRebuildDefaults.Identity.pose,
         racket: RallyGearReference? = RallyAvatarRebuildDefaults.Gear.defaultRacket,
@@ -123,9 +126,10 @@ struct RallyAvatarAppearance: Codable, Equatable {
         socks: RallyGearReference? = nil,
         headband: RallyGearReference? = nil
     ) {
-        self.skinToneHex = skinToneHex
-        self.hairColorHex = hairColorHex
-        self.hairStyle = hairStyle
+        self.athletePreset = athletePreset
+        self.skinToneHex = skinToneHex ?? athletePreset.skinTone.hex
+        self.hairColorHex = hairColorHex ?? athletePreset.hairColorHex
+        self.hairStyle = hairStyle ?? RallyAvatarHairProfile(hairStyle: athletePreset.hairStyle, hairColorHex: athletePreset.hairColorHex)
         self.bodyProfile = bodyProfile
         self.pose = pose
         self.racket = racket
@@ -137,15 +141,15 @@ struct RallyAvatarAppearance: Codable, Equatable {
     }
 
     init(config: AvatarConfig, previewItem: ShopItem? = nil) {
-        let skinTone = config.skinTone.hex
-        let body = RallyAvatarBodyProfile(bodyType: config.bodyType)
-        let hair = RallyAvatarHairProfile(hairStyle: config.hairStyle, hairColorHex: config.hairColorHex)
+        let preset = config.athletePreset
+        let hair = RallyAvatarHairProfile(hairStyle: preset.hairStyle, hairColorHex: preset.hairColorHex)
 
         self.init(
-            skinToneHex: skinTone,
-            hairColorHex: config.hairColorHex,
+            athletePreset: preset,
+            skinToneHex: preset.skinTone.hex,
+            hairColorHex: preset.hairColorHex,
             hairStyle: hair,
-            bodyProfile: body,
+            bodyProfile: .athletic,
             pose: .confidentAsymmetricIdle,
             racket: Self.gearReference(
                 id: config.equippedRacketID,
@@ -172,6 +176,28 @@ struct RallyAvatarAppearance: Codable, Equatable {
         if let itemToPreview = previewItem {
             equipPreview(itemToPreview)
         }
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case athletePreset, skinToneHex, hairColorHex, hairStyle, bodyProfile, pose
+        case racket, top, shorts, shoes, socks, headband
+    }
+
+    init(from decoder: Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        // Appearances saved before the player roster contain no preset key.
+        athletePreset = try values.decodeIfPresent(RallyAthletePreset.self, forKey: .athletePreset) ?? .maleEuropean
+        skinToneHex = try values.decode(String.self, forKey: .skinToneHex)
+        hairColorHex = try values.decode(String.self, forKey: .hairColorHex)
+        hairStyle = try values.decode(RallyAvatarHairProfile.self, forKey: .hairStyle)
+        bodyProfile = try values.decode(RallyAvatarBodyProfile.self, forKey: .bodyProfile)
+        pose = try values.decode(RallyAvatarPose.self, forKey: .pose)
+        racket = try values.decodeIfPresent(RallyGearReference.self, forKey: .racket)
+        top = try values.decodeIfPresent(RallyGearReference.self, forKey: .top)
+        shorts = try values.decodeIfPresent(RallyGearReference.self, forKey: .shorts)
+        shoes = try values.decodeIfPresent(RallyGearReference.self, forKey: .shoes)
+        socks = try values.decodeIfPresent(RallyGearReference.self, forKey: .socks)
+        headband = try values.decodeIfPresent(RallyGearReference.self, forKey: .headband)
     }
 
     private static func gearReference(

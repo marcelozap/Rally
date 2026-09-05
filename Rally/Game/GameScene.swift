@@ -1,4 +1,5 @@
 import SpriteKit
+import SceneKit
 import UIKit
 
 /// Core SpriteKit scene. The single publisher of `GameEvent`s. All feedback
@@ -46,80 +47,6 @@ final class GameScene: SKScene {
     enum StrokeSide {
         case forehand
         case backhand
-    }
-
-    private enum PlayerPoseState {
-        case ready
-        case forehandClean
-        case backhandClean
-        case stretchForehand
-        case stretchBackhand
-        case defensiveBlock
-        case recovery
-    }
-
-    private struct PlayerPoseTargets {
-        let torsoRotation: CGFloat
-        let headRotation: CGFloat
-        let headX: CGFloat
-        let leadLegRotation: CGFloat
-        let trailLegRotation: CGFloat
-        let leadLegX: CGFloat
-        let trailLegX: CGFloat
-        let leadArmRotation: CGFloat
-        let trailArmRotation: CGFloat
-        let leadArmX: CGFloat
-        let leadArmY: CGFloat
-        let trailArmX: CGFloat
-        let trailArmY: CGFloat
-        let racketHandleRotation: CGFloat
-        let racketHeadRotation: CGFloat
-        let racketHandleX: CGFloat
-        let racketHandleY: CGFloat
-        let racketHeadX: CGFloat
-        let racketHeadY: CGFloat
-        let shadowXScale: CGFloat
-        let shadowYScale: CGFloat
-        let shadowAlpha: CGFloat
-        /// Additional zRotation applied to the racket head for wrist/face angle.
-        /// Positive = open face (slice), negative = closed face (topspin).
-        let racketFaceAngle: CGFloat
-
-        init(torsoRotation: CGFloat = 0, headRotation: CGFloat = 0, headX: CGFloat = 0,
-             leadLegRotation: CGFloat = 0, trailLegRotation: CGFloat = 0,
-             leadLegX: CGFloat = 0, trailLegX: CGFloat = 0,
-             leadArmRotation: CGFloat = 0, trailArmRotation: CGFloat = 0,
-             leadArmX: CGFloat = 0, leadArmY: CGFloat = 0,
-             trailArmX: CGFloat = 0, trailArmY: CGFloat = 0,
-             racketHandleRotation: CGFloat = 0, racketHeadRotation: CGFloat = 0,
-             racketHandleX: CGFloat = 0, racketHandleY: CGFloat = 0,
-             racketHeadX: CGFloat = 0, racketHeadY: CGFloat = 0,
-             shadowXScale: CGFloat = 1, shadowYScale: CGFloat = 1, shadowAlpha: CGFloat = 0.3,
-             racketFaceAngle: CGFloat = 0) {
-            self.torsoRotation = torsoRotation
-            self.headRotation = headRotation
-            self.headX = headX
-            self.leadLegRotation = leadLegRotation
-            self.trailLegRotation = trailLegRotation
-            self.leadLegX = leadLegX
-            self.trailLegX = trailLegX
-            self.leadArmRotation = leadArmRotation
-            self.trailArmRotation = trailArmRotation
-            self.leadArmX = leadArmX
-            self.leadArmY = leadArmY
-            self.trailArmX = trailArmX
-            self.trailArmY = trailArmY
-            self.racketHandleRotation = racketHandleRotation
-            self.racketHeadRotation = racketHeadRotation
-            self.racketHandleX = racketHandleX
-            self.racketHandleY = racketHandleY
-            self.racketHeadX = racketHeadX
-            self.racketHeadY = racketHeadY
-            self.shadowXScale = shadowXScale
-            self.shadowYScale = shadowYScale
-            self.shadowAlpha = shadowAlpha
-            self.racketFaceAngle = racketFaceAngle
-        }
     }
 
     // MARK: - Configuration
@@ -233,6 +160,7 @@ final class GameScene: SKScene {
     private var strikeLinePulse: StrikeLinePulse!
     private var strikeHalo: SKShapeNode!
     private var contactTimingRing: SKShapeNode!
+    private var beatTargetRing: SKShapeNode?
     private var leftStrikeGate: SKShapeNode!
     private var rightStrikeGate: SKShapeNode!
     private var leftContactPocket: SKShapeNode!
@@ -250,50 +178,15 @@ final class GameScene: SKScene {
     private var rightLaneGlow: SKShapeNode!
     private var background: TennisCourtBackdrop!
     private var playerRoot: SKNode!
-    private var playerTorso: SKShapeNode!
-    private var playerNeck: SKShapeNode!
-    private var playerHead: SKShapeNode!
-    private var playerBackHair: SKShapeNode!
-    private var playerHair: SKShapeNode!
-    private var playerHairHighlight: SKShapeNode!
-    private var playerLeftEar: SKShapeNode!
-    private var playerRightEar: SKShapeNode!
-    private var playerLeftEye: SKShapeNode!
-    private var playerRightEye: SKShapeNode!
-    private var playerEyeSpeculars: [SKShapeNode] = []
-    private var playerLeftBrow: SKShapeNode!
-    private var playerRightBrow: SKShapeNode!
-    private var playerNose: SKShapeNode!
-    private var playerLeftLens: SKShapeNode!
-    private var playerRightLens: SKShapeNode!
-    private var playerGlassesBridge: SKShapeNode!
-    private var playerLeftTemple: SKShapeNode!
-    private var playerRightTemple: SKShapeNode!
-    private var playerMouth: SKShapeNode!
-    private var courtAvatarLayout: RallyAvatarRebuildDefaults.CourtLayout?
-    private var courtAvatarScale: CGFloat = 0.90
-    private var playerPelvis: SKShapeNode!
-    private var playerLeadLeg: SKShapeNode!
-    private var playerTrailLeg: SKShapeNode!
-    private var playerLeadShoe: SKNode!
-    private var playerTrailShoe: SKNode!
-    private var playerLeadArm: SKShapeNode!
-    private var playerTrailArm: SKShapeNode!
-    private var playerLeadSleeve: SKShapeNode!
-    private var playerTrailSleeve: SKShapeNode!
-    private var playerLeadHand: SKShapeNode!
-    private var playerTrailHand: SKShapeNode!
-    private var playerRacketHandle: SKShapeNode!
-    private var playerRacketHead: SKShapeNode!
-    private var playerRacketStrings: [SKShapeNode] = []
-    private var playerShadow: SKShapeNode!
-    private var playerStanceGlow: SKShapeNode!
-    private var playerRacketBaseColor: UIColor = UIColor(white: 0.78, alpha: 1)
-    private var playerRacketAccentColor: UIColor = UIColor(red: 0, green: 0.9, blue: 1, alpha: 1)
-    // Opponent avatar (far end)
+    private var playerAvatarRig: RallyAvatarRig?
+    private var playerAvatarNode: SK3DNode?
+    /// The rendered racket center, expressed in playerRoot coordinates.
+    private var playerRacketContactAnchor: CGPoint?
+    private var playerShadow: SKShapeNode?
     private var opponentRoot: SKNode?
-    private var opponentRacketHead: SKShapeNode?
-    private var opponentHitTime: TimeInterval = 0
+    private var opponentAvatarRig: RallyAvatarRig?
+    private var opponentAvatarNode: SK3DNode?
+    private var opponentHitTime: TimeInterval?
     private var currentBPM: Double = 120
     private var currentTravelSeconds: Double = Tunables.ballTravelSeconds
     private var lastBeatTime: TimeInterval = 0
@@ -323,6 +216,10 @@ final class GameScene: SKScene {
 
     // Pan-gesture swing state — see `handlePan(_:)`.
     private var swingOriginScene: CGPoint?
+    private var swingStartedAt: TimeInterval?
+    private var lastCommittedFlickAt: TimeInterval = -.infinity
+    private var committedFlick: RallyFlickInput.Result?
+    private var recentTimingFeedback: RallyFlickInput.Feedback?
     private var swingCurrentScene: CGPoint?
     private var swingTrailNode: SKShapeNode?
     private var swingTrailGlowNode: SKShapeNode?
@@ -336,25 +233,6 @@ final class GameScene: SKScene {
     private var hitStopUntil: TimeInterval = 0
     private var recentContactLane: Lane?
 
-    // MARK: - TopSpin swing body mechanics state
-    /// Velocity accumulated during the torso load phase; released as uncoil on contact.
-    private var torsoVelocity: CGFloat = 0
-    /// Current wrist-snap overshoot offset (points along swing axis), decays exponentially.
-    private var wristSnapOffset: CGFloat = 0
-    /// Timestamp when the wrist snap was last applied.
-    private var wristSnapAppliedAt: TimeInterval = 0
-    /// Last resolved ball position at racket contact, stored in player-local coordinates.
-    private var lastRacketContactTarget: CGPoint?
-
-    // MARK: - Footwork state
-    /// Timestamp until which the split-step animation is active.
-    private var splitStepUntil: TimeInterval = 0
-    /// Previous frame's approachProgress — used to detect rising edge for split-step trigger.
-    private var prevApproachProgress: CGFloat = 0
-    /// Weight side: +1 = forehand (left foot planted), -1 = backhand, 0 = neutral.
-    private var weightSide: CGFloat = 0
-    /// Timestamp of last contact, used to drive foot recovery shuffle.
-    private var footContactTime: TimeInterval = 0
     private var recoveryTrackUntil: TimeInterval = 0
     private var recoveryLane: Lane?
     private var recoverySeverity: CGFloat = 0
@@ -443,9 +321,9 @@ final class GameScene: SKScene {
 
     func applyAvatarAppearance(_ appearance: RallyAvatarAppearance) {
         avatarAppearance = appearance
-        guard playerRoot != nil else { return }
-        playerRoot.removeFromParent()
-        setupCourtAvatar()
+        playerAvatarRig?.apply(appearance)
+        opponentAvatarRig?.apply(appearance)
+        updateCourtAvatar(trackTime: currentTrackTime)
     }
 
     private var usesMinimalWallHUD: Bool {
@@ -536,7 +414,7 @@ final class GameScene: SKScene {
             )
             self.showInstruction(
                 self.sessionMode == .wallRally
-                    ? "Swipe up on the side the ball is arriving."
+                    ? "Flick up on the ball’s side. Release as the rings meet."
                     : "Meet the ball and release through contact.",
                 hold: Tunables.openingHintSeconds * 0.38
             )
@@ -567,6 +445,7 @@ final class GameScene: SKScene {
         cameraNode?.removeAction(forKey: "drift")
         cameraNode?.position = cameraHomePosition
         background?.resize(to: size, strikeYRatio: Tunables.strikeLineYRatio)
+        opponentRoot?.position = CGPoint(x: size.width / 2, y: size.height * Tunables.gameplayCourtFarYRatio)
 
         let strikeY = size.height * Tunables.strikeLineYRatio
         let wallY = size.height * Tunables.wallSurfaceYRatio
@@ -919,6 +798,14 @@ final class GameScene: SKScene {
         timingRing.zPosition = 16
         addChild(timingRing)
         contactTimingRing = timingRing
+        let beatTarget = SKShapeNode(circleOfRadius: Tunables.wallContactRingRadius)
+        beatTarget.fillColor = .clear
+        beatTarget.strokeColor = UIColor.white.withAlphaComponent(0.55)
+        beatTarget.lineWidth = 1.6
+        beatTarget.zPosition = 16
+        beatTarget.alpha = 0
+        addChild(beatTarget)
+        beatTargetRing = beatTarget
     }
 
     private func layoutWallHUDPositions() {
@@ -1042,732 +929,96 @@ final class GameScene: SKScene {
         background?.pulseHorizon(intensity: 1.08)
     }
 
-    /// Difficulty ramp: the return ball comes back faster as the run's score
-    /// climbs. Returns a scalar on `wallReturnTravelSeconds`, 1.0 at the start
-    /// tapering to `rampMinTravelScalar` once `rampFullScore` is reached.
+    /// Return coordination accelerates at the same combo milestones as the
+    /// visible tempo banner, with a floor that preserves a playable response time.
     private func survivalReturnTravelScalar() -> Double {
         guard Tunables.Survival.enabled else { return 1.0 }
-        let start = Double(Tunables.Survival.rampStartScore)
-        let full = Double(Tunables.Survival.rampFullScore)
-        guard full > start else { return 1.0 }
-        let t = max(0, min(1, (Double(score) - start) / (full - start)))
-        return 1.0 - (1.0 - Tunables.Survival.rampMinTravelScalar) * t
+        return max(Tunables.Survival.rampMinTravelScalar,
+                   Tunables.wallSpeedScalar(forCombo: combo) / Tunables.wallSpeedScalarTier0)
     }
 
-    // MARK: - Opponent Avatar
+    // MARK: - Shared 3D Characters
 
     private func setupOpponentAvatar() {
-        let appearance = avatarAppearance ?? RallyAvatarAppearance()
-        // Scale relative to court perspective: opponent stands at the far baseline.
-        // We compute the same farY the court backdrop uses.
-        let farY = size.height * Tunables.gameplayCourtFarYRatio
-        // At the far baseline the perspective ratio to the near baseline (~54% vs ~18%
-        // of width) gives us ~0.33 shrink. Use 0.42 for a slightly heroic silhouette.
-        let oppScale: CGFloat = 0.42
-        let s = oppScale
-        let skin   = appearance.skinUIColor.withAlphaComponent(0.85)
-        let top    = appearance.topUIColor.withAlphaComponent(0.90)
-        let bottom = appearance.shortsUIColor.withAlphaComponent(0.90)
-        let racket = appearance.racketUIColor
-
+        let rig = RallyAvatarRig(
+            appearance: avatarAppearance ?? RallyAvatarAppearance(),
+            presentation: .opponent
+        )
         let root = SKNode()
-        // Place root so the figure's feet land on the far baseline.
-        // Figure legs extend to -22*s below root, so raise root by that much.
-        root.position = CGPoint(x: size.width / 2, y: farY + 22 * s)
-        root.zPosition = -89      // just above court backdrop (-95) but behind court lines (-90)
-        root.alpha = 1.0
+        root.position = CGPoint(x: size.width / 2, y: size.height * Tunables.gameplayCourtFarYRatio)
+        root.zPosition = -89
         addChild(root)
         opponentRoot = root
-
-        // Ground shadow
-        let shadow = SKShapeNode(ellipseOf: CGSize(width: 42 * s, height: 6 * s))
-        shadow.fillColor = UIColor.black.withAlphaComponent(0.35)
-        shadow.strokeColor = .clear
-        shadow.position = CGPoint(x: 0, y: -22 * s)
-        shadow.zPosition = -1
-        root.addChild(shadow)
-
-        // Legs (in wide-stance ready position, slightly bent)
-        for sign in [-1.0, 1.0] {
-            let leg = SKShapeNode(rectOf: CGSize(width: 10 * s, height: 24 * s), cornerRadius: 3 * s)
-            leg.fillColor = skin
-            leg.strokeColor = .clear
-            leg.position = CGPoint(x: sign * 7 * s, y: -9 * s)
-            leg.zRotation = sign * 0.12      // slight V-stance
-            leg.zPosition = 1
-            root.addChild(leg)
-            let shoe = SKShapeNode(rectOf: CGSize(width: 13 * s, height: 5 * s), cornerRadius: 2 * s)
-            shoe.fillColor = appearance.shoesUIColor.withAlphaComponent(0.90)
-            shoe.strokeColor = .clear
-            shoe.position = CGPoint(x: sign * 8 * s, y: -21 * s)
-            shoe.zPosition = 1
-            root.addChild(shoe)
-        }
-
-        // Shorts
-        let shorts = SKShapeNode(rectOf: CGSize(width: 24 * s, height: 12 * s), cornerRadius: 4 * s)
-        shorts.fillColor = bottom
-        shorts.strokeColor = .clear
-        shorts.position = CGPoint(x: 0, y: -2 * s)
-        shorts.zPosition = 2
-        root.addChild(shorts)
-
-        // Torso
-        let torso = SKShapeNode(rectOf: CGSize(width: 22 * s, height: 28 * s), cornerRadius: 5 * s)
-        torso.fillColor = top
-        torso.strokeColor = UIColor.white.withAlphaComponent(0.15)
-        torso.lineWidth = 0.8 * s
-        torso.position = CGPoint(x: 0, y: 18 * s)
-        torso.zPosition = 2
-        root.addChild(torso)
-
-        // Arms — racket arm (left from opponent's view = right side of screen) raised
-        // Non-racket arm slightly out for balance
-        let racketArm = SKShapeNode(rectOf: CGSize(width: 8 * s, height: 20 * s), cornerRadius: 3 * s)
-        racketArm.fillColor = skin
-        racketArm.strokeColor = .clear
-        racketArm.position = CGPoint(x: -16 * s, y: 14 * s)
-        racketArm.zRotation = -0.55   // raised to hit
-        racketArm.zPosition = 1
-        root.addChild(racketArm)
-
-        let freeArm = SKShapeNode(rectOf: CGSize(width: 8 * s, height: 20 * s), cornerRadius: 3 * s)
-        freeArm.fillColor = skin.withAlphaComponent(0.70)
-        freeArm.strokeColor = .clear
-        freeArm.position = CGPoint(x: 16 * s, y: 14 * s)
-        freeArm.zRotation = 0.30
-        freeArm.zPosition = 1
-        root.addChild(freeArm)
-
-        // Head
-        let head = SKShapeNode(ellipseOf: CGSize(width: 16 * s, height: 18 * s))
-        head.fillColor = skin
-        head.strokeColor = UIColor.white.withAlphaComponent(0.08)
-        head.lineWidth = 0.5 * s
-        head.position = CGPoint(x: 0, y: 36 * s)
-        head.zPosition = 3
-        root.addChild(head)
-
-        // Hair cap
-        let hair = SKShapeNode(ellipseOf: CGSize(width: 17 * s, height: 10 * s))
-        hair.fillColor = appearance.hairUIColor
-        hair.strokeColor = .clear
-        hair.position = CGPoint(x: 0, y: 42 * s)
-        hair.zPosition = 3.5
-        root.addChild(hair)
-
-        // Racket hoop — prominent so it reads clearly
-        let hoop = SKShapeNode(ellipseOf: CGSize(width: 14 * s, height: 18 * s))
-        hoop.fillColor = UIColor.clear
-        hoop.strokeColor = racket
-        hoop.lineWidth = 3.0 * s
-        hoop.glowWidth = 2
-        hoop.position = CGPoint(x: -26 * s, y: 28 * s)
-        hoop.zRotation = -0.55
-        hoop.zPosition = 3
-        root.addChild(hoop)
-        opponentRacketHead = hoop
-
-        // Racket strings (cross pattern)
-        for i in [-1, 0, 1] {
-            let str = SKShapeNode(rectOf: CGSize(width: 1.5 * s, height: 14 * s), cornerRadius: 0.5 * s)
-            str.fillColor = UIColor.white.withAlphaComponent(0.42)
-            str.strokeColor = .clear
-            str.position = CGPoint(x: CGFloat(i) * 4 * s, y: 0)
-            hoop.addChild(str)
-        }
-
-        let handle = SKShapeNode(rectOf: CGSize(width: 3.5 * s, height: 14 * s), cornerRadius: 1.5 * s)
-        handle.fillColor = appearance.racketAccentUIColor
-        handle.strokeColor = .clear
-        handle.position = CGPoint(x: -22 * s, y: 17 * s)
-        handle.zRotation = -0.55
-        handle.zPosition = 3
-        root.addChild(handle)
-
-        // Subtle idle sway
-        root.run(.repeatForever(.sequence([
-            .rotate(byAngle: 0.008, duration: 1.2),
-            .rotate(byAngle: -0.008, duration: 1.2)
-        ])))
+        opponentAvatarRig = rig
+        opponentAvatarNode = makeAvatarNode(rig: rig, viewport: CGSize(width: 96, height: 90), parent: root)
     }
 
     private func animateOpponentHit() {
-        guard let hoop = opponentRacketHead, let root = opponentRoot else { return }
         opponentHitTime = currentTimeSnapshot
-        hoop.run(.sequence([
-            .group([.scale(to: 1.35, duration: 0.06), .fadeAlpha(to: 1.0, duration: 0.06)]),
-            .group([.scale(to: 1.0, duration: 0.18), .fadeAlpha(to: 0.72, duration: 0.18)])
-        ]))
-        root.run(.sequence([
-            .moveBy(x: 0, y: 6, duration: 0.05),
-            .moveBy(x: 0, y: -6, duration: 0.12)
-        ]))
     }
 
     private func setupCourtAvatar() {
-        let appearance = avatarAppearance ?? RallyAvatarAppearance()
-        let bodyScale: CGFloat = min(1.22, max(1.06, appearance.bodyScale * 1.14))
-        let profile = appearance.bodyProfile
-        let layout = RallyAvatarRebuildDefaults.CourtLayout.make(profile: profile, scale: bodyScale)
-        courtAvatarLayout = layout
-        courtAvatarScale = bodyScale
-        playerEyeSpeculars.removeAll(keepingCapacity: true)
-        // Gameplay must match the Home/Locker identity. Do not hardcode a second
-        // player look here; that is how the in-game avatar drifted into "catfish".
-        let skin = appearance.skinUIColor
-        let top = appearance.topUIColor
-        let bottom = appearance.shortsUIColor
-        let shoes = appearance.shoesUIColor
-        let shoesAccent = appearance.shoesAccentUIColor
-        let racket = appearance.racketUIColor
-        let racketAccent = appearance.racketAccentUIColor
-        playerRacketBaseColor = racket
-        playerRacketAccentColor = racketAccent
-
+        let rig = RallyAvatarRig(
+            appearance: avatarAppearance ?? RallyAvatarAppearance(),
+            presentation: .gameplay
+        )
         let root = SKNode()
         root.zPosition = 14
         root.position = CGPoint(x: size.width / 2, y: size.height * Tunables.gameplayPlayerRootYRatio)
         root.setScale(Tunables.gameplayPlayerVisualScale)
         addChild(root)
         playerRoot = root
+        playerAvatarRig = rig
 
-        let shadow = SKShapeNode(ellipseOf: CGSize(width: 138 * bodyScale, height: 18 * bodyScale))
-        shadow.fillColor = UIColor.black.withAlphaComponent(0.48)
+        let shadow = SKShapeNode(ellipseOf: CGSize(width: 102, height: 15))
+        shadow.fillColor = UIColor.black.withAlphaComponent(0.38)
         shadow.strokeColor = .clear
-        shadow.position = CGPoint(x: 0, y: -14 * bodyScale)
         shadow.zPosition = -1
         root.addChild(shadow)
         playerShadow = shadow
-
-        let stanceGlow = SKShapeNode(ellipseOf: CGSize(width: 128 * bodyScale, height: 18 * bodyScale))
-        stanceGlow.fillColor = racketAccent.withAlphaComponent(0.018)
-        stanceGlow.strokeColor = .clear
-        stanceGlow.position = CGPoint(x: 0, y: -12 * bodyScale)
-        stanceGlow.zPosition = -2
-        root.addChild(stanceGlow)
-        playerStanceGlow = stanceGlow
-
-        let legVisualHeight = layout.legHeight * 0.74
-        let leadLeg = SKShapeNode(path: RallyAvatarGeometry.athleticLegPath(scale: bodyScale, height: legVisualHeight, side: 1))
-        leadLeg.strokeColor = .clear
-        leadLeg.position = CGPoint(x: 21 * bodyScale, y: layout.legY + 2 * bodyScale)
-        root.addChild(leadLeg)
-        playerLeadLeg = leadLeg
-        leadLeg.attachRenderedSprite(
-            RallyAvatarPartRenderer.legTexture(skinColor: skin, scale: bodyScale, legVisualHeight: legVisualHeight, side: 1)
-        )
-        addKneeBand(to: leadLeg, skin: skin, width: 13.8 * bodyScale, y: -legVisualHeight * 0.06)
-
-        // Quad highlight on lead leg
-        let leadLegHL = SKShapeNode(path: RallyAvatarGeometry.legHighlightPath(scale: bodyScale, legVisualHeight: legVisualHeight))
-        leadLegHL.fillColor = UIColor.white.withAlphaComponent(0.09)
-        leadLegHL.strokeColor = .clear
-        leadLegHL.position = CGPoint(x: 21 * bodyScale, y: layout.legY + 2 * bodyScale + legVisualHeight * 0.16)
-        leadLegHL.zPosition = 1.1
-        root.addChild(leadLegHL)
-
-        let trailLegVisualHeight = layout.trailLegHeight * 0.74
-        let trailLeg = SKShapeNode(path: RallyAvatarGeometry.athleticLegPath(scale: bodyScale, height: trailLegVisualHeight, side: -1))
-        trailLeg.strokeColor = .clear
-        trailLeg.position = CGPoint(x: -21 * bodyScale, y: layout.legY)
-        root.addChild(trailLeg)
-        playerTrailLeg = trailLeg
-        trailLeg.attachRenderedSprite(
-            RallyAvatarPartRenderer.legTexture(skinColor: skin.mixed(with: .black, ratio: 0.04), scale: bodyScale, legVisualHeight: trailLegVisualHeight, side: -1)
-        )
-        addKneeBand(to: trailLeg, skin: skin, width: 13.5 * bodyScale, y: -trailLegVisualHeight * 0.06)
-
-        // Quad highlight on trail leg (dimmer — in shadow)
-        let trailLegHL = SKShapeNode(path: RallyAvatarGeometry.legHighlightPath(scale: bodyScale, legVisualHeight: trailLegVisualHeight))
-        trailLegHL.fillColor = UIColor.white.withAlphaComponent(0.05)
-        trailLegHL.strokeColor = .clear
-        trailLegHL.position = CGPoint(x: -21 * bodyScale, y: layout.legY + trailLegVisualHeight * 0.16)
-        trailLegHL.zPosition = 1.1
-        root.addChild(trailLegHL)
-
-        let leadShoeY = layout.legY - legVisualHeight * 0.51
-        let trailShoeY = layout.legY - trailLegVisualHeight * 0.51
-        addDetailedShoe(
-            to: root,
-            x: 21 * bodyScale, y: leadShoeY,
-            bodyScale: bodyScale,
-            upper: shoes, accent: shoesAccent,
-            zBase: 2,
-            primaryRef: &playerLeadShoe
-        )
-        addDetailedShoe(
-            to: root,
-            x: -21 * bodyScale, y: trailShoeY,
-            bodyScale: bodyScale,
-            upper: shoes.mixed(with: .black, ratio: 0.06), accent: shoesAccent,
-            zBase: 2,
-            xFlip: true,   // left foot: mirror shoe so toe faces outward, not inward-caved
-            primaryRef: &playerTrailShoe
-        )
-
-        let pelvisY = layout.torsoY - 43 * bodyScale
-        let pelvis = SKShapeNode(path: RallyAvatarGeometry.athleticShortsPath(scale: bodyScale))
-        pelvis.strokeColor = .clear
-        pelvis.lineWidth = 0
-        pelvis.position = CGPoint(x: 0, y: pelvisY)
-        pelvis.zPosition = 2.05
-        pelvis.alpha = 0.96
-        root.addChild(pelvis)
-        playerPelvis = pelvis
-        pelvis.attachRenderedSprite(
-            RallyAvatarPartRenderer.shortsTexture(shortsColor: bottom, scale: bodyScale)
-        )
-
-        // Elastic waistband at top of shorts
-        let waistband = SKShapeNode(path: RallyAvatarGeometry.shortsWaistbandPath(scale: bodyScale))
-        waistband.fillColor = bottom.blended(withFraction: 0.22, of: .white) ?? bottom
-        waistband.strokeColor = .clear
-        waistband.lineWidth = 0
-        waistband.position = CGPoint(x: 0, y: pelvisY + 8 * bodyScale)
-        waistband.zPosition = 2.06
-        root.addChild(waistband)
-
-        let torso = SKShapeNode(path: RallyAvatarGeometry.premiumTorsoPath(scale: bodyScale))
-        torso.strokeColor = .clear
-        torso.lineWidth = 0
-        torso.position = CGPoint(x: 0, y: layout.torsoY - 2 * bodyScale)
-        torso.zPosition = 2.2
-        root.addChild(torso)
-        playerTorso = torso
-        // Gradient-rendered torso replaces flat fill
-        torso.attachRenderedSprite(
-            RallyAvatarPartRenderer.torsoTexture(shirtColor: top, accentColor: racketAccent, scale: bodyScale)
-        )
-
-        // V-neck collar (stays as SKShapeNode — thin line detail)
-        let collar = SKShapeNode(path: RallyAvatarGeometry.shirtCollarPath(scale: bodyScale))
-        collar.fillColor = top.mixed(with: .black, ratio: 0.30)
-        collar.strokeColor = .clear
-        collar.position = CGPoint(x: 0, y: layout.torsoY + 22 * bodyScale)
-        collar.zPosition = 2.3
-        root.addChild(collar)
-
-        let faceScale = layout.headPathScale * 0.96
-        let neckSize = RallyAvatarGeometry.neckSize(scale: faceScale)
-        let neck = SKShapeNode(rectOf: neckSize, cornerRadius: neckSize.width * 0.42)
-        neck.fillColor = skin.mixed(with: .black, ratio: 0.03)
-        neck.strokeColor = .clear
-        neck.position = CGPoint(x: 0, y: layout.neckY - 2 * bodyScale)
-        root.addChild(neck)
-        playerNeck = neck
-        // Keep the same identity language as Home. A rear-only wall-rally puppet
-        // hides hair/face and reads like a different player after tapping Play.
-        let showsRearAvatar = false
-
-        let headAnchorY = layout.headY
-        let head = SKShapeNode(path: RallyAvatarGeometry.premiumHeadPath(scale: layout.headPathScale * 0.96))
-        head.fillColor = skin
-        head.strokeColor = .clear
-        head.lineWidth = 0
-        head.position = CGPoint(x: 0, y: headAnchorY)
-        head.zPosition = 6
-        root.addChild(head)
-        playerHead = head
-
-        // IDENTITY LOCK: hair shares the head's exact anchor + scale (see the head
-        // node above: y = headY, scale = headPathScale * 0.96). The
-        // hair paths are authored in the head's local frame, so co-anchoring keeps
-        // the crown attached and the fringe off the eyes — and keeps gameplay
-        // matching Home, where RallyAvatarView uses the identical rule.
-        let hairScale = layout.headPathScale * 0.96
-        // Shared with RallyAvatarView: lifts the front fringe off the eyes only.
-        let hairFringeLift = RallyAvatarGeometry.hairFringeLift(scale: hairScale)
-        let backHair = SKShapeNode(path: RallyAvatarGeometry.premiumBackHairPath(scale: hairScale))
-        backHair.fillColor = appearance.hairUIColor
-        backHair.strokeColor = .clear
-        backHair.lineWidth = 0
-        backHair.position = CGPoint(x: 0, y: headAnchorY)
-        backHair.zPosition = 5.7
-        root.addChild(backHair)
-        playerBackHair = backHair
-
-        let hair = SKShapeNode(path: RallyAvatarGeometry.premiumHairPath(scale: hairScale))
-        hair.fillColor = appearance.hairUIColor
-        hair.strokeColor = .clear
-        hair.lineWidth = 0
-        hair.position = CGPoint(x: 0, y: headAnchorY + hairFringeLift)
-        hair.zPosition = 7.25
-        hair.isHidden = showsRearAvatar
-        root.addChild(hair)
-        playerHair = hair
-
-        let leftEar = SKShapeNode(path: RallyAvatarGeometry.earPath(side: -1, scale: faceScale))
-        leftEar.fillColor = skin.mixed(with: .black, ratio: 0.025)
-        leftEar.strokeColor = .clear
-        leftEar.lineWidth = 0
-        leftEar.position = CGPoint(x: 0, y: headAnchorY)
-        leftEar.zPosition = 6.05
-        leftEar.alpha = 0.92
-        root.addChild(leftEar)
-        playerLeftEar = leftEar
-
-        let leftEarInner = SKShapeNode(path: RallyAvatarGeometry.earInnerPath(side: -1, scale: faceScale))
-        leftEarInner.fillColor = .clear
-        leftEarInner.strokeColor = skin.mixed(with: .black, ratio: 0.20).withAlphaComponent(0.48)
-        leftEarInner.lineWidth = max(0.72 * bodyScale, 0.62)
-        leftEarInner.lineCap = .round
-        leftEarInner.position = .zero
-        leftEarInner.zPosition = 0.03
-        leftEar.addChild(leftEarInner)
-
-        let rightEar = SKShapeNode(path: RallyAvatarGeometry.earPath(side: 1, scale: faceScale))
-        rightEar.fillColor = skin.mixed(with: .black, ratio: 0.025)
-        rightEar.strokeColor = .clear
-        rightEar.lineWidth = 0
-        rightEar.position = CGPoint(x: 0, y: headAnchorY)
-        rightEar.zPosition = 6.05
-        rightEar.alpha = 0.92
-        root.addChild(rightEar)
-        playerRightEar = rightEar
-
-        let rightEarInner = SKShapeNode(path: RallyAvatarGeometry.earInnerPath(side: 1, scale: faceScale))
-        rightEarInner.fillColor = .clear
-        rightEarInner.strokeColor = skin.mixed(with: .black, ratio: 0.20).withAlphaComponent(0.48)
-        rightEarInner.lineWidth = max(0.72 * bodyScale, 0.62)
-        rightEarInner.lineCap = .round
-        rightEarInner.position = .zero
-        rightEarInner.zPosition = 0.03
-        rightEar.addChild(rightEarInner)
-
-        let hairHighlight = SKShapeNode(path: RallyAvatarGeometry.hairHighlightPath(scale: hairScale))
-        hairHighlight.fillColor = UIColor(red: 0.165, green: 0.165, blue: 0.188, alpha: 0.58)
-        hairHighlight.strokeColor = .clear
-        hairHighlight.position = CGPoint(x: 0, y: headAnchorY + hairFringeLift)
-        hairHighlight.zPosition = 7.35
-        hairHighlight.isHidden = showsRearAvatar
-        root.addChild(hairHighlight)
-        playerHairHighlight = hairHighlight
-
-        let eyeFill = UIColor(red: 0.025, green: 0.022, blue: 0.020, alpha: 0.98)
-        let showsFrontFace = !showsRearAvatar
-        let leftEye = SKShapeNode(path: RallyAvatarGeometry.eyePath(side: -1, scale: faceScale))
-        leftEye.fillColor = eyeFill
-        leftEye.strokeColor = UIColor.white.withAlphaComponent(0.10)
-        leftEye.lineWidth = max(0.36 * bodyScale, 0.28)
-        leftEye.position = CGPoint(x: 0, y: headAnchorY)
-        leftEye.zPosition = 8
-        leftEye.isHidden = !showsFrontFace
-        root.addChild(leftEye)
-        playerLeftEye = leftEye
-
-        let rightEye = SKShapeNode(path: RallyAvatarGeometry.eyePath(side: 1, scale: faceScale))
-        rightEye.fillColor = eyeFill
-        rightEye.strokeColor = UIColor.white.withAlphaComponent(0.10)
-        rightEye.lineWidth = max(0.36 * bodyScale, 0.28)
-        rightEye.position = CGPoint(x: 0, y: headAnchorY)
-        rightEye.zPosition = 8
-        rightEye.isHidden = !showsFrontFace
-        root.addChild(rightEye)
-        playerRightEye = rightEye
-
-        for side in [-1.0, 1.0] {
-            let spec = SKShapeNode(path: RallyAvatarGeometry.eyeSpecularPath(side: side, scale: faceScale))
-            spec.fillColor = UIColor.white.withAlphaComponent(0.46)
-            spec.strokeColor = .clear
-            spec.position = CGPoint(x: 0, y: headAnchorY)
-            spec.zPosition = 8.1
-            spec.isHidden = !showsFrontFace
-            root.addChild(spec)
-            playerEyeSpeculars.append(spec)
-        }
-
-        let browColor = appearance.hairUIColor.withAlphaComponent(0.72)
-        let leftBrow = SKShapeNode(path: RallyAvatarGeometry.browPath(side: -1, scale: faceScale))
-        leftBrow.fillColor = browColor
-        leftBrow.strokeColor = .clear
-        leftBrow.position = CGPoint(x: 0, y: headAnchorY)
-        leftBrow.zRotation = 0.0
-        leftBrow.zPosition = 8
-        leftBrow.isHidden = !showsFrontFace
-        root.addChild(leftBrow)
-        playerLeftBrow = leftBrow
-
-        let rightBrow = SKShapeNode(path: RallyAvatarGeometry.browPath(side: 1, scale: faceScale))
-        rightBrow.fillColor = browColor
-        rightBrow.strokeColor = .clear
-        rightBrow.position = CGPoint(x: 0, y: headAnchorY)
-        rightBrow.zRotation = 0.0
-        rightBrow.zPosition = 8
-        rightBrow.isHidden = !showsFrontFace
-        root.addChild(rightBrow)
-        playerRightBrow = rightBrow
-
-        let nose = SKShapeNode(path: RallyAvatarGeometry.nosePath(scale: faceScale))
-        nose.fillColor = .clear
-        nose.strokeColor = skin.mixed(with: .black, ratio: 0.18).withAlphaComponent(0.64)
-        nose.lineWidth = max(1.70 * bodyScale, 1.38)
-        nose.lineCap = .round
-        nose.position = CGPoint(x: 0, y: headAnchorY)
-        nose.zPosition = 8
-        nose.isHidden = !showsFrontFace
-        root.addChild(nose)
-        playerNose = nose
-
-        let showsGlasses = false
-        let lensSize = CGSize(width: 16 * bodyScale, height: 12 * bodyScale)
-        let lensStroke = RallyAvatarRebuildDefaults.Face.glassesFrameUIColor
-        let leftLens = SKShapeNode(rectOf: lensSize, cornerRadius: 5 * bodyScale)
-        leftLens.fillColor = RallyAvatarRebuildDefaults.Face.lensFillUIColor
-        leftLens.strokeColor = lensStroke
-        leftLens.lineWidth = 1.1 * bodyScale
-        leftLens.position = CGPoint(x: -13 * bodyScale, y: layout.headY)
-        leftLens.zPosition = 3
-        leftLens.isHidden = !showsGlasses
-        root.addChild(leftLens)
-        playerLeftLens = leftLens
-
-        let rightLens = SKShapeNode(rectOf: lensSize, cornerRadius: 5 * bodyScale)
-        rightLens.fillColor = RallyAvatarRebuildDefaults.Face.lensFillUIColor
-        rightLens.strokeColor = lensStroke
-        rightLens.lineWidth = 1.1 * bodyScale
-        rightLens.position = CGPoint(x: 13 * bodyScale, y: layout.headY)
-        rightLens.zPosition = 3
-        rightLens.isHidden = !showsGlasses
-        root.addChild(rightLens)
-        playerRightLens = rightLens
-
-        let bridge = SKShapeNode(rectOf: CGSize(width: 7 * bodyScale, height: 1.2 * bodyScale), cornerRadius: 0.6 * bodyScale)
-        bridge.fillColor = lensStroke
-        bridge.strokeColor = .clear
-        bridge.position = CGPoint(x: 0, y: layout.headY)
-        bridge.zPosition = 3
-        bridge.isHidden = !showsGlasses
-        root.addChild(bridge)
-        playerGlassesBridge = bridge
-
-        let leftTemple = SKShapeNode(rectOf: CGSize(width: 11 * bodyScale, height: 1.2 * bodyScale), cornerRadius: 0.6 * bodyScale)
-        leftTemple.fillColor = lensStroke
-        leftTemple.strokeColor = .clear
-        leftTemple.position = CGPoint(x: -24 * bodyScale, y: layout.headY)
-        leftTemple.zRotation = 0.14
-        leftTemple.zPosition = 3
-        leftTemple.isHidden = !showsGlasses
-        root.addChild(leftTemple)
-        playerLeftTemple = leftTemple
-
-        let rightTemple = SKShapeNode(rectOf: CGSize(width: 11 * bodyScale, height: 1.2 * bodyScale), cornerRadius: 0.6 * bodyScale)
-        rightTemple.fillColor = lensStroke
-        rightTemple.strokeColor = .clear
-        rightTemple.position = CGPoint(x: 24 * bodyScale, y: layout.headY)
-        rightTemple.zRotation = -0.14
-        rightTemple.zPosition = 3
-        rightTemple.isHidden = !showsGlasses
-        root.addChild(rightTemple)
-        playerRightTemple = rightTemple
-
-        let mouth = SKShapeNode(path: RallyAvatarGeometry.friendlyMouthPath(scale: faceScale))
-        mouth.strokeColor = skin.mixed(with: .black, ratio: 0.66).withAlphaComponent(0.98)
-        mouth.fillColor = .clear
-        mouth.lineWidth = max(2.04 * bodyScale, 1.58)
-        mouth.lineCap = .round
-        mouth.position = CGPoint(x: 0, y: headAnchorY + RallyAvatarGeometry.mouthCenterY(scale: faceScale))
-        mouth.zRotation = RallyAvatarRebuildDefaults.Face.smileRotationDegrees * .pi / 180
-        mouth.zPosition = 8.35
-        mouth.alpha = showsFrontFace ? 0.95 : 0
-        mouth.isHidden = !showsFrontFace
-        root.addChild(mouth)
-        playerMouth = mouth
-
-        let leadArm = SKShapeNode(path: RallyAvatarGeometry.armPath(scale: bodyScale, topWidth: 14.2, bottomWidth: 9.8, length: 63))
-        leadArm.strokeColor = .clear
-        leadArm.position = CGPoint(x: 36 * bodyScale, y: layout.torsoY + 1 * bodyScale)
-        leadArm.zRotation = -0.42
-        leadArm.zPosition = 3.0  // in front of torso — racket arm is always visible
-        root.addChild(leadArm)
-        playerLeadArm = leadArm
-        leadArm.attachRenderedSprite(
-            RallyAvatarPartRenderer.armTexture(skinColor: skin, scale: bodyScale, topWidth: 14.2, bottomWidth: 9.8, length: 63)
-        )
-
-        // Sloped sleeve panel over the shoulder joint. Round caps read like puppet pins at game scale.
-        let leadSleeve = SKShapeNode(path: RallyAvatarGeometry.sleeveCapPath(scale: bodyScale, side: 1))
-        leadSleeve.fillColor = top.blended(withFraction: 0.03, of: .white) ?? top
-        leadSleeve.strokeColor = .clear
-        leadSleeve.lineWidth = 0
-        leadSleeve.position = CGPoint(x: 10 * bodyScale, y: layout.torsoY + 30 * bodyScale)
-        leadSleeve.zRotation = 0
-        leadSleeve.zPosition = 3.1  // just above leadArm (3.0) to cap the joint
-        root.addChild(leadSleeve)
-        playerLeadSleeve = leadSleeve
-
-        let trailArm = SKShapeNode(path: RallyAvatarGeometry.armPath(scale: bodyScale, topWidth: 13.8, bottomWidth: 9.4, length: 62))
-        trailArm.strokeColor = .clear
-        trailArm.position = CGPoint(x: -36 * bodyScale, y: layout.torsoY + 4 * bodyScale)
-        trailArm.zRotation = 0.30
-        trailArm.zPosition = 1.8  // behind torso (trail arm reads as behind body)
-        root.addChild(trailArm)
-        playerTrailArm = trailArm
-        trailArm.attachRenderedSprite(
-            RallyAvatarPartRenderer.armTexture(skinColor: skin.mixed(with: .black, ratio: 0.05), scale: bodyScale, topWidth: 13.8, bottomWidth: 9.4, length: 62)
-        )
-
-        let trailSleeve = SKShapeNode(path: RallyAvatarGeometry.sleeveCapPath(scale: bodyScale, side: -1))
-        trailSleeve.fillColor = top.blended(withFraction: 0.04, of: .black) ?? top
-        trailSleeve.strokeColor = .clear
-        trailSleeve.lineWidth = 0
-        trailSleeve.position = CGPoint(x: -10 * bodyScale, y: layout.torsoY + 30 * bodyScale)
-        trailSleeve.zRotation = 0
-        trailSleeve.zPosition = 2.1  // just above trailArm (1.8), below torso front
-        root.addChild(trailSleeve)
-        playerTrailSleeve = trailSleeve
-
-        let leadHand = SKShapeNode(circleOfRadius: RallyAvatarGeometry.handRadius(scale: bodyScale))
-        leadHand.fillColor = skin.brightened(0.04)
-        leadHand.strokeColor = UIColor.white.withAlphaComponent(0.08)
-        leadHand.lineWidth = 0.8 * bodyScale
-        leadHand.position = CGPoint(x: 54 * bodyScale, y: 112 * bodyScale)
-        leadHand.zPosition = 5
-        root.addChild(leadHand)
-        playerLeadHand = leadHand
-
-        let trailHand = SKShapeNode(circleOfRadius: RallyAvatarGeometry.handRadius(scale: bodyScale, armThickness: 12.8))
-        trailHand.fillColor = skin.brightened(0.035)
-        trailHand.strokeColor = UIColor.white.withAlphaComponent(0.08)
-        trailHand.lineWidth = 0.8 * bodyScale
-        trailHand.position = CGPoint(x: -42 * bodyScale, y: 112 * bodyScale)
-        trailHand.zPosition = 5
-        trailHand.alpha = 0.75
-        root.addChild(trailHand)
-        playerTrailHand = trailHand
-
-        let handle = SKShapeNode(rectOf: CGSize(width: 7.2 * bodyScale, height: 58 * bodyScale), cornerRadius: 3.6 * bodyScale)
-        handle.fillColor = racketAccent
-        handle.strokeColor = .white.withAlphaComponent(0.12)
-        handle.lineWidth = 1
-        handle.position = CGPoint(x: 54 * bodyScale, y: 125 * bodyScale)
-        handle.zRotation = -0.42
-        handle.zPosition = 3
-        root.addChild(handle)
-        playerRacketHandle = handle
-
-        let hoop = SKShapeNode(ellipseOf: CGSize(width: 46 * bodyScale, height: 64 * bodyScale))
-        hoop.fillColor = racketAccent.withAlphaComponent(0.006)
-        hoop.strokeColor = racket
-        hoop.lineWidth = 4.0 * bodyScale
-        hoop.glowWidth = 0.25
-        hoop.position = CGPoint(x: 74 * bodyScale, y: 164 * bodyScale)
-        hoop.zRotation = -0.28
-        hoop.zPosition = 3
-        root.addChild(hoop)
-        playerRacketHead = hoop
-
-        playerRacketStrings.removeAll()
-        for offset in [-16, -6, 6, 16] {
-            let string = SKShapeNode(rectOf: CGSize(width: 1.2 * bodyScale, height: 52 * bodyScale), cornerRadius: 0.6 * bodyScale)
-            string.fillColor = UIColor.white.withAlphaComponent(0.54)
-            string.strokeColor = .clear
-            string.position = CGPoint(x: CGFloat(offset) * bodyScale, y: 0)
-            hoop.addChild(string)
-            playerRacketStrings.append(string)
-        }
-        for offset in [-18, 0, 18] {
-            let string = SKShapeNode(rectOf: CGSize(width: 36 * bodyScale, height: 1.2 * bodyScale), cornerRadius: 0.6 * bodyScale)
-            string.fillColor = UIColor.white.withAlphaComponent(0.46)
-            string.strokeColor = .clear
-            string.position = CGPoint(x: 0, y: CGFloat(offset) * bodyScale)
-            hoop.addChild(string)
-            playerRacketStrings.append(string)
-        }
+        playerAvatarNode = makeAvatarNode(rig: rig, viewport: CGSize(width: 280, height: 320), parent: root)
+        rig.animate(time: currentTrackTime, leftHanded: dominantHand == .left)
     }
 
-    // swiftlint:disable:next function_parameter_count
-    private func addDetailedShoe(
-        to root: SKNode,
-        x: CGFloat, y: CGFloat,
-        bodyScale: CGFloat,
-        upper: UIColor, accent: UIColor,
-        zBase: CGFloat,
-        xFlip: Bool = false,
-        primaryRef: inout SKNode?
-    ) {
-        // Mirror factor: -1 for left foot so toe faces outward, not caved inward.
-        let flip: CGFloat = xFlip ? -1 : 1
-        let shoeRoot = SKNode()
-        shoeRoot.position = CGPoint(x: x, y: y)
-        shoeRoot.zPosition = zBase
-        shoeRoot.setScale(Tunables.gameplayShoeVisualScale)
-        root.addChild(shoeRoot)
-
-        // 1. Midsole/outsole — darkest layer, sits lowest (symmetric — no flip needed)
-        let sole = SKShapeNode(path: RallyAvatarGeometry.shoeSolePath(scale: bodyScale))
-        sole.fillColor = upper.mixed(with: .black, ratio: 0.42)
-        sole.strokeColor = .clear
-        sole.position = CGPoint(x: 0, y: -4.8 * bodyScale)
-        sole.zPosition = 0
-        shoeRoot.addChild(sole)
-
-        // 2. Shoe upper — main body (asymmetric: toe at +x; flip for left foot)
-        let body = SKShapeNode(path: RallyAvatarGeometry.shoeBodyPath(scale: bodyScale))
-        body.fillColor = upper
-        body.strokeColor = accent.withAlphaComponent(0.55)
-        body.lineWidth = 1.2 * bodyScale
-        body.xScale = flip
-        body.position = .zero
-        body.zPosition = 0.05
-        shoeRoot.addChild(body)
-        primaryRef = shoeRoot
-
-        // 3. Side brand stripe (asymmetric: stripe on toe side; flip for left foot)
-        let stripe = SKShapeNode(path: RallyAvatarGeometry.shoeStripePath(scale: bodyScale))
-        stripe.fillColor = accent.withAlphaComponent(0.82)
-        stripe.strokeColor = .clear
-        stripe.xScale = flip
-        stripe.position = .zero
-        stripe.zPosition = 0.06
-        shoeRoot.addChild(stripe)
-
-        let toeCap = SKShapeNode(path: RallyAvatarGeometry.shoeToeCapPath(scale: bodyScale))
-        toeCap.fillColor = .clear
-        toeCap.strokeColor = accent.withAlphaComponent(0.72)
-        toeCap.lineWidth = max(0.90 * bodyScale, 0.72)
-        toeCap.lineCap = .round
-        toeCap.xScale = flip
-        toeCap.position = .zero
-        toeCap.zPosition = 0.065
-        shoeRoot.addChild(toeCap)
-
-        // 4. Tongue — lighter patch at top centre
-        let tongue = SKShapeNode(path: RallyAvatarGeometry.shoeTonguePath(scale: bodyScale))
-        tongue.fillColor = upper.blended(withFraction: 0.20, of: .white) ?? upper
-        tongue.strokeColor = .clear
-        tongue.position = .zero
-        tongue.zPosition = 0.07
-        shoeRoot.addChild(tongue)
-
-        // 5. Lace bars
-        let laces = SKShapeNode(path: RallyAvatarGeometry.shoeLacePath(scale: bodyScale))
-        laces.fillColor = UIColor.white.withAlphaComponent(0.72)
-        laces.strokeColor = .clear
-        laces.position = .zero
-        laces.zPosition = 0.08
-        shoeRoot.addChild(laces)
+    private func makeAvatarNode(rig: RallyAvatarRig, viewport: CGSize, parent: SKNode) -> SK3DNode {
+        let node = SK3DNode(viewportSize: viewport)
+        node.name = "rally.sharedCharacter"
+        // HDR cameras in SK3DNode can black out the SpriteKit background.
+        // Keep embedded characters in SDR so the court survives compositing.
+        rig.camera.camera?.wantsHDR = false
+        node.scnScene = rig.scene
+        node.pointOfView = rig.camera
+        node.autoenablesDefaultLighting = false
+        node.isPlaying = false
+        // Initial framing before SpriteKit creates the offscreen renderer.
+        // The projection below takes over after the first rendered frame.
+        let cameraHeight = CGFloat(rig.camera.position.y)
+        let visibleHeight = CGFloat(rig.camera.camera?.orthographicScale ?? 1.05) * 2
+        node.position.y = viewport.height * cameraHeight / max(0.01, visibleHeight)
+        parent.addChild(node)
+        return node
     }
 
-    private func addKneeBand(to leg: SKShapeNode, skin: UIColor, width: CGFloat, y: CGFloat) {
-        let bandHeight = max(1.5, width * 0.13)
-        let knee = SKShapeNode(rectOf: CGSize(width: width, height: bandHeight), cornerRadius: bandHeight * 0.5)
-        knee.fillColor = skin.mixed(with: .black, ratio: 0.16).withAlphaComponent(0.34)
-        knee.strokeColor = UIColor.white.withAlphaComponent(0.05)
-        knee.lineWidth = 0.35
-        knee.position = CGPoint(x: 0, y: y)
-        knee.zPosition = 2
-        leg.addChild(knee)
+    /// SK3DNode projects into its offscreen texture pixels. Its texture size
+    /// depends on display density and the effective SpriteKit scale, including
+    /// rounding. Projecting the camera axis gives the actual texture midpoint;
+    /// normalizing around it converts correctly into this node's local points.
+    private func avatarPoint(_ worldPoint: SCNVector3, rig: RallyAvatarRig, node: SK3DNode) -> CGPoint? {
+        let axisWorld = rig.camera.convertPosition(SCNVector3(0, 0, -2), to: nil)
+        let midpoint = node.projectPoint(SIMD3<Float>(axisWorld.x, axisWorld.y, axisWorld.z))
+        let point = node.projectPoint(SIMD3<Float>(worldPoint.x, worldPoint.y, worldPoint.z))
+        guard midpoint.x > 0, midpoint.y > 0, point.x.isFinite, point.y.isFinite else { return nil }
+        return CGPoint(
+            x: CGFloat(point.x / midpoint.x - 1) * node.viewportSize.width * 0.5,
+            y: CGFloat(point.y / midpoint.y - 1) * node.viewportSize.height * 0.5
+        )
     }
 
-    private func addShortsPanel(to leg: SKShapeNode, color: UIColor, width: CGFloat, height: CGFloat, y: CGFloat) {
-        let panel = SKShapeNode(rectOf: CGSize(width: width, height: height), cornerRadius: min(width, height) * 0.22)
-        panel.fillColor = color.withAlphaComponent(0.96)
-        panel.strokeColor = UIColor.white.withAlphaComponent(0.035)
-        panel.lineWidth = 0.45
-        panel.position = CGPoint(x: 0, y: y)
-        panel.zPosition = 3
-        leg.addChild(panel)
+    private func alignAvatarToCourt(rig: RallyAvatarRig, node: SK3DNode) {
+        // World origin is the shared rig's standing floor, independent of the
+        // current swing pose, so foot planting survives camera/framing changes.
+        guard let floor = avatarPoint(SCNVector3Zero, rig: rig, node: node) else { return }
+        node.position = CGPoint(x: -floor.x, y: -floor.y)
     }
 
     private func setupHUD() {
@@ -2227,26 +1478,17 @@ final class GameScene: SKScene {
     }
 
     private func resetSwingBodyMechanics() {
-        torsoVelocity = 0
-        wristSnapOffset = 0
-        wristSnapAppliedAt = 0
-        lastRacketContactTarget = nil
+        playerAvatarRig?.animate(time: currentTrackTime, leftHanded: dominantHand == .left)
+        playerRacketContactAnchor = nil
     }
 
     private func updateCourtAvatar(trackTime: Double) {
-        guard let playerRoot else { return }
-
+        guard let playerRoot, let rig = playerAvatarRig, let node = playerAvatarNode else { return }
         let activeTouch = swingCurrentScene ?? swingOriginScene
-        let idleBreath = CGFloat(sin(trackTime * (Double.pi * 2.0 / Tunables.avatarBreathingPeriodSeconds)))
-        let recoveryProgressValue = recoveryProgress(at: trackTime)
         let impactProgress = max(0, min(1, (swingVisualImpactUntil - currentTimeSnapshot) / 0.26))
-        let swingPhase = max(0, min(1, 1 - impactProgress))
         let focusLane = sessionMode == .wallRally ? wallFocusLane() : swingVisualLane
         let focusBall = sessionMode == .wallRally ? nearestBall(in: focusLane, around: currentTrackTime) : nil
-        let approachProgress = max(
-            impactProgress,
-            focusBall?.approachToStrike(at: currentTrackTime) ?? 0
-        )
+        let approachProgress = max(impactProgress, focusBall?.approachToStrike(at: currentTrackTime) ?? 0)
         let footworkUrgency = sessionMode == .wallRally
             ? min(1, approachProgress * 1.16 + wallOpeningForgivenessBoost() * 0.06)
             : impactProgress
@@ -2257,8 +1499,7 @@ final class GameScene: SKScene {
             let laneBlend = min(Tunables.footworkLaneBlendMax, max(0, footworkUrgency - 0.20) * 0.62)
             desiredX = center + (laneTarget - center) * laneBlend
         } else if let activeTouch {
-            let clamped = min(size.width * 0.78, max(size.width * 0.22, activeTouch.x))
-            desiredX = clamped
+            desiredX = min(size.width * 0.78, max(size.width * 0.22, activeTouch.x))
         } else {
             desiredX = size.width / 2 + recoveryOffsetX(at: trackTime) + sin(trackTime * 0.8) * 10
         }
@@ -2272,651 +1513,35 @@ final class GameScene: SKScene {
         let movementBlend: CGFloat = sessionMode == .wallRally ? 0.30 + footworkUrgency * 0.18 : 0.18
         playerRoot.position.x += ((desiredX + footworkRootOffset) - playerRoot.position.x) * movementBlend
         playerRoot.position.y = size.height * Tunables.gameplayPlayerRootYRatio - anticipation * 0.65
-        let splitCompression = sessionMode == .wallRally ? footworkUrgency * (1 - impactProgress) * 0.025 : 0
 
         if sessionMode == .wallRally, impactProgress < 0.08 {
             swingVisualLane = focusLane
         }
-        let leaningRight = swingVisualLane == .right
-        let leanDirection: CGFloat = leaningRight ? 1 : -1
-        let reach = swingVisualReach * (0.22 + (1 - impactProgress) * 0.78)
+        if currentTimeSnapshot >= hitStopUntil {
+            let lateral = (playerRoot.position.x - size.width / 2) / max(1, size.width * 0.22)
+            rig.animate(
+                time: trackTime,
+                swingProgress: impactProgress > 0.02 ? Float(1 - impactProgress) : nil,
+                backhand: strokeSide(for: swingVisualLane) == .backhand,
+                lateral: Float(max(-1, min(1, lateral))),
+                leftHanded: dominantHand == .left
+            )
+            node.sceneTime = trackTime
+        }
+        alignAvatarToCourt(rig: rig, node: node)
+        if let racketPoint = avatarPoint(rig.racketHeadWorldPosition, rig: rig, node: node) {
+            playerRacketContactAnchor = node.convert(racketPoint, to: playerRoot)
+        }
         let contactFlash = max(0, (contactFlashUntil - currentTimeSnapshot) / 0.16)
-        let qualityFlash = max(0, (recentContactUntil - currentTimeSnapshot) / 0.22)
-        let pose = currentPoseState(
-            activeTouch: activeTouch,
-            impactProgress: impactProgress,
-            recoveryProgress: recoveryProgressValue
-        )
-        let idleShoulder = sin(currentTrackTime * 2.1) * 0.03
-        let idleHeadLift = sin(currentTrackTime * 1.7) * 2.2
-        let liveContactTarget = focusBall?.position ?? lastRacketContactTarget.map {
-            CGPoint(x: $0.x + playerRoot.position.x, y: $0.y + playerRoot.position.y)
-        }
-        let localRacketContactTarget = liveContactTarget.map {
-            CGPoint(
-                x: ($0.x - playerRoot.position.x) / max(0.001, abs(playerRoot.xScale)),
-                y: ($0.y - playerRoot.position.y) / max(0.001, abs(playerRoot.yScale))
-            )
-        }
-        let targets = poseTargets(
-            for: pose,
-            leanDirection: leanDirection,
-            reach: reach,
-            recoveryProgress: recoveryProgressValue,
-            anticipationProgress: footworkUrgency,
-            swingPhase: swingPhase,
-            racketContactTarget: localRacketContactTarget
-        )
+        playerShadow?.xScale = 1 + contactFlash * 0.16
+        playerShadow?.alpha = 0.86 + contactFlash * 0.14
 
-        // ── Split-step: detect rising edge of approachProgress crossing trigger ──
-        let splitTrigger = Tunables.splitStepApproachTrigger
-        if approachProgress >= splitTrigger && prevApproachProgress < splitTrigger && splitStepUntil < currentTimeSnapshot {
-            splitStepUntil = currentTimeSnapshot + Tunables.splitStepDuration
-        }
-        prevApproachProgress = approachProgress
-        let splitPhaseRaw = max(0, min(1, (splitStepUntil - currentTimeSnapshot) / Tunables.splitStepDuration))
-        // Triangle wave: 0→1→0 over the duration (rises for first half, falls for second)
-        let splitStepLift = Tunables.splitStepHeight * (1 - abs(splitPhaseRaw * 2 - 1))
-        let splitStepLanding = splitPhaseRaw > 0 ? max(0, 1 - splitStepLift / max(0.001, Tunables.splitStepHeight)) : 0
-
-        let footLoad = max(0, 1 - swingPhase / Tunables.swingLoadPhaseEnd)
-        let footContact = max(0, 1 - abs(swingPhase - Tunables.swingContactPhaseCenter) / Tunables.swingContactPhaseRadius)
-        let footFollowRaw = max(0, min(1, (swingPhase - Tunables.swingContactPhaseEnd) / (1 - Tunables.swingContactPhaseEnd)))
-        let footFollow = 1 - pow(1 - footFollowRaw, Tunables.followEaseOutPow)
-
-        // ── Weight side from pose ──
-        let targetWeightSide: CGFloat
-        switch pose {
-        case .forehandClean, .stretchForehand: targetWeightSide = 1
-        case .backhandClean, .stretchBackhand: targetWeightSide = -1
-        default:
-            targetWeightSide = sideCommit > 0.02 ? committedSide : 0
-        }
-        weightSide += (targetWeightSide - weightSide) * Tunables.footworkWeightShiftBlend
-
-        // ── Foot vertical offsets ──
-        // Non-planted foot lifts on load, planted foot stomps at contact
-        let footRecoveryProgress = footContactTime > 0
-            ? max(0, min(1, (currentTimeSnapshot - footContactTime) / Tunables.footRecoveryDuration))
-            : 1.0
-        let plantPressure = min(1, abs(weightSide)) * max(footLoad * 0.55, footContact + contactFlash)
-        let pushLift = Tunables.weightTransferLiftPt * (0.65 * footLoad + 0.45 * footFollow) * abs(weightSide)
-        let stompFoot = Tunables.footStompPt * plantPressure
-        // Lead foot plants on forehand; trail foot plants on backhand.
-        let leadFootY = splitStepLift + (weightSide > 0 ? -stompFoot : pushLift)
-        let trailFootY = splitStepLift + (weightSide < 0 ? -stompFoot : pushLift)
-
-        let loadCrouch = Tunables.footworkLoadCrouchScale * abs(weightSide) * footLoad
-        let contactCrouch = Tunables.footworkContactCompressionScale * footContact
-        let landingCrouch = Tunables.footworkSplitLandCompression * splitStepLanding
-        let playerVisualScale = Tunables.gameplayPlayerVisualScale
-        let yScaleTarget = playerVisualScale * (1 - splitCompression - loadCrouch - contactCrouch - landingCrouch)
-        playerRoot.yScale += (yScaleTarget - playerRoot.yScale) * 0.12
-
-        // ── Torso velocity accumulation (load) → release (contact) ──
-        let isLoadPhase    = swingPhase < Tunables.swingLoadPhaseEnd && impactProgress > 0.02
-        let isContactPhase = swingPhase >= Tunables.swingLoadPhaseEnd && swingPhase < Tunables.swingContactPhaseEnd && impactProgress > 0.02
-        let storedTorsoLoad = torsoVelocity
-        if isLoadPhase {
-            let torsoTarget = targets.torsoRotation
-            torsoVelocity += (torsoTarget - torsoVelocity) * Tunables.torsoVelocityAccumRate
-        } else if isContactPhase {
-            torsoVelocity *= (1 - Tunables.torsoVelocityDecayRate)
-        } else {
-            torsoVelocity *= 0.85
-        }
-        let torsoUncoilRelease = isContactPhase
-            ? -storedTorsoLoad * Tunables.torsoContactUncoilMultiplier
-            : 0
-        let effectiveTorsoRotation = targets.torsoRotation + torsoUncoilRelease
-
-        // ── Wrist-snap decay ──
-        let wristSnapAge = currentTimeSnapshot - wristSnapAppliedAt
-        if wristSnapAppliedAt > 0 {
-            if wristSnapAge <= Tunables.wristSnapHoldSeconds {
-                wristSnapOffset = Tunables.wristSnapAmplitude
-            } else {
-                wristSnapOffset = Tunables.wristSnapAmplitude
-                    * exp(-CGFloat(wristSnapAge - Tunables.wristSnapHoldSeconds) * Tunables.wristSnapDecayRate)
-            }
-        } else {
-            wristSnapOffset = 0
-        }
-        if wristSnapOffset < 0.5 { wristSnapOffset = 0 }
-
-        // Hit-stop: when we just registered a perfect/great contact, nearly freeze
-        // all pose blends for ~2 frames so the impact frame "holds" visibly.
-        let isHitStop = currentTimeSnapshot < hitStopUntil
-        let poseBlend: CGFloat = isHitStop ? Tunables.hitStopBlendFraction : 1.0
-
-        // Torso is the initiator — blends fastest (kinetic chain origin)
-        playerTorso.zRotation += (effectiveTorsoRotation - playerTorso.zRotation) * 0.24 * poseBlend
-        playerTorso.xScale += ((1 + abs(idleShoulder) * 0.03) - playerTorso.xScale) * 0.08
-        playerTorso.yScale += ((1 + idleBreath * Tunables.avatarBreathingScaleAmplitude) - playerTorso.yScale) * 0.08
-        // Pelvis follows torso with a slight lag — hips lead then stabilise
-        playerPelvis.zRotation += ((effectiveTorsoRotation * 0.52) - playerPelvis.zRotation) * 0.22
-        playerPelvis.position.x += ((targets.headX * 0.10) - playerPelvis.position.x) * 0.12
-        playerHead.zRotation += (targets.headRotation - playerHead.zRotation) * 0.18
-        playerHead.position.x += (targets.headX - playerHead.position.x) * 0.14
-        let gameplayScale: CGFloat = courtAvatarScale
-        let faceScale = (courtAvatarLayout?.headPathScale ?? gameplayScale) * 0.96
-        let headAnchorX = targets.headX
-        let headAnchorY = (courtAvatarLayout?.headY ?? 186) + idleHeadLift
-        let hairFringeLift = RallyAvatarGeometry.hairFringeLift(scale: faceScale)
-        playerHead.position.y += (headAnchorY - playerHead.position.y) * 0.12
-        playerNeck.zRotation += (targets.headRotation * 0.6 - playerNeck.zRotation) * 0.16
-        playerBackHair.zRotation += (targets.headRotation * 0.50 - playerBackHair.zRotation) * 0.12
-        playerBackHair.position.x += (headAnchorX - playerBackHair.position.x) * 0.12
-        playerBackHair.position.y += (headAnchorY - playerBackHair.position.y) * 0.12
-        playerHair.zRotation += (targets.headRotation * 0.72 - playerHair.zRotation) * 0.14
-        playerHair.position.x += (headAnchorX - playerHair.position.x) * 0.14
-        playerHair.position.y += ((headAnchorY + hairFringeLift) - playerHair.position.y) * 0.14
-        playerHairHighlight.position.x += (headAnchorX - playerHairHighlight.position.x) * 0.14
-        playerHairHighlight.position.y += ((headAnchorY + hairFringeLift) - playerHairHighlight.position.y) * 0.14
-        playerLeftEar.position.x += (headAnchorX - playerLeftEar.position.x) * 0.14
-        playerLeftEar.position.y += (headAnchorY - playerLeftEar.position.y) * 0.14
-        playerRightEar.position.x += (headAnchorX - playerRightEar.position.x) * 0.14
-        playerRightEar.position.y += (headAnchorY - playerRightEar.position.y) * 0.14
-        playerLeftEye.position.x += (headAnchorX - playerLeftEye.position.x) * 0.14
-        playerLeftEye.position.y += (headAnchorY - playerLeftEye.position.y) * 0.14
-        playerRightEye.position.x += (headAnchorX - playerRightEye.position.x) * 0.14
-        playerRightEye.position.y += (headAnchorY - playerRightEye.position.y) * 0.14
-        for specular in playerEyeSpeculars {
-            specular.position.x += (headAnchorX - specular.position.x) * 0.14
-            specular.position.y += (headAnchorY - specular.position.y) * 0.14
-        }
-        playerLeftBrow.position.x += (headAnchorX - playerLeftBrow.position.x) * 0.14
-        playerLeftBrow.position.y += (headAnchorY - playerLeftBrow.position.y) * 0.14
-        playerRightBrow.position.x += (headAnchorX - playerRightBrow.position.x) * 0.14
-        playerRightBrow.position.y += (headAnchorY - playerRightBrow.position.y) * 0.14
-        playerLeftBrow.zRotation += ((targets.headRotation * 0.08) - playerLeftBrow.zRotation) * 0.12
-        playerRightBrow.zRotation += ((targets.headRotation * 0.08) - playerRightBrow.zRotation) * 0.12
-        playerNose.position.x += (headAnchorX - playerNose.position.x) * 0.14
-        playerNose.position.y += (headAnchorY - playerNose.position.y) * 0.14
-        playerMouth?.position.x += (headAnchorX - (playerMouth?.position.x ?? 0)) * 0.14
-        playerMouth?.position.y += ((headAnchorY + RallyAvatarGeometry.mouthCenterY(scale: faceScale)) - (playerMouth?.position.y ?? 0)) * 0.14
-        playerMouth?.zRotation += ((RallyAvatarRebuildDefaults.Face.smileRotationDegrees * .pi / 180) + targets.headRotation * 0.2 - (playerMouth?.zRotation ?? 0)) * 0.12
-        playerLeftLens?.position.x += (targets.headX - (playerLeftLens?.position.x ?? 0)) * 0.14
-        playerLeftLens?.position.y += (headAnchorY - (playerLeftLens?.position.y ?? 0)) * 0.12
-        playerRightLens?.position.x += (targets.headX - (playerRightLens?.position.x ?? 0)) * 0.14
-        playerRightLens?.position.y += (headAnchorY - (playerRightLens?.position.y ?? 0)) * 0.12
-        playerGlassesBridge?.position.x += (targets.headX * 0.5 - (playerGlassesBridge?.position.x ?? 0)) * 0.14
-        playerGlassesBridge?.position.y += (headAnchorY - (playerGlassesBridge?.position.y ?? 0)) * 0.12
-        if let leftLens = playerLeftLens, let leftTemple = playerLeftTemple {
-            leftTemple.position = CGPoint(x: leftLens.position.x - 11 * (avatarAppearance?.bodyScale ?? 1), y: leftLens.position.y)
-        }
-        if let rightLens = playerRightLens, let rightTemple = playerRightTemple {
-            rightTemple.position = CGPoint(x: rightLens.position.x + 11 * (avatarAppearance?.bodyScale ?? 1), y: rightLens.position.y)
-        }
-
-        let presentationIdle = impactProgress < 0.04 && pose == .ready
-        let depthTarget: CGFloat = playerVisualScale * (presentationIdle ? 0.985 : 1.0)
-        let yawTarget: CGFloat = 0
-        let isBackhandPose = pose == .backhandClean || pose == .stretchBackhand
-        playerRoot.zRotation += (yawTarget + effectiveTorsoRotation * 0.16 - playerRoot.zRotation) * 0.1
-        playerRoot.xScale += (depthTarget + splitCompression * 0.7 * playerVisualScale - playerRoot.xScale) * 0.12
-
-        let stanceWiden = Tunables.footworkStanceWidenPoints * max(sideCommit, footLoad * 0.72)
-        let outsidePlant = Tunables.footworkOutsidePlantPoints * abs(weightSide) * max(footLoad * 0.7, footContact)
-        let insidePush = Tunables.footworkInsidePushPoints * abs(weightSide) * footFollow
-        let leadLegXTarget = targets.leadLegX
-            + stanceWiden
-            + (weightSide > 0 ? outsidePlant : -insidePush)
-        let trailLegXTarget = targets.trailLegX
-            - stanceWiden
-            + (weightSide < 0 ? -outsidePlant : insidePush)
-        let leadPlantRotation = weightSide > 0
-            ? Tunables.footworkOutsideToeOutRadians * max(footLoad, footContact)
-            : Tunables.footworkRecoveryToeDragRadians * footFollow
-        let trailPlantRotation = weightSide < 0
-            ? -Tunables.footworkOutsideToeOutRadians * max(footLoad, footContact)
-            : -Tunables.footworkRecoveryToeDragRadians * footFollow
-
-        playerLeadLeg.zRotation += ((targets.leadLegRotation + anticipation * 0.08 + leadPlantRotation * 0.35) - playerLeadLeg.zRotation) * 0.18
-        playerTrailLeg.zRotation += ((targets.trailLegRotation - anticipation * 0.08 + trailPlantRotation * 0.35) - playerTrailLeg.zRotation) * 0.18
-        playerLeadLeg.position.x += (leadLegXTarget - playerLeadLeg.position.x) * 0.18
-        playerTrailLeg.position.x += (trailLegXTarget - playerTrailLeg.position.x) * 0.18
-
-        let leadLegHeight = (courtAvatarLayout?.legHeight ?? 108) * 0.74
-        let trailLegHeight = (courtAvatarLayout?.trailLegHeight ?? 102) * 0.74
-        let leadShoeTarget = CGPoint(
-            x: leadLegXTarget,
-            y: (courtAvatarLayout?.legY ?? 32) - leadLegHeight * 0.51
-        )
-        let trailShoeTarget = CGPoint(
-            x: trailLegXTarget,
-            y: (courtAvatarLayout?.legY ?? 32) - trailLegHeight * 0.51
-        )
-        playerLeadShoe.position.x += (leadShoeTarget.x - playerLeadShoe.position.x) * 0.18
-        playerLeadShoe.position.y += ((leadShoeTarget.y + leadFootY) - playerLeadShoe.position.y) * 0.18
-        playerTrailShoe.position.x += (trailShoeTarget.x - playerTrailShoe.position.x) * 0.18
-        playerTrailShoe.position.y += ((trailShoeTarget.y + trailFootY) - playerTrailShoe.position.y) * 0.18
-        let readyToeOut = Tunables.footworkReadyToeOutRadians
-        let leadShoeRotationTarget = -readyToeOut
-            - max(0, leadPlantRotation) * 0.35
-            + max(0, targets.leadLegRotation) * 0.006
-        let trailShoeRotationTarget = readyToeOut
-            - min(0, trailPlantRotation) * 0.35
-            + min(0, targets.trailLegRotation) * 0.006
-        playerLeadShoe.zRotation += (leadShoeRotationTarget - playerLeadShoe.zRotation) * 0.24
-        playerTrailShoe.zRotation += (trailShoeRotationTarget - playerTrailShoe.zRotation) * 0.24
-
-        // Kinetic chain: arm blends SLOWER during load (torso coils first), faster at contact/follow
-        // isLoadPhase / isContactPhase already computed above
-        let armLoadBlend: CGFloat    = isLoadPhase    ? 0.14 : (isContactPhase ? 0.34 : 0.22)
-        let armRotBlend: CGFloat     = isLoadPhase    ? 0.16 : (isContactPhase ? 0.36 : 0.24)
-        let racketLoadBlend: CGFloat = isLoadPhase    ? 0.12 : (isContactPhase ? 0.38 : 0.24)
-
-        playerLeadArm.zRotation += ((targets.leadArmRotation + idleShoulder - anticipation * 0.04) - playerLeadArm.zRotation) * armRotBlend * poseBlend
-        playerTrailArm.zRotation += ((targets.trailArmRotation - idleShoulder * 0.8 + anticipation * 0.04) - playerTrailArm.zRotation) * (isBackhandPose ? armRotBlend * 1.1 : armLoadBlend) * poseBlend
-        playerLeadArm.position.x += (targets.leadArmX - playerLeadArm.position.x) * armLoadBlend * poseBlend
-        playerLeadArm.position.y += (targets.leadArmY - playerLeadArm.position.y) * armLoadBlend * poseBlend
-        playerTrailArm.position.x += (targets.trailArmX - playerTrailArm.position.x) * (isBackhandPose ? armLoadBlend * 1.15 : armLoadBlend) * poseBlend
-        playerTrailArm.position.y += (targets.trailArmY - playerTrailArm.position.y) * (isBackhandPose ? armLoadBlend * 1.15 : armLoadBlend) * poseBlend
-
-        let qualityPose = qualityImpactProfile()
-        // Racket lags behind arm during load — hand+racket are the last link in the chain
-        playerRacketHandle.zRotation += ((targets.racketHandleRotation + qualityPose.handleRotation * qualityFlash) - playerRacketHandle.zRotation) * racketLoadBlend * poseBlend
-        // Racket face angle applied additively on top of head rotation — wrist cock / topspin / slice
-        playerRacketHead.zRotation += ((targets.racketHeadRotation + targets.racketFaceAngle + qualityPose.headRotation * qualityFlash) - playerRacketHead.zRotation) * racketLoadBlend * poseBlend
-        playerRacketHandle.position.x += ((targets.racketHandleX + qualityPose.handleX * qualityFlash) - playerRacketHandle.position.x) * racketLoadBlend * poseBlend
-        playerRacketHandle.position.y += ((targets.racketHandleY + qualityPose.handleY * qualityFlash) - playerRacketHandle.position.y) * racketLoadBlend * poseBlend
-        // Wrist-snap offset: racket head overshoots along the swing axis at contact then decays
-        let snapAxisX: CGFloat = isBackhandPose ? Tunables.backhandWristSnapAxisX : Tunables.forehandWristSnapAxisX
-        let snapAxisY: CGFloat = isBackhandPose ? Tunables.backhandWristSnapAxisY : Tunables.forehandWristSnapAxisY
-        playerRacketHead.position.x += ((targets.racketHeadX + qualityPose.headX * qualityFlash + wristSnapOffset * snapAxisX) - playerRacketHead.position.x) * racketLoadBlend * poseBlend
-        playerRacketHead.position.y += ((targets.racketHeadY + qualityPose.headY * qualityFlash + wristSnapOffset * snapAxisY) - playerRacketHead.position.y) * racketLoadBlend * poseBlend
-
-        let gripAngle = playerRacketHandle.zRotation + CGFloat.pi / 2
-        let gripDX = cos(gripAngle)
-        let gripDY = sin(gripAngle)
-        let gripHalfSeparation = (isBackhandPose ? Tunables.backhandSupportHandGripSeparation : 8.5) * gameplayScale
-        let gripLower = CGPoint(
-            x: playerRacketHandle.position.x - gripDX * gripHalfSeparation,
-            y: playerRacketHandle.position.y - gripDY * gripHalfSeparation
-        )
-        let gripUpper = CGPoint(
-            x: playerRacketHandle.position.x + gripDX * gripHalfSeparation,
-            y: playerRacketHandle.position.y + gripDY * gripHalfSeparation
-        )
-        let leadHandTarget = gripLower
-        let trailHandTarget = isBackhandPose
-            ? gripUpper
-            : CGPoint(x: targets.trailArmX - 8 * leanDirection, y: targets.trailArmY - 24 * gameplayScale)
-        let backhandGripLock = max(contactFlash, isContactPhase ? 1 : 0)
-        let handBlend: CGFloat = isBackhandPose
-            ? 0.50 + (Tunables.backhandContactGripLockBlend - 0.50) * backhandGripLock
-            : 0.34
-        playerLeadHand.position.x += (leadHandTarget.x - playerLeadHand.position.x) * handBlend
-        playerLeadHand.position.y += (leadHandTarget.y - playerLeadHand.position.y) * handBlend
-        playerTrailHand.position.x += (trailHandTarget.x - playerTrailHand.position.x) * handBlend
-        playerTrailHand.position.y += (trailHandTarget.y - playerTrailHand.position.y) * handBlend
-        playerTrailHand.alpha += ((isBackhandPose ? 1.0 : 0.68) - playerTrailHand.alpha) * 0.24
-
-        playerLeadArm.position.x += ((playerLeadHand.position.x - 8 * leanDirection * gameplayScale) - playerLeadArm.position.x) * 0.18
-        playerLeadArm.position.y += ((playerLeadHand.position.y - 31 * gameplayScale) - playerLeadArm.position.y) * 0.18
-        if isBackhandPose {
-            playerLeadArm.position.x += ((playerLeadHand.position.x + 8 * gameplayScale) - playerLeadArm.position.x) * 0.18
-            playerLeadArm.position.y += ((playerLeadHand.position.y - 35 * gameplayScale) - playerLeadArm.position.y) * 0.18
-            playerTrailArm.position.x += ((playerTrailHand.position.x - 8 * gameplayScale) - playerTrailArm.position.x) * 0.22
-            playerTrailArm.position.y += ((playerTrailHand.position.y - 33 * gameplayScale) - playerTrailArm.position.y) * 0.22
-            playerLeadArm.zRotation += ((playerRacketHandle.zRotation - 0.18) - playerLeadArm.zRotation) * 0.16
-            playerTrailArm.zRotation += ((playerRacketHandle.zRotation + 0.20) - playerTrailArm.zRotation) * 0.18
-        } else {
-            playerTrailArm.position.x += ((playerTrailHand.position.x + 7 * leanDirection * gameplayScale) - playerTrailArm.position.x) * 0.12
-            playerTrailArm.position.y += ((playerTrailHand.position.y - 28 * gameplayScale) - playerTrailArm.position.y) * 0.12
-        }
-
-        // ── Shoulder sleeve caps: track the top (shoulder end) of each arm ──
-        // Arm shape is centered — shoulder is at armCenter + rotate(0, halfLen)
-        let leadHalfLen: CGFloat = 63.0 * 0.5 * gameplayScale
-        let trailHalfLen: CGFloat = 62.0 * 0.5 * gameplayScale
-        let leadAng = playerLeadArm.zRotation
-        let trailAng = playerTrailArm.zRotation
-        let leadShoulderX = playerLeadArm.position.x - sin(leadAng) * leadHalfLen
-        let leadShoulderY = playerLeadArm.position.y + cos(leadAng) * leadHalfLen
-        let trailShoulderX = playerTrailArm.position.x - sin(trailAng) * trailHalfLen
-        let trailShoulderY = playerTrailArm.position.y + cos(trailAng) * trailHalfLen
-        playerLeadSleeve.position.x  += (leadShoulderX  - playerLeadSleeve.position.x)  * 0.52
-        playerLeadSleeve.position.y  += (leadShoulderY  - playerLeadSleeve.position.y)  * 0.52
-        playerTrailSleeve.position.x += (trailShoulderX - playerTrailSleeve.position.x) * 0.52
-        playerTrailSleeve.position.y += (trailShoulderY - playerTrailSleeve.position.y) * 0.52
-
-        let swingPalette = swingTrailPalette(intent: swingVisualIntent, lane: swingVisualLane)
-        let flashColor = contactFlash > 0.01
-            ? UIColor.white.withAlphaComponent(0.35 + contactFlash * 0.55)
-            : swingPalette.glow.withAlphaComponent(0.22)
-        let liveIntentEnergy = min(1, impactProgress * 0.72 + qualityFlash * 0.58 + anticipation * 0.3)
-        playerRacketHead.glowWidth = 0.35 + contactFlash * 8 + qualityPose.glowBoost * qualityFlash * 0.26 + liveIntentEnergy * 1.1
-        playerRacketHead.fillColor = swingPalette.glow.withAlphaComponent(
-            0.006 + liveIntentEnergy * 0.010 + contactFlash * 0.035 + qualityPose.fillBoost * qualityFlash * 0.12
-        )
-        playerRacketHead.strokeColor = playerRacketBaseColor
-            .blended(withFraction: CGFloat(contactFlash * 0.6), of: .white)?
-            .blended(withFraction: CGFloat(liveIntentEnergy * 0.4), of: swingPalette.core)
-            ?? playerRacketBaseColor
-        playerRacketHandle.strokeColor = flashColor
-        playerRacketHandle.fillColor = swingPalette.core.withAlphaComponent(0.74 + contactFlash * 0.16)
-        let liveSkinColor = avatarAppearance?.skinUIColor
-            ?? UIColor(red: 0.88, green: 0.68, blue: 0.52, alpha: 1)
-        playerLeadHand.fillColor = liveSkinColor.blended(withFraction: 0.06, of: .white) ?? liveSkinColor
-        playerTrailHand.fillColor = liveSkinColor.blended(withFraction: 0.04, of: .white) ?? liveSkinColor
-        playerRacketStrings.forEach { string in
-            string.alpha = 0.38 + contactFlash * 0.44 + qualityPose.stringBoost * qualityFlash
-            string.fillColor = UIColor.white
-                .blended(withFraction: CGFloat(liveIntentEnergy * 0.34), of: swingPalette.tip)?
-                .withAlphaComponent(0.22 + contactFlash * 0.46 + qualityPose.stringBoost * qualityFlash * 0.8)
-                ?? UIColor.white.withAlphaComponent(0.22 + contactFlash * 0.46 + qualityPose.stringBoost * qualityFlash * 0.8)
-        }
-        let liveHairColor = avatarAppearance?.hairUIColor ?? UIColor(red: 0.008, green: 0.008, blue: 0.012, alpha: 0.98)
-        playerBackHair.fillColor = liveHairColor.blended(withFraction: CGFloat(contactFlash * 0.12), of: .white) ?? liveHairColor
-        playerHair.fillColor = liveHairColor.blended(withFraction: CGFloat(contactFlash * 0.18), of: .white) ?? liveHairColor
-        // Shadow punches outward on contact then snaps back — sells the physical weight
-        let shadowContactPunch = contactFlash * 0.22
-        playerShadow.xScale += ((targets.shadowXScale + shadowContactPunch) - playerShadow.xScale) * 0.18
-        playerShadow.yScale += ((targets.shadowYScale + shadowContactPunch * 0.5) - playerShadow.yScale) * 0.18
-        playerShadow.alpha += ((max(0.32, targets.shadowAlpha) + contactFlash * 0.22) - playerShadow.alpha) * 0.18
-        // Shadow shifts laterally with weight transfer — planted foot pushes shadow toward it
-        let shadowShiftTarget = weightSide * Tunables.shadowWeightShiftPt * (1 - footRecoveryProgress)
-        playerShadow.position.x += (shadowShiftTarget - playerShadow.position.x) * 0.14
-        playerStanceGlow.fillColor = swingPalette.glow.withAlphaComponent(
-            0.014 + anticipation * 0.018 + impactProgress * 0.028 + qualityFlash * 0.030
-        )
-        playerStanceGlow.xScale += ((0.92 + impactProgress * 0.10 + recoveryProgressValue * 0.04) - playerStanceGlow.xScale) * 0.14
-        playerStanceGlow.yScale += ((0.86 + anticipation * 0.04 + qualityFlash * 0.03) - playerStanceGlow.yScale) * 0.14
-        playerStanceGlow.alpha += ((0.14 + impactProgress * 0.08 + qualityFlash * 0.06) - playerStanceGlow.alpha) * 0.12
-    }
-
-    private func qualityImpactProfile() -> (
-        handleRotation: CGFloat,
-        headRotation: CGFloat,
-        handleX: CGFloat,
-        handleY: CGFloat,
-        headX: CGFloat,
-        headY: CGFloat,
-        glowBoost: CGFloat,
-        fillBoost: CGFloat,
-        stringBoost: CGFloat
-    ) {
-        switch recentContactQuality {
-        case .perfect:
-            return (0.08, 0.12, 8, 6, 12, 9, 10, 0.12, 0.22)
-        case .great:
-            return (0.03, 0.05, 4, 3, 6, 4, 5, 0.06, 0.12)
-        case .good:
-            return (-0.04, -0.07, -3, -2, -5, -3, 2, 0.03, 0.06)
-        case .miss, nil:
-            return (0, 0, 0, 0, 0, 0, 0, 0, 0)
-        }
-    }
-
-    private func currentPoseState(activeTouch: CGPoint?, impactProgress: CGFloat, recoveryProgress: CGFloat) -> PlayerPoseState {
-        if impactProgress > 0.02 {
-            if swingVisualIntent == .slice {
-                return .defensiveBlock
-            }
-            let strokeSide = strokeSide(for: swingVisualLane)
-            let stretched = recoverySeverity > 0.52 || swingVisualReach > 150
-            if stretched {
-                return strokeSide == .forehand ? .stretchForehand : .stretchBackhand
-            }
-            return strokeSide == .forehand ? .forehandClean : .backhandClean
-        }
-        if recoveryProgress > 0.08 {
-            return .recovery
-        }
-        if activeTouch != nil {
-            return .ready
-        }
-        return .ready
-    }
-
-    private func poseTargets(
-        for state: PlayerPoseState,
-        leanDirection: CGFloat,
-        reach: CGFloat,
-        recoveryProgress: CGFloat,
-        anticipationProgress: CGFloat,
-        swingPhase: CGFloat,
-        racketContactTarget: CGPoint? = nil
-    ) -> PlayerPoseTargets {
-        switch state {
-        case .ready:
-            let split = sin(currentTrackTime * 5.0) * (0.012 + anticipationProgress * 0.010)
-            let breathBob = sin(currentTrackTime * 1.6) * 1.2  // gentle idle breathing lift
-            let preload = anticipationProgress
-            let weightShift = leanDirection * Tunables.avatarWeightShiftPoints * preload
-            // Athletic ready: racket up at chest, both arms bent forward, wide knees-bent stance.
-            // Trail arm crosses slightly in front of body (cradles racket throat in real tennis).
-            return PlayerPoseTargets(
-                torsoRotation: leanDirection * (0.025 + preload * 0.055) + split * 0.30,
-                headRotation: leanDirection * (0.020 + preload * 0.040) + split * 0.16,
-                headX: leanDirection * (4 + preload * 6) + weightShift * 0.10,
-                // More knee bend for athletic squat
-                leadLegRotation: 0.08 + split + preload * 0.10,
-                trailLegRotation: -0.07 - split * 0.75 - preload * 0.09,
-                leadLegX: 28 + leanDirection * (6 + preload * 7) + weightShift,
-                trailLegX: -28 - leanDirection * (5 + preload * 7) + weightShift * 0.36,
-                // Lead arm (racket arm): bent inward, racket throat in front of chest
-                leadArmRotation: -0.46 + leanDirection * (0.08 + preload * 0.06),
-                // Trail arm: NOT dangling — bent forward, hand near racket throat
-                trailArmRotation: 0.20 + leanDirection * (0.06 + preload * 0.04),
-                leadArmX: 28 + leanDirection * (5 + preload * 7),
-                leadArmY: 124 + breathBob + preload * 5,
-                trailArmX: -22 + leanDirection * (3 + preload * 4),  // pulled toward body center
-                trailArmY: 122 + breathBob + preload * 3,
-                // Racket centered in front of body, face open and ready
-                racketHandleRotation: -0.28 + leanDirection * (0.10 + preload * 0.08),
-                racketHeadRotation: -0.08 + leanDirection * (0.10 + preload * 0.10),
-                racketHandleX: 40 + leanDirection * (5 + preload * 8),
-                racketHandleY: 132 + breathBob + preload * 6,
-                racketHeadX: 62 + leanDirection * (6 + preload * 9),
-                racketHeadY: 170 + breathBob + preload * 8,
-                shadowXScale: 1.04 + preload * 0.04,
-                shadowYScale: 0.98 - preload * 0.02,
-                shadowAlpha: 0.25 + preload * 0.04
-            )
-        case .forehandClean:
-            let phase = max(0, min(1, swingPhase))
-            let load = max(0, 1 - phase / Tunables.swingLoadPhaseEnd)
-            let contact = max(0, 1 - abs(phase - Tunables.swingContactPhaseCenter) / Tunables.swingContactPhaseRadius)
-            let followRaw = max(0, min(1, (phase - Tunables.swingContactPhaseEnd) / (1 - Tunables.swingContactPhaseEnd)))
-            let follow = 1 - pow(1 - followRaw, Tunables.followEaseOutPow)
-            let armReach = 32 + reach * 0.12
-
-            // Kinetic-chain lag: the racket hand commits only after the torso has loaded.
-            let torsoTarget = Tunables.forehandLoadTorsoRotation * load
-            let torsoFrac = abs(playerTorso.zRotation) / max(0.001, abs(torsoTarget))
-            let racketLagBlend = torsoFrac < Tunables.racketHandLagTorsoFrac ? 0.60 : 1.0
-            let rl = racketLagBlend
-
-            let defaultContactHeadX = 88 + armReach * 0.92
-            let defaultContactHeadY = 170 + armReach * 0.08
-            let contactHeadX = racketContactTarget?.x ?? defaultContactHeadX
-            let contactHeadY = racketContactTarget?.y ?? defaultContactHeadY
-            let handleContactX = contactHeadX - 28
-            let handleContactY = contactHeadY - 30
-
-            let faceAtContact: CGFloat = {
-                switch swingVisualIntent {
-                case .topspin: return Tunables.racketFaceTopspin
-                case .slice:   return Tunables.racketFaceSlice
-                default:       return Tunables.racketFaceFlat
-                }
-            }()
-            let racketFaceAngle = Tunables.wristCockAngleLoad * load
-                                + faceAtContact * contact
-                                + (faceAtContact + Tunables.wristPronateFinal) * follow
-            return PlayerPoseTargets(
-                torsoRotation: Tunables.forehandLoadTorsoRotation * load
-                    + 0.34 * contact                                     // chest drives through ball without over-rotating at phone scale
-                    + Tunables.forehandFollowTorsoRotation * follow,
-                headRotation: -0.04 * load + 0.02 * contact + 0.035 * follow,  // head stays level, eyes on ball
-                headX: -8 * load + 5 * contact + 10 * follow,
-                // Legs: deep knee bend on load, weight drives powerfully into front foot at contact
-                leadLegRotation: 0.18 + 0.22 * load + 0.22 * contact - 0.05 * follow,
-                trailLegRotation: -0.26 - 0.22 * load + 0.18 * follow,         // trail foot pivots through on follow
-                leadLegX: 31 + 10 * load + 16 * contact + 4 * follow,
-                trailLegX: -28 - 12 * load + 14 * follow,                      // trail foot sweeps through
-                // Lead arm: coils behind torso on load, whips explosively through contact, dips into follow
-                leadArmRotation: Tunables.forehandLeadArmLoadRotation * load + 0.24 * contact + 0.48 * follow + reach * 0.0010,
-                // Trail arm: balance arm — extends dramatically OUT and UP during follow (key pro signature)
-                trailArmRotation: 0.26 * load + 0.02 * contact - 0.38 * follow,  // balance arm opens without pinwheeling
-                leadArmX: 36 + armReach * (0.24 * load + 0.56 * contact + 0.34 * follow),
-                leadArmY: 128 + reach * (0.025 * load + 0.055 * contact + 0.08 * follow) + Tunables.forehandLeadShoulderFollowDip * follow,
-                trailArmX: -38 + reach * 0.035 * contact - 30 * follow,          // balance arm sweeps wide, not off-body
-                trailArmY: 118 + reach * 0.018 + 22 * follow,                    // and lifts — classic pro balance
-                racketHandleRotation: (-0.64 * load + 0.24 * contact + 0.58 * follow + reach * 0.0011) * rl,
-                racketHeadRotation: -0.48 * load + 0.48 * contact + 0.72 * follow + reach * 0.0009,  // wrist rolls but stays readable
-                racketHandleX: ((50 - 26 * load) * rl) * (1 - contact) * (1 - follow)
-                    + handleContactX * contact
-                    + Tunables.forehandFollowHandleX * follow,
-                racketHandleY: (130 + 32 * load) * (1 - contact) * (1 - follow)
-                    + handleContactY * contact
-                    + Tunables.forehandFollowHandleY * follow,
-                racketHeadX: (74 - 40 * load) * (1 - contact) * (1 - follow)
-                    + contactHeadX * contact
-                    + (Tunables.forehandFollowHandleX - 18) * follow,
-                racketHeadY: (162 + 26 * load) * (1 - contact) * (1 - follow)
-                    + contactHeadY * contact
-                    + (Tunables.forehandFollowHandleY + 36) * follow,           // racket finishes high over opposite shoulder
-                shadowXScale: 1.14 + 0.12 * contact,
-                shadowYScale: 0.93,
-                shadowAlpha: 0.36,
-                racketFaceAngle: racketFaceAngle
-            )
-        case .backhandClean:
-            let phase = max(0, min(1, swingPhase))
-            let load = max(0, 1 - phase / Tunables.swingLoadPhaseEnd)
-            let contact = max(0, 1 - abs(phase - Tunables.swingContactPhaseCenter) / Tunables.swingContactPhaseRadius)
-            let followRaw = max(0, min(1, (phase - Tunables.swingContactPhaseEnd) / (1 - Tunables.swingContactPhaseEnd)))
-            let follow = 1 - pow(1 - followRaw, Tunables.followEaseOutPow)
-            let armReach = 30 + reach * 0.12
-
-            let defaultContactHeadX = -86 - armReach * 0.18
-            let defaultContactHeadY = 178 + armReach * 0.08
-            let contactHeadX = racketContactTarget?.x ?? defaultContactHeadX
-            let contactHeadY = racketContactTarget?.y ?? defaultContactHeadY
-            let handleContactX = contactHeadX + 26
-            let handleContactY = contactHeadY - 30
-
-            let faceAtContact: CGFloat = {
-                switch swingVisualIntent {
-                case .slice:   return Tunables.racketFaceSlice
-                default:       return Tunables.racketFaceFlat
-                }
-            }()
-            let racketFaceAngle = Tunables.wristCockAngleLoad * load + faceAtContact * contact + faceAtContact * 0.5 * follow
-            return PlayerPoseTargets(
-                // Two-hander: full shoulder coil behind ball, explosive through-rotation, high finish
-                torsoRotation: Tunables.backhandLoadTorsoRotation * load
-                    - 0.38 * contact                                     // drives chest through target
-                    + Tunables.backhandFollowTorsoRotation * follow,
-                headRotation: -0.04 * load - 0.015 * contact + 0.01 * follow,  // head level, watches ball
-                headX: -22 * load - 6 * contact - 3 * follow,
-                leadLegRotation: -0.26 - 0.10 * load + 0.12 * follow,
-                trailLegRotation: 0.40 + 0.20 * load - 0.10 * follow,
-                leadLegX: -16 - 6 * load + 8 * contact + 10 * follow,
-                trailLegX: -48 - 12 * load - 6 * contact + 14 * follow,
-                // Both arms drive through together (two-hander unit), then lead arm extends to finish
-                leadArmRotation: -1.40 * load - 0.82 * contact - 0.34 * follow - reach * 0.0008,
-                trailArmRotation: -1.28 * load - 0.76 * contact - 0.30 * follow - reach * 0.0007,
-                leadArmX: -18 - armReach * (0.60 * load + 0.48 * contact + 0.42 * follow),
-                leadArmY: 144 + 18 * load + reach * (0.070 * contact + 0.045 * follow),
-                trailArmX: -14 - armReach * (0.50 * load + 0.42 * contact + 0.46 * follow),
-                trailArmY: 148 + 16 * load + reach * (0.068 * contact + 0.044 * follow),
-                racketHandleRotation: -1.48 * load - 1.02 * contact - 0.36 * follow - reach * 0.0009,
-                racketHeadRotation: -1.14 * load - 0.74 * contact - 0.12 * follow - reach * 0.0008,
-                racketHandleX: (-22 - armReach * 0.98 * load) * (1 - contact) * (1 - follow)
-                    + handleContactX * contact
-                    + Tunables.backhandFollowHandleX * follow,
-                racketHandleY: (154 + 22 * load) * (1 - contact) * (1 - follow)
-                    + handleContactY * contact
-                    + Tunables.backhandFollowHandleY * follow,
-                racketHeadX: (-48 - armReach * 1.18 * load) * (1 - contact) * (1 - follow)
-                    + contactHeadX * contact
-                    + Tunables.backhandFollowHeadX * follow,
-                racketHeadY: (204 + 28 * load) * (1 - contact) * (1 - follow)
-                    + contactHeadY * contact
-                    + Tunables.backhandFollowHeadY * follow,
-                shadowXScale: 1.28 + 0.06 * load,
-                shadowYScale: 0.88,
-                shadowAlpha: 0.38,
-                racketFaceAngle: racketFaceAngle
-            )
-        case .stretchForehand:
-            return poseTargets(
-                for: .forehandClean,
-                leanDirection: leanDirection,
-                reach: reach + 42,
-                recoveryProgress: recoveryProgress,
-                anticipationProgress: anticipationProgress,
-                swingPhase: swingPhase,
-                racketContactTarget: racketContactTarget
-            )
-        case .stretchBackhand:
-            return poseTargets(
-                for: .backhandClean,
-                leanDirection: leanDirection,
-                reach: reach + 46,
-                recoveryProgress: recoveryProgress,
-                anticipationProgress: anticipationProgress,
-                swingPhase: swingPhase,
-                racketContactTarget: racketContactTarget
-            )
-        case .defensiveBlock:
-            let armReach = 18 + reach * 0.06
-            return PlayerPoseTargets(
-                torsoRotation: leanDirection * 0.08,
-                headRotation: leanDirection * 0.03,
-                headX: leanDirection * 6,
-                leadLegRotation: leanDirection * 0.04,
-                trailLegRotation: -leanDirection * 0.04,
-                leadLegX: 22 + leanDirection * 7,
-                trailLegX: -18 - leanDirection * 5,
-                leadArmRotation: -0.08 + leanDirection * 0.18,
-                trailArmRotation: 0.18 + leanDirection * 0.06,
-                leadArmX: 36 + armReach * 0.18,
-                leadArmY: 118,
-                trailArmX: -34 + leanDirection * 6,
-                trailArmY: 122,
-                racketHandleRotation: -0.18 + leanDirection * 0.1,
-                racketHeadRotation: -0.04 + leanDirection * 0.08,
-                racketHandleX: 50 + armReach * 0.30,
-                racketHandleY: 122,
-                racketHeadX: 70 + armReach * 0.38,
-                racketHeadY: 150,
-                shadowXScale: 1.05,
-                shadowYScale: 1.0,
-                shadowAlpha: 0.28
-            )
-        case .recovery:
-            let direction: CGFloat = recoveryLane == .right ? 1 : -1
-            let severity = max(0.2, recoverySeverity) * recoveryProgress
-            return PlayerPoseTargets(
-                torsoRotation: direction * 0.16 * severity,
-                headRotation: direction * 0.08 * severity,
-                headX: direction * 14 * severity,
-                leadLegRotation: direction * 0.12 * severity,
-                trailLegRotation: -direction * 0.22 * severity,
-                leadLegX: 26 + direction * 14 * severity,
-                trailLegX: -26 - direction * 18 * severity,
-                leadArmRotation: -0.24 + direction * 0.22 * severity,
-                trailArmRotation: 0.24 + direction * 0.14 * severity,
-                leadArmX: 38 + direction * 18 * severity,
-                leadArmY: 120 - 8 * severity,
-                trailArmX: -36 + direction * 8 * severity,
-                trailArmY: 124 - 4 * severity,
-                racketHandleRotation: -0.28 + direction * 0.24 * severity,
-                racketHeadRotation: -0.12 + direction * 0.16 * severity,
-                racketHandleX: 62 + direction * 26 * severity,
-                racketHandleY: 120 - 10 * severity,
-                racketHeadX: 92 + direction * 28 * severity,
-                racketHeadY: 166 - 14 * severity,
-                shadowXScale: 1.1 + 0.06 * severity,
-                shadowYScale: 0.98,
-                shadowAlpha: 0.26 + 0.04 * severity
-            )
+        if let opponentRig = opponentAvatarRig, let opponentNode = opponentAvatarNode {
+            let elapsed = opponentHitTime.map { currentTimeSnapshot - $0 }
+            let swing = elapsed.flatMap { $0 >= 0 && $0 < 0.36 ? Float($0 / 0.36) : nil }
+            opponentRig.animate(time: trackTime + 1.2, swingProgress: swing)
+            opponentNode.sceneTime = trackTime
+            alignAvatarToCourt(rig: opponentRig, node: opponentNode)
         }
     }
 
@@ -3201,7 +1826,9 @@ final class GameScene: SKScene {
             focusLane = swingVisualLane
         }
 
-        let focusBall = nearestBall(in: focusLane, around: currentTrackTime)
+        let focusBall = sessionMode == .wallRally
+            ? primaryWallBall()
+            : nearestBall(in: focusLane, around: currentTrackTime)
         let partner = focusBall.flatMap { linkedDoublePartner(for: $0) }
         updateStrikeGates(focusLane: focusLane, focusBall: focusBall, partner: partner)
         updateWallReadability(focusLane: focusLane, focusBall: focusBall, partner: partner)
@@ -3338,139 +1965,53 @@ final class GameScene: SKScene {
     }
 
     private func updateWallReadability(focusLane: Lane, focusBall: BallNode?, partner: BallNode?) {
-        guard sessionMode == .wallRally else {
-            leftStrokeReadLabel?.alpha = 0
-            rightStrokeReadLabel?.alpha = 0
-            focusStrokeReadLabel?.alpha = 0
-            wallAnticipationBar?.alpha = 0
-            wallAnticipationFill?.alpha = 0
-            wallReboundBand?.alpha = 0
-            contactTimingRing?.alpha = 0
-            return
-        }
-
-        styleStrokeReadLabel(leftStrokeReadLabel, lane: .left, isFocus: false, approach: 0)
-        styleStrokeReadLabel(rightStrokeReadLabel, lane: .right, isFocus: false, approach: 0)
         leftStrokeReadLabel?.alpha = 0
         rightStrokeReadLabel?.alpha = 0
-
-        guard let focusBall else {
+        wallAnticipationBar?.alpha = 0
+        wallAnticipationFill?.alpha = 0
+        wallReboundBand?.alpha = 0
+        guard sessionMode == .wallRally, !isCountingDown, !sessionEnded, let focusBall else {
             focusStrokeReadLabel?.alpha = 0
-            wallAnticipationBar?.alpha = 0.03
-            wallAnticipationFill?.alpha = 0
             contactTimingRing?.alpha = 0
+            beatTargetRing?.alpha = 0
             return
         }
 
-        let palette = swingTrailPalette(intent: .drive, lane: focusLane)
-        let signedDelta = focusBall.effectiveArrivalTime - currentTrackTime
-        let scalar = timingWindowScalar(
-            for: focusBall,
-            signedDelta: -signedDelta,
-            swingIntent: .drive,
-            strokeSide: strokeSide(for: focusLane)
-        )
-        let goodWindow = HitQuality.good.windowSeconds * scalar
-        let greatWindow = HitQuality.great.windowSeconds * scalar
+        // The target stays on the ball's authored strike point. The outer ring
+        // meets it at the same arrival time used for scoring, then shrinks inside
+        // it when late. No animation action can shift this timing independently.
+        let remaining = focusBall.effectiveArrivalTime - currentTrackTime
+        let scalar = timingWindowScalar(for: focusBall, signedDelta: -remaining,
+                                        swingIntent: .drive, strokeSide: strokeSide(for: focusLane))
         let perfectWindow = HitQuality.perfect.windowSeconds * scalar
-        let absDelta = abs(signedDelta)
-        let approach = focusBall.approachToStrike(at: currentTrackTime)
-        let focusPoint = racketContactPoint(for: focusLane)
-        let contactDistance = spatialContactDistance(to: focusBall, lane: focusLane)
-        let moveWarning = approach > 0.36 && contactDistance > wallAssistMissRadius(for: focusLane) * 0.78
-        let nowCueLead = max(0.10, greatWindow * 0.26)
-        let cueColor: UIColor
-        if moveWarning {
-            cueColor = UIColor(red: 0.96, green: 0.92, blue: 0.62, alpha: 1)
-        } else if absDelta <= greatWindow + nowCueLead {
-            cueColor = UIColor(red: 1.0, green: 0.88, blue: 0.42, alpha: 1)
-        } else {
-            cueColor = palette.core
-        }
-        let laneRead = focusLane == .left ? "LEFT SIDE" : "RIGHT SIDE"
-        let timingRead: String
-        if moveWarning {
-            timingRead = laneRead
-        } else if absDelta <= greatWindow + nowCueLead {
-            timingRead = "SWIPE UP"
-        } else {
-            timingRead = laneRead
-        }
-        focusStrokeReadLabel?.text = shouldSuppressProofCoaching ? "" : timingRead
-        focusStrokeReadLabel?.position = CGPoint(
-            x: focusPoint.x,
-            y: focusPoint.y + Tunables.wallFocusReadLabelLift + 6
-        )
-        focusStrokeReadLabel?.fontColor = cueColor.withAlphaComponent(0.86)
-        focusStrokeReadLabel?.fontSize = absDelta <= greatWindow + nowCueLead ? 16 : 13
-        focusStrokeReadLabel?.setScale(1.0 + approach * 0.06)
-        focusStrokeReadLabel?.alpha = shouldSuppressProofCoaching ? 0 : min(0.70, 0.10 + approach * 0.54)
+        let goodWindow = HitQuality.good.windowSeconds * scalar
+        let target = focusBall.effectiveStrikePoint
+        let lead = Tunables.wallBeatCueLeadSeconds
+        let visible = remaining <= lead && remaining >= -goodWindow
+        let alpha: CGFloat = visible ? 0.85 : 0
+        let perfect = abs(remaining) <= perfectWindow && focusBall.isHittable(at: currentTrackTime)
+        let palette = swingTrailPalette(intent: .drive, lane: focusLane)
+        let color = perfect ? UIColor(red: 1, green: 0.84, blue: 0.24, alpha: 1) : palette.core
+        let normalized = CGFloat(max(-0.18, min(1, remaining / lead)))
+        contactTimingRing?.removeAllActions()
+        contactTimingRing?.position = target
+        contactTimingRing?.setScale(1 + normalized * 1.8)
+        contactTimingRing?.strokeColor = color
+        contactTimingRing?.lineWidth = perfect ? 3.0 : 2.0
+        contactTimingRing?.glowWidth = perfect ? 3 : 0.5
+        contactTimingRing?.alpha = alpha
+        beatTargetRing?.position = target
+        beatTargetRing?.strokeColor = color.withAlphaComponent(0.6)
+        beatTargetRing?.fillColor = color.withAlphaComponent(perfect ? 0.08 : 0.015)
+        beatTargetRing?.alpha = alpha
 
-        wallAnticipationBar?.position = CGPoint(x: focusPoint.x, y: focusPoint.y + Tunables.wallFocusReadLabelLift - 26)
-        wallAnticipationBar?.alpha = shouldSuppressProofCoaching ? 0 : min(0.38, 0.04 + approach * 0.34)
-        wallAnticipationBar?.strokeColor = cueColor.withAlphaComponent(0.10 + approach * 0.18)
-        wallAnticipationBar?.fillColor = UIColor(red: 0.03, green: 0.05, blue: 0.09, alpha: 0.14 + approach * 0.06)
-        wallAnticipationBar?.glowWidth = 2 + approach * 3
-        wallAnticipationBar?.xScale = 1.0 + approach * 0.03
-        wallAnticipationBar?.yScale = 1.0 + approach * 0.04
-
-        let peakLead = Tunables.wallAnticipationLeadMs.seconds
-        let timeToContact = max(0, signedDelta)
-        let rampIn = peakLead * 0.78
-        let anticipationProgress: CGFloat
-        if timeToContact > peakLead + rampIn {
-            anticipationProgress = 0
-        } else if timeToContact >= peakLead {
-            anticipationProgress = 1 - CGFloat((timeToContact - peakLead) / rampIn)
-        } else {
-            anticipationProgress = max(0.78, 1 - CGFloat(timeToContact / peakLead) * 0.22)
-        }
-        focusStrokeReadLabel?.setScale(1.0 + anticipationProgress * 0.08)
-        focusStrokeReadLabel?.alpha = shouldSuppressProofCoaching ? 0 : min(0.82, 0.10 + approach * 0.46 + anticipationProgress * 0.26)
-        let readabilityWindow = max(goodWindow * 3.0, 0.48)
-        let timingFill = max(0, min(1, 1 - absDelta / readabilityWindow))
-        let fillWidthProgress = max(0.14, anticipationProgress * 0.74 + timingFill * 0.26)
-        let fillWidth = max(24, Tunables.wallAnticipationBarWidth * fillWidthProgress)
-        wallAnticipationFill?.path = CGPath(
-            roundedRect: CGRect(
-                x: -fillWidth / 2,
-                y: -(Tunables.wallAnticipationBarHeight * 0.56) / 2,
-                width: fillWidth,
-                height: Tunables.wallAnticipationBarHeight * 0.56
-            ),
-            cornerWidth: Tunables.wallAnticipationBarHeight * 0.28,
-            cornerHeight: Tunables.wallAnticipationBarHeight * 0.28,
-            transform: nil
-        )
-        wallAnticipationFill?.position = wallAnticipationBar?.position ?? .zero
-        wallAnticipationFill?.fillColor = cueColor.withAlphaComponent(0.20 + fillWidthProgress * 0.16)
-        wallAnticipationFill?.alpha = shouldSuppressProofCoaching ? 0 : min(0.42, 0.08 + anticipationProgress * 0.26 + timingFill * 0.04)
-        wallAnticipationFill?.glowWidth = 4 + fillWidthProgress * 6
-        wallAnticipationFill?.xScale = 1.0 + (anticipationProgress > 0.78 ? 0.04 : 0)
-
-        let ringScale = 0.86 + fillWidthProgress * 0.40 + approach * 0.14
-        let ringAlpha = min(0.34, 0.04 + anticipationProgress * 0.20 + (absDelta <= perfectWindow ? 0.08 : 0))
-        contactTimingRing?.position = focusPoint
-        contactTimingRing?.strokeColor = cueColor.withAlphaComponent(0.10 + anticipationProgress * 0.16)
-        contactTimingRing?.glowWidth = 2 + anticipationProgress * 5 + fillWidthProgress * 2
-        contactTimingRing?.lineWidth = 1.2 + (anticipationProgress > 0.78 ? 0.4 : 0) + (absDelta <= greatWindow ? 0.3 : 0)
-        contactTimingRing?.setScale(ringScale)
-        contactTimingRing?.alpha = shouldSuppressProofCoaching ? 0 : ringAlpha
-        if !shouldSuppressProofCoaching,
-            anticipationProgress > 0.92,
-            contactTimingRing?.action(forKey: "contactPulse") == nil {
-            contactTimingRing?.run(.sequence([
-                .group([
-                    .scale(to: ringScale * 1.12, duration: 0.08),
-                    .fadeAlpha(to: min(1, ringAlpha + 0.22), duration: 0.08)
-                ]),
-                .group([
-                    .scale(to: ringScale, duration: 0.14),
-                    .fadeAlpha(to: ringAlpha, duration: 0.14)
-                ])
-            ]), withKey: "contactPulse")
-        }
-        wallReboundBand?.alpha = 0
+        let side = focusLane == .left ? "LEFT ↑" : "RIGHT ↑"
+        focusStrokeReadLabel?.text = perfect ? "RELEASE" : (remaining < -perfectWindow ? "LATE" : side)
+        focusStrokeReadLabel?.position = CGPoint(x: target.x, y: target.y + 86)
+        focusStrokeReadLabel?.fontSize = 12
+        focusStrokeReadLabel?.fontColor = color
+        focusStrokeReadLabel?.setScale(1)
+        focusStrokeReadLabel?.alpha = shouldSuppressProofCoaching ? 0 : alpha
     }
 
     private func styleStrokeReadLabel(
@@ -4031,89 +2572,80 @@ final class GameScene: SKScene {
     ///   across the center axis to hit a down-the-line ball.
     @objc private func handlePan(_ pan: UIPanGestureRecognizer) {
         guard let view = self.view else { return }
+        guard !isDying, !isCountingDown, !sessionEnded else {
+            swingOriginScene = nil
+            swingCurrentScene = nil
+            swingStartedAt = nil
+            fadeSwingTrail()
+            return
+        }
         let viewPoint = pan.location(in: view)
         let scenePoint = convertPoint(fromView: viewPoint)
-
+        let now = ProcessInfo.processInfo.systemUptime
         switch pan.state {
         case .began:
-            swingOriginScene = scenePoint
+            let viewOrigin = RallyFlickInput.panStart(location: viewPoint, translation: pan.translation(in: view))
+            let origin = convertPoint(fromView: viewOrigin)
+            swingOriginScene = origin
             swingCurrentScene = scenePoint
-            swingVisualReach = 0
-            HapticManager.shared.playTouchDown()
-            installSwingTrail(at: scenePoint)
-
+            swingStartedAt = now
+            swingVisualReach = hypot(scenePoint.x - origin.x, scenePoint.y - origin.y)
+            installSwingTrail(at: origin)
+            updateSwingTrail(from: origin, to: scenePoint)
         case .changed:
             guard let origin = swingOriginScene else { return }
             swingCurrentScene = scenePoint
             swingVisualReach = hypot(scenePoint.x - origin.x, scenePoint.y - origin.y)
             updateSwingTrail(from: origin, to: scenePoint)
-
         case .ended:
             defer {
                 swingOriginScene = nil
                 swingCurrentScene = nil
+                swingStartedAt = nil
+                committedFlick = nil
                 fadeSwingTrail()
             }
-            guard let origin = swingOriginScene else { return }
+            guard let origin = swingOriginScene, let began = swingStartedAt else { return }
+            let velocity = pan.velocity(in: view)
             let dx = scenePoint.x - origin.x
             let dy = scenePoint.y - origin.y
             let distance = hypot(dx, dy)
-
-            let v = pan.velocity(in: view)
-            let upwardVelocity = max(0, -v.y)
-            let speed = sessionMode == .wallRally
-                ? max(hypot(v.x, v.y), upwardVelocity)
-                : hypot(v.x, v.y)
-
-            // Ignore taps and accidental contact — only deliberate motion
-            // commits a swing.
-            let minimumDistance = sessionMode == .wallRally
-                ? Tunables.swingMinDistance * 0.34
-                : Tunables.swingMinDistance
-            let minimumSpeed = sessionMode == .wallRally
-                ? Tunables.swingFastVelocity * 0.30
-                : 0
-            guard distance >= minimumDistance || speed >= minimumSpeed else { return }
-
-            // Lane is side-based, not cross-axis based. A left-side upward
-            // swipe hits the left lane; a right-side upward swipe hits the
-            // right lane. If the gesture starts nearly centered, defer to the
-            // currently arriving ball.
             let lane: Lane
+            let speed: CGFloat
+            let intent: SwingIntent
             if sessionMode == .wallRally {
-                let focusLane = wallFocusLane()
-                let weightedSideX = origin.x * Tunables.swingLaneSideStartWeight
-                    + scenePoint.x * (1 - Tunables.swingLaneSideStartWeight)
-                let centerDeadZone = size.width * Tunables.swingLaneCenterDeadZoneRatio
-                if abs(weightedSideX - size.width * 0.5) > centerDeadZone {
-                    lane = weightedSideX < size.width * 0.5 ? .left : .right
-                } else {
-                    lane = focusLane
-                }
+                guard now - lastCommittedFlickAt >= Tunables.wallFlickCooldownSeconds,
+                      let flick = RallyFlickInput.evaluate(
+                        start: origin, end: scenePoint,
+                        velocity: CGVector(dx: velocity.x, dy: -velocity.y),
+                        // Coalesced began/ended delivery must still recognize
+                        // a complete flick with measurable travel.
+                        duration: max(0.001, now - began), viewportWidth: size.width
+                      ) else { return }
+                committedFlick = flick
+                lastCommittedFlickAt = now
+                lane = flick.lane
+                speed = flick.speed
+                intent = flick.stroke == .topspin ? .topspin : .drive
             } else {
-                let weightedSideX = origin.x * Tunables.swingLaneSideStartWeight
-                    + scenePoint.x * (1 - Tunables.swingLaneSideStartWeight)
-                lane = weightedSideX < size.width * 0.5 ? .left : .right
+                guard distance >= Tunables.swingMinDistance else { return }
+                lane = origin.x * Tunables.swingLaneSideStartWeight
+                    + scenePoint.x * (1 - Tunables.swingLaneSideStartWeight) < size.width / 2 ? .left : .right
+                speed = hypot(velocity.x, velocity.y)
+                intent = classifySwingIntent(dx: dx, dy: dy)
             }
+            HapticManager.shared.playTouchDown()
             swingVisualLane = lane
             swingVisualImpactUntil = currentTimeSnapshot + 0.26
-            swingVisualReach = sessionMode == .wallRally
-                ? hypot(dx, max(dy, Tunables.swingWallMinUpwardRisePoints))
-                : distance
-            let swingIntent = classifySwingIntent(dx: dx, dy: dy)
-            swingVisualIntent = swingIntent
-            resolveSwing(
-                lane: lane,
-                swingSpeed: speed,
-                swingIntent: swingIntent,
-                strokeSide: strokeSide(for: lane)
-            )
-
+            swingVisualReach = distance
+            swingVisualIntent = intent
+            resolveSwing(lane: lane, swingSpeed: speed, swingIntent: intent, strokeSide: strokeSide(for: lane))
         case .cancelled, .failed:
             swingOriginScene = nil
             swingCurrentScene = nil
+            swingStartedAt = nil
+            committedFlick = nil
             fadeSwingTrail()
-
         default:
             break
         }
@@ -4286,40 +2818,14 @@ final class GameScene: SKScene {
                 return
             }
 
-            if contactDistance > wallOpeningContactRadius(for: lane, baseMultiplier: 1.08) {
-                registerMiss(lane: lane, wallReason: .reach)
-                return
-            }
-
-            let gradingDistance = adjustedWallGradingDistance(contactDistance, lane: lane)
             let windowScalar = timingWindowScalar(
-                for: target,
-                signedDelta: signedDelta,
-                swingIntent: swingIntent,
-                strokeSide: strokeSide
+                for: target, signedDelta: signedDelta, swingIntent: swingIntent, strokeSide: strokeSide
             )
-            var quality = HitQuality.grade(absDelta: delta, windowScalar: windowScalar)
-
-            if quality == .great,
-               swingSpeed >= Tunables.swingFastVelocity * 0.34,
-               delta <= HitQuality.perfect.windowSeconds * windowScalar * 1.42 {
-                quality = .perfect
-            }
-
-            if quality == .good,
-               swingSpeed >= Tunables.swingFastVelocity * 0.18,
-               delta <= HitQuality.great.windowSeconds * windowScalar * 1.28 {
-                quality = .great
-            }
-
-            quality = adjustedQualityForContactDistance(quality, distance: gradingDistance)
-            quality = softenedWallTimingQuality(
-                quality,
-                lane: target.lane,
-                delta: delta,
-                windowScalar: windowScalar,
-                swingSpeed: swingSpeed,
-                gradingDistance: gradingDistance
+            // Timing is the player's skill input. Avatar footwork is automatic;
+            // a different body/garment must never change this scoring window.
+            let quality = HitQuality.grade(absDelta: delta, windowScalar: windowScalar)
+            recentTimingFeedback = RallyFlickInput.timingFeedback(
+                signedDelta: signedDelta, perfectWindow: HitQuality.perfect.windowSeconds * windowScalar
             )
 
             if quality == .miss {
@@ -4334,7 +2840,7 @@ final class GameScene: SKScene {
                 ball: target,
                 quality: quality,
                 strokeSide: strokeSide,
-                swingIntent: .drive,
+                swingIntent: swingIntent,
                 contactDistance: contactDistance,
                 swingSpeed: swingSpeed
             )
@@ -4439,22 +2945,10 @@ final class GameScene: SKScene {
 
     private func preferredWallSwingTarget(for lane: Lane) -> BallNode? {
         guard sessionMode == .wallRally else { return preferredSwingTarget(in: lane) }
-
-        let laneMatch = nearestBall(in: lane, around: currentTrackTime)
-        if let laneMatch {
-            return laneMatch
-        }
-
-        guard let focusBall = primaryWallBall() else { return nil }
-        guard focusBall.isHittable(at: currentTrackTime) else { return nil }
-
-        let focusDelta = abs(focusBall.effectiveArrivalTime - currentTrackTime)
-        let generousWindow = HitQuality.good.windowSeconds * 2.8
-        if focusDelta <= generousWindow {
-            return focusBall
-        }
-
-        return nil
+        // Keep the arriving ball as the target before its scoring window, so a
+        // premature committed flick reports EARLY instead of silently allowing spam.
+        guard let ball = primaryWallBall(), ball.isHittable(at: currentTrackTime) else { return nil }
+        return ball
     }
 
     private func nearestBall(in lane: Lane, around trackTime: Double) -> BallNode? {
@@ -4488,6 +2982,7 @@ final class GameScene: SKScene {
         contactDistance: CGFloat,
         swingSpeed: CGFloat
     ) {
+        if isProofAutoPlayEnabled { recentTimingFeedback = quality == .perfect ? .perfect : nil }
         let hitLane = ball.lane
         let hitPosition = ball.position
         let contactPoint = racketContactPoint(for: hitLane)
@@ -4503,8 +2998,8 @@ final class GameScene: SKScene {
                 showWallSpeedUpBanner(tier: newTier)
             } else {
                 // Show score multiplier climb when no speed banner fires this hit.
-                let mult = max(1, combo / 5)
-                let prevMult = max(1, (combo - 1) / 5)
+                let mult = Tunables.wallScoreMultiplier(forCombo: combo)
+                let prevMult = Tunables.wallScoreMultiplier(forCombo: combo - 1)
                 if mult > prevMult, mult >= 2 {
                     showWallMultiplierBanner(multiplier: mult)
                 }
@@ -4549,16 +3044,8 @@ final class GameScene: SKScene {
         if quality != .miss {
             hitStopUntil = currentTimeSnapshot + Tunables.swingHitStopSeconds
         }
-        // Wrist snap: spike then exponential decay tracked from this timestamp
-        wristSnapAppliedAt = currentTimeSnapshot
-        lastRacketContactTarget = CGPoint(
-            x: hitPosition.x - (playerRoot?.position.x ?? size.width / 2),
-            y: hitPosition.y - (playerRoot?.position.y ?? size.height * Tunables.gameplayPlayerRootYRatio)
-        )
-        // Foot stomp: record contact time for recovery shuffle
-        footContactTime = currentTimeSnapshot
         stageRacketContactBurst(quality: quality)
-        let comboMultiplier = max(1, combo / 5)
+        let comboMultiplier = sessionMode == .wallRally ? Tunables.wallScoreMultiplier(forCombo: combo) : max(1, combo / 5)
         let strokeScoreBoost = scoreBoost(for: strokeSide, swingIntent: swingIntent, shotShape: ball.shotShape)
         score += Int((Double(quality.baseScore * comboMultiplier) * strokeScoreBoost).rounded())
 
@@ -4649,6 +3136,7 @@ final class GameScene: SKScene {
         correctLane: Lane? = nil
     ) {
         resetSwingBodyMechanics()
+        recentTimingFeedback = nil
         totalMisses += 1
         pressureExchangeStreak = 0
         stageMissTimingPopup(at: racketContactPoint(for: lane), reason: wallReason)
@@ -5222,8 +3710,8 @@ final class GameScene: SKScene {
     /// racket visually "hits" something even before the ball reacts.
     private func stageRacketContactBurst(quality: HitQuality) {
         guard quality != .miss else { return }
-        let origin = playerRacketHead.parent?.convert(playerRacketHead.position, to: self)
-            ?? playerRacketHead.position
+        let origin = playerRacketContactAnchor.flatMap { playerRoot?.convert($0, to: self) }
+            ?? authoredRacketContactPoint(for: swingVisualLane)
         let r = Tunables.contactRacketBurstRadius
         let wallMode = sessionMode == .wallRally
         let alphaMultiplier = Tunables.contactRacketBurstAlphaMultiplier * (wallMode ? Tunables.wallRacketBurstAlphaMultiplier : 1)
@@ -5549,7 +4037,12 @@ final class GameScene: SKScene {
     }
 
     private func stageContactScoreBurst(at point: CGPoint, quality: HitQuality, strokeSide: StrokeSide) {
-        let burstText = contactScoreBurstText(for: quality, strokeSide: strokeSide)
+        let burstText: String
+        if sessionMode == .wallRally, quality != .perfect, let recentTimingFeedback {
+            burstText = recentTimingFeedback == .early ? "EARLY" : (recentTimingFeedback == .late ? "LATE" : "GOOD")
+        } else {
+            burstText = contactScoreBurstText(for: quality, strokeSide: strokeSide)
+        }
         guard !burstText.isEmpty else { return }
 
         let label = SKLabelNode(fontNamed: "AvenirNext-Heavy")
@@ -5982,13 +4475,14 @@ final class GameScene: SKScene {
         quality: HitQuality,
         strokeSide: StrokeSide
     ) {
-        let laneEndX = lane == .left
-            ? size.width * Tunables.horizonLaneInsetRatio
-            : size.width * (1 - Tunables.horizonLaneInsetRatio)
+        let aim = committedFlick?.direction ?? 0
+        let lift = committedFlick?.lift ?? 0.5
         let wallPoint = CGPoint(
-            x: laneEndX + ((size.width * 0.5) - laneEndX) * 0.10,
-            y: size.height * Tunables.wallSurfaceYRatio - 16
+            x: RallyFlickInput.wallTargetX(lane: lane, direction: aim, viewportWidth: size.width),
+            y: size.height * Tunables.wallSurfaceYRatio - 24 + lift * 18
         )
+        var exchangeConfig = RallyExchangeConfig.rallyDefault
+        exchangeConfig.wall.reboundArcLift *= 0.75 + lift * 0.75
         let direction: CGFloat = lane == .right ? 1 : -1
         let inboundSpeed = max(
             280,
@@ -6008,7 +4502,8 @@ final class GameScene: SKScene {
             direction: direction,
             inboundSpeed: inboundSpeed,
             offsetFromCenter: abs(hitPosition.y - contactPoint.y),
-            startTime: currentTimeSnapshot
+            startTime: currentTimeSnapshot,
+            config: exchangeConfig
         )
         ball.ownershipPhase = .racketExchange
         activeExchanges.append(exchange)
@@ -6172,14 +4667,11 @@ final class GameScene: SKScene {
 
     private func racketContactPoint(for lane: Lane) -> CGPoint {
         let authored = authoredRacketContactPoint(for: lane)
-        guard let playerRacketHead, lane == swingVisualLane else {
+        guard let playerRoot, let playerRacketContactAnchor, lane == swingVisualLane else {
             return authored
         }
 
-        let live = playerRoot.convert(
-            CGPoint(x: playerRacketHead.position.x, y: playerRacketHead.position.y),
-            to: self
-        )
+        let live = playerRoot.convert(playerRacketContactAnchor, to: self)
         let swingProgress = max(0, min(1, (swingVisualImpactUntil - currentTimeSnapshot) / 0.26))
         let touchProgress: CGFloat = swingCurrentScene == nil ? 0 : 0.28
         let blend = min(1, swingProgress + touchProgress)
@@ -6247,86 +4739,10 @@ final class GameScene: SKScene {
 
     #if DEBUG
     private func runDebugAvatarAuditIfNeeded() {
-        guard !hasLoggedAvatarAudit else { return }
-        guard
-            let root = playerRoot,
-            let head = playerHead,
-            let torso = playerTorso,
-            let leadLeg = playerLeadLeg,
-            let trailLeg = playerTrailLeg,
-            let leadArm = playerLeadArm,
-            let trailArm = playerTrailArm,
-            let mouth = playerMouth
-        else { return }
-
-        let totalFrame = root.calculateAccumulatedFrame()
-        let totalHeight = max(1, totalFrame.height)
-        let headHeight = head.frame.height
-        let legHeight = max(leadLeg.frame.height, trailLeg.frame.height)
-        let stanceWidth = abs(leadLeg.position.x - trailLeg.position.x)
-        let shoulderWidth = abs(leadArm.position.x - trailArm.position.x)
-        let hipWidth = max(leadLeg.frame.width * 2, 1)
-
-        let forehand = poseTargets(
-            for: .forehandClean,
-            leanDirection: 1,
-            reach: 92,
-            recoveryProgress: 0,
-            anticipationProgress: 0.2,
-            swingPhase: 0.42
-        )
-        let backhand = poseTargets(
-            for: .backhandClean,
-            leanDirection: -1,
-            reach: 92,
-            recoveryProgress: 0,
-            anticipationProgress: 0.2,
-            swingPhase: 0.42
-        )
-
-        let torsoContrast = abs(abs(forehand.torsoRotation) - abs(backhand.torsoRotation))
-        let armContrast = abs(abs(forehand.trailArmRotation) - abs(backhand.trailArmRotation))
-        let handleContrast = abs(abs(forehand.racketHandleRotation) - abs(backhand.racketHandleRotation))
-        let mirroredSimilarity = max(0, 1 - ((torsoContrast + armContrast + handleContrast) / 1.35))
-
-        let audit = RallyAvatarUnifiedAudit.run(
-            RallyAvatarUnifiedAuditConfig(
-                context: "Gameplay.SpriteKit",
-                proportions: RallyAvatarProportionSample(
-                    headHeightRatio: headHeight / totalHeight,
-                    legLengthRatio: legHeight / totalHeight,
-                    torsoWidthRatio: torso.frame.width / totalHeight,
-                    shoulderToHipRatio: shoulderWidth / hipWidth,
-                    stanceWidthRatio: stanceWidth / totalHeight
-                ),
-                face: RallyFaceSample(
-                    eyeWidthRatio: 0.21,
-                    eyeSpacingRatio: 0.25,
-                    browHeightRatio: 0.11,
-                    mouthHeightRatio: (mouth.position.y - head.position.y) / max(1, headHeight),
-                    glassesWidthRatio: 0.48,
-                    glassesVisible: !(playerLeftLens?.isHidden ?? true)
-                ),
-                framing: RallyFramingSample(
-                    cameraPitchDegrees: 8,
-                    cameraDistance: 1.14,
-                    bodyCoverageRatio: min(1, totalFrame.height / max(1, size.height)),
-                    headCoverageRatio: headHeight / max(1, size.height),
-                    feetVisible: totalFrame.minY > -24,
-                    shoulderCropRisk: totalFrame.maxX > size.width * 0.9 || totalFrame.minX < size.width * 0.1,
-                    mannequinCenterRisk: abs(totalFrame.midX - size.width / 2) < 8
-                ),
-                backhand: RallyBackhandSample(
-                    forehandTorsoTurn: forehand.torsoRotation,
-                    backhandTorsoTurn: backhand.torsoRotation,
-                    backhandSupportArmReach: abs(backhand.leadArmX - backhand.trailArmX) / 100,
-                    backhandContactOffset: backhand.racketHeadX / 100,
-                    recoveryDuration: 0.22,
-                    mirroredSimilarityScore: mirroredSimilarity
-                )
-            )
-        )
-        RallyAvatarUnifiedAudit.log(audit, context: "Gameplay.SpriteKit")
+        guard !hasLoggedAvatarAudit, let rig = playerAvatarRig, let node = playerAvatarNode else { return }
+        assert(node.scnScene === rig.scene, "Gameplay must render the shared character scene")
+        assert(node.pointOfView === rig.camera, "Gameplay must use the shared character camera")
+        print("[RallyAvatar] Gameplay uses shared SceneKit rig; viewport \(node.viewportSize)")
         hasLoggedAvatarAudit = true
     }
     #endif
@@ -7142,9 +5558,8 @@ final class GameScene: SKScene {
         let model = RallyManualContactModel(config: .rallyDefault)
         let totalDuration = model.config.totalDuration
 
-        let stringBaselines = playerRacketStrings.map(\.position)
-        let animation = SKAction.customAction(withDuration: totalDuration) { [weak self, weak ball, weak halo] _, elapsed in
-            guard let self, let ball, let halo else { return }
+        let animation = SKAction.customAction(withDuration: totalDuration) { [weak ball, weak halo] _, elapsed in
+            guard let ball, let halo else { return }
             let progress = CGFloat(max(0, min(1, elapsed / totalDuration)))
             let frame = model.frame(
                 start: hitPosition,
@@ -7168,26 +5583,11 @@ final class GameScene: SKScene {
             halo.xScale = (0.96 + model.compressionScalar(at: progress) * 0.46) * haloScaleMultiplier
             halo.yScale = (0.86 + model.releaseVelocityScalar(at: progress) * 0.12) * haloScaleMultiplier
 
-            for (index, string) in self.playerRacketStrings.enumerated() {
-                guard index < stringBaselines.count else { continue }
-                let baseline = stringBaselines[index]
-                string.position = CGPoint(
-                    x: baseline.x + direction * frame.stringFlexOffset * 0.12,
-                    y: baseline.y - frame.stringFlexOffset
-                )
-                string.alpha = min(1, 0.38 + model.compressionScalar(at: progress) * 0.4)
-            }
         }
 
-        let cleanup = SKAction.run { [weak self, weak ball, weak halo] in
+        let cleanup = SKAction.run { [weak ball, weak halo] in
             let releasePoint = ball?.position ?? contactPoint
             halo?.removeFromParent()
-            guard let self else { return }
-            for (index, string) in self.playerRacketStrings.enumerated() {
-                guard index < stringBaselines.count else { continue }
-                string.position = stringBaselines[index]
-                string.alpha = 0.38
-            }
             completion(releasePoint)
         }
 
@@ -7311,7 +5711,7 @@ final class GameScene: SKScene {
 
     private func classifySwingIntent(dx: CGFloat, dy: CGFloat) -> SwingIntent {
         if sessionMode == .wallRally {
-            return .drive
+            return dy >= abs(dx) * 1.35 ? .topspin : .drive
         }
         if dy >= Tunables.swingTopspinRisePoints {
             return .topspin

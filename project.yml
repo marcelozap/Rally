@@ -26,6 +26,11 @@ targets:
     platform: iOS
     sources:
       - path: Rally
+        excludes:
+          - Resources/Avatar3D
+      - path: Rally/Resources/Avatar3D
+        type: folder
+        buildPhase: resources
     info:
       path: Rally/Info.plist
     settings:

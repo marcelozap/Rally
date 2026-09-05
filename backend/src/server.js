@@ -8,6 +8,7 @@ import { mkdirSync, readFileSync, writeFileSync, existsSync } from "fs";
 import { dirname, join } from "path";
 import { fileURLToPath } from "url";
 import { v4 as uuidv4 } from "uuid";
+import { preserveAthletePreset } from "./avatar-roster.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: `${__dirname}/../.env` });
@@ -56,6 +57,7 @@ function defaultSnapshot() {
       hairStyleRaw: "short",
       hairColorHex: "#3A2A1A",
       bodyTypeRaw: "athletic",
+      athletePresetRaw: "maleEuropean",
       equippedTopID: "rally.default.top",
       equippedBottomID: "rally.default.bottom",
       equippedShoesID: "rally.default.shoes",
@@ -340,6 +342,10 @@ app.put("/api/me/sync", authMiddleware, (req, res) => {
   // Always merge progress with max-wins regardless of revision status.
   if (serverSnapshot && body.progress) {
     body.progress = mergeProgressMaxWins(serverSnapshot.progress, body.progress);
+  }
+
+  if (serverSnapshot && body.avatar) {
+    body.avatar = preserveAthletePreset(serverSnapshot.avatar, body.avatar);
   }
 
   const updatedAt = new Date().toISOString();

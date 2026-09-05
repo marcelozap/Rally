@@ -149,18 +149,20 @@ struct AvatarShopStageView: View {
                 accent: currentAccent,
                 height: preview == nil ? 540 : 520
             ) {
-                TimelineView(.animation) { timeline in
+                VStack(spacing: 8) {
                     RallyAvatarView(
                         appearance: avatarAppearanceStore.appearance(for: config, previewItem: preview?.item),
                         targetHeight: preview == nil ? 420 : 400,
-                        showsRacket: true,
-                        breathingPhase: timeline.date.timeIntervalSinceReferenceDate * 1.7
+                        showsRacket: preview?.slot == .racket
                     )
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .padding(.horizontal, 0)
-                    .padding(.bottom, tone == .calm ? 8 : 0)
-                    .scaleEffect(emoteScale)
+                    .frame(maxWidth: .infinity)
+                    Text("Drag to rotate · Pinch to zoom")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.62))
+                        .padding(.bottom, 18)
                 }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+
             }
         }
         .onAppear {

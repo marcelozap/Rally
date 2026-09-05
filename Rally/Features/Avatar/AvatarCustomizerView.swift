@@ -1,18 +1,8 @@
 import SwiftUI
 import SwiftData
 
-/// Two-mode avatar editor.
-///
-/// - **First-launch mode** (`isFirstLaunch == true`): the gating screen the
-///   app boots into on a fresh install. Adds a hero "Build your avatar"
-///   intro, auto-focuses the name field, and the bottom CTA reads
-///   "Step onto the court". `ContentView`'s `@Query` observation reads
-///   `hasCompletedSetup = true` and transitions to the main tabs — no
-///   manual dismiss needed.
-///
-/// - **Edit mode** (`isFirstLaunch == false`): pushed from Home via the
-///   avatar icon. Same form, no hero, CTA reads "Save changes" and pops
-///   the navigation stack on save.
+/// Selects one of the six fixed tennis players and preserves the equipped outfit.
+/// First launch completes setup; subsequent visits save the player selection.
 struct AvatarCustomizerView: View {
     @Bindable var config: AvatarConfig
 
@@ -21,104 +11,68 @@ struct AvatarCustomizerView: View {
     @EnvironmentObject private var auth: AuthSession
     @EnvironmentObject private var avatarAppearanceStore: RallyAvatarAppearanceStore
     @StateObject private var gamePreferences = GamePreferences.shared
-    @FocusState private var nameFieldFocused: Bool
 
     var isFirstLaunch: Bool = false
 
-    private static let hairColorPalette: [(name: String, hex: String)] = [
-        ("Black",    "#1A1410"),
-        ("Brown",    "#5C3A20"),
-        ("Chestnut", "#8B5A2B"),
-        ("Blonde",   "#E0C088"),
-        ("Auburn",   "#A93226"),
-        ("Silver",   "#C0C0C0"),
-        ("Magenta",  "#D63384"),
-        ("Cyan",     "#00BCD4")
-    ]
-
     var body: some View {
         ScrollView {
-            VStack(spacing: RallyUIKit.Spacing.xl) {
+            VStack(spacing: 16) {
                 if isFirstLaunch {
                     welcomeHero
                 }
 
-                RallyUIKit.SectionCard(stroke: RallyUIKit.Palette.cyan.opacity(0.24)) {
-                    ZStack(alignment: .bottom) {
-                        heroBackdrop
+                VStack(spacing: 6) {
+                    RallyAvatarView(
+                        appearance: avatarAppearanceStore.appearance(for: config),
+                        targetHeight: 288,
+                        showsRacket: true,
+                        breathingPhase: Date().timeIntervalSinceReferenceDate * 1.8,
+                        leftHanded: gamePreferences.dominantHand == .left
+                    )
+                    .frame(height: 288)
 
-                        RallyAvatarView(
-                            appearance: avatarAppearanceStore.appearance(for: config),
-                            targetHeight: isFirstLaunch ? 300 : 336,
-                            showsRacket: true,
-                            breathingPhase: Date().timeIntervalSinceReferenceDate * 1.8
-                        )
-                        .frame(height: isFirstLaunch ? 300 : 336)
-                        .clipShape(RoundedRectangle(cornerRadius: 26, style: .continuous))
-
-                        customizationReadout
-                            .padding(.horizontal, 14)
-                            .padding(.bottom, 14)
-                    }
+                    playerReadout
+                        .padding(.bottom, 14)
                 }
+                .frame(maxWidth: .infinity)
+                .background(heroBackdrop)
+                .clipShape(RoundedRectangle(cornerRadius: 26, style: .continuous))
                 .padding(.horizontal, 20)
 
-                VStack(alignment: .leading, spacing: 18) {
-                    handednessSection
-                    namingSection
-                    skinSection
-                    hairStyleSection
-                    hairColorSection
-                    bodySection
-                }
-                .padding(.horizontal, 20)
-
-                ctaButton
+                athleteSection
                     .padding(.horizontal, 20)
-                    .padding(.top, 8)
-                    .padding(.bottom, 40)
+                    .padding(.bottom, 12)
+
             }
         }
-        .navigationTitle(isFirstLaunch ? "" : "Your avatar")
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            ctaButton
+                .padding(.horizontal, 20)
+                .padding(.vertical, 12)
+                .background(RallyUIKit.screenBackground)
+        }
+        .navigationTitle(isFirstLaunch ? "" : "Choose your player")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(isFirstLaunch ? .hidden : .visible, for: .navigationBar)
         .background(RallyUIKit.screenBackground.ignoresSafeArea())
         .onAppear {
             avatarAppearanceStore.sync(from: config)
-            if isFirstLaunch {
-                // Tiny delay so the keyboard avoidance settles after layout.
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
-                    nameFieldFocused = true
-                }
-            }
         }
-        .onChange(of: config.skinToneRaw) { _, _ in avatarAppearanceStore.sync(from: config) }
-        .onChange(of: config.hairStyleRaw) { _, _ in avatarAppearanceStore.sync(from: config) }
-        .onChange(of: config.hairColorHex) { _, _ in avatarAppearanceStore.sync(from: config) }
-        .onChange(of: config.bodyTypeRaw) { _, _ in avatarAppearanceStore.sync(from: config) }
+        .onChange(of: config.athletePresetRaw) { _, _ in avatarAppearanceStore.sync(from: config) }
     }
 
     // MARK: - First-launch hero
 
     private var welcomeHero: some View {
-        RallyUIKit.LuxePanel(tint: RallyUIKit.Palette.cyan) {
-            VStack(spacing: 10) {
-                RallyUIKit.EditorialEyebrow(text: "Welcome to Rally", tint: RallyUIKit.Palette.cyan)
-
-                Text("Build your avatar")
-                    .font(RallyUIKit.Typography.display(34, weight: .bold))
-                    .foregroundStyle(RallyUIKit.Palette.frost)
-                    .multilineTextAlignment(.center)
-
-                Text("This is the player you’ll see on Home, in the shop try-on, and across your match history. You can change all of it later from the avatar icon on Home.")
-                    .font(RallyUIKit.Typography.body(.subheadline, weight: .medium))
-                    .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.74))
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 6)
-            }
-            .frame(maxWidth: .infinity)
+        VStack(spacing: 6) {
+            RallyUIKit.EditorialEyebrow(text: "Welcome to Rally", tint: RallyUIKit.Palette.cyan)
+            Text("Choose your player")
+                .font(RallyUIKit.Typography.display(28, weight: .bold))
+                .foregroundStyle(RallyUIKit.Palette.frost)
+                .multilineTextAlignment(.center)
         }
-        .padding(.top, 24)
+        .frame(maxWidth: .infinity)
+        .padding(.top, 12)
         .padding(.horizontal, 20)
     }
 
@@ -154,138 +108,39 @@ struct AvatarCustomizerView: View {
         }
     }
 
-    private var customizationReadout: some View {
-        VStack(spacing: 10) {
-            HStack(spacing: 8) {
-                StatPill(label: config.bodyType.displayName, tint: RallyUIKit.Palette.cyan)
-                StatPill(label: config.hairStyle.displayName, tint: RallyUIKit.Palette.rose)
-                StatPill(label: config.skinTone.displayName, tint: RallyUIKit.Palette.champagne)
-            }
+    private var playerReadout: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 10) {
+            Text(config.athletePreset.displayName)
+                .font(RallyUIKit.Typography.label(.headline, weight: .bold))
+                .foregroundStyle(RallyUIKit.Palette.frost)
+            Text("Tennis athlete")
+                .font(RallyUIKit.Typography.label(.caption, weight: .medium))
+                .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.66))
+        }
+    }
 
-            HStack(spacing: 8) {
-                Text("Racket hand")
-                    .font(RallyUIKit.Typography.label(.caption2, weight: .bold))
-                    .tracking(1.4)
-                    .foregroundStyle(.white.opacity(0.72))
-                    .textCase(.uppercase)
+    // MARK: - Player roster
 
-                Spacer(minLength: 8)
-
-                ForEach(GamePreferences.DominantHand.allCases) { hand in
-                    HandednessPreviewChip(
-                        title: hand == .left ? "Lefty" : "Righty",
-                        selected: gamePreferences.dominantHand == hand
-                    ) {
-                        withAnimation(.spring(response: 0.20, dampingFraction: 0.80)) {
-                            gamePreferences.dominantHand = hand
+    private var athleteSection: some View {
+        sectionCard(title: "Players") {
+            ForEach(RallyAthleteModel.allCases) { model in
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(model == .male ? "Men" : "Women")
+                        .font(RallyUIKit.Typography.label(.caption, weight: .semibold))
+                        .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.65))
+                    HStack(spacing: 10) {
+                        ForEach(RallyAthletePreset.allCases.filter { $0.athleteModel == model }) { preset in
+                            Chip(
+                                label: preset.displayName,
+                                selected: config.athletePreset == preset
+                            ) {
+                                config.athletePreset = preset
+                                avatarAppearanceStore.sync(from: config)
+                            }
+                            .accessibilityLabel("\(preset.displayName), \(preset.heritageDescription), \(model.displayName)")
+                            .accessibilityIdentifier("athletePreset.\(preset.rawValue)")
+                            .accessibilityAddTraits(config.athletePreset == preset ? .isSelected : [])
                         }
-                    }
-                }
-            }
-            .padding(.vertical, 7)
-            .padding(.horizontal, 10)
-            .background(
-                Capsule()
-                    .fill(Color.black.opacity(0.42))
-            )
-            .overlay(
-                Capsule()
-                    .stroke(RallyUIKit.Palette.cyan.opacity(0.24), lineWidth: 1)
-            )
-        }
-    }
-
-    // MARK: - Sections
-
-    private var namingSection: some View {
-        sectionCard(title: "Name") {
-            TextField("Your name", text: $config.playerName)
-                .focused($nameFieldFocused)
-                .submitLabel(.done)
-                .rallyTextFieldStyle()
-        }
-    }
-
-    private var skinSection: some View {
-        sectionCard(title: "Skin tone") {
-            HStack(spacing: 12) {
-                ForEach(AvatarSkinTone.allCases) { tone in
-                    Circle()
-                        .fill(Color(hex: tone.hex) ?? .gray)
-                        .frame(width: 36, height: 36)
-                        .overlay(
-                            Circle()
-                                .stroke(config.skinTone == tone ? Color.cyan : .clear, lineWidth: 2)
-                        )
-                        .onTapGesture { config.skinTone = tone }
-                }
-            }
-        }
-    }
-
-    private var handednessSection: some View {
-        sectionCard(title: "Dominant hand") {
-            HStack(spacing: 10) {
-                ForEach(GamePreferences.DominantHand.allCases) { hand in
-                    Chip(
-                        label: "\(hand.title) hand",
-                        selected: gamePreferences.dominantHand == hand
-                    ) {
-                        gamePreferences.dominantHand = hand
-                    }
-                }
-            }
-
-            Text(gamePreferences.dominantHand.coachingCopy)
-                .font(RallyUIKit.Typography.label(.caption, weight: .semibold))
-                .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.58))
-                .padding(.top, 2)
-        }
-    }
-
-    private var hairStyleSection: some View {
-        sectionCard(title: "Hair style") {
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 10) {
-                    ForEach(AvatarHairStyle.customizerCases) { style in
-                        Chip(
-                            label: style.displayName,
-                            selected: config.hairStyle == style
-                        ) {
-                            config.hairStyle = style
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    private var hairColorSection: some View {
-        sectionCard(title: "Hair color") {
-            HStack(spacing: 12) {
-                ForEach(Self.hairColorPalette, id: \.hex) { entry in
-                    Circle()
-                        .fill(Color(hex: entry.hex) ?? .gray)
-                        .frame(width: 30, height: 30)
-                        .overlay(
-                            Circle()
-                                .stroke(config.hairColorHex == entry.hex ? Color.cyan : .clear, lineWidth: 2)
-                        )
-                        .onTapGesture { config.hairColorHex = entry.hex }
-                }
-            }
-        }
-    }
-
-    private var bodySection: some View {
-        sectionCard(title: "Build") {
-            HStack(spacing: 10) {
-                ForEach(AvatarBodyType.allCases) { type in
-                    Chip(
-                        label: type.displayName,
-                        selected: config.bodyType == type
-                    ) {
-                        config.bodyType = type
                     }
                 }
             }
@@ -297,7 +152,7 @@ struct AvatarCustomizerView: View {
     private var ctaButton: some View {
         Button(action: save) {
             HStack(spacing: 8) {
-                Text(isFirstLaunch ? "Step onto the court" : "Save changes")
+                Text(isFirstLaunch ? "Step onto the court" : "Select player")
                 if isFirstLaunch {
                     Image(systemName: "arrow.right")
                 }
@@ -305,16 +160,6 @@ struct AvatarCustomizerView: View {
             .frame(maxWidth: .infinity)
         }
         .buttonStyle(PrimaryButtonStyle(tint: RallyUIKit.Palette.cyan))
-        .disabled(!canSave)
-    }
-
-    private var canSave: Bool {
-        // Require at least a non-empty name on first launch so the player
-        // doesn't end up greeted as "Player" forever.
-        if isFirstLaunch {
-            return !config.playerName.trimmingCharacters(in: .whitespaces).isEmpty
-        }
-        return true
     }
 
     private func sectionTitle(_ text: String) -> some View {
@@ -338,6 +183,7 @@ struct AvatarCustomizerView: View {
         if config.playerName.isEmpty { config.playerName = "Player" }
         config.hasCompletedSetup = true
         try? modelContext.save()
+        avatarAppearanceStore.commitPersisted(from: config)
         if auth.isAuthenticated {
             RallySyncTriggers.pushAvatarAfterLocalSave(modelContext: modelContext)
         }
@@ -349,53 +195,6 @@ struct AvatarCustomizerView: View {
 }
 
 // MARK: - Chip
-
-private struct StatPill: View {
-    let label: String
-    let tint: Color
-
-    var body: some View {
-        Text(label)
-            .font(RallyUIKit.Typography.label(.caption, weight: .semibold))
-            .foregroundStyle(.white.opacity(0.94))
-            .padding(.vertical, 8)
-            .padding(.horizontal, 12)
-            .background(
-                Capsule()
-                    .fill(Color.black.opacity(0.36))
-            )
-            .overlay(
-                Capsule()
-                    .stroke(tint.opacity(0.45), lineWidth: 1)
-            )
-    }
-}
-
-private struct HandednessPreviewChip: View {
-    let title: String
-    let selected: Bool
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            Text(title)
-                .font(RallyUIKit.Typography.label(.caption, weight: .black))
-                .foregroundStyle(selected ? Color.black : Color.white.opacity(0.78))
-                .padding(.vertical, 7)
-                .padding(.horizontal, 12)
-                .background(
-                    Capsule()
-                        .fill(selected ? RallyUIKit.Palette.cyan : Color.white.opacity(0.10))
-                )
-                .overlay(
-                    Capsule()
-                        .stroke(selected ? Color.white.opacity(0.22) : Color.white.opacity(0.08), lineWidth: 1)
-                )
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(title)
-    }
-}
 
 struct Chip: View {
     let label: String

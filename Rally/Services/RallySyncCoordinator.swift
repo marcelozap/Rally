@@ -95,6 +95,7 @@ enum RallySyncCoordinator {
             hairStyleRaw: avatar.hairStyleRaw,
             hairColorHex: avatar.hairColorHex,
             bodyTypeRaw: avatar.bodyTypeRaw,
+            athletePresetRaw: avatar.athletePresetRaw,
             equippedTopID: avatar.equippedTopID,
             equippedBottomID: avatar.equippedBottomID,
             equippedShoesID: avatar.equippedShoesID,
@@ -283,13 +284,16 @@ enum RallySyncCoordinator {
         Dictionary(rows.map { ($0[keyPath: id], $0) }, uniquingKeysWith: { first, _ in first })
     }
 
-    private static func applyAvatar(_ dto: AvatarPayload, to avatar: AvatarConfig) {
+    static func applyAvatar(_ dto: AvatarPayload, to avatar: AvatarConfig) {
         avatar.id = dto.id
         avatar.playerName = dto.playerName
         avatar.skinToneRaw = dto.skinToneRaw
         avatar.hairStyleRaw = dto.hairStyleRaw
         avatar.hairColorHex = dto.hairColorHex
         avatar.bodyTypeRaw = dto.bodyTypeRaw
+        if let raw = dto.athletePresetRaw, let preset = RallyAthletePreset(rawValue: raw) {
+            avatar.athletePreset = preset
+        }
         avatar.equippedTopID = dto.equippedTopID
         avatar.equippedBottomID = dto.equippedBottomID
         avatar.equippedShoesID = dto.equippedShoesID

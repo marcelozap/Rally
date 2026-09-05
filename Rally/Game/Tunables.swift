@@ -17,22 +17,20 @@ enum Tunables {
     //
     // Two regimes:
     //
-    // 1. Per-hit "weight" pause — strictly sub-frame at 60 Hz. Just enough
-    //    to make the brain interpret the moment as heavier than it is,
-    //    without ever costing a full vsync. Follows GDD §1.1 (6 / 3 / 0 ms).
-    //    A previous draft used 24 / 12 / 0 ms (GDD §0.5) which was full
-    //    visible hitches at 60 Hz — that broke the 16th-note flow.
+    // 1. Accuracy earns a brief impact hold: two frames for perfect,
+    //    one for great, none for a saved contact. Long freezes obscure
+    //    the next approaching beat and make release timing feel inconsistent.
     //
     // 2. Death pause — the iconic Flappy freeze. Long, deliberate, the
     //    "oh no" moment. Coincides with the red flash, screen shake, and
     //    descending death tone.
 
     static let frameStopFrameMs: Double = 1000.0 / 60.0
-    static let frameStopHitFrames: Double = 3
-    static let frameStopPerfectFrames: Double = 5
+    static let frameStopHitFrames: Double = 1
+    static let frameStopPerfectFrames: Double = 2
     static let frameStopPerfectMs: Double = frameStopFrameMs * frameStopPerfectFrames
     static let frameStopGreatMs:   Double = frameStopFrameMs * frameStopHitFrames
-    static let frameStopGoodMs:    Double = frameStopFrameMs * frameStopHitFrames
+    static let frameStopGoodMs:    Double = 0
     static let frameStopMissMs:    Double = 0
 
     /// Extended freeze on a combo break — the "you died" moment.
@@ -213,7 +211,10 @@ enum Tunables {
         }
     }
 
-    static let wallContactRingRadius: CGFloat = 38
+    static let wallContactRingRadius: CGFloat = 26
+    /// The outer beat ring reaches the fixed target exactly at scored arrival.
+    static let wallBeatCueLeadSeconds: TimeInterval = 0.85
+    static let wallFlickCooldownSeconds: TimeInterval = 0.16
     static let wallApproachWindowRatio: CGFloat = 0.50
     static let wallSurfaceHeight: CGFloat = 20
     static let wallSurfaceWidthRatio: CGFloat = 0.42
@@ -273,11 +274,8 @@ enum Tunables {
                 && forgivenMissesUsed < openingNoLifeLossMisses
                 && sessionTime <= openingNoLifeLossSeconds
         }
-        /// Difficulty ramp: the return ball comes back faster as score climbs.
-        /// The travel-time scalar lerps from 1.0 (base) at `rampStartScore`
-        /// down to `rampMinTravelScalar` at `rampFullScore`.
-        static let rampStartScore = 60
-        static let rampFullScore = 1400
+        /// Return pacing follows visible combo tempo tiers, independently of
+        /// score multipliers, so a reward cannot cause an unannounced speed jump.
         /// Fastest return as a fraction of `wallReturnTravelSeconds`. 0.72 =
         /// the late-run ball returns ~28% quicker than the opening ball.
         static let rampMinTravelScalar: Double = 0.72
@@ -666,12 +664,12 @@ enum Tunables {
     static let wallRacketBurstAlphaMultiplier: CGFloat = 0.12
     static let wallRacketBurstScaleMultiplier: CGFloat = 0.20
     static let wallRacketBurstGlowMultiplier: CGFloat = 0.10
-    static let wallTimingPopupFontScale: CGFloat = 0.66
+    static let wallTimingPopupFontScale: CGFloat = 0.86
     static let wallTimingPopupSideOffset: CGFloat = 74
     static let wallTimingPopupYOffset: CGFloat = 82
     static let wallTimingPopupRise: CGFloat = 10
     static let wallTimingPopupPeakScale: CGFloat = 1.02
-    static let wallTimingPopupLabelAlpha: CGFloat = 0.76
+    static let wallTimingPopupLabelAlpha: CGFloat = 0.95
     static let wallTimingPopupShadowAlpha: CGFloat = 0.24
     static let wallTimingPopupScreenInset: CGFloat = 18
     static let wallTimingPopupPerfectHalfWidth: CGFloat = 58
@@ -936,6 +934,11 @@ enum Tunables {
     static let wallNearBestComboWindow: Int = 5
 
     // MARK: - Scoring
+
+    /// Reward each five clean returns without runaway score-driven difficulty.
+    static func wallScoreMultiplier(forCombo combo: Int) -> Int {
+        min(4, 1 + max(0, combo) / 5)
+    }
 
     static let comboTier1: Int = 5
     static let comboTier2: Int = 15

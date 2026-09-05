@@ -7,6 +7,11 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		AB0500000000000000000013 /* RallyFlickInputTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB0500000000000000000014 /* RallyFlickInputTests.swift */; };
+		AB0500000000000000000011 /* RallyFlickInput.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB0500000000000000000012 /* RallyFlickInput.swift */; };
+		AB0500000000000000000005 /* AvatarRigTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB0500000000000000000006 /* AvatarRigTests.swift */; };
+		AB0500000000000000000001 /* RallyAvatarRig.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB0500000000000000000002 /* RallyAvatarRig.swift */; };
+		AB0500000000000000000003 /* Avatar3D in Resources */ = {isa = PBXBuildFile; fileRef = AB0500000000000000000004 /* Avatar3D */; };
 		0372CBCE0196735089EF883D /* MusicEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE13BF1EBDC5059E4F20BEEB /* MusicEngine.swift */; };
 		A10000000000000000000001 /* RallyAvatarAuditModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000011 /* RallyAvatarAuditModels.swift */; };
 		A10000000000000000000002 /* RallyAvatarFace.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000012 /* RallyAvatarFace.swift */; };
@@ -131,6 +136,11 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		AB0500000000000000000014 /* RallyFlickInputTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RallyFlickInputTests.swift; sourceTree = "<group>"; };
+		AB0500000000000000000012 /* RallyFlickInput.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RallyFlickInput.swift; sourceTree = "<group>"; };
+		AB0500000000000000000006 /* AvatarRigTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AvatarRigTests.swift; sourceTree = "<group>"; };
+		AB0500000000000000000002 /* RallyAvatarRig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RallyAvatarRig.swift; sourceTree = "<group>"; };
+		AB0500000000000000000004 /* Avatar3D */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Avatar3D; sourceTree = "<group>"; };
 		00F928F99BF076A334C45826 /* JournalModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JournalModels.swift; sourceTree = "<group>"; };
 		01AF72E6A20623311E103964 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		06F8C945ED9F419E06E8F0F6 /* TunablesOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TunablesOverlay.swift; sourceTree = "<group>"; };
@@ -369,6 +379,7 @@
 		6B99E788EA4862A3543F69FA /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				AB0500000000000000000004 /* Avatar3D */,
 				4565569C11AFDE663466D6F9 /* cosmetics.json */,
 			
 				FF9BB2E4211B4A70A5D92FA3 /* RallyReferralCatalog.json */,
@@ -384,6 +395,8 @@
 				FB90CCD37FEC5580BDA74365 /* MatchFlowTests.swift */,
 				B930D3F395CCB54159AC82A2 /* ProgressMergeTests.swift */,
 				FDC20C6A220342A5BD7B21B0 /* RallyDefaultsTests.swift */,
+				AB0500000000000000000014 /* RallyFlickInputTests.swift */,
+				AB0500000000000000000006 /* AvatarRigTests.swift */,
 				D8CEDAD6E64A2A13DCE5BDBD /* RemoteTunablesTests.swift */,
 				162E97FEF5B42181857E22F4 /* RhythmSpawnerTests.swift */,
 				5E415C7F8BB889E45B50472A /* SyncPayloadCodingTests.swift */,
@@ -467,6 +480,7 @@
 				59E939E1EF2C26F02414BF4E /* EchoTrail.swift */,
 				B239FE19473AF14BFC06A92B /* GameEvent.swift */,
 				9EB08BC2D6104E21193BD6A4 /* GameScene.swift */,
+				AB0500000000000000000012 /* RallyFlickInput.swift */,
 				AA5D439297231AE3C62B5D0B /* HitQuality.swift */,
 				70E2F5538362AD6A21014D2C /* Lane.swift */,
 				9C34580C7EF0C10E74CE82D2 /* MatchFlow.swift */,
@@ -549,6 +563,7 @@
 				A30000000000000000000012 /* RallyAvatarRebuildDefaults.swift */,
 				A30000000000000000000013 /* RallyAvatarAppearance.swift */,
 				A30000000000000000000014 /* RallyAvatarView.swift */,
+				AB0500000000000000000002 /* RallyAvatarRig.swift */,
 				F43AC5BE0F2D422AA1E337A9 /* RallyAvatarPartRenderer.swift */,
 				A10000000000000000000021 /* Debug */,
 			);
@@ -671,6 +686,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				CCB2195A58AAE304F9D6625F /* Assets.xcassets in Resources */,
+				AB0500000000000000000003 /* Avatar3D in Resources */,
 				EEFF0A9DAC191198D5646055 /* cosmetics.json in Resources */,
 			
 				333BDB1C56824B8D87B70D8B /* RallyReferralCatalog.json in Resources */,
@@ -689,6 +705,8 @@
 				E33D4125508B73663AA07A62 /* MatchFlowTests.swift in Sources */,
 				5E517627E805E761E926734B /* ProgressMergeTests.swift in Sources */,
 				3C5ED332CF194FDFB9B8F570 /* RallyDefaultsTests.swift in Sources */,
+				AB0500000000000000000013 /* RallyFlickInputTests.swift in Sources */,
+				AB0500000000000000000005 /* AvatarRigTests.swift in Sources */,
 				6F031884A1F85F9B11EA9FE1 /* RemoteTunablesTests.swift in Sources */,
 				3ACC84A5C05B9A0529940A5B /* RhythmSpawnerTests.swift in Sources */,
 				B64A1FFC930F7B6FEF4F69D8 /* SyncPayloadCodingTests.swift in Sources */,
@@ -724,6 +742,7 @@
 				A30000000000000000000002 /* RallyAvatarRebuildDefaults.swift in Sources */,
 				A30000000000000000000003 /* RallyAvatarAppearance.swift in Sources */,
 				A30000000000000000000004 /* RallyAvatarView.swift in Sources */,
+				AB0500000000000000000001 /* RallyAvatarRig.swift in Sources */,
 				A30000000000000000000005 /* RallyAvatarUnificationAudit.swift in Sources */,
 				7A9DD3BC935727C47DE05483 /* BattlePass.swift in Sources */,
 				34E80699D27B49B7B20DB2E6 /* CameraShake.swift in Sources */,
@@ -743,6 +762,7 @@
 				8C172C3912A676FF96D3B959 /* GameOverView.swift in Sources */,
 				C0398E8B4FF1539703522D6A /* GamePreferences.swift in Sources */,
 				FB2E0854AC7A517AA5B926B4 /* GameScene.swift in Sources */,
+				AB0500000000000000000011 /* RallyFlickInput.swift in Sources */,
 				ED89128A05608B0C60594251 /* GameSessionView.swift in Sources */,
 				757F93169098EDAB89D9CB81 /* HapticManager.swift in Sources */,
 				1FEEAF40C267A40437FE363B /* HitQuality.swift in Sources */,

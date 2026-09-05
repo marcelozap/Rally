@@ -9,6 +9,7 @@ final class AvatarConfig {
     var hairStyleRaw: String = AvatarHairStyle.medium.rawValue
     var hairColorHex: String = "#050507"
     var bodyTypeRaw: String = AvatarBodyType.athletic.rawValue
+    var athletePresetRaw: String = RallyAthletePreset.maleEuropean.rawValue
 
     var equippedTopID: String = ShopCatalog.defaultTopID
     var equippedBottomID: String = ShopCatalog.defaultBottomID
@@ -43,6 +44,11 @@ final class AvatarConfig {
         set { bodyTypeRaw = newValue.rawValue }
     }
 
+    var athletePreset: RallyAthletePreset {
+        get { RallyAthletePreset(rawValue: athletePresetRaw) ?? .maleEuropean }
+        set { athletePresetRaw = newValue.rawValue }
+    }
+
     func refreshForCurrentVisualSystem() {
         if equippedRacketID == "rally.default.racket" {
             equippedRacketID = ShopCatalog.defaultRacketID
@@ -74,6 +80,69 @@ final class AvatarConfig {
         skinTone = .light
         bodyType = .athletic
         hairStyle = .medium
+    }
+}
+
+/// The two shared tennis physiques used by the six-player roster.
+enum RallyAthleteModel: String, Codable, CaseIterable, Identifiable {
+    case male, female
+
+    var id: String { rawValue }
+    var displayName: String { self == .male ? "Man" : "Woman" }
+}
+
+/// Fixed player identities. Clothing and racket choices remain independent.
+enum RallyAthletePreset: String, Codable, CaseIterable, Identifiable {
+    case maleEuropean, maleAsian, maleBlack
+    case femaleEuropean, femaleAsian, femaleBlack
+
+    var id: String { rawValue }
+    var athleteModel: RallyAthleteModel {
+        switch self {
+        case .maleEuropean, .maleAsian, .maleBlack: return .male
+        case .femaleEuropean, .femaleAsian, .femaleBlack: return .female
+        }
+    }
+
+    var displayName: String {
+        switch self {
+        case .maleEuropean: return "Alex"
+        case .maleAsian: return "Kai"
+        case .maleBlack: return "Miles"
+        case .femaleEuropean: return "Emma"
+        case .femaleAsian: return "Maya"
+        case .femaleBlack: return "Zoe"
+        }
+    }
+
+    var heritageDescription: String {
+        switch self {
+        case .maleEuropean, .femaleEuropean: return "White / European"
+        case .maleAsian, .femaleAsian: return "Asian"
+        case .maleBlack, .femaleBlack: return "Black"
+        }
+    }
+
+    var skinTone: AvatarSkinTone {
+        switch self {
+        case .maleEuropean, .femaleEuropean: return .light
+        case .maleAsian, .femaleAsian: return .light
+        case .maleBlack, .femaleBlack: return .deep
+        }
+    }
+
+    var hairStyle: AvatarHairStyle {
+        switch self {
+        case .maleEuropean, .maleAsian, .maleBlack: return .short
+        case .femaleEuropean, .femaleAsian, .femaleBlack: return .ponytail
+        }
+    }
+
+    var hairColorHex: String {
+        switch self {
+        case .maleEuropean, .femaleEuropean: return "#4A3228"
+        default: return "#080809"
+        }
     }
 }
 
