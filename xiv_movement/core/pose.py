@@ -23,6 +23,12 @@ class PoseExtractor:
     """
 
     def __init__(self, complexity=1, min_det=0.5, min_track=0.5):
+        if not hasattr(mp, "solutions"):
+            raise RuntimeError(
+                "This pipeline requires MediaPipe's legacy Pose API. "
+                "Use Python 3.11 or 3.12 and install requirements.txt in a clean "
+                "virtual environment (mediapipe==0.10.14)."
+            )
         self._pose = mp.solutions.pose.Pose(
             model_complexity=complexity,
             min_detection_confidence=min_det,

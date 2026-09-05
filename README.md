@@ -8,8 +8,26 @@ pixels -> keypoints + confidence -> smooth -> angles & velocities -> metrics
 
 ## Install
 
+Use Python 3.11 or 3.12 and a clean environment. This branch uses the legacy
+MediaPipe Pose API, so its compatible MediaPipe, NumPy and OpenCV dependencies
+are constrained in `requirements.txt`. Installing the latest MediaPipe alone
+breaks that API. `opencv-contrib-python` provides `cv2`; do not also install
+`opencv-python` into the same environment.
+
+Windows:
+
+```powershell
+py -3.12 -m venv .venv
+.venv\Scripts\python -m pip install -r requirements.txt
+.venv\Scripts\python cli.py analyze serve.mp4
+```
+
+macOS/Linux:
+
 ```bash
-pip install -r requirements.txt
+python3.12 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements.txt
 ```
 
 ## Use
@@ -119,6 +137,27 @@ Also: shoulder and hip tilt, trunk lean, elbow and knee angles, left/right
 asymmetry.
 
 Almost all of it is trigonometry. There is no model to train here yet.
+
+## Verification and app status
+
+```bash
+python -m unittest discover -s tests -v
+python scripts/verify_movement.py --video serve.mp4
+# Or use a local full-body photo to test actual model loading and video export:
+python scripts/verify_movement.py --image person.jpg
+```
+
+The smoke command saves CSV, an overlay and `result.json` under
+`artifacts/verification/`. Image mode repeats a photograph: it verifies real
+inference and exports, **not** the accuracy of tennis analysis. Recorded-video
+overlays preserve the input frame rate. Low-visibility limb angles are `nan`
+in the CSV, and lost tracking clears the overlay's previous measurements.
+
+This is a standalone Python prototype on the `xiv-movement` branch. It is not
+called by the Swift iOS game. There is no LLM integration: MediaPipe supplies
+pose landmarks, then mathematical metrics and rules produce results. A real
+practice clip with known movements is still needed to evaluate coaching
+accuracy. See [verification notes](docs/VERIFICATION.md) for tested scope.
 
 ## Notes
 
