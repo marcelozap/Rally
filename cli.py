@@ -19,6 +19,7 @@ import sys
 from pathlib import Path
 
 from xiv_movement.capture import from_video, from_webcam
+from xiv_movement.capture.file import video_fps
 from xiv_movement.core.session import analyze_source, write_csv
 from xiv_movement.core.metrics import METRIC_NAMES
 
@@ -26,7 +27,8 @@ from xiv_movement.core.metrics import METRIC_NAMES
 def analyze(path, activity=None, date=None, label="", outcomes=None):
     src = Path(path)
     rows = analyze_source(
-        from_video(src), overlay_path=src.with_name(src.stem + "_overlay.mp4")
+        from_video(src), overlay_path=src.with_name(src.stem + "_overlay.mp4"),
+        overlay_fps=video_fps(src),
     )
     csv_path = write_csv(rows, src.with_name(src.stem + "_metrics.csv"))
 

@@ -1,4 +1,6 @@
-mediapipe>=0.10
-opencv-python>=4.8
-numpy>=1.24
+# This pipeline uses the legacy mp.solutions.pose API, removed by newer releases.
+mediapipe==0.10.14
+# MediaPipe already requires contrib; do not install two conflicting cv2 wheels.
+opencv-contrib-python==4.11.0.86
+numpy>=1.26,<2
 matplotlib>=3.7
