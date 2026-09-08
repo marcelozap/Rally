@@ -95,6 +95,17 @@ struct IconicTennisCourt: Identifiable, Hashable {
         CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
     }
 
+    /// Official web schedule, not a native live-data feed. Do not cache match
+    /// times or infer an event is currently running from the presence of a URL.
+    var officialScheduleURL: URL? {
+        switch id {
+        case "usopen.ashe":
+            return URL(string: "https://www.usopen.org/en_US/scores/schedule/index.html")
+        default:
+            return nil
+        }
+    }
+
     /// Opens Apple Maps at the pin.
     var appleMapsURL: URL {
         var c = URLComponents(string: "https://maps.apple.com/")!
@@ -284,7 +295,8 @@ enum IconicCourtsCatalog {
             vibe: "Mallorca flagship campus with Rafa’s methodology.",
             detail: "The academy’s official site highlights junior and adult camps built around the training system developed with Rafa Nadal’s team, plus the broader campus environment in Manacor.",
             venueWebsiteURL: URL(string: "https://www.rafanadalacademy.com/"),
-            bookingOrMembershipURL: URL(string: "https://www.rafanadalacademy.com/en/tennis-camps"),
+            bookingOrMembershipURL: URL(string: "https://www.rafanadalacademy.com/en/"),
+            officialProgramURL: URL(string: "https://www.rafanadalacademy.com/en/adult-camps/tennis-camps/"),
             sponsorHostName: "Rafa Nadal Academy by Movistar",
             sponsorHostURL: URL(string: "https://www.rafanadalacademy.com/"),
             campProfile: CampProfile(
@@ -308,7 +320,8 @@ enum IconicCourtsCatalog {
             vibe: "Côte d’Azur high-performance campus with boarding and camp options.",
             detail: "The official camp page positions Mouratoglou as a tennis-focused resort and academy environment in Sophia Antipolis, with camp formats for juniors and adults.",
             venueWebsiteURL: URL(string: "https://www.mouratoglou.com/en/"),
-            bookingOrMembershipURL: URL(string: "https://www.mouratoglou.com/en/tennis-camps/"),
+            bookingOrMembershipURL: URL(string: "https://booking.mouratoglou.com/"),
+            officialProgramURL: URL(string: "https://www.mouratoglou.com/en/stages/"),
             sponsorHostName: "Mouratoglou Hotel & Resort",
             sponsorHostURL: URL(string: "https://www.mouratoglou.com/en/"),
             campProfile: CampProfile(
