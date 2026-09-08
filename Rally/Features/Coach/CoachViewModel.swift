@@ -16,14 +16,17 @@ final class CoachViewModel: ObservableObject {
     @Published private(set) var statusMessage: String?
     @Published private(set) var isUpdatingHistory = false
     @Published private(set) var canRetry = false
+    @Published var hittingHand: CoachHittingHand = .right
 
     private let store: CoachReportStore
+    let isMotionPreviewEnabled: Bool
     private var analysisTask: Task<Void, Never>?
     private var activeRun: UUID?
     private var lastSelection: PhotosPickerItem?
 
-    init(store: CoachReportStore = CoachReportStore()) {
+    init(store: CoachReportStore = CoachReportStore(), motionPreviewEnabled: Bool = CoachMotionFeature.isEnabled) {
         self.store = store
+        self.isMotionPreviewEnabled = motionPreviewEnabled
     }
 
     var isBusy: Bool { phase != .idle }
@@ -44,6 +47,8 @@ final class CoachViewModel: ObservableObject {
         currentReport = nil
         canRetry = false
 
+        let motionHand = isMotionPreviewEnabled ? hittingHand : nil
+
         analysisTask = Task { [weak self] in
             guard let self else { return }
             var imported: CoachImportedVideo?
@@ -56,6 +61,7 @@ final class CoachViewModel: ObservableObject {
                 let report = try await CoachVideoAnalyzer().analyze(
                     url: video.url,
                     sourceName: video.sourceName,
+                    motionHand: motionHand,
                     onProgress: { [weak self] fraction in
                         Task { @MainActor [weak self] in
                             guard let self, self.activeRun == runID, self.phase == .analyzing else { return }
@@ -106,6 +112,11 @@ final class CoachViewModel: ObservableObject {
     func retry() {
         guard let lastSelection, !isBusy else { return }
         analyze(lastSelection)
+    }
+
+    func dismissAnalysisMessage() {
+        analysisError = nil
+        statusMessage = nil
     }
 
     func cancel() {

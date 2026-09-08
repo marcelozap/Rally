@@ -58,6 +58,8 @@ struct CoachVideoAnalyzer: Sendable {
     func analyze(
         url: URL,
         sourceName: String,
+        motionHand: CoachHittingHand? = nil,
+        onObservedFrames: (@Sendable ([CoachPoseFrame]) -> Void)? = nil,
         onProgress: @escaping @Sendable (Double) -> Void
     ) async throws -> CoachReport {
         try Task.checkCancellation()
@@ -67,6 +69,8 @@ struct CoachVideoAnalyzer: Sendable {
             return try await Self.makeReport(
                 url: url,
                 sourceName: sourceName,
+                motionHand: motionHand,
+                onObservedFrames: onObservedFrames,
                 onProgress: onProgress,
                 cancellation: cancellation
             )
@@ -91,11 +95,14 @@ struct CoachVideoAnalyzer: Sendable {
     private static func makeReport(
         url: URL,
         sourceName: String,
+        motionHand: CoachHittingHand?,
+        onObservedFrames: (@Sendable ([CoachPoseFrame]) -> Void)?,
         onProgress: @escaping @Sendable (Double) -> Void,
         cancellation: CoachVideoCancellation
     ) async throws -> CoachReport {
         try Task.checkCancellation()
         try validateLocalFile(url)
+        let startedAt = ProcessInfo.processInfo.systemUptime
         onProgress(0)
 
         let asset = AVURLAsset(url: url, options: [AVURLAssetPreferPreciseDurationAndTimingKey: true])
@@ -185,11 +192,26 @@ struct CoachVideoAnalyzer: Sendable {
         try Task.checkCancellation()
         guard decodedFrameCount > 0 else { throw CoachVideoAnalysisError.unreadableFrames }
         guard completedPoseRequestCount > 0 else { throw CoachVideoAnalysisError.poseAnalysisFailed }
-        return CoachAnalyzer.analyze(
+        // Test/calibration callers can compare filters against the exact same
+        // observations in memory. Ordinary app calls do not retain pose arrays.
+        onObservedFrames?(frames)
+        let baseline = CoachAnalyzer.analyze(
             frames: frames,
             duration: duration,
             sampledFrameCount: sampleCount,
             sourceFilename: sourceName
+        )
+        guard let motionHand else { return baseline }
+        let motion = try CoachMotionAnalyzer.analyze(
+            frames: frames, duration: duration, hand: motionHand,
+            processingSeconds: ProcessInfo.processInfo.systemUptime - startedAt
+        )
+        return CoachReport(
+            id: baseline.id, createdAt: baseline.createdAt, sourceFilename: baseline.sourceFilename,
+            duration: baseline.duration, sampledFrameCount: baseline.sampledFrameCount,
+            trackedFrameCount: baseline.trackedFrameCount, trackedDuration: baseline.trackedDuration,
+            longestTrackedSegmentDuration: baseline.longestTrackedSegmentDuration,
+            quality: baseline.quality, metrics: baseline.metrics, notes: baseline.notes, motionReview: motion
         )
     }
 

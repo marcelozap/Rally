@@ -123,6 +123,7 @@ public struct CoachReport: Identifiable, Codable, Sendable, Equatable {
     public let quality: CoachTrackingQuality
     public let metrics: [CoachMetric]
     public let notes: [String]
+    public let motionReview: CoachMotionReview?
 
     public var coverage: Double {
         guard sampledFrameCount > 0 else { return 0 }
@@ -133,7 +134,8 @@ public struct CoachReport: Identifiable, Codable, Sendable, Equatable {
         id: UUID = UUID(), createdAt: Date = Date(), sourceFilename: String,
         duration: Double, sampledFrameCount: Int, trackedFrameCount: Int,
         trackedDuration: Double, longestTrackedSegmentDuration: Double,
-        quality: CoachTrackingQuality, metrics: [CoachMetric], notes: [String]
+        quality: CoachTrackingQuality, metrics: [CoachMetric], notes: [String],
+        motionReview: CoachMotionReview? = nil
     ) {
         schemaVersion = Self.currentSchemaVersion
         self.id = id
@@ -147,11 +149,16 @@ public struct CoachReport: Identifiable, Codable, Sendable, Equatable {
         self.quality = quality
         self.metrics = metrics
         self.notes = notes
+        self.motionReview = motionReview
     }
 
     /// Validate before saving. Decoding also validates, so corrupt/future reports
     /// cannot silently become a plausible result in history.
     public func validate() throws {
+        if let motionReview {
+            try motionReview.validate()
+            guard motionReview.duration == duration else { throw CoachReportValidationError.invalidReport }
+        }
         let tolerance = 0.000_001
         guard schemaVersion == Self.currentSchemaVersion,
               createdAt.timeIntervalSince1970.isFinite,
@@ -205,7 +212,7 @@ public struct CoachReport: Identifiable, Codable, Sendable, Equatable {
     private enum CodingKeys: String, CodingKey {
         case schemaVersion, id, createdAt, sourceFilename, duration
         case sampledFrameCount, trackedFrameCount, trackedDuration, longestTrackedSegmentDuration
-        case quality, metrics, notes
+        case quality, metrics, notes, motionReview
     }
 
     public init(from decoder: Decoder) throws {
@@ -222,6 +229,7 @@ public struct CoachReport: Identifiable, Codable, Sendable, Equatable {
         quality = try values.decode(CoachTrackingQuality.self, forKey: .quality)
         metrics = try values.decode([CoachMetric].self, forKey: .metrics)
         notes = try values.decode([String].self, forKey: .notes)
+        motionReview = try values.decodeIfPresent(CoachMotionReview.self, forKey: .motionReview)
         try validate()
     }
 }

@@ -5,9 +5,13 @@ import SwiftUI
 @MainActor
 struct CoachView: View {
     @Environment(\.scenePhase) private var scenePhase
-    @StateObject private var model = CoachViewModel()
+    @StateObject private var model: CoachViewModel
     @State private var selection: PhotosPickerItem?
     @State private var reportToDelete: CoachReport?
+
+    init(model: CoachViewModel? = nil) {
+        _model = StateObject(wrappedValue: model ?? CoachViewModel())
+    }
 
     var body: some View {
         ScrollViewReader { scroll in
@@ -78,6 +82,16 @@ struct CoachView: View {
                 Text("Choose a short clip for movement ranges and filming feedback.")
                     .font(RallyUIKit.Typography.body(.subheadline))
                     .foregroundStyle(RallyUIKit.Palette.cloud)
+                if model.isMotionPreviewEnabled {
+                    Picker("Hitting hand", selection: $model.hittingHand) {
+                        ForEach(CoachHittingHand.allCases, id: \.self) { hand in
+                            Text(hand.title).tag(hand)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    .accessibilityLabel("Hitting hand for motion review")
+                    .disabled(model.isBusy)
+                }
                 PhotosPicker(
                     selection: $selection,
                     matching: .videos,
@@ -141,6 +155,8 @@ struct CoachView: View {
                         .font(RallyUIKit.Typography.label(.subheadline))
                         .frame(minHeight: 44)
                 }
+                Button("Dismiss") { model.dismissAnalysisMessage() }
+                    .frame(minHeight: 44)
             }
         }
     }
@@ -179,6 +195,9 @@ struct CoachView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(14)
                     .background(RoundedRectangle(cornerRadius: 14).fill(Color.white.opacity(0.045)))
+                }
+                if model.isMotionPreviewEnabled, let motion = report.motionReview {
+                    CoachMotionTimelineView(review: motion)
                 }
                 ForEach(Array(report.notes.enumerated()), id: \.offset) { _, note in
                     Text(note)

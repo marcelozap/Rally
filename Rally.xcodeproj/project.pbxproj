@@ -150,6 +150,9 @@
 		5B5A35ECEF35EC17251366E5 /* CoachVideoAnalyzerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C8C8901471ECA8A50EFB610 /* CoachVideoAnalyzerTests.swift */; };
 		AFC8E3E8FD2256A49FC806E0 /* CoachImportWorkspace.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8BBFD303B0F873D921DBCF6D /* CoachImportWorkspace.swift */; };
 		A3EDB392D3ACB9E553C2B5DB /* CoachImportWorkspaceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE2A78CC14A1D088E2E9741A /* CoachImportWorkspaceTests.swift */; };
+		8FB296FB6E01DDF2BDEF3D53 /* CoachMotionAnalysis.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4372CEC9A5C0E6B0740D2034 /* CoachMotionAnalysis.swift */; };
+		E7B725EC15CAFC5AC782954E /* CoachMotionTimelineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F13361A273C9BD8448518402 /* CoachMotionTimelineView.swift */; };
+		D4B1A190F7E7A551F6DD8B13 /* CoachMotionAnalysisTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDEDAB19E154CE7092170F97 /* CoachMotionAnalysisTests.swift */; };
 		/* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -310,6 +313,9 @@
 		1C8C8901471ECA8A50EFB610 /* CoachVideoAnalyzerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "RallyTests/CoachVideoAnalyzerTests.swift"; sourceTree = SOURCE_ROOT; };
 		8BBFD303B0F873D921DBCF6D /* CoachImportWorkspace.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Rally/Features/Coach/Core/CoachImportWorkspace.swift"; sourceTree = SOURCE_ROOT; };
 		EE2A78CC14A1D088E2E9741A /* CoachImportWorkspaceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Tests/RallyCoachCoreTests/CoachImportWorkspaceTests.swift"; sourceTree = SOURCE_ROOT; };
+		4372CEC9A5C0E6B0740D2034 /* CoachMotionAnalysis.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Rally/Features/Coach/Core/CoachMotionAnalysis.swift"; sourceTree = SOURCE_ROOT; };
+		F13361A273C9BD8448518402 /* CoachMotionTimelineView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Rally/Features/Coach/CoachMotionTimelineView.swift"; sourceTree = SOURCE_ROOT; };
+		CDEDAB19E154CE7092170F97 /* CoachMotionAnalysisTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Tests/RallyCoachCoreTests/CoachMotionAnalysisTests.swift"; sourceTree = SOURCE_ROOT; };
 		/* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -678,6 +684,8 @@
 		83D8E5CA55390FAB13F99BBC /* Coach */ = {
 			isa = PBXGroup;
 			children = (
+				F13361A273C9BD8448518402 /* CoachMotionTimelineView.swift */,
+				4372CEC9A5C0E6B0740D2034 /* CoachMotionAnalysis.swift */,
 				8BBFD303B0F873D921DBCF6D /* CoachImportWorkspace.swift */,
 				3225A82DD47780DCB9F39789 /* CoachView.swift */,
 				93671369F631FA6CE8C2CFBC /* CoachViewModel.swift */,
@@ -693,6 +701,7 @@
 		3597832EB8392B12DBE8D04C /* Coach Core Tests */ = {
 			isa = PBXGroup;
 			children = (
+				CDEDAB19E154CE7092170F97 /* CoachMotionAnalysisTests.swift */,
 				EE2A78CC14A1D088E2E9741A /* CoachImportWorkspaceTests.swift */,
 				68F039227AC7689F1156157D /* CoachAnalyzerTests.swift */,
 				FAA662D6B57391324247CE86 /* CoachReportStoreTests.swift */,
@@ -798,6 +807,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D4B1A190F7E7A551F6DD8B13 /* CoachMotionAnalysisTests.swift in Sources */,
 				A3EDB392D3ACB9E553C2B5DB /* CoachImportWorkspaceTests.swift in Sources */,
 				C3A97811DEA9F5FA5DA1CE8D /* CoachAnalyzerTests.swift in Sources */,
 				1FEC17DF19C5D4113C2115F9 /* CoachReportStoreTests.swift in Sources */,
@@ -830,6 +840,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E7B725EC15CAFC5AC782954E /* CoachMotionTimelineView.swift in Sources */,
+				8FB296FB6E01DDF2BDEF3D53 /* CoachMotionAnalysis.swift in Sources */,
 				AFC8E3E8FD2256A49FC806E0 /* CoachImportWorkspace.swift in Sources */,
 				07F46D55EE692592C8C48895 /* CoachView.swift in Sources */,
 				5ACA1DAABF6DE9342A71E512 /* CoachViewModel.swift in Sources */,

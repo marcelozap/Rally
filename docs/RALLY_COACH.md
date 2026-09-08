@@ -50,4 +50,8 @@ swift test
 
 The Windows environment can execute Foundation-only tests and parse Swift syntax. It cannot type-check the Apple frameworks, run Xcode, or install the phone app. The current evidence and remaining Mac/iPhone checks are recorded in [RALLY_COACH_VALIDATION.md](RALLY_COACH_VALIDATION.md). Follow the [laptop prompt](../RALLY_COACH_LAPTOP_PROMPT.md) to complete those checks.
 
-The video adapter follows Apple's [body-pose detection](https://developer.apple.com/documentation/vision/detecting-human-body-poses-in-images) and [asynchronous frame extraction](https://developer.apple.com/documentation/avfoundation/avassetimagegenerator/image%28at%3A%29) APIs. Those Apple-specific paths still require the Mac/iPhone checks above.
+The video adapter follows Apple's [body-pose detection](https://developer.apple.com/documentation/vision/detecting-human-body-poses-in-images) and [asynchronous frame extraction](https://developer.apple.com/documentation/avfoundation/avassetimagegenerator/image%28at%3A%29) APIs. Mac builds and focused iPhone tests now run; the detailed validation record separates those results from pending interactive checks.
+
+## Experimental motion review
+
+The `codex/rally-coach-kinematics` branch adds adaptive joint smoothing, explicit hitting-hand selection, shoulder-relative wrist velocity and a timestamped motion timeline. It preserves the existing reports and keeps these new measurements off by default pending broader footage validation. See [RALLY_COACH_KINEMATICS.md](RALLY_COACH_KINEMATICS.md) for the reference, parameters, comparisons, preview launch flag and limitations.
