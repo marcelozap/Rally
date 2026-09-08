@@ -137,6 +137,19 @@
 		333BDB1C56824B8D87B70D8B /* RallyReferralCatalog.json in Resources */ = {isa = PBXBuildFile; fileRef = FF9BB2E4211B4A70A5D92FA3 /* RallyReferralCatalog.json */; };
 		FFE733A7D9831E3D06345CDB /* RallyGarmentCatalog.json in Resources */ = {isa = PBXBuildFile; fileRef = 9A78DD1E1494F139B7CF057D /* RallyGarmentCatalog.json */; };
 		489A0E7356654802AB927C2B /* RallyAvatarPartRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F43AC5BE0F2D422AA1E337A9 /* RallyAvatarPartRenderer.swift */; };
+		07F46D55EE692592C8C48895 /* CoachView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3225A82DD47780DCB9F39789 /* CoachView.swift */; };
+		5ACA1DAABF6DE9342A71E512 /* CoachViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93671369F631FA6CE8C2CFBC /* CoachViewModel.swift */; };
+		40D83603838FC06FF4278B23 /* CoachAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5D41AC99E81927F95104BBB /* CoachAnalyzer.swift */; };
+		E4B0C728253BBC52AF1C087C /* CoachModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1E49956550DDF603D6617A3 /* CoachModels.swift */; };
+		D756A6CD473B654CA03CB3C0 /* CoachReportStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 918BF2C1DE384823549C8E3E /* CoachReportStore.swift */; };
+		C99857594E2621E477DB29DC /* CoachVideoAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21D032F28218E290156626B1 /* CoachVideoAnalyzer.swift */; };
+		DF98A5A4F32F13A7B0F6F199 /* CoachVideoTransfer.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC7760432A2D2C184F366663 /* CoachVideoTransfer.swift */; };
+		C3A97811DEA9F5FA5DA1CE8D /* CoachAnalyzerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68F039227AC7689F1156157D /* CoachAnalyzerTests.swift */; };
+		1FEC17DF19C5D4113C2115F9 /* CoachReportStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAA662D6B57391324247CE86 /* CoachReportStoreTests.swift */; };
+		2C16B12D17492AECB4CD05A1 /* CoachReportTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63203A53CFA456ADE1589A2C /* CoachReportTests.swift */; };
+		5B5A35ECEF35EC17251366E5 /* CoachVideoAnalyzerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C8C8901471ECA8A50EFB610 /* CoachVideoAnalyzerTests.swift */; };
+		AFC8E3E8FD2256A49FC806E0 /* CoachImportWorkspace.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8BBFD303B0F873D921DBCF6D /* CoachImportWorkspace.swift */; };
+		A3EDB392D3ACB9E553C2B5DB /* CoachImportWorkspaceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE2A78CC14A1D088E2E9741A /* CoachImportWorkspaceTests.swift */; };
 		/* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -284,6 +297,19 @@
 		FF9BB2E4211B4A70A5D92FA3 /* RallyReferralCatalog.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = RallyReferralCatalog.json; sourceTree = "<group>"; };
 		9A78DD1E1494F139B7CF057D /* RallyGarmentCatalog.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = RallyGarmentCatalog.json; sourceTree = "<group>"; };
 		F43AC5BE0F2D422AA1E337A9 /* RallyAvatarPartRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RallyAvatarPartRenderer.swift; sourceTree = "<group>"; };
+		3225A82DD47780DCB9F39789 /* CoachView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Rally/Features/Coach/CoachView.swift"; sourceTree = SOURCE_ROOT; };
+		93671369F631FA6CE8C2CFBC /* CoachViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Rally/Features/Coach/CoachViewModel.swift"; sourceTree = SOURCE_ROOT; };
+		C5D41AC99E81927F95104BBB /* CoachAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Rally/Features/Coach/Core/CoachAnalyzer.swift"; sourceTree = SOURCE_ROOT; };
+		A1E49956550DDF603D6617A3 /* CoachModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Rally/Features/Coach/Core/CoachModels.swift"; sourceTree = SOURCE_ROOT; };
+		918BF2C1DE384823549C8E3E /* CoachReportStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Rally/Features/Coach/Services/CoachReportStore.swift"; sourceTree = SOURCE_ROOT; };
+		21D032F28218E290156626B1 /* CoachVideoAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Rally/Features/Coach/Services/CoachVideoAnalyzer.swift"; sourceTree = SOURCE_ROOT; };
+		BC7760432A2D2C184F366663 /* CoachVideoTransfer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Rally/Features/Coach/Services/CoachVideoTransfer.swift"; sourceTree = SOURCE_ROOT; };
+		68F039227AC7689F1156157D /* CoachAnalyzerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Tests/RallyCoachCoreTests/CoachAnalyzerTests.swift"; sourceTree = SOURCE_ROOT; };
+		FAA662D6B57391324247CE86 /* CoachReportStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Tests/RallyCoachCoreTests/CoachReportStoreTests.swift"; sourceTree = SOURCE_ROOT; };
+		63203A53CFA456ADE1589A2C /* CoachReportTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Tests/RallyCoachCoreTests/CoachReportTests.swift"; sourceTree = SOURCE_ROOT; };
+		1C8C8901471ECA8A50EFB610 /* CoachVideoAnalyzerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "RallyTests/CoachVideoAnalyzerTests.swift"; sourceTree = SOURCE_ROOT; };
+		8BBFD303B0F873D921DBCF6D /* CoachImportWorkspace.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Rally/Features/Coach/Core/CoachImportWorkspace.swift"; sourceTree = SOURCE_ROOT; };
+		EE2A78CC14A1D088E2E9741A /* CoachImportWorkspaceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Tests/RallyCoachCoreTests/CoachImportWorkspaceTests.swift"; sourceTree = SOURCE_ROOT; };
 		/* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -419,6 +445,8 @@
 		7FE866764E535BBEEA0F53EE /* RallyTests */ = {
 			isa = PBXGroup;
 			children = (
+				3597832EB8392B12DBE8D04C /* Coach Core Tests */,
+				1C8C8901471ECA8A50EFB610 /* CoachVideoAnalyzerTests.swift */,
 				2196B585C7FBD2B2E5900066 /* CourtUnlockTests.swift */,
 				707002AAB0C609EE49FAA4D1 /* HitQualityTests.swift */,
 				FB90CCD37FEC5580BDA74365 /* MatchFlowTests.swift */,
@@ -476,6 +504,7 @@
 		8D6584F5303EEAF00CA6D60A /* Features */ = {
 			isa = PBXGroup;
 			children = (
+				83D8E5CA55390FAB13F99BBC /* Coach */,
 				093D59465D16CFA4DC14A926 /* Auth */,
 				D1CDBA833DEFCAD1351F5F8F /* Avatar */,
 				ED1493F745326917FE7CCCC0 /* Competition */,
@@ -646,6 +675,32 @@
 			path = Shop;
 			sourceTree = "<group>";
 		};
+		83D8E5CA55390FAB13F99BBC /* Coach */ = {
+			isa = PBXGroup;
+			children = (
+				8BBFD303B0F873D921DBCF6D /* CoachImportWorkspace.swift */,
+				3225A82DD47780DCB9F39789 /* CoachView.swift */,
+				93671369F631FA6CE8C2CFBC /* CoachViewModel.swift */,
+				C5D41AC99E81927F95104BBB /* CoachAnalyzer.swift */,
+				A1E49956550DDF603D6617A3 /* CoachModels.swift */,
+				918BF2C1DE384823549C8E3E /* CoachReportStore.swift */,
+				21D032F28218E290156626B1 /* CoachVideoAnalyzer.swift */,
+				BC7760432A2D2C184F366663 /* CoachVideoTransfer.swift */,
+			);
+			name = "Coach";
+			sourceTree = "<group>";
+		};
+		3597832EB8392B12DBE8D04C /* Coach Core Tests */ = {
+			isa = PBXGroup;
+			children = (
+				EE2A78CC14A1D088E2E9741A /* CoachImportWorkspaceTests.swift */,
+				68F039227AC7689F1156157D /* CoachAnalyzerTests.swift */,
+				FAA662D6B57391324247CE86 /* CoachReportStoreTests.swift */,
+				63203A53CFA456ADE1589A2C /* CoachReportTests.swift */,
+			);
+			name = "Coach Core Tests";
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -743,6 +798,11 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A3EDB392D3ACB9E553C2B5DB /* CoachImportWorkspaceTests.swift in Sources */,
+				C3A97811DEA9F5FA5DA1CE8D /* CoachAnalyzerTests.swift in Sources */,
+				1FEC17DF19C5D4113C2115F9 /* CoachReportStoreTests.swift in Sources */,
+				2C16B12D17492AECB4CD05A1 /* CoachReportTests.swift in Sources */,
+				5B5A35ECEF35EC17251366E5 /* CoachVideoAnalyzerTests.swift in Sources */,
 				13D814DAB8B1AF983893D5C2 /* CourtUnlockTests.swift in Sources */,
 				B7C0EEE585B8701B78124A90 /* HitQualityTests.swift in Sources */,
 				E33D4125508B73663AA07A62 /* MatchFlowTests.swift in Sources */,
@@ -770,6 +830,14 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				AFC8E3E8FD2256A49FC806E0 /* CoachImportWorkspace.swift in Sources */,
+				07F46D55EE692592C8C48895 /* CoachView.swift in Sources */,
+				5ACA1DAABF6DE9342A71E512 /* CoachViewModel.swift in Sources */,
+				40D83603838FC06FF4278B23 /* CoachAnalyzer.swift in Sources */,
+				E4B0C728253BBC52AF1C087C /* CoachModels.swift in Sources */,
+				D756A6CD473B654CA03CB3C0 /* CoachReportStore.swift in Sources */,
+				C99857594E2621E477DB29DC /* CoachVideoAnalyzer.swift in Sources */,
+				DF98A5A4F32F13A7B0F6F199 /* CoachVideoTransfer.swift in Sources */,
 				625000CF1196D42E0586B789 /* AccessibilityHelpers.swift in Sources */,
 				7D9763E612E97F9FDF990293 /* Achievement.swift in Sources */,
 				A66086638B3E57695051E30A /* AnalyticsInsights.swift in Sources */,
