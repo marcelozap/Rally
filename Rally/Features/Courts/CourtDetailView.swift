@@ -473,6 +473,24 @@ struct CourtDetailView: View {
                     }
                 }
 
+                if let url = court.officialScheduleURL {
+                    Button {
+                        RallyReferralLinkRouter.shared.openVenueLink(url, venueName: court.name + " official schedule")
+                    } label: {
+                        linkRow(
+                            icon: "calendar.badge.clock",
+                            title: "Official match schedule",
+                            subtitle: "Opens the tournament website. Check its date and time zone; match times may change."
+                        )
+                    }
+                    .buttonStyle(.plain)
+
+                    Text("Schedule updates are provided by the tournament website, not a live feed inside Rally.")
+                        .font(RallyUIKit.Typography.body(.caption, weight: .medium))
+                        .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.7))
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
                 // All venue links route through RallyReferralLinkRouter — W-3/W-4 audit gates.
                 if let url = court.venueWebsiteURL {
                     Button {

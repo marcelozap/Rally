@@ -35,6 +35,11 @@ struct TrainingLogView: View {
                 }
             }
             .background(RallyUIKit.screenBackground)
+            .safeAreaInset(edge: .top, spacing: 0) {
+                coachEntry
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 10)
+            }
             .navigationTitle("Training")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -53,6 +58,36 @@ struct TrainingLogView: View {
                 }
             }
         }
+    }
+
+    private var coachEntry: some View {
+        NavigationLink {
+            CoachView()
+        } label: {
+            RallyUIKit.LuxePanel(tint: RallyUIKit.Palette.cyan) {
+                HStack(spacing: 14) {
+                    RallyUIKit.IconBadge(
+                        systemName: "figure.tennis",
+                        tint: RallyUIKit.Palette.cyan,
+                        size: 38
+                    )
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Rally Coach")
+                            .font(RallyUIKit.Typography.body(.headline, weight: .bold))
+                            .foregroundStyle(RallyUIKit.Palette.frost)
+                        Text("Review movement from a practice video.")
+                            .font(RallyUIKit.Typography.body(.caption, weight: .medium))
+                            .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.68))
+                    }
+                    Spacer(minLength: 4)
+                    Image(systemName: "chevron.right")
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(RallyUIKit.Palette.cyan)
+                }
+            }
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("training.rallyCoach")
     }
 
     private var emptyState: some View {

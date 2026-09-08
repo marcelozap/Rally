@@ -57,6 +57,7 @@ targets:
     platform: iOS
     sources:
       - path: RallyTests
+      - path: Tests/RallyCoachCoreTests
     dependencies:
       - target: Rally
     settings:

@@ -45,6 +45,21 @@ struct HomeView: View {
                         }
                         .buttonStyle(LoadoutPlayButtonStyle())
                         .accessibilityLabel("Open journal")
+
+                        NavigationLink {
+                            CoachView()
+                        } label: {
+                            Text("Coach")
+                                .font(RallyUIKit.Typography.body(.subheadline, weight: .bold))
+                                .foregroundStyle(RallyUIKit.Palette.champagne)
+                                .padding(.horizontal, 12)
+                                .frame(height: HomeCraft.headerTapTarget)
+                                .background(Capsule().fill(Color.white.opacity(0.075)))
+                                .overlay(Capsule().stroke(Color.white.opacity(0.12), lineWidth: 1))
+                        }
+                        .buttonStyle(LoadoutPlayButtonStyle())
+                        .accessibilityLabel("Open Rally Coach")
+                        .accessibilityIdentifier("home.rallyCoach")
                     }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
