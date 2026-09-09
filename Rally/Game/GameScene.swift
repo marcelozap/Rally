@@ -54,6 +54,21 @@ final class GameScene: SKScene {
     /// How long a single rally session lasts before `sessionEnd` is fired.
     /// The procedural beatmap is generated to match.
     var sessionDurationSeconds: Double = RallyMirrorRules.durationSeconds
+    var practiceMode: RallyPlayMode = .rallyChallenge
+    private(set) var practiceAttempts = 0
+    private(set) var practiceHits = 0
+    private var serveCycle = RallyServeCycle()
+    private var serveBall: SKShapeNode?
+    private var serveCue: SKLabelNode?
+    private var practiceTarget: SKShapeNode?
+    private var practiceShotBall: BallNode?
+    private var isServingFlight = false
+    private var hasStartedRallyClock = false
+    private var lastSystemUpdate: TimeInterval?
+    private var clockOffset: TimeInterval = 0
+    private var needsClockRebase = false
+    private var sessionSuspended = false
+    var servePhase: RallyServeCycle.Phase { serveCycle.phase }
     var racketTuning: RacketGameplayTuning = .balanced
     var avatarAppearance: RallyAvatarAppearance?
     var dominantHand: GamePreferences.DominantHand = .right {
@@ -410,7 +425,7 @@ final class GameScene: SKScene {
             subtitle?.removeFromParent()
             ring?.removeFromParent()
             guard let self = self else { return }
-            self.beginActiveRally(at: CACurrentMediaTime())
+            self.beginServePoint(at: self.currentTimeSnapshot > 0 ? self.currentTimeSnapshot : CACurrentMediaTime())
             CameraShake.nudge(self.cameraNode, dx: 0, dy: -8, outMs: 90, backMs: 220)
             self.background?.setMomentum(
                 tier: 0,
@@ -438,9 +453,162 @@ final class GameScene: SKScene {
         lastAvatarMovementTime = nil
         lastBeatTime = currentTime
         currentTravelSeconds = wallTravelSeconds()
-        if sessionMode == .wallRally {
-            scheduleWallBall(after: Tunables.wallOpeningFeedDelaySeconds)
+        hasStartedRallyClock = true
+        serveCycle.enterRally()
+    }
+
+    func beginServePoint(at time: TimeInterval) {
+        guard !sessionEnded, activeBalls.isEmpty, activeExchanges.isEmpty else { return }
+        isCountingDown = false
+        currentTimeSnapshot = time
+        clearPendingWallSpawnToken()
+        serveCycle.begin(at: time)
+        serveBall?.removeFromParent()
+        let ball = SKShapeNode(circleOfRadius: 6)
+        ball.name = "serve.toss"
+        ball.fillColor = .init(red: 0.9, green: 1, blue: 0.3, alpha: 1)
+        ball.strokeColor = .white
+        ball.zPosition = 70
+        addChild(ball)
+        serveBall = ball
+        setServeCue("Get ready. Swipe up with the toss.")
+        updatePracticeTarget()
+        renderServe(at: time)
+    }
+
+    private func advanceServe(at time: TimeInterval) {
+        let previous = serveCycle.phase
+        serveCycle.advance(at: time)
+        if previous == .toss, serveCycle.phase == .retry {
+            if practiceMode == .servePractice { practiceAttempts += 1; totalMisses += 1 }
+            serveBall?.removeFromParent(); serveBall = nil
+            setServeCue("A little late. Try another serve.")
         }
+        if practiceMode.isTargetMode, practiceAttempts >= 10 { completeSession(); return }
+        if serveCycle.phase == .retry {
+            if serveCycle.elapsed(at: time) >= 0.9 { beginServePoint(at: time) }
+            return
+        }
+        renderServe(at: time)
+        if serveCycle.phase == .toss {
+            let inWindow = RallyServeCycle.contactWindow.contains(serveCycle.elapsed(at: time))
+            setServeCue(inWindow ? "SWIPE UP NOW" : "Follow the toss")
+            if isProofAutoPlayEnabled, inWindow { attemptServe(at: time) }
+        }
+    }
+
+    private func renderServe(at time: TimeInterval) {
+        guard let rig = playerAvatarRig, let node = playerAvatarNode, let playerRoot else { return }
+        let p = Float(min(1, serveCycle.elapsed(at: time) / RallyServeCycle.duration))
+        playerRoot.position.x = size.width / 2
+        rig.animateLesson(progress: p, leftHanded: dominantHand == .left, serve: true)
+        alignAvatarToCourt(rig: rig, node: node)
+        node.sceneTime = time
+        guard let hand = avatarPoint(rig.tossHandWorldPosition(leftHanded: dominantHand == .left), rig: rig, node: node) else { return }
+        let origin = node.convert(hand, to: self)
+        if p < 0.28 { serveBall?.position = origin }
+        else {
+            let fraction = CGFloat(min(1, max(0, (p - 0.28) / 0.47)))
+            let contact = racketContactPoint(for: dominantHand == .left ? .left : .right)
+            let end = CGPoint(x: size.width / 2 + (dominantHand == .left ? 12 : -12), y: max(contact.y, origin.y) + 45)
+            serveBall?.position = CGPoint(x: origin.x + (end.x - origin.x) * fraction,
+                                          y: origin.y + (end.y - origin.y) * fraction + sin(fraction * .pi) * 44)
+        }
+    }
+
+    /// Input and autoplay use this same one-shot boundary.
+    func attemptServe(at time: TimeInterval) {
+        guard !sessionEnded, !sessionSuspended else { return }
+        serveCycle.advance(at: time)
+        guard serveCycle.hit(at: time) else {
+            if serveCycle.phase == .preparing || serveCycle.phase == .toss {
+                serveCycle.retry(at: time)
+                serveBall?.removeFromParent(); serveBall = nil
+                if practiceMode == .servePractice { practiceAttempts += 1; totalMisses += 1 }
+                setServeCue("A little early. Follow the toss.")
+            }
+            return
+        }
+        if !hasStartedRallyClock { beginActiveRally(at: time) }
+        guard let rig = playerAvatarRig, let node = playerAvatarNode else {
+            serveCycle.retry(at: time); return
+        }
+        rig.animateLesson(progress: 0.75, leftHanded: dominantHand == .left, serve: true)
+        alignAvatarToCourt(rig: rig, node: node)
+        let lane: Lane = dominantHand == .left ? .left : .right
+        let contact = avatarPoint(rig.racketHeadWorldPosition, rig: rig, node: node)
+            .map { node.convert($0, to: self) } ?? racketContactPoint(for: lane)
+        serveBall?.removeFromParent(); serveBall = nil
+        let ball = BallNode(lane: lane, kind: .normal, role: .serve, wallStyleMode: true, shotShape: .drive,
+                            arrivalTime: currentTrackTime, spawnTime: currentTrackTime, travelSeconds: 1,
+                            spawnPoint: contact, strikePoint: contact, spawnScale: 1, strikeScale: 1,
+                            overrunScale: 1, curveAmount: 0, overrideFillColor: .yellow)
+        ball.position = contact
+        addChild(ball)
+        spawnedBallCount += 1
+        isServingFlight = true
+        beginContinuousWallExchange(for: ball, from: contact, to: contact, lane: lane, quality: .good,
+                                    strokeSide: .forehand)
+        isServingFlight = false
+        swingVisualImpactUntil = time + 0.35
+        playerContactFollowThrough = true
+        setServeCue(practiceMode == .servePractice ? "Aim for the ring" : "Serve in. Get ready for the return.")
+    }
+
+    private func finishPracticeShot(at point: CGPoint, ball: BallNode) {
+        let hit = RallyPracticeTarget.isHit(x: point.x, width: size.width, attempt: practiceAttempts)
+        practiceAttempts += 1
+        if hit { practiceHits += 1; score += 100 }
+        if practiceMode == .servePractice {
+            if hit { goodHits += 1 } else { totalMisses += 1 }
+        }
+        ball.removeFromParent()
+        practiceShotBall = nil
+        let mark = SKShapeNode(circleOfRadius: 9)
+        mark.position = point; mark.strokeColor = hit ? .systemGreen : .systemOrange
+        mark.lineWidth = 3; mark.zPosition = 75; addChild(mark)
+        mark.run(.sequence([.wait(forDuration: 0.6), .fadeOut(withDuration: 0.3), .removeFromParent()]))
+        setServeCue(hit ? "Target hit. Nice placement." : "Outside the ring. Adjust your angle.")
+        serveCycle.retry(at: currentTimeSnapshot)
+        updateHUD()
+        // The exchange array is replaced by the caller before the next update.
+    }
+
+    private func updatePracticeTarget() {
+        practiceTarget?.removeFromParent()
+        guard practiceMode.isTargetMode else { return }
+        let target = SKShapeNode(ellipseOf: CGSize(width: size.width * 0.20, height: 28))
+        target.position = CGPoint(x: size.width * RallyPracticeTarget.center(at: practiceAttempts), y: size.height * 0.62)
+        target.strokeColor = .systemYellow; target.fillColor = .yellow.withAlphaComponent(0.12)
+        target.lineWidth = 3; target.zPosition = 61
+        addChild(target); practiceTarget = target
+    }
+
+    private func setServeCue(_ text: String) {
+        if serveCue == nil {
+            let label = SKLabelNode(fontNamed: "AvenirNext-DemiBold")
+            label.fontSize = 17; label.fontColor = .white
+            label.numberOfLines = 2; label.preferredMaxLayoutWidth = size.width - 70
+            label.zPosition = 160; addChild(label); serveCue = label
+        }
+        serveCue?.position = CGPoint(x: size.width / 2, y: size.height * 0.40)
+        serveCue?.text = text
+    }
+
+    func pauseSession() {
+        guard !sessionSuspended else { return }
+        sessionSuspended = true
+        isPaused = true
+        swingOriginScene = nil; swingCurrentScene = nil; swingStartedAt = nil
+        committedFlick = nil
+        fadeSwingTrail()
+    }
+
+    func resumeSession() {
+        guard sessionSuspended else { return }
+        needsClockRebase = true
+        sessionSuspended = false
+        isPaused = false
     }
 
     private func setupCamera() {
@@ -1409,8 +1577,14 @@ final class GameScene: SKScene {
 
     // MARK: - Update loop
 
-    override func update(_ currentTime: TimeInterval) {
-        guard !sessionEnded else { return }
+    override func update(_ systemTime: TimeInterval) {
+        guard !sessionEnded, !sessionSuspended else { return }
+        if needsClockRebase, let lastSystemUpdate {
+            clockOffset += max(0, systemTime - lastSystemUpdate)
+        }
+        needsClockRebase = false
+        lastSystemUpdate = systemTime
+        let currentTime = systemTime - clockOffset
         if currentTime < frameStopUntil {
             speed = 0
             return
@@ -1420,10 +1594,10 @@ final class GameScene: SKScene {
 
         let trackTime = currentTime - startTime
         currentTimeSnapshot = currentTime
-        currentTrackTime = max(0, trackTime)
+        currentTrackTime = hasStartedRallyClock ? max(0, trackTime) : 0
         // Finish before feed, input or miss processing. A ball in flight at the
         // deadline cannot turn a completed twenty-second run into a late miss.
-        if sessionMode == .wallRally, !sessionEnded, !isCountingDown,
+        if sessionMode == .wallRally, !practiceMode.isTargetMode, hasStartedRallyClock, !sessionEnded, !isCountingDown,
            RallyMirrorRules.hasFinished(at: currentTrackTime) {
             completedMirrorRally = true
             currentTrackTime = RallyMirrorRules.durationSeconds
@@ -1432,6 +1606,11 @@ final class GameScene: SKScene {
             return
         }
 
+        if !isCountingDown, serveCycle.phase != .rally {
+            advanceServe(at: currentTime)
+            updateTimeLabel(trackTime: currentTrackTime)
+            return
+        }
         if !sessionEnded, !isCountingDown, sessionMode == .phasedMatch {
             flow?.update(trackTime: currentTrackTime, combo: combo)
             if let profile = flow?.currentProfile() {
@@ -1734,7 +1913,7 @@ final class GameScene: SKScene {
             changeupWinners: changeupWinners,
             pressureHolds: pressureHolds,
             segments: segments,
-            isMirrorRally: sessionMode == .wallRally,
+            isMirrorRally: sessionMode == .wallRally && !practiceMode.isTargetMode,
             completedMirrorRally: completedMirrorRally,
             elapsedSeconds: sessionMode == .wallRally
                 ? min(RallyMirrorRules.durationSeconds, max(0, currentTrackTime)) : currentTrackTime
@@ -1829,6 +2008,10 @@ final class GameScene: SKScene {
     private func updateTimeLabel(trackTime: Double) {
         guard let timeLabel = timeLabel else { return }
         if sessionMode == .wallRally {
+            if practiceMode.isTargetMode {
+                timeLabel.text = "\(practiceHits) / \(practiceAttempts)  |  10 shots"
+                return
+            }
             let remaining = RallyMirrorRules.remainingSeconds(at: isCountingDown ? 0 : trackTime)
             timeLabel.text = "\(Int(ceil(remaining)))s"
             timeLabel.fontColor = remaining <= 5 ? UIColor(red: 0.94, green: 0.98, blue: 0.42, alpha: 1) : .white
@@ -1934,6 +2117,10 @@ final class GameScene: SKScene {
                 exchange.ball.ownershipPhase = .wallExchange
             }
             exchange.ball.applyLiveExchangeFrame(frame)
+            if practiceShotBall === exchange.ball, currentTime >= exchange.farContactTime {
+                finishPracticeShot(at: exchange.farContactPoint, ball: exchange.ball)
+                continue
+            }
 
             if frame.didBeginWallImpact {
                 let lane = exchange.ball.lane
@@ -1976,7 +2163,7 @@ final class GameScene: SKScene {
             ?? (start + RallyMirrorRules.beatSeconds(forCombo: combo))
         let travelDuration = max(0.001, arrival - start)
         guard !sessionEnded,
-              RallyMirrorRules.canStartIncoming(at: start, travelSeconds: travelDuration) else {
+              practiceMode.isTargetMode || RallyMirrorRules.canStartIncoming(at: start, travelSeconds: travelDuration) else {
             ball.removeFromParent()
             return
         }
@@ -2348,115 +2535,16 @@ final class GameScene: SKScene {
     }
 
     private func scheduleWallBall(after delay: Double) {
-        guard sessionMode == .wallRally, !sessionEnded,
-              RallyMirrorRules.canStartIncoming(at: currentTrackTime, travelSeconds: max(0, delay) + currentTravelSeconds) else { return }
-        guard pendingWallSpawnToken == nil else {
-            #if DEBUG
-            recordWallFeedDebugEvent("skip pending")
-            #endif
-            return
-        }
-        guard activeBalls.isEmpty, activeExchanges.isEmpty else { return }
-        let token = UUID()
-        pendingWallSpawnToken = token
-        pendingWallSpawnDeadline = Tunables.wallSpawnWatchdogDeadline(
-            requestedAt: ProcessInfo.processInfo.systemUptime,
-            delay: delay
-        )
-        #if DEBUG
-        recordWallFeedDebugEvent(String(format: "schedule %.2fs", delay))
-        #endif
-        DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
-            guard let self else { return }
-            guard self.pendingWallSpawnToken == token else {
-                #if DEBUG
-                self.recordWallFeedDebugEvent("drop stale token")
-                #endif
-                return
-            }
-            guard self.sessionMode == .wallRally, !self.sessionEnded, !self.isCountingDown else {
-                #if DEBUG
-                self.recordWallFeedDebugEvent("clear inactive")
-                #endif
-                self.clearPendingWallSpawnToken()
-                return
-            }
-            self.pruneStrandedWallExchanges(currentTime: ProcessInfo.processInfo.systemUptime)
-            guard self.activeBalls.isEmpty, self.activeExchanges.isEmpty else {
-                #if DEBUG
-                self.recordWallFeedDebugEvent("clear occupied")
-                #endif
-                self.clearPendingWallSpawnToken()
-                return
-            }
-            guard !self.activeBalls.contains(where: { $0.ownershipPhase.blocksSpawn }) else {
-                #if DEBUG
-                self.recordWallFeedDebugEvent("clear ownership")
-                #endif
-                self.clearPendingWallSpawnToken()
-                return
-            }
-            guard self.activeBalls.isEmpty else {
-                #if DEBUG
-                self.recordWallFeedDebugEvent("clear active")
-                #endif
-                self.clearPendingWallSpawnToken()
-                return
-            }
-            let lane = self.nextWallSpawnLane()
-            let arrivalTime = self.currentTrackTime + self.currentTravelSeconds
-            let note = BeatmapNote(
-                arrivalTime: arrivalTime,
-                lane: lane,
-                kind: .normal,
-                role: .rally
-            )
-            // This token gates the empty-court watchdog. Clear it once the ball
-            // actually exists, otherwise the rally can get stuck with no feed.
-            #if DEBUG
-            self.recordWallFeedDebugEvent("spawn \(String(describing: lane))")
-            #endif
-            self.clearPendingWallSpawnToken()
-            self.spawnBall(note)
-        }
+        // Serve owns setup; there is no independent delayed feed or dispatch timer.
+        guard !sessionEnded, !isCountingDown, activeBalls.isEmpty, activeExchanges.isEmpty else { return }
+        clearPendingWallSpawnToken()
+        serveCycle.retry(at: currentTimeSnapshot)
     }
 
     private func maintainWallFeed(currentTime: TimeInterval) {
-        guard sessionMode == .wallRally, !sessionEnded, !isCountingDown else { return }
-
-        pruneStrandedWallExchanges(currentTime: currentTime)
-        clearExpiredWallSpawnToken()
-
-        let courtIsEmpty = activeBalls.isEmpty && activeExchanges.isEmpty
-        guard courtIsEmpty else {
-            wallEmptyCourtSince = nil
-            return
-        }
-
-        let emptySince = wallEmptyCourtSince ?? currentTime
-        wallEmptyCourtSince = emptySince
-
-        let emptyDuration = currentTime - emptySince
-        var clearedStalePendingFeed = false
-        if pendingWallSpawnToken != nil {
-            guard Tunables.isWallStalePendingFeedExpired(emptyDuration: emptyDuration) else { return }
-            #if DEBUG
-            recordWallFeedDebugEvent(String(format: "rescue pending %.2fs", emptyDuration))
-            #endif
-            clearPendingWallSpawnToken()
-            clearedStalePendingFeed = true
-        }
-
-        let needsRescue = Tunables.shouldUseWallFeedRescueDelay(
-            emptyDuration: emptyDuration,
-            clearedStalePendingFeed: clearedStalePendingFeed
-        )
-        #if DEBUG
-        if needsRescue {
-            recordWallFeedDebugEvent(String(format: "rescue %.2fs", emptyDuration))
-        }
-        #endif
-        scheduleWallBall(after: needsRescue ? Tunables.wallFeedRescueDelaySeconds : Tunables.wallFeedDelaySeconds)
+        guard !sessionEnded, !isCountingDown, activeBalls.isEmpty, activeExchanges.isEmpty,
+              serveCycle.phase == .rally else { return }
+        beginServePoint(at: currentTime)
     }
 
     private func pruneStrandedWallExchanges(currentTime: TimeInterval) {
@@ -2777,7 +2865,7 @@ final class GameScene: SKScene {
         }
         let viewPoint = pan.location(in: view)
         let scenePoint = convertPoint(fromView: viewPoint)
-        let now = ProcessInfo.processInfo.systemUptime
+        let now = currentTimeSnapshot
         switch pan.state {
         case .began:
             let viewOrigin = RallyFlickInput.panStart(location: viewPoint, translation: pan.translation(in: view))
@@ -2837,6 +2925,10 @@ final class GameScene: SKScene {
             swingVisualImpactUntil = currentTimeSnapshot + 0.26
             swingVisualReach = distance
             swingVisualIntent = intent
+            if serveCycle.phase != .rally {
+                attemptServe(at: now)
+                return
+            }
             resolveSwing(lane: lane, swingSpeed: speed, swingIntent: intent, strokeSide: strokeSide(for: lane))
         case .cancelled, .failed:
             swingOriginScene = nil
@@ -3334,6 +3426,16 @@ final class GameScene: SKScene {
         wallReason: WallMissReason = .generic,
         correctLane: Lane? = nil
     ) {
+        if practiceMode == .targetPractice {
+            totalMisses += 1
+            practiceAttempts += 1
+            activeBalls.forEach { $0.removeFromParent() }
+            activeBalls.removeAll()
+            serveCycle.retry(at: currentTimeSnapshot)
+            setServeCue("Missed. Try the next target.")
+            if practiceAttempts >= 10 { completeSession() }
+            return
+        }
         resetSwingBodyMechanics()
         recentTimingFeedback = nil
         totalMisses += 1
@@ -4678,7 +4780,9 @@ final class GameScene: SKScene {
         let lift = committedFlick?.lift ?? 0.5
         let rawTarget = RallyFlickInput.wallTargetX(lane: lane, direction: aim, viewportWidth: size.width)
         let targetX = size.width / 2 + (rawTarget - size.width / 2) * 0.65
-        let wallPoint = prepareMirrorContact(targetX: targetX)
+        let isTargetShot = practiceMode == .servePractice || (practiceMode == .targetPractice && !isServingFlight)
+        let wallPoint = isTargetShot ? CGPoint(x: targetX, y: size.height * 0.62) : prepareMirrorContact(targetX: targetX)
+        if isTargetShot { practiceShotBall = ball }
         let beat = RallyMirrorRules.beatSeconds(forCombo: combo)
         var exchangeConfig = RallyExchangeConfig.rallyDefault
         let contactTail = exchangeConfig.wall.compressionDuration + exchangeConfig.wall.dwellDuration
@@ -5469,6 +5573,11 @@ final class GameScene: SKScene {
     }
 
     private func clearFinishedRally() {
+        serveCycle.stop()
+        serveBall?.removeFromParent(); serveBall = nil
+        practiceTarget?.removeFromParent()
+        serveCue?.removeFromParent()
+        practiceShotBall = nil
         clearPendingWallSpawnToken()
         strikeLinePulse?.cancelAll()
         if score > bestScore {
@@ -6276,9 +6385,10 @@ final class GameScene: SKScene {
     // MARK: - Teardown
 
     override func willMove(from view: SKView) {
-        if !sessionEnded {
-            completeSession()
-        }
+        sessionEnded = true
+        clearFinishedRally()
+        removeAllActions()
+        if let swingPanRecognizer { view.removeGestureRecognizer(swingPanRecognizer) }
     }
 }
 

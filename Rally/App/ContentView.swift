@@ -75,7 +75,7 @@ struct ContentView: View {
         // Keep the fullScreenCover at root level so it's always in the hierarchy
         // regardless of whether mainTabs has rendered yet.
         .fullScreenCover(isPresented: $isPlaying) {
-            GameSessionView(onExit: {
+            RallyPlayHubView(onExit: {
                 isPlaying = false
                 selectedTab = .home
             })
