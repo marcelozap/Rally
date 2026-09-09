@@ -1,6 +1,6 @@
 # Native visual Coach and serve-mode integration
 
-Status: WIP development build. Simulator suite and generic signed iPhone build pass. Sister's device registration/install remain blocked on Developer Mode. Not release-ready.
+Status: WIP development build. Installed on the owner's identified sister's phone, but first launch was blocked by an iOS signing/trust error. User trust and on-phone smoke checks remain. Not release-ready.
 
 ## Integration provenance
 
@@ -36,6 +36,20 @@ Existing signing, app identity, assets, account storage and local settings remai
 - No new physical-phone, real Photos or real-video lesson validation yet.
 
 ## Remaining acceptance work
+
+### Sister's cable install, September 8, 2026
+
+- Developer Mode enabled and phone reconnected successfully.
+- Device-specific signed Debug build passed using the existing team and bundle identity.
+- Verified code signature, bundle identity, team and inclusion of the sister's device in the provisioning profile before installation.
+- Installed successfully with devicectl. No prior Rally installation was found, no uninstall occurred, and no other phone's data or account session was copied.
+- Installed source commit: 94ba643. Later documentation commits do not change this binary.
+- First launch failed with iOS Security/RequestDenied: invalid signature, inadequate entitlements or profile not explicitly trusted. The local signature check passed; asked the user to trust Rally's developer entry in Settings > General > VPN & Device Management, then retry.
+- Current profile expires September 15, 2026. This is time-limited development signing, not an App Store install; renewal/reinstallation is required when it expires.
+- Still pending: successful foreground launch, guest/own-account setup, one serve, one Coach lesson and launch after cable disconnection. Installation alone is not proof of these checks.
+
+The earlier Developer Mode/provisioning blockers below are historical and have
+been resolved. The current blocker is the phone's launch/trust gate.
 
 1. Keep the passing build and suite as the baseline; finish real lesson and physical-device acceptance below.
 2. Prove serve timing/trajectory alignment with the actual racket. Check misses, duplicate input, all modes, ten-attempt completion and twenty-second challenge timing.
