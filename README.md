@@ -1,6 +1,12 @@
 # Rally
 
-A high-polish, rhythm-adjacent iPhone game. Swipe left or right to hit incoming neon balls in time with a dynamic soundtrack. Minimalist cyberpunk-arcade aesthetic, dopamine-heavy feedback loop.
+A tennis app with fun swipe-and-time mini-games, customizable avatars, tennis fashion, travel, and match journaling, plus movement analysis to help you practice.
+
+Working iPhone demo, with more features in development. Visual coaching and serve-first practice modes are being integrated and validated; this is not an App Store release. Existing brand clothing does not imply a partnership.
+
+Project caption: Play tennis mini-games, style your avatar, and track your tennis journey.
+
+See [project copy](docs/RALLY_PROJECT_DESCRIPTION.md) and the [visual Coach and game modes plan](docs/RALLY_VISUAL_COACH_AND_GAME_MODES.md).
 
 > Working title in the GDD: **SwipeBeat**. Repo / shipping name: **Rally**.
 

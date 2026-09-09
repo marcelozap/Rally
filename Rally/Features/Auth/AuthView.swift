@@ -193,11 +193,11 @@ struct AuthView: View {
                 tint: RallyUIKit.Palette.cyan,
                 size: 66
             )
-            Text("Save your player everywhere")
+            Text("Play. Style. Practice.")
                 .font(.system(.title2, design: .rounded).weight(.heavy))
                 .foregroundStyle(.white)
                 .multilineTextAlignment(.center)
-            Text("Sign in for cloud backup, or continue offline on this device.")
+            Text("Fun tennis mini-games, swipe timing, avatar customization, tennis fashion, court travel ideas, match journaling and movement practice. Sign in or continue offline.")
                 .font(.system(.subheadline, design: .rounded).weight(.medium))
                 .foregroundStyle(.white.opacity(0.6))
                 .multilineTextAlignment(.center)

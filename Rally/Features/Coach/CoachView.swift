@@ -17,6 +17,7 @@ struct CoachView: View {
         ScrollViewReader { scroll in
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
+                    CoachVisualLesson(model: model)
                     introduction
                     if model.isBusy { analysisProgress }
                     if let error = model.analysisError {
@@ -25,8 +26,9 @@ struct CoachView: View {
                         messageCard(title: "Analysis stopped", message: message, isError: false)
                     }
                     if let report = model.currentReport {
-                        reportCard(report)
-                            .id("coach-result")
+                        DisclosureGroup("Optional movement details and saved report") {
+                            reportCard(report)
+                        }
                     }
                     filmingGuide
                     history
@@ -34,11 +36,6 @@ struct CoachView: View {
                 .padding(.horizontal, 16)
                 .padding(.top, 12)
                 .padding(.bottom, 32)
-            }
-            .onChange(of: model.currentReport?.id) { _, id in
-                if id != nil {
-                    withAnimation { scroll.scrollTo("coach-result", anchor: .top) }
-                }
             }
         }
         .background(RallyUIKit.screenBackground)
@@ -55,7 +52,7 @@ struct CoachView: View {
         .onChange(of: scenePhase) { _, phase in
             if phase == .background { model.cancel() }
         }
-        .onDisappear { model.cancel() }
+        .onDisappear { model.cancel(); model.closeLesson() }
         .alert("Delete saved report?", isPresented: Binding(
             get: { reportToDelete != nil },
             set: { if !$0 { reportToDelete = nil } }
@@ -79,10 +76,10 @@ struct CoachView: View {
                     .font(RallyUIKit.Typography.title(.largeTitle))
                     .foregroundStyle(RallyUIKit.Palette.frost)
                     .fixedSize(horizontal: false, vertical: true)
-                Text("Choose a short clip for movement ranges and filming feedback.")
+                Text("Watch yourself, watch the practice example, then try again.")
                     .font(RallyUIKit.Typography.body(.subheadline))
                     .foregroundStyle(RallyUIKit.Palette.cloud)
-                if model.isMotionPreviewEnabled {
+                Group {
                     Picker("Hitting hand", selection: $model.hittingHand) {
                         ForEach(CoachHittingHand.allCases, id: \.self) { hand in
                             Text(hand.title).tag(hand)
@@ -97,7 +94,7 @@ struct CoachView: View {
                     matching: .videos,
                     preferredItemEncoding: .current
                 ) {
-                    Label("Choose practice video", systemImage: "video.badge.plus")
+                    Label(model.lesson == nil ? "Choose practice video" : "Try again: choose another video", systemImage: "video.badge.plus")
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(PrimaryButtonStyle(tint: RallyUIKit.Palette.cyan))
@@ -106,7 +103,7 @@ struct CoachView: View {
                 Text("2–60 seconds · Up to 250 MB")
                     .font(RallyUIKit.Typography.label(.caption))
                     .foregroundStyle(RallyUIKit.Palette.cloud)
-                Text("Analyzed on your iPhone. Only reports are saved.")
+                Text("Your clip stays on this iPhone while the lesson is open, then its temporary copy is removed. Only reports are saved.")
                     .font(RallyUIKit.Typography.body(.caption))
                     .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.72))
             }

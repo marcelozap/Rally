@@ -13,6 +13,7 @@ import SwiftData
 struct GameSessionView: View {
 
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.scenePhase) private var scenePhase
     @EnvironmentObject private var avatarAppearanceStore: RallyAvatarAppearanceStore
     @Query private var progressRecords: [PlayerProgress]
     @Query private var avatarConfigs: [AvatarConfig]
@@ -24,6 +25,10 @@ struct GameSessionView: View {
     @State private var sessionKey = UUID()
     @State private var viewportSize: CGSize = .zero
     @State private var autoPlayEnabled = ProcessInfo.processInfo.arguments.contains("-RallyAutoPlay")
+    @State private var showingSettings = false
+    @State private var pausedByPlayer = false
+    @State private var practiceIntroDismissed = false
+    var mode: RallyPlayMode = .rallyChallenge
 
     /// Optional rival opponent when launching a rival challenge session.
     var rivalOpponent: RivalOpponent? = nil
@@ -41,7 +46,7 @@ struct GameSessionView: View {
 
                 if let scene = scene {
                     SpriteView(scene: scene, options: [.ignoresSiblingOrder])
-                        .accessibilityLabel("Mirror Rally, 20 seconds against your double")
+                        .accessibilityLabel(mode.title + ". " + mode.cue)
                         .frame(width: size.width, height: size.height)
                         .ignoresSafeArea()
                         .id(sessionKey)
@@ -56,6 +61,16 @@ struct GameSessionView: View {
                 }
 
                 if let result = viewModel.lastResult, let outcome = viewModel.lastOutcome {
+                    if mode.isTargetMode {
+                        RallyUIKit.LuxePanel(tint: RallyUIKit.Palette.cyan) {
+                            VStack(spacing: 18) {
+                                Text(mode.title).font(.largeTitle)
+                                Text("\(scene?.practiceHits ?? 0) of \(scene?.practiceAttempts ?? 0) targets hit").font(.title2)
+                                Button("Try again") { restart() }.buttonStyle(.borderedProminent)
+                                Button("Back to practice", action: onExit).buttonStyle(.bordered)
+                            }
+                        }.padding(24).zIndex(10)
+                    } else {
                     GameOverView(
                         result: result,
                         outcome: outcome,
@@ -67,6 +82,15 @@ struct GameSessionView: View {
                     )
                     .transition(.opacity.combined(with: .scale(scale: 1.02)))
                     .zIndex(10)
+                    }
+                }
+                if mode == .servePractice, !practiceIntroDismissed {
+                    RallyServeIntroduction(appearance: avatarAppearanceStore.appearance,
+                                           leftHanded: gamePreferences.dominantHand == .left) {
+                        practiceIntroDismissed = true
+                        scene?.resumeSession()
+                    }
+                    .padding(20).zIndex(20)
                 }
             }
             .onAppear {
@@ -77,6 +101,7 @@ struct GameSessionView: View {
                     syncSceneSize(to: size)
                 }
                 applyPreferences()
+                if mode == .servePractice, !practiceIntroDismissed { scene?.pauseSession() }
                 DailyChallengeMgr.generateDailyIfNeeded(modelContext: modelContext)
                 viewModel.bindIfNeeded { result in
                     handleSessionEnded(result: result)
@@ -110,6 +135,18 @@ struct GameSessionView: View {
         .onChange(of: avatarAppearanceStore.appearance) { _, appearance in
             scene?.applyAvatarAppearance(appearance)
         }
+        .onChange(of: scenePhase) { _, phase in
+            if phase != .active { scene?.pauseSession() }
+            else if !showingSettings && !pausedByPlayer && (mode != .servePractice || practiceIntroDismissed) { scene?.resumeSession() }
+        }
+        .sheet(isPresented: $showingSettings, onDismiss: {
+            if scenePhase == .active && !pausedByPlayer { scene?.resumeSession() }
+        }) {
+            GameSettingsSheet(preferences: gamePreferences, onRestartMatch: {
+                showingSettings = false
+                restart()
+            })
+        }
         .animation(.easeOut(duration: 0.35), value: viewModel.lastResult != nil)
     }
 
@@ -118,6 +155,13 @@ struct GameSessionView: View {
             Spacer()
             VStack(alignment: .trailing, spacing: 10) {
                 exitButton
+                Button(pausedByPlayer ? "Resume" : "Pause") {
+                    pausedByPlayer.toggle()
+                    if pausedByPlayer { scene?.pauseSession() } else { scene?.resumeSession() }
+                }.buttonStyle(.bordered).frame(minHeight: 44)
+                Button { scene?.pauseSession(); showingSettings = true } label: {
+                    Image(systemName: "gearshape").frame(width: 44, height: 44)
+                }.accessibilityLabel("Game settings")
                 if autoPlayEnabled {
                     aiButton
                         .scaleEffect(0.88)
@@ -230,7 +274,7 @@ struct GameSessionView: View {
             Image(systemName: "xmark")
                 .font(.system(size: 10, weight: .black))
                 .foregroundStyle(RallyUIKit.Palette.frost.opacity(0.82))
-                .frame(width: 22, height: 22)
+                .frame(width: 44, height: 44)
                 .background(
                     Circle()
                         .fill(Color.black.opacity(0.18))
@@ -277,6 +321,7 @@ struct GameSessionView: View {
 
     private func makeScene(for size: CGSize) -> GameScene {
         let s = GameScene(size: size)
+        s.practiceMode = mode
         s.sessionDurationSeconds = RallyMirrorRules.durationSeconds
         s.scaleMode = .resizeFill
         if let avatar = avatarConfigs.first {
@@ -309,6 +354,7 @@ struct GameSessionView: View {
 
     private func restart() {
         viewModel.dismiss()
+        pausedByPlayer = false
         sessionKey = UUID()
         scene = makeScene(for: viewportSize)
     }
@@ -325,6 +371,15 @@ struct GameSessionView: View {
     }
 
     private func handleSessionEnded(result: GameResult) {
+        if mode.isTargetMode {
+            JournalAutoLogger.logRallySession(result: result, modelContext: modelContext,
+                                             appearance: avatarAppearanceStore.appearance)
+            viewModel.present(result: result, outcome: Rewards.Outcome(
+                coinsEarned: 0, xpEarned: 0, previousBestScore: 0, previousBestCombo: 0,
+                isNewBestScore: false, isNewBestCombo: false, didLevelUp: false, newLevel: 1,
+                newStreak: 0, streakIncreased: false))
+            return
+        }
         guard let progress = progressRecords.first ?? insertProgressIfMissing() else {
             // No persistence available — still show the summary so the run
             // isn't lost; just no rewards.

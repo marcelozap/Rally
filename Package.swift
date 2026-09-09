@@ -11,7 +11,7 @@ let package = Package(
         .target(
             name: "RallyCoachCore",
             path: "Rally/Features/Coach",
-            exclude: ["CoachView.swift", "CoachViewModel.swift", "CoachMotionTimelineView.swift", "Services/CoachVideoAnalyzer.swift", "Services/CoachVideoTransfer.swift"],
+            exclude: ["CoachView.swift", "CoachViewModel.swift", "CoachMotionTimelineView.swift", "CoachVisualLesson.swift", "Services/CoachVideoAnalyzer.swift", "Services/CoachVideoTransfer.swift"],
             sources: ["Core", "Services/CoachReportStore.swift"]
         ),
         .testTarget(

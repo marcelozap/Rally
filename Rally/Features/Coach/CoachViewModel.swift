@@ -17,6 +17,7 @@ final class CoachViewModel: ObservableObject {
     @Published private(set) var isUpdatingHistory = false
     @Published private(set) var canRetry = false
     @Published var hittingHand: CoachHittingHand = .right
+    @Published private(set) var lesson: CoachLessonSession?
 
     private let store: CoachReportStore
     let isMotionPreviewEnabled: Bool
@@ -37,6 +38,7 @@ final class CoachViewModel: ObservableObject {
 
     func analyze(_ item: PhotosPickerItem) {
         cancel()
+        closeLesson()
         let runID = UUID()
         activeRun = runID
         lastSelection = item
@@ -52,16 +54,20 @@ final class CoachViewModel: ObservableObject {
         analysisTask = Task { [weak self] in
             guard let self else { return }
             var imported: CoachImportedVideo?
+            var review: CoachLessonSession?
+            let observed = CoachFrameBuffer()
             do {
                 let video = try await CoachVideoTransfer.load(from: item)
                 imported = video
                 try Task.checkCancellation()
                 guard self.activeRun == runID else { throw CancellationError() }
+                review = try await CoachLessonSession.make(video: video)
                 self.phase = .analyzing
                 let report = try await CoachVideoAnalyzer().analyze(
                     url: video.url,
                     sourceName: video.sourceName,
                     motionHand: motionHand,
+                    onObservedFrames: { observed.set($0) },
                     onProgress: { [weak self] fraction in
                         Task { @MainActor [weak self] in
                             guard let self, self.activeRun == runID, self.phase == .analyzing else { return }
@@ -70,10 +76,10 @@ final class CoachViewModel: ObservableObject {
                     }
                 )
                 try Task.checkCancellation()
-                // AVFoundation has returned before its input is removed.
-                try video.removeTemporaryFile()
-                imported = nil
                 guard self.activeRun == runID else { return }
+                review?.frames = observed.get()
+                self.lesson = review
+                imported = nil
                 self.currentReport = report
                 self.progress = 1
                 self.phase = .idle
@@ -83,6 +89,16 @@ final class CoachViewModel: ObservableObject {
                 self.lastSelection = nil
             } catch {
                 var cleanupMessage: String?
+                let canReviewManually = self.activeRun == runID && !(error is CancellationError)
+                    && review != nil
+                if canReviewManually {
+                    self.lesson = review
+                    imported = nil
+                } else if let review {
+                    do { try review.close() }
+                    catch { cleanupMessage = error.localizedDescription }
+                    imported = nil
+                }
                 if let imported {
                     do { try imported.removeTemporaryFile() }
                     catch { cleanupMessage = error.localizedDescription }
@@ -120,6 +136,7 @@ final class CoachViewModel: ObservableObject {
     }
 
     func cancel() {
+        lesson?.pause()
         guard isBusy else { return }
         activeRun = nil
         analysisTask?.cancel()
@@ -151,10 +168,18 @@ final class CoachViewModel: ObservableObject {
 
     func show(_ report: CoachReport) {
         guard !isBusy else { return }
+        closeLesson()
         currentReport = report
         statusMessage = nil
         analysisError = nil
         canRetry = false
+    }
+
+    func closeLesson() {
+        guard let lesson else { return }
+        do { try lesson.close() }
+        catch { historyError = error.localizedDescription }
+        self.lesson = nil
     }
 
     func saveCurrentReport() async {

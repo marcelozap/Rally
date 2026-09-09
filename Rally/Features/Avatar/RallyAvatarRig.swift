@@ -34,6 +34,7 @@ final class RallyAvatarRig {
     private var footwork = RallyAvatarFootwork()
     private(set) var assetError: String?
     var yaw: Float = -0.20
+    private var lessonRing: SCNNode?
 
     var racketHeadWorldPosition: SCNVector3 {
         racketHead.convertPosition(SCNVector3Zero, to: nil)
@@ -194,6 +195,7 @@ final class RallyAvatarRig {
 
     /// Articulated movement leaves the character's body proportions intact.
     func animate(time: TimeInterval, swingProgress: Float? = nil, backhand: Bool = false, lateral: Float = 0, leftHanded: Bool = false, courtPosition: Float? = nil) {
+        lessonRing?.isHidden = true
         guard !bones.isEmpty else { return }
         let breath = Float(sin(time * 1.65))
         let studio = presentation == .studio
@@ -288,6 +290,67 @@ final class RallyAvatarRig {
                 foot.simdOrientation = simd_inverse(parent.simdWorldOrientation) * root.simdWorldOrientation
             }
         }
+    }
+
+    /// Slow instructional motion uses the same skeleton and grounded IK as play.
+    /// It is a general example, not an ideal-angle or technique-scoring template.
+    func animateLesson(progress: Float, leftHanded: Bool, serve: Bool = false, viewingYaw: Float? = nil) {
+        let p = min(1, max(0, progress.isFinite ? progress : 0))
+        animate(time: 0, leftHanded: leftHanded)
+        if let viewingYaw { root.eulerAngles.y = viewingYaw }
+        let hand: Float = leftHanded ? -1 : 1
+        let dominant = leftHanded ? "L" : "R"
+        let support = leftHanded ? "R" : "L"
+        let bend = (1 - cos(p * 2 * .pi)) * 0.5
+        if let hip = boneByName["root"], let neutral = bindPosition["root"] {
+            hip.simdPosition = neutral + SIMD3<Float>(0, -(0.025 + bend * (serve ? 0.045 : 0.085)) * stature, 0)
+        }
+        rotate("spine03", x: 0.035 + bend * 0.055, y: serve ? -hand * sin(p * .pi) * 0.25 : 0)
+        if serve {
+            func blend(_ a: SIMD3<Float>, _ b: SIMD3<Float>, _ t: Float) -> SIMD3<Float> {
+                let t = min(1, max(0, t)); return a + (b - a) * (t * t * (3 - 2 * t))
+            }
+            let ready = SIMD3<Float>(-0.30 * hand, 1.10, 0.28)
+            let trophy = SIMD3<Float>(-0.30 * hand, 1.48, -0.06)
+            let reach = SIMD3<Float>(-0.16 * hand, 1.80, 0.12)
+            let finish = SIMD3<Float>(0.12 * hand, 1.12, 0.36)
+            let wrist: SIMD3<Float>
+            if p < 0.5 { wrist = blend(ready, trophy, p / 0.5) }
+            else if p < 0.75 { wrist = blend(trophy, reach, (p - 0.5) / 0.25) }
+            else { wrist = blend(reach, finish, (p - 0.75) / 0.25) }
+            solveArm(dominant, target: wrist)
+            let toss = sin(min(1, p / 0.7) * .pi)
+            solveArm(support, target: SIMD3<Float>(0.24 * hand, 1.12 + toss * 0.55, 0.28))
+            poseRacketGrip(side: dominant, hand: hand, gripAngle: -0.10 * hand)
+        }
+        for side in ["L", "R"] {
+            guard let ankle = bindPosition["foot.\(side)"] else { continue }
+            let spread: Float = (side == "L" ? 1 : -1) * 0.04
+            solveChain(upperName: "upperleg01.\(side)", lowerName: "lowerleg01.\(side)",
+                       endName: "foot.\(side)", target: ankle + SIMD3<Float>(spread, 0, 0),
+                       pole: SIMD3<Float>(spread, 0, 1))
+            if let foot = boneByName["foot.\(side)"], let parent = foot.parent {
+                foot.simdOrientation = simd_inverse(parent.simdWorldOrientation) * root.simdWorldOrientation
+            }
+        }
+        if !serve, let knee = boneByName["lowerleg01.\(dominant)"] {
+            if lessonRing == nil {
+                let ring = SCNNode(geometry: SCNTorus(ringRadius: 0.055, pipeRadius: 0.007))
+                let material = SCNMaterial(); material.diffuse.contents = UIColor.systemYellow
+                material.emission.contents = UIColor.systemYellow; ring.geometry?.materials = [material]
+                ring.eulerAngles.x = .pi / 2
+                lessonRing = ring
+            }
+            if let ring = lessonRing {
+                if ring.parent !== root { root.addChildNode(ring) }
+                ring.position = knee.convertPosition(SCNVector3(0, 0, 0.065), to: root)
+                ring.isHidden = false
+            }
+        }
+    }
+
+    func tossHandWorldPosition(leftHanded: Bool) -> SCNVector3 {
+        boneByName[leftHanded ? "wrist.R" : "wrist.L"]?.convertPosition(SCNVector3Zero, to: nil) ?? SCNVector3Zero
     }
 
     /// The bind skeleton uses common world axes, not hand-local axes. Recover
