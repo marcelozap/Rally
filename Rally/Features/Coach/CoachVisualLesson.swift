@@ -285,11 +285,12 @@ private struct CoachComparison: View {
                 if showOutline {
                     Canvas { context, size in
                         let points = CoachOutline.points(at: session.time, frames: session.frames)
-                        let scale = min(size.width / session.aspectRatio, size.height)
-                        let origin = CGPoint(x: (size.width - scale * session.aspectRatio) / 2,
+                        let aspect = CGFloat(session.aspectRatio)
+                        let scale: CGFloat = min(size.width / aspect, size.height)
+                        let origin = CGPoint(x: (size.width - scale * aspect) / 2,
                                              y: (size.height - scale) / 2)
                         func location(_ point: CoachKeypoint) -> CGPoint {
-                            CGPoint(x: origin.x + point.x * scale, y: origin.y + point.y * scale)
+                            CGPoint(x: origin.x + CGFloat(point.x) * scale, y: origin.y + CGFloat(point.y) * scale)
                         }
                         for (a, b) in CoachOutline.links {
                             guard let a = points[a], let b = points[b], a.x <= session.aspectRatio, b.x <= session.aspectRatio else { continue }

@@ -1,6 +1,6 @@
 # Native visual Coach and serve-mode integration
 
-Status: WIP. Not build-ready, installed, visually verified or release-ready.
+Status: WIP development build. Simulator suite and generic signed iPhone build pass. Sister's device registration/install remain blocked on Developer Mode. Not release-ready.
 
 ## Integration provenance
 
@@ -11,7 +11,7 @@ Only the two product documents were selected from codex/visual-coach-game-modes;
 its older app base and separate Python prototypes were not merged.
 Existing signing, app identity, assets, account storage and local settings remain.
 
-## Implemented in source, awaiting successful iOS validation
+## Implemented in source, awaiting complete device acceptance
 
 - Native local video replay with slow motion, looping and manually selected comparison start.
 - Timestamp-bounded body outline. Missing/low-confidence torso observations hide the outline rather than inventing joints. This remains 10 Hz sampled tracking, not ground-truth motion.
@@ -27,15 +27,17 @@ Existing signing, app identity, assets, account storage and local settings remai
 ## Tests actually run
 
 - `swift test`: 63 portable tests passed, zero failures.
-- Full generic iOS Simulator Debug build with Xcode 16.4: FAILED.
-- Compiler reports ambiguous numeric division in CoachVisualLesson.swift's Canvas layout, plus a Swift 6 isolation warning in CoachView's PhotosPicker label.
-- Correction approval requested before another edit/build pass.
-- New focused integration tests were written and explicitly registered, but have NOT run because the app does not compile.
-- No new real-video validation, screenshots or recordings. Earlier artifacts must not be presented as evidence for this implementation.
+- Owner approved compiler corrections. Explicit CGFloat layout and an immutable PhotosPicker label snapshot resolved the reported diagnostics.
+- Full iOS Simulator build and suite with Xcode 16.4: 260 executed, 259 passed, one external-fixture skip, zero failures. Two simulator Vision-model-dependent tests were explicitly excluded.
+- All 13 new native integration tests passed, including serve-clock start, repeated contact, early/late retry, pause rebasing, mode boundaries and missing outline data.
+- Generic signed iPhone Debug build passed. Its existing provisioning profile does not yet include the sister's newly paired phone; it is not an install-ready build for that device.
+- Actual simulator autoplay reached a scored rally. A screenshot and serve/rally recording are saved privately under /tmp/rally-visual-integration. They are simulator/autoplay evidence, not real-user or real-video validation.
+- Simulator image also shows that the top HUD needs safe-area polish. Broader visual acceptance remains open.
+- No new physical-phone, real Photos or real-video lesson validation yet.
 
 ## Remaining acceptance work
 
-1. Resolve compiler error/warning; rerun full build and focused/native suites.
+1. Keep the passing build and suite as the baseline; finish real lesson and physical-device acceptance below.
 2. Prove serve timing/trajectory alignment with the actual racket. Check misses, duplicate input, all modes, ten-attempt completion and twenty-second challenge timing.
 3. Exercise settings, exit/restart, inactive/background and relaunch. Verify reward and Journal isolation for practice.
 4. Use real Photos selections in portrait and landscape, both hands, cancellation, missing tracking, repeated selection and saved-history reopening.
@@ -44,8 +46,11 @@ Existing signing, app identity, assets, account storage and local settings remai
 7. Identify the sister's cable-connected iPhone, retain the existing development team and bundle identity, build a signed DEVICE app, install in place and verify launch plus one serve and lesson.
 8. Confirm launch after cable disconnection. Read actual profile expiration; do not invent a signing duration.
 
-At discovery, only the phone used for the earlier demo was visible. No install
-was attempted on that phone. No personal account session, app data, clips or
+The owner identified the newly USB-connected sister's phone. Pairing succeeded,
+but its latest device status reports Developer Mode disabled. Enable it in
+Settings, restart and confirm Turn On before Xcode can finish device-specific
+signing/registration. The first device-specific build timed out waiting for
+reconnection. No install was attempted on either phone. No personal account session, app data, clips or
 device identifiers are included in this handoff. GitHub pushes do not update an
 installed development app. No PR merge, TestFlight upload or App Store release
 has been performed.

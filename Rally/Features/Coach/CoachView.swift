@@ -69,7 +69,8 @@ struct CoachView: View {
     }
 
     private var introduction: some View {
-        RallyUIKit.LuxePanel(tint: RallyUIKit.Palette.cyan) {
+        let chooseLabel = model.lesson == nil ? "Choose practice video" : "Try again: choose another video"
+        return RallyUIKit.LuxePanel(tint: RallyUIKit.Palette.cyan) {
             VStack(alignment: .leading, spacing: 16) {
                 RallyUIKit.EditorialEyebrow(text: "Practice review · Preview", tint: RallyUIKit.Palette.cyan)
                 Text("See your practice\nin motion.")
@@ -94,7 +95,7 @@ struct CoachView: View {
                     matching: .videos,
                     preferredItemEncoding: .current
                 ) {
-                    Label(model.lesson == nil ? "Choose practice video" : "Try again: choose another video", systemImage: "video.badge.plus")
+                    Label(chooseLabel, systemImage: "video.badge.plus")
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(PrimaryButtonStyle(tint: RallyUIKit.Palette.cyan))
