@@ -259,6 +259,10 @@ final class GameScene: SKScene {
     private var swingVisualIntent: SwingIntent = .drive
     private var swingVisualImpactUntil: TimeInterval = 0
     private var playerContactFollowThrough = false
+    private var playerSwingStartProgress: Float = 0
+    private(set) var playerPreparationProgress: Float = 0
+    private(set) var playerPreparationLane: Lane?
+    private var lastPlayerPreparationTime: TimeInterval?
     private var swingVisualReach: CGFloat = 0
     private var contactFlashUntil: TimeInterval = 0
     private var hitStopUntil: TimeInterval = 0
@@ -469,6 +473,7 @@ final class GameScene: SKScene {
 
     func beginServePoint(at time: TimeInterval) {
         guard !sessionEnded, activeBalls.isEmpty, activeExchanges.isEmpty else { return }
+        clearPlayerPreparation()
         isCountingDown = false
         currentTimeSnapshot = time
         clearPendingWallSpawnToken()
@@ -497,6 +502,7 @@ final class GameScene: SKScene {
         }
         if practiceMode.isTargetMode, practiceAttempts >= 10 { completeSession(); return }
         if serveCycle.phase == .retry {
+            releasePlayerPreparation()
             if serveCycle.elapsed(at: time) >= 0.9 { beginServePoint(at: time) }
             return
         }
@@ -1795,6 +1801,7 @@ final class GameScene: SKScene {
     }
 
     private func posePlayerAtContact(lane: Lane) -> CGPoint {
+        clearPlayerPreparation()
         playerContactFollowThrough = true
         swingVisualLane = lane
         guard let rig = playerAvatarRig, let node = playerAvatarNode, let playerRoot else {
@@ -1814,7 +1821,70 @@ final class GameScene: SKScene {
         return node.convert(point, to: self)
     }
 
-    private func resetSwingBodyMechanics() {
+    private func clearPlayerPreparation() {
+        playerPreparationProgress = 0
+        playerPreparationLane = nil
+        lastPlayerPreparationTime = nil
+    }
+
+    /// Incoming flight loads and approaches contact without reaching it.
+    /// Input still owns the hit; this phase never moves the graded target.
+    private func updatePlayerPreparation(for ball: BallNode?) {
+        let delta = lastPlayerPreparationTime.map { max(0, min(0.05, currentTimeSnapshot - $0)) } ?? 0
+        lastPlayerPreparationTime = currentTimeSnapshot
+        var target: Float = 0
+        if let ball, ball.parent != nil,
+           ball.effectiveArrivalTime.isFinite, ball.effectiveTravelSeconds.isFinite,
+           playerPreparationLane == nil || playerPreparationLane == ball.lane {
+            let lead = min(0.55, max(0.18, ball.effectiveTravelSeconds * 0.7))
+            let remaining = ball.effectiveArrivalTime - currentTrackTime
+            let driveSeconds = 0.14
+            if remaining > driveSeconds {
+                let t = Float(max(0, min(1, (lead - remaining) / (lead - driveSeconds))))
+                target = 0.34 * t * t * (3 - 2 * t)
+            } else {
+                let t = Float(max(0, min(1, 1 - remaining / driveSeconds)))
+                target = min(0.48, 0.34 + 0.14 * t * t * (3 - 2 * t))
+            }
+            if target > 0 { playerPreparationLane = ball.lane }
+        }
+        // A changed or removed ball releases the existing side before loading
+        // another one. Capping the step also avoids a pose jump after a stall.
+        let step = Float(delta) * (0.48 / 0.18)
+        if target > playerPreparationProgress {
+            playerPreparationProgress = min(target, playerPreparationProgress + step)
+        } else {
+            playerPreparationProgress = max(target, playerPreparationProgress - step)
+        }
+        if playerPreparationProgress < 0.0001, target == 0 {
+            playerPreparationProgress = 0
+            playerPreparationLane = nil
+        }
+    }
+
+    /// The retry interval has no serve pose yet, so a missed loaded stroke can
+    /// settle before the next toss takes ownership of the character.
+    private func releasePlayerPreparation() {
+        guard playerPreparationProgress > 0, let lane = playerPreparationLane,
+              let rig = playerAvatarRig, let node = playerAvatarNode else { return }
+        updatePlayerPreparation(for: nil)
+        rig.animate(time: currentTrackTime,
+                    swingProgress: playerPreparationProgress > 0 ? playerPreparationProgress : nil,
+                    backhand: strokeSide(for: lane) == .backhand,
+                    leftHanded: dominantHand == .left)
+        node.sceneTime = currentTrackTime
+        alignAvatarToCourt(rig: rig, node: node)
+        playerRacketContactAnchor = nil
+    }
+
+    private func resetSwingBodyMechanics(releasePreparation: Bool = false) {
+        if releasePreparation, playerPreparationProgress > 0 {
+            swingVisualImpactUntil = 0
+            playerContactFollowThrough = false
+            playerRacketContactAnchor = nil
+            return
+        }
+        clearPlayerPreparation()
         if let rig = playerAvatarRig, let node = playerAvatarNode, let playerRoot {
             let scale = avatarPointsPerMeter(rig: rig, node: node)
             rig.animate(time: currentTrackTime, leftHanded: dominantHand == .left,
@@ -1831,6 +1901,12 @@ final class GameScene: SKScene {
         // Feet must start moving while the ball is approaching. The swing
         // candidate filter requires a ball to be hittable and already in reach.
         let focusBall = sessionMode == .wallRally ? primaryWallBall() : nil
+        if sessionMode == .wallRally, serveCycle.phase == .rally,
+           serveRecovery == nil, impactProgress <= 0.02, !isCountingDown {
+            updatePlayerPreparation(for: focusBall)
+        } else {
+            clearPlayerPreparation()
+        }
         // The double always answers to the other side. Begin crossing during
         // the outbound flight, so a wide reply is physically reachable.
         let plannedLane = activeExchanges.last?.ball.lane.opposite
@@ -1865,7 +1941,7 @@ final class GameScene: SKScene {
         playerRoot.position.y = size.height * Tunables.gameplayPlayerRootYRatio - anticipation * 0.65
 
         if sessionMode == .wallRally, impactProgress < 0.08 {
-            swingVisualLane = focusLane
+            swingVisualLane = playerPreparationLane ?? focusLane
         }
         if currentTimeSnapshot >= hitStopUntil {
             let lateral = (playerRoot.position.x - size.width / 2) / max(1, size.width * 0.22)
@@ -1876,7 +1952,9 @@ final class GameScene: SKScene {
                 rig.animate(
                     time: trackTime,
                     swingProgress: impactProgress > 0.02
-                        ? Float(playerContactFollowThrough ? 0.5 + (1 - impactProgress) * 0.5 : 1 - impactProgress) : nil,
+                        ? (playerContactFollowThrough ? Float(0.5 + (1 - impactProgress) * 0.5)
+                           : playerSwingStartProgress + (1 - playerSwingStartProgress) * Float(1 - impactProgress))
+                        : playerPreparationProgress > 0 ? playerPreparationProgress : nil,
                     backhand: strokeSide(for: swingVisualLane) == .backhand,
                     lateral: Float(max(-1, min(1, lateral))),
                     leftHanded: dominantHand == .left,
@@ -1886,7 +1964,9 @@ final class GameScene: SKScene {
             node.sceneTime = trackTime
         }
         alignAvatarToCourt(rig: rig, node: node)
-        if let racketPoint = avatarPoint(rig.racketHeadWorldPosition, rig: rig, node: node) {
+        if playerPreparationProgress > 0 {
+            playerRacketContactAnchor = nil
+        } else if let racketPoint = avatarPoint(rig.racketHeadWorldPosition, rig: rig, node: node) {
             playerRacketContactAnchor = node.convert(racketPoint, to: playerRoot)
         }
         let contactFlash = max(0, (contactFlashUntil - currentTimeSnapshot) / 0.16)
@@ -1896,7 +1976,7 @@ final class GameScene: SKScene {
         if let opponentRig = opponentAvatarRig, let opponentNode = opponentAvatarNode,
            let opponentRoot {
             let elapsed = opponentHitTime.map { currentTimeSnapshot - $0 }
-            let swing = elapsed.flatMap { $0 >= 0 && $0 < 0.36 ? Float($0 / 0.36) : nil }
+            let swing = opponentStrokeProgress
             let scale = avatarPointsPerMeter(rig: opponentRig, node: opponentNode)
             let contactIsPending = opponentHitTime.map { currentTimeSnapshot < $0 + 0.36 } ?? false
             if contactIsPending, let elapsed {
@@ -1921,6 +2001,14 @@ final class GameScene: SKScene {
             opponentNode.sceneTime = trackTime
             alignAvatarToCourt(rig: opponentRig, node: opponentNode)
         }
+    }
+
+    /// The double's visual contact remains exactly halfway through the swing:
+    /// exchange scheduling starts this clock 0.18 seconds before ball contact.
+    var opponentStrokeProgress: Float? {
+        guard let started = opponentHitTime else { return nil }
+        let elapsed = currentTimeSnapshot - started
+        return elapsed >= 0 && elapsed < 0.36 ? Float(elapsed / 0.36) : nil
     }
 
     /// Snapshot of the current run state. Cheap — just copies counters.
@@ -2952,6 +3040,7 @@ final class GameScene: SKScene {
             }
             HapticManager.shared.playTouchDown()
             swingVisualLane = lane
+            playerSwingStartProgress = playerPreparationLane == lane ? playerPreparationProgress : 0
             playerContactFollowThrough = false
             swingVisualImpactUntil = currentTimeSnapshot + 0.26
             swingVisualReach = distance
@@ -3467,7 +3556,7 @@ final class GameScene: SKScene {
             if practiceAttempts >= 10 { completeSession() }
             return
         }
-        resetSwingBodyMechanics()
+        resetSwingBodyMechanics(releasePreparation: true)
         recentTimingFeedback = nil
         totalMisses += 1
         pressureExchangeStreak = 0

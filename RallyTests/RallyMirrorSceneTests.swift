@@ -5,6 +5,99 @@ import XCTest
 /// Advances the real scene clock without rendering or relying on GUI gestures.
 @MainActor
 final class RallyMirrorSceneTests: XCTestCase {
+    func testIncomingBallLoadsEitherStrokeWithoutStartingAHit() {
+        for hand in GamePreferences.DominantHand.allCases {
+            for lane in [Lane.left, .right] {
+                let (scene, view) = makeScene(autoPlay: false)
+                defer { removeSceneContents(scene, retaining: view) }
+                scene.dominantHand = hand
+                scene.spawnBall(BeatmapNote(arrivalTime: 1.1, lane: lane, kind: .normal, role: .rally))
+
+                for frame in 0...30 { scene.update(100 + Double(frame) / 60) }
+                XCTAssertEqual(scene.playerPreparationProgress, 0, "An early ball should leave the player ready")
+                var previous: Float = 0
+                for frame in 31...66 {
+                    scene.update(100 + Double(frame) / 60)
+                    XCTAssertGreaterThanOrEqual(scene.playerPreparationProgress, previous)
+                    XCTAssertLessThanOrEqual(scene.playerPreparationProgress, 0.48,
+                                             "Anticipation must never manufacture contact at phase 0.5")
+                    previous = scene.playerPreparationProgress
+                }
+                XCTAssertGreaterThan(scene.playerPreparationProgress, 0.46,
+                                     "The final approach should avoid snapping from load straight to contact")
+                XCTAssertEqual(scene.playerPreparationLane, lane)
+                XCTAssertEqual(scene.buildResult().totalHits, 0)
+                XCTAssertEqual(scene.buildResult().misses, 0)
+                XCTAssertFalse(scene.sessionIsOver)
+            }
+        }
+    }
+
+    func testLoadedStrokePausesWithTheRallyClock() {
+        let (scene, view) = makeScene(autoPlay: false)
+        defer { removeSceneContents(scene, retaining: view) }
+        spawnOpeningBall(in: scene)
+        for frame in 0...51 { scene.update(100 + Double(frame) / 60) }
+        let loaded = scene.playerPreparationProgress
+        XCTAssertGreaterThan(loaded, 0)
+        scene.pauseSession()
+        scene.update(200)
+        XCTAssertEqual(scene.playerPreparationProgress, loaded)
+        scene.resumeSession()
+        scene.update(200.1)
+        XCTAssertEqual(scene.playerPreparationProgress, loaded, accuracy: 0.0001,
+                       "Resuming rebases time instead of skipping directly to contact")
+        scene.update(200.15)
+        XCTAssertGreaterThan(scene.playerPreparationProgress, loaded)
+        XCTAssertEqual(scene.buildResult().totalHits, 0)
+    }
+
+    func testMissedLoadedStrokeSettlesBeforeTheNextServe() {
+        let (scene, view) = makeScene(autoPlay: false)
+        defer { removeSceneContents(scene, retaining: view) }
+        spawnOpeningBall(in: scene)
+        for frame in 0...66 { scene.update(100 + Double(frame) / 60) }
+        let loaded = scene.playerPreparationProgress
+        scene.update(101.45)
+        XCTAssertEqual(scene.buildResult().misses, 1)
+        XCTAssertEqual(scene.playerPreparationProgress, loaded, accuracy: 0.0001,
+                       "A missed ball starts recovery from the visible loaded pose")
+        scene.update(101.50)
+        XCTAssertGreaterThan(scene.playerPreparationProgress, 0)
+        XCTAssertLessThan(scene.playerPreparationProgress, loaded)
+        XCTAssertEqual(scene.playerPreparationLane, .right)
+        for frame in 1...15 { scene.update(101.50 + Double(frame) / 60) }
+        XCTAssertEqual(scene.playerPreparationProgress, 0)
+        XCTAssertNil(scene.playerPreparationLane)
+        scene.beginServePoint(at: 101.8)
+        scene.update(102.0)
+        XCTAssertEqual(scene.playerPreparationProgress, 0, "A toss owns the pose without incoming preparation")
+        XCTAssertEqual(scene.buildResult().totalHits, 0)
+    }
+
+    func testFarFeedStartsAtContactAndRealNearContactClearsPreparation() throws {
+        let (scene, view) = makeScene(autoPlay: true)
+        defer { removeSceneContents(scene, retaining: view) }
+        spawnOpeningBall(in: scene)
+        XCTAssertEqual(try XCTUnwrap(scene.opponentStrokeProgress), 0.5, accuracy: 0.0001)
+        scene.update(100.09)
+        XCTAssertEqual(try XCTUnwrap(scene.opponentStrokeProgress), 0.75, accuracy: 0.0001)
+        scene.update(100.19)
+        XCTAssertNil(scene.opponentStrokeProgress)
+
+        var sawPreparation = false
+        for frame in 12...90 {
+            scene.update(100 + Double(frame) / 60)
+            sawPreparation = sawPreparation || scene.playerPreparationProgress > 0
+            if scene.buildResult().totalHits > 0 { break }
+        }
+        XCTAssertTrue(sawPreparation)
+        XCTAssertEqual(scene.buildResult().totalHits, 1)
+        XCTAssertEqual(scene.playerPreparationProgress, 0,
+                       "The actual contact pose and hit-stop take priority over preparation")
+        XCTAssertNil(scene.playerPreparationLane)
+    }
+
     func testCleanEightUsesRealRallyAndCanReachItsGoal() {
         for hand in GamePreferences.DominantHand.allCases {
             let (scene, view) = makeScene(autoPlay: true)

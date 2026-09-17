@@ -2,6 +2,7 @@ import XCTest
 import SceneKit
 import UIKit
 import Metal
+import ImageIO
 @testable import Rally
 
 @MainActor
@@ -140,6 +141,41 @@ final class AvatarRigTests: XCTestCase {
         XCTAssertNil(rig.root.childNode(withName: "Polo collar", recursively: true))
     }
 
+    func testTeeCoverageRestoresExposedSkinWhenSwitchingToATank() throws {
+        for preset in [RallyAthletePreset.maleEuropean, .femaleBlack] {
+            var look = RallyAvatarAppearance(athletePreset: preset)
+            let rig = RallyAvatarRig(appearance: look)
+            let body = try XCTUnwrap(rig.root.childNode(withName: "Human skin", recursively: true))
+            let teeCount = try XCTUnwrap(body.geometry?.elements.first?.primitiveCount)
+            look.top = RallyGearReference(id: "newbalance.tournament.tank.white", colorwayHex: "#FFFFFF")
+            rig.apply(look)
+            let tankCount = try XCTUnwrap(body.geometry?.elements.first?.primitiveCount)
+            XCTAssertGreaterThan(tankCount, teeCount, "A tank must restore exposed shoulders instead of retaining the tee mask")
+            look.top = nil
+            rig.apply(look)
+            XCTAssertEqual(body.geometry?.elements.first?.primitiveCount, teeCount)
+            XCTAssertTrue(rig.root.childNode(withName: "Human skin", recursively: true) === body)
+        }
+    }
+
+    func testBackhandLoadsTheActualChestAndShoulderGirdle() throws {
+        for preset in [RallyAthletePreset.maleEuropean, .femaleBlack] {
+            let rig = RallyAvatarRig(appearance: RallyAvatarAppearance(athletePreset: preset), presentation: .gameplay)
+            let left = try XCTUnwrap(rig.root.childNode(withName: "upperarm01.L", recursively: true))
+            let right = try XCTUnwrap(rig.root.childNode(withName: "upperarm01.R", recursively: true))
+            let chest = try XCTUnwrap(rig.root.childNode(withName: "spine02", recursively: true))
+            for leftHanded in [false, true] {
+                rig.animate(time: 0, swingProgress: 0.20, backhand: true, leftHanded: leftHanded)
+                let shoulderAxis = rig.root.simdConvertVector(left.simdWorldPosition - right.simdWorldPosition, from: nil)
+                let shoulderTurn = atan2(-shoulderAxis.z, shoulderAxis.x) * (leftHanded ? -1 : 1)
+                let chestForward = rig.root.simdConvertVector(chest.simdConvertVector(SIMD3<Float>(0, 0, 1), to: nil), from: nil)
+                let chestTurn = atan2(chestForward.x, chestForward.z) * (leftHanded ? -1 : 1)
+                XCTAssertGreaterThan(shoulderTurn, 0.90, "Loading turns the shoulder line, not only the wrists")
+                XCTAssertGreaterThan(chestTurn, 0.75, "The broad rib cage participates in the unit turn")
+            }
+        }
+    }
+
     func testMissingOptionalGarmentsStillProduceAClothedPreview() throws {
         let rig = RallyAvatarRig(appearance: RallyAvatarAppearance(), assetLoader: { name in
             if ["shirt", "polo", "shorts", "shoes"].contains(name) {
@@ -178,21 +214,32 @@ final class AvatarRigTests: XCTestCase {
         }
     }
 
-    func testStrokePathsKeepTheEstablishedContactAndReturnToReady() {
+    func testStrokePathsKeepForehandContactAndReturnToReady() {
         for leftHanded in [false, true] {
             let hand: Float = leftHanded ? -1 : 1
             for backhand in [false, true] {
                 let contact = RallyAvatarRig.strokeWristTarget(progress: 0.5, backhand: backhand, leftHanded: leftHanded)
-                XCTAssertEqual(contact.x, (backhand ? 0.26 : -0.46) * hand, accuracy: 0.000001)
-                XCTAssertEqual(contact.y, 1.21 + 0.15, accuracy: 0.000001)
-                XCTAssertEqual(contact.z, 0.31, accuracy: 0.000001)
+                if backhand {
+                    XCTAssertGreaterThan(contact.x * hand, 0, "Backhand contact is across the dominant side")
+                    XCTAssertLessThan(contact.y, 1.20, "Hands meet a normal return below shoulder height")
+                    XCTAssertGreaterThan(contact.z, 0.30, "Contact is in front of the torso")
+                } else {
+                    XCTAssertEqual(contact.x, -0.46 * hand, accuracy: 0.000001)
+                    XCTAssertEqual(contact.y, 1.21 + 0.15, accuracy: 0.000001)
+                    XCTAssertEqual(contact.z, 0.31, accuracy: 0.000001)
+                }
                 let ready = RallyAvatarRig.strokeWristTarget(progress: 0, backhand: backhand, leftHanded: leftHanded)
                 let recovered = RallyAvatarRig.strokeWristTarget(progress: 1, backhand: backhand, leftHanded: leftHanded)
                 XCTAssertLessThan(simd_distance(ready, recovered), 0.000001)
-                let prepared = RallyAvatarRig.strokeWristTarget(progress: 0.22, backhand: backhand, leftHanded: leftHanded)
-                let finish = RallyAvatarRig.strokeWristTarget(progress: 0.78, backhand: backhand, leftHanded: leftHanded)
+                let prepared = RallyAvatarRig.strokeWristTarget(progress: backhand ? 0.20 : 0.22, backhand: backhand, leftHanded: leftHanded)
+                let finish = RallyAvatarRig.strokeWristTarget(progress: backhand ? 0.80 : 0.78, backhand: backhand, leftHanded: leftHanded)
                 XCTAssertGreaterThan(contact.z - prepared.z, 0.20, "Preparation must travel into contact")
-                XCTAssertGreaterThan(abs(finish.x - contact.x), 0.5, "The finish must cross through the stroke")
+                if backhand {
+                    XCTAssertLessThan(finish.x * hand, 0, "The follow-through crosses toward the opposite shoulder")
+                    XCTAssertGreaterThan(finish.y - contact.y, 0.20, "The racket rises through the finish")
+                } else {
+                    XCTAssertGreaterThan(abs(finish.x - contact.x), 0.5, "The finish must cross through the stroke")
+                }
             }
         }
     }
@@ -211,13 +258,65 @@ final class AvatarRigTests: XCTestCase {
                 XCTAssertEqual(left.z, right.z, accuracy: 0.000001)
                 previous = right
             }
-            for knot: Float in [0.22, 0.5, 0.78] {
+            let knots: [Float] = backhand ? [0.20, 0.34, 0.5, 0.63, 0.80] : [0.22, 0.5, 0.78]
+            for knot in knots {
                 let epsilon: Float = 0.0001
                 let before = RallyAvatarRig.strokeWristTarget(progress: knot - epsilon, backhand: backhand, leftHanded: false)
                 let at = RallyAvatarRig.strokeWristTarget(progress: knot, backhand: backhand, leftHanded: false)
                 let after = RallyAvatarRig.strokeWristTarget(progress: knot + epsilon, backhand: backhand, leftHanded: false)
                 XCTAssertLessThan(simd_length((at - before) / epsilon - (after - at) / epsilon), 0.025,
                                   "Stroke velocity should not stop or jump at a phase boundary")
+            }
+        }
+    }
+
+    func testBackhandRacketDropsTurnsTowardTheBallAndRecoversForBothHands() {
+        for leftHanded in [false, true] {
+            let drop = RallyAvatarRig.backhandRacketOrientation(progress: 0.34, leftHanded: leftHanded)
+            XCTAssertLessThan(drop.act(SIMD3<Float>(0, 1, 0)).y, -0.20, "The head drops below the grip before accelerating")
+            let contact = RallyAvatarRig.backhandRacketOrientation(progress: 0.5, leftHanded: leftHanded)
+            let shaft = contact.act(SIMD3<Float>(0, 1, 0))
+            XCTAssertLessThan(abs(shaft.y), 0.30, "A contact racket extends beside the body instead of standing upright")
+            XCTAssertGreaterThan(abs(contact.act(SIMD3<Float>(0, 0, 1)).z), 0.90, "The string bed faces the incoming ball")
+            let ready = RallyAvatarRig.backhandRacketOrientation(progress: 0, leftHanded: leftHanded)
+            let recovered = RallyAvatarRig.backhandRacketOrientation(progress: 1, leftHanded: leftHanded)
+            XCTAssertGreaterThan(abs(simd_dot(ready.vector, recovered.vector)), 0.99999)
+            var previous = ready
+            for frame in 1...240 {
+                let p = Float(frame) / 240
+                let current = RallyAvatarRig.backhandRacketOrientation(progress: p, leftHanded: leftHanded)
+                XCTAssertGreaterThan(abs(simd_dot(previous.vector, current.vector)), 0.997,
+                                     "The racket must not snap between adjacent poses")
+                let mirror = RallyAvatarRig.backhandRacketOrientation(progress: p, leftHanded: !leftHanded)
+                for axis in [SIMD3<Float>(0, 1, 0), SIMD3<Float>(0, 0, 1)] {
+                    let first = current.act(axis)
+                    let second = mirror.act(axis)
+                    XCTAssertEqual(first.x, -second.x, accuracy: 0.00001)
+                    XCTAssertEqual(first.y, second.y, accuracy: 0.00001)
+                    XCTAssertEqual(first.z, second.z, accuracy: 0.00001)
+                }
+                previous = current
+            }
+        }
+    }
+
+    func testBackhandContactHeadIsBelowTheShouldersAndClearOfTheFace() throws {
+        for spec in presetAssets {
+            let rig = RallyAvatarRig(appearance: RallyAvatarAppearance(athletePreset: spec.preset), presentation: .gameplay)
+            let face = try XCTUnwrap(rig.root.childNode(withName: "head", recursively: true))
+            let hip = try XCTUnwrap(rig.root.childNode(withName: "root", recursively: true))
+            let shoulders = try ["upperarm01.L", "upperarm01.R"].map {
+                try XCTUnwrap(rig.root.childNode(withName: $0, recursively: true))
+            }
+            for leftHanded in [false, true] {
+                rig.animate(time: 0, swingProgress: 0.5, backhand: true, leftHanded: leftHanded)
+                let headPosition = rig.racketHeadWorldPosition
+                let racket = SIMD3<Float>(headPosition.x, headPosition.y, headPosition.z)
+                let shoulderLine = try XCTUnwrap(shoulders.map(\.simdWorldPosition.y).min())
+                XCTAssertLessThan(racket.y, shoulderLine - 0.05, "A standard return contacts below the shoulders")
+                XCTAssertGreaterThan(racket.y, hip.simdWorldPosition.y - 0.10, "Contact stays near the waist, not at the feet")
+                XCTAssertLessThan(racket.y, face.simdWorldPosition.y - 0.25, "The racket head must not cover the face at contact")
+                XCTAssertGreaterThan(simd_distance(racket, face.simdWorldPosition), 0.30)
             }
         }
     }
@@ -321,8 +420,8 @@ final class AvatarRigTests: XCTestCase {
         }
     }
 
-    /// Close render evidence makes both palms/fingers and the single handle
-    /// inspectable for each athlete and handedness at all three held phases.
+    /// Inspect the entire stroke in motion, with all limbs visible and the
+    /// actual gameplay camera retained. Passing numeric tests is not visual approval.
     func testRasterizeTwoHandedBackhandsForVisualReview() throws {
         let device = try XCTUnwrap(MTLCreateSystemDefaultDevice())
         for spec in presetAssets {
@@ -332,49 +431,154 @@ final class AvatarRigTests: XCTestCase {
                 let rig = RallyAvatarRig(appearance: look, presentation: .gameplay)
                 XCTAssertNil(rig.assetError)
                 rig.scene.background.contents = UIColor(red: 0.055, green: 0.075, blue: 0.07, alpha: 1)
-                rig.camera.camera?.orthographicScale = 0.78
-                rig.camera.position = SCNVector3(0, 1.40, 3)
-                rig.camera.look(at: SCNVector3(0, 1.40, 0))
+                // Move a separate inspection camera, never the avatar or its
+                // gameplay camera. The complete head/racket/feet stay in view.
+                let inspectionCamera = SCNNode()
+                inspectionCamera.camera = SCNCamera()
+                inspectionCamera.camera?.usesOrthographicProjection = true
+                inspectionCamera.camera?.orthographicScale = 1.18
+                inspectionCamera.camera?.zNear = 0.05
+                inspectionCamera.camera?.zFar = 20
+                rig.scene.rootNode.addChildNode(inspectionCamera)
                 let renderer = SCNRenderer(device: device, options: nil)
                 renderer.scene = rig.scene
-                renderer.pointOfView = rig.camera
                 renderer.autoenablesDefaultLighting = false
                 for leftHanded in [false, true] {
-                    for (phase, p) in [("load", Float(0.22)), ("contact", Float(0.5)), ("finish", Float(0.76))] {
-                        rig.animate(time: 0, swingProgress: p, backhand: true, leftHanded: leftHanded)
-                        // Front three-quarter evidence avoids hiding the grip
-                        // behind the player's torso as the gameplay camera does.
-                        rig.root.eulerAngles.y = leftHanded ? 0.25 : -0.25
-                        SCNTransaction.flush()
-                        let capture = renderer.snapshot(atTime: 1, with: CGSize(width: 768, height: 768),
-                                                        antialiasingMode: .multisampling4X)
-                        let attachment = XCTAttachment(image: capture)
-                        attachment.name = "backhand-\(spec.preset.rawValue)-\(leftHanded ? "left" : "right")-\(phase)"
-                        attachment.lifetime = .keepAlways
-                        add(attachment)
+                    try autoreleasepool {
+                        inspectionCamera.position = SCNVector3(0.90, 1.05, -4)
+                        inspectionCamera.look(at: SCNVector3(0, 1.05, 0))
+                        try captureBackhandMotion(rig: rig, renderer: renderer,
+                                                  inspectionCamera: inspectionCamera,
+                                                  preset: spec.preset, leftHanded: leftHanded)
                     }
                 }
             }
         }
     }
 
+    private struct BackhandProofPose {
+        let label: String
+        let progress: Float
+        let fullBody: UIImage
+        let gameplay: UIImage
+    }
+
+    private func captureBackhandMotion(rig: RallyAvatarRig, renderer: SCNRenderer,
+                                       inspectionCamera: SCNNode, preset: RallyAthletePreset,
+                                       leftHanded: Bool) throws {
+        let name = "backhand-motion-\(preset.rawValue)-\(leftHanded ? "left" : "right")"
+        let phases = [0: "Ready", 6: "Load", 11: "Forward", 15: "Contact", 19: "Follow", 24: "Finish", 30: "Recover"]
+        var poses: [BackhandProofPose] = []
+        let animation = NSMutableData()
+        let destination = try XCTUnwrap(CGImageDestinationCreateWithData(animation as CFMutableData, "com.compuserve.gif" as CFString, 31, nil))
+        CGImageDestinationSetProperties(destination, [kCGImagePropertyGIFDictionary: [kCGImagePropertyGIFLoopCount: 0]] as CFDictionary)
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = 1
+        format.opaque = true
+        // 31 poses at 60ms each is deliberately slow inspection, not a claim
+        // about live gameplay speed. No pose mirroring or frame interpolation.
+        for frame in 0...30 {
+            try autoreleasepool {
+                let p = Float(frame) / 30
+                let time = Double(p) * 0.7
+                rig.animate(time: time, swingProgress: p, backhand: true, leftHanded: leftHanded)
+                SCNTransaction.flush()
+                renderer.pointOfView = inspectionCamera
+                let fullBody = renderer.snapshot(atTime: time, with: CGSize(width: 384, height: 480),
+                                                 antialiasingMode: .multisampling4X)
+                renderer.pointOfView = rig.camera
+                // 420:480 matches the gameplay SK3DNode's 280:320 aspect ratio.
+                let gameplay = renderer.snapshot(atTime: time, with: CGSize(width: 420, height: 480),
+                                                 antialiasingMode: .multisampling4X)
+                if let label = phases[frame] {
+                    poses.append(BackhandProofPose(label: label, progress: p, fullBody: fullBody, gameplay: gameplay))
+                }
+                let combined = UIGraphicsImageRenderer(size: CGSize(width: 804, height: 536), format: format).image { context in
+                    UIColor(white: 0.045, alpha: 1).setFill()
+                    context.fill(CGRect(x: 0, y: 0, width: 804, height: 536))
+                    drawProofLabel("\(preset.rawValue) · \(leftHanded ? "Left" : "Right") hand · p=\(String(format: "%.2f", p)) · slow inspection",
+                                   at: CGPoint(x: 12, y: 8), size: 16)
+                    fullBody.draw(in: CGRect(x: 0, y: 56, width: 384, height: 480))
+                    gameplay.draw(in: CGRect(x: 384, y: 56, width: 420, height: 480))
+                    drawProofLabel("Full body · front", at: CGPoint(x: 12, y: 34), size: 13)
+                    drawProofLabel("Unchanged gameplay camera", at: CGPoint(x: 396, y: 34), size: 13)
+                }
+                CGImageDestinationAddImage(destination, try XCTUnwrap(combined.cgImage), [
+                    kCGImagePropertyGIFDictionary: [kCGImagePropertyGIFDelayTime: 0.06,
+                                                   kCGImagePropertyGIFUnclampedDelayTime: 0.06]
+                ] as CFDictionary)
+            }
+        }
+        XCTAssertTrue(CGImageDestinationFinalize(destination))
+        let motion = XCTAttachment(data: animation as Data, uniformTypeIdentifier: "com.compuserve.gif")
+        motion.name = name + "-slow-motion"
+        motion.lifetime = .keepAlways
+        add(motion)
+
+        XCTAssertEqual(poses.count, 7)
+        let width: CGFloat = 336
+        let rowHeight: CGFloat = 458
+        let size = CGSize(width: width * CGFloat(poses.count), height: 38 + rowHeight * 2)
+        let strip = UIGraphicsImageRenderer(size: size, format: format).image { context in
+            UIColor(white: 0.045, alpha: 1).setFill()
+            context.fill(CGRect(origin: .zero, size: size))
+            drawProofLabel("\(preset.rawValue) · \(leftHanded ? "Left" : "Right") handed backhand · top: full body · bottom: unchanged gameplay camera",
+                           at: CGPoint(x: 12, y: 9), size: 18)
+            for (index, pose) in poses.enumerated() {
+                let x = CGFloat(index) * width
+                for row in 0...1 {
+                    let y = 38 + CGFloat(row) * rowHeight
+                    let image = row == 0 ? pose.fullBody : pose.gameplay
+                    let imageWidth = row == 0 ? CGFloat(307.2) : CGFloat(336)
+                    image.draw(in: CGRect(x: x + (width - imageWidth) / 2, y: y + 30, width: imageWidth, height: 384))
+                    drawProofLabel("\(pose.label) · \(String(format: "%.2f", pose.progress))", at: CGPoint(x: x + 10, y: y + 8), size: 16)
+                }
+            }
+        }
+        let stills = XCTAttachment(image: strip)
+        stills.name = name + "-seven-phases"
+        stills.lifetime = .keepAlways
+        add(stills)
+    }
+
+    private func drawProofLabel(_ text: String, at point: CGPoint, size: CGFloat) {
+        (text as NSString).draw(at: point, withAttributes: [
+            .font: UIFont.systemFont(ofSize: size, weight: .medium),
+            .foregroundColor: UIColor.white
+        ])
+    }
+
     func testAthleticLoadingCoilsBeforeContactAndTransfersWeightAfterIt() {
         for leftHanded in [false, true] {
             for backhand in [false, true] {
                 let direction: Float = (leftHanded ? -1 : 1) * (backhand ? -1 : 1)
-                for p: Float in [0, 0.5, 1] {
+                for p: Float in [0, 1] {
                     XCTAssertEqual(RallyAvatarRig.groundstrokeBodyMotion(progress: p, backhand: backhand, leftHanded: leftHanded),
-                                   RallyAvatarRig.BodyMotion(), "Contact and ready poses must retain their existing transforms")
+                                   RallyAvatarRig.BodyMotion(), "Both ends of the stroke must settle into ready")
                 }
-                let load = RallyAvatarRig.groundstrokeBodyMotion(progress: 0.22, backhand: backhand, leftHanded: leftHanded)
-                let finish = RallyAvatarRig.groundstrokeBodyMotion(progress: 0.76, backhand: backhand, leftHanded: leftHanded)
-                XCTAssertLessThan((load.lowerSpineYaw + load.upperSpineYaw) * direction, -0.6)
-                XCTAssertGreaterThan((finish.lowerSpineYaw + finish.upperSpineYaw) * direction, 0.3)
+                let load = RallyAvatarRig.groundstrokeBodyMotion(progress: backhand ? 0.20 : 0.22, backhand: backhand, leftHanded: leftHanded)
+                let contact = RallyAvatarRig.groundstrokeBodyMotion(progress: 0.5, backhand: backhand, leftHanded: leftHanded)
+                let finish = RallyAvatarRig.groundstrokeBodyMotion(progress: backhand ? 0.80 : 0.76, backhand: backhand, leftHanded: leftHanded)
+                if backhand {
+                    let hand: Float = leftHanded ? -1 : 1
+                    let loadTurn = (load.pelvisYaw + load.lowerSpineYaw + load.upperSpineYaw) * hand
+                    let contactTurn = (contact.pelvisYaw + contact.lowerSpineYaw + contact.upperSpineYaw) * hand
+                    let finishTurn = (finish.pelvisYaw + finish.lowerSpineYaw + finish.upperSpineYaw) * hand
+                    XCTAssertGreaterThan(loadTurn, 0.65, "The backhand starts with a unit turn")
+                    XCTAssertGreaterThan(contactTurn, 0, "The shoulders remain partly turned through contact")
+                    XCTAssertLessThan(contactTurn, loadTurn, "The torso unwinds toward the ball")
+                    XCTAssertLessThan(finishTurn, 0, "The finish carries the turn to the opposite side")
+                    XCTAssertGreaterThan(contact.pelvisOffset.z, load.pelvisOffset.z, "Weight travels forward into contact")
+                } else {
+                    XCTAssertEqual(contact, RallyAvatarRig.BodyMotion(), "Forehand retains its established contact transform")
+                    XCTAssertLessThan((load.lowerSpineYaw + load.upperSpineYaw) * direction, -0.6)
+                    XCTAssertGreaterThan((finish.lowerSpineYaw + finish.upperSpineYaw) * direction, 0.3)
+                }
                 XCTAssertLessThan(load.pelvisOffset.x * direction, 0)
                 XCTAssertGreaterThan(finish.pelvisOffset.x * direction, 0)
                 XCTAssertLessThan(load.pelvisOffset.y, -0.015, "Loading should compress the knees before the hit")
                 XCTAssertGreaterThan(finish.pelvisOffset.z, 0.015, "The finish should carry weight forward")
-                let mirrored = RallyAvatarRig.groundstrokeBodyMotion(progress: 0.22, backhand: backhand, leftHanded: !leftHanded)
+                let mirrored = RallyAvatarRig.groundstrokeBodyMotion(progress: backhand ? 0.20 : 0.22, backhand: backhand, leftHanded: !leftHanded)
                 XCTAssertEqual(load.pelvisOffset.x, -mirrored.pelvisOffset.x)
                 XCTAssertEqual(load.pelvisYaw, -mirrored.pelvisYaw)
                 XCTAssertEqual(load.upperSpineYaw, -mirrored.upperSpineYaw)

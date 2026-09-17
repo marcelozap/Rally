@@ -99,8 +99,10 @@
 		A5845BD6034B55D0C4CCAA07 /* RallyCourtMovement.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7C4F0B092B5803CC0ACCC21 /* RallyCourtMovement.swift */; };
 		A66086638B3E57695051E30A /* AnalyticsInsights.swift in Sources */ = {isa = PBXBuildFile; fileRef = DCA48106E0FB6099E0C4043A /* AnalyticsInsights.swift */; };
 		AB0500000000000000000001 /* RallyAvatarRig.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB0500000000000000000002 /* RallyAvatarRig.swift */; };
+		AB1700000000000000000001 /* RallyHumanMesh.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB1700000000000000000002 /* RallyHumanMesh.swift */; };
 		AB0500000000000000000003 /* Avatar3D in Resources */ = {isa = PBXBuildFile; fileRef = AB0500000000000000000004 /* Avatar3D */; };
 		AB0500000000000000000005 /* AvatarRigTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB0500000000000000000006 /* AvatarRigTests.swift */; };
+		AB1700000000000000000003 /* RallyTeeOcclusionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB1700000000000000000004 /* RallyTeeOcclusionTests.swift */; };
 		AB0500000000000000000011 /* RallyFlickInput.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB0500000000000000000012 /* RallyFlickInput.swift */; };
 		AB0500000000000000000013 /* RallyFlickInputTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB0500000000000000000014 /* RallyFlickInputTests.swift */; };
 		AC6FF132662B27EE9AEEFAA8 /* JournalModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00F928F99BF076A334C45826 /* JournalModels.swift */; };
@@ -254,8 +256,10 @@
 		A71B34217FAE2AA173B9C4A3 /* Signing.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Signing.xcconfig; sourceTree = "<group>"; };
 		AA5D439297231AE3C62B5D0B /* HitQuality.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HitQuality.swift; sourceTree = "<group>"; };
 		AB0500000000000000000002 /* RallyAvatarRig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RallyAvatarRig.swift; sourceTree = "<group>"; };
+		AB1700000000000000000002 /* RallyHumanMesh.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RallyHumanMesh.swift; sourceTree = "<group>"; };
 		AB0500000000000000000004 /* Avatar3D */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Avatar3D; sourceTree = "<group>"; };
 		AB0500000000000000000006 /* AvatarRigTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AvatarRigTests.swift; sourceTree = "<group>"; };
+		AB1700000000000000000004 /* RallyTeeOcclusionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RallyTeeOcclusionTests.swift; sourceTree = "<group>"; };
 		AB0500000000000000000012 /* RallyFlickInput.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RallyFlickInput.swift; sourceTree = "<group>"; };
 		AB0500000000000000000014 /* RallyFlickInputTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RallyFlickInputTests.swift; sourceTree = "<group>"; };
 		ADB48AE6B4EA53A608C0EFBB /* RivalMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RivalMode.swift; sourceTree = "<group>"; };
@@ -481,6 +485,7 @@
 				1D2A36D53E1D47764823F03C /* RallyContinuousBallExchangeTests.swift */,
 				81341B1A69CA22C3B0E57279 /* RallyMirrorRulesTests.swift */,
 				AB0500000000000000000006 /* AvatarRigTests.swift */,
+				AB1700000000000000000004 /* RallyTeeOcclusionTests.swift */,
 				1CE884D74D9F3C2533DEEAF7 /* RallyFootworkRenderTests.swift */,
 				47FC0BEB465A44403FE5EA37 /* RallyAvatarFootworkTests.swift */,
 				D8CEDAD6E64A2A13DCE5BDBD /* RemoteTunablesTests.swift */,
@@ -669,6 +674,7 @@
 				A30000000000000000000013 /* RallyAvatarAppearance.swift */,
 				A30000000000000000000014 /* RallyAvatarView.swift */,
 				AB0500000000000000000002 /* RallyAvatarRig.swift */,
+				AB1700000000000000000002 /* RallyHumanMesh.swift */,
 				9F23AADE0B758B9060AE0B17 /* RallyAvatarFootwork.swift */,
 				F43AC5BE0F2D422AA1E337A9 /* RallyAvatarPartRenderer.swift */,
 				A10000000000000000000021 /* Debug */,
@@ -847,6 +853,7 @@
 				DD9FF7B0B71F5D8C551ECE3D /* RallyContinuousBallExchangeTests.swift in Sources */,
 				314DC7245C07266D46466165 /* RallyMirrorRulesTests.swift in Sources */,
 				AB0500000000000000000005 /* AvatarRigTests.swift in Sources */,
+				AB1700000000000000000003 /* RallyTeeOcclusionTests.swift in Sources */,
 				F62CD9A625586848E7504FF1 /* RallyFootworkRenderTests.swift in Sources */,
 				B690B99BAB1C86F75C81AD6D /* RallyAvatarFootworkTests.swift in Sources */,
 				6F031884A1F85F9B11EA9FE1 /* RemoteTunablesTests.swift in Sources */,
@@ -898,6 +905,7 @@
 				A30000000000000000000003 /* RallyAvatarAppearance.swift in Sources */,
 				A30000000000000000000004 /* RallyAvatarView.swift in Sources */,
 				AB0500000000000000000001 /* RallyAvatarRig.swift in Sources */,
+				AB1700000000000000000001 /* RallyHumanMesh.swift in Sources */,
 				97AD4D573132C0A7F0B71B8C /* RallyAvatarFootwork.swift in Sources */,
 				A30000000000000000000005 /* RallyAvatarUnificationAudit.swift in Sources */,
 				7A9DD3BC935727C47DE05483 /* BattlePass.swift in Sources */,
