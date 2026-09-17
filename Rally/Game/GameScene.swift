@@ -64,6 +64,14 @@ final class GameScene: SKScene {
     private var practiceShotBall: BallNode?
     private var isServingFlight = false
     private var hasStartedRallyClock = false
+    private var serveRecoveryStartedAt: TimeInterval?
+    private static let serveRecoverySeconds: TimeInterval = 0.42
+    var serveRecoveryProgress: Float? {
+        guard let started = serveRecoveryStartedAt else { return nil }
+        let elapsed = currentTimeSnapshot - started
+        guard elapsed >= 0, elapsed <= Self.serveRecoverySeconds else { return nil }
+        return Float(elapsed / Self.serveRecoverySeconds)
+    }
     private var lastSystemUpdate: TimeInterval?
     private var clockOffset: TimeInterval = 0
     private var needsClockRebase = false
@@ -340,6 +348,7 @@ final class GameScene: SKScene {
             allTimeHighCombo = UserDefaults.standard.integer(forKey: Tunables.wallHighComboKey)
             wallBestLabel?.text = allTimeHighCombo > 0 ? "STREAK ×\(allTimeHighCombo)" : ""
         }
+        updateHUD()
         runCountdown()
     }
 
@@ -464,6 +473,7 @@ final class GameScene: SKScene {
         currentTimeSnapshot = time
         clearPendingWallSpawnToken()
         serveCycle.begin(at: time)
+        serveRecoveryStartedAt = nil
         serveBall?.removeFromParent()
         let ball = SKShapeNode(circleOfRadius: 6)
         ball.name = "serve.toss"
@@ -535,6 +545,7 @@ final class GameScene: SKScene {
             serveCycle.retry(at: time); return
         }
         rig.animateLesson(progress: 0.75, leftHanded: dominantHand == .left, serve: true)
+        serveRecoveryStartedAt = time
         alignAvatarToCourt(rig: rig, node: node)
         let lane: Lane = dominantHand == .left ? .left : .right
         let contact = avatarPoint(rig.racketHeadWorldPosition, rig: rig, node: node)
@@ -554,6 +565,7 @@ final class GameScene: SKScene {
         swingVisualImpactUntil = time + 0.35
         playerContactFollowThrough = true
         setServeCue(practiceMode == .servePractice ? "Aim for the ring" : "Serve in. Get ready for the return.")
+        serveCue?.run(.sequence([.wait(forDuration: 1.2), .fadeOut(withDuration: 0.2)]), withKey: "serveCue.dismiss")
     }
 
     private func finishPracticeShot(at point: CGPoint, ball: BallNode) {
@@ -593,6 +605,8 @@ final class GameScene: SKScene {
             label.zPosition = 160; addChild(label); serveCue = label
         }
         serveCue?.position = CGPoint(x: size.width / 2, y: size.height * 0.40)
+        serveCue?.removeAction(forKey: "serveCue.dismiss")
+        serveCue?.alpha = 1
         serveCue?.text = text
     }
 
@@ -998,7 +1012,7 @@ final class GameScene: SKScene {
         let scoreY = visibleTop - 51
         let scoreX = size.width * 0.39
         let timeX = size.width * 0.59
-        hudCaptionLabel?.text = "SCORE"
+        hudCaptionLabel?.text = practiceMode.challenge == nil ? "SCORE" : "BEST STREAK"
         hudCaptionLabel?.fontColor = UIColor(white: 1, alpha: 0.82)
         hudCaptionLabel?.alpha = 1
         hudCaptionLabel?.isHidden = false
@@ -1021,6 +1035,11 @@ final class GameScene: SKScene {
         livesLabel?.position = CGPoint(x: scoreX, y: scoreY - 17)
         // Score PB and best streak are separate records, with distinct labels.
         survivalBestLabel?.position = CGPoint(x: timeX, y: scoreY + 20)
+        if practiceMode.challenge != nil {
+            survivalBestLabel?.isHidden = false
+            survivalBestLabel?.text = "CLEAN EIGHT"
+            survivalBestLabel?.fontSize = 9
+        }
         wallStreakLabel?.position = CGPoint(x: size.width * 0.18, y: scoreY - 15)
         wallBestLabel?.position = CGPoint(x: timeX, y: scoreY - 17)
         wallMomentLabel?.position = CGPoint(x: size.width / 2, y: size.height * Tunables.wallMomentBannerYRatio)
@@ -1808,6 +1827,7 @@ final class GameScene: SKScene {
         guard let playerRoot, let rig = playerAvatarRig, let node = playerAvatarNode else { return }
         let activeTouch = swingCurrentScene ?? swingOriginScene
         let impactProgress = max(0, min(1, (swingVisualImpactUntil - currentTimeSnapshot) / 0.26))
+        let serveRecovery = serveRecoveryProgress
         // Feet must start moving while the ball is approaching. The swing
         // candidate filter requires a ball to be hittable and already in reach.
         let focusBall = sessionMode == .wallRally ? primaryWallBall() : nil
@@ -1840,7 +1860,7 @@ final class GameScene: SKScene {
         playerRoot.position.x = RallyCourtMovement.advance(
             from: playerRoot.position.x, toward: desiredX, deltaTime: deltaTime,
             pointsPerMeter: pointsPerMeter,
-            planted: currentTimeSnapshot < hitStopUntil || impactProgress > 0.20
+            planted: serveRecovery != nil || currentTimeSnapshot < hitStopUntil || impactProgress > 0.20
         )
         playerRoot.position.y = size.height * Tunables.gameplayPlayerRootYRatio - anticipation * 0.65
 
@@ -1849,15 +1869,20 @@ final class GameScene: SKScene {
         }
         if currentTimeSnapshot >= hitStopUntil {
             let lateral = (playerRoot.position.x - size.width / 2) / max(1, size.width * 0.22)
-            rig.animate(
-                time: trackTime,
-                swingProgress: impactProgress > 0.02
-                    ? Float(playerContactFollowThrough ? 0.5 + (1 - impactProgress) * 0.5 : 1 - impactProgress) : nil,
-                backhand: strokeSide(for: swingVisualLane) == .backhand,
-                lateral: Float(max(-1, min(1, lateral))),
-                leftHanded: dominantHand == .left,
-                courtPosition: Float((playerRoot.position.x - size.width / 2) / pointsPerMeter)
-            )
+            if let serveRecovery {
+                rig.animateLesson(progress: 0.75 + 0.25 * serveRecovery,
+                                  leftHanded: dominantHand == .left, serve: true)
+            } else {
+                rig.animate(
+                    time: trackTime,
+                    swingProgress: impactProgress > 0.02
+                        ? Float(playerContactFollowThrough ? 0.5 + (1 - impactProgress) * 0.5 : 1 - impactProgress) : nil,
+                    backhand: strokeSide(for: swingVisualLane) == .backhand,
+                    lateral: Float(max(-1, min(1, lateral))),
+                    leftHanded: dominantHand == .left,
+                    courtPosition: Float((playerRoot.position.x - size.width / 2) / pointsPerMeter)
+                )
+            }
             node.sceneTime = trackTime
         }
         alignAvatarToCourt(rig: rig, node: node)
@@ -3653,7 +3678,11 @@ final class GameScene: SKScene {
     var sessionIsOver: Bool { sessionEnded }
 
     private func updateHUD() {
-        scoreLabel?.text = usesMinimalWallHUD ? wallFormattedScore(score) : "\(score)"
+        if let challenge = practiceMode.challenge {
+            scoreLabel?.text = "\(challenge.progress(maxCombo: maxCombo))/\(challenge.targetStreak)"
+        } else {
+            scoreLabel?.text = usesMinimalWallHUD ? wallFormattedScore(score) : "\(score)"
+        }
         if usesMinimalWallHUD {
             layoutWallHUDPositions()
             applyMinimalWallScoreTypography()
@@ -3699,6 +3728,10 @@ final class GameScene: SKScene {
                 wallBestLabel.text = state.text
                 wallBestLabel.fontColor = state.color
                 wallBestLabel.alpha = state.text.isEmpty ? 0 : 1
+                if let challenge = practiceMode.challenge {
+                    wallBestLabel.text = maxCombo >= challenge.targetStreak ? "FINISH RUN" : "8 IN A ROW"
+                    wallBestLabel.alpha = 1
+                }
             }
         }
         hudTopPlate?.strokeColor = combo > 1
@@ -5584,6 +5617,7 @@ final class GameScene: SKScene {
 
     private func clearFinishedRally() {
         serveCycle.stop()
+        serveRecoveryStartedAt = nil
         serveBall?.removeFromParent(); serveBall = nil
         practiceTarget?.removeFromParent()
         serveCue?.removeFromParent()

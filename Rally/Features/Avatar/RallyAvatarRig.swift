@@ -208,6 +208,14 @@ final class RallyAvatarRig {
         let follow = swingProgress == nil ? Float(0) : sin(max(0, progress - 0.35) / 0.65 * .pi)
         let hand: Float = leftHanded ? -1 : 1
         let turn: Float = (backhand ? -1 : 1) * hand
+        // On a two-handed backhand the dominant shoulder leads toward the
+        // cross-body contact. Sending it backward forces the arm through the
+        // chest even if its wrist and the upper-hand grip are correct.
+        let backhandUnwind = 1 - Self.smoothUnit((progress - 0.5) / 0.22)
+        let backhandShoulderLead: Float = backhand ? hand * swing * 1.02 * backhandUnwind : 0
+        let bodyMotion = !studio && swingProgress != nil
+            ? Self.groundstrokeBodyMotion(progress: progress, backhand: backhand, leftHanded: leftHanded)
+            : BodyMotion()
         for bone in bones { bone.eulerAngles = SCNVector3Zero }
         root.eulerAngles.y = studio ? yaw + Float(sin(time * 0.72)) * 0.018 : (presentation == .gameplay ? Float.pi - 0.22 : -0.15)
         root.position.y = groundOffset
@@ -226,14 +234,20 @@ final class RallyAvatarRig {
         // movement back through the avatar's yaw, including the local Z term.
         let courtToRoot = simd_inverse(root.simdWorldOrientation)
         let pelvisTravel = courtToRoot.act(SIMD3<Float>(gait.pelvisOffset, 0, 0))
-        let weightShift = studio ? Float(sin(time * 0.94)) * 0.025 : lateral * 0.018 + pelvisTravel.x
+        let weightShift = studio ? Float(sin(time * 0.94)) * 0.025 : lateral * 0.018 + pelvisTravel.x + bodyMotion.pelvisOffset.x * stature
         let readyDrop: Float = studio ? 0.046 + Float(cos(time * 1.88)) * 0.005 : 0.028 + gait.pelvisDrop
         if let hip = boneByName["root"], let neutral = bindPosition["root"] {
-            hip.simdPosition = neutral + SIMD3<Float>(weightShift, -readyDrop - swing * 0.014 + breath * 0.002, pelvisTravel.z)
+            hip.simdPosition = neutral + SIMD3<Float>(weightShift,
+                -readyDrop - swing * 0.014 + breath * 0.002 + bodyMotion.pelvisOffset.y * stature,
+                pelvisTravel.z + bodyMotion.pelvisOffset.z * stature)
+            hip.eulerAngles.y = bodyMotion.pelvisYaw
         }
-        rotate("spine03", x: studio ? 0.075 : 0.035, y: turn * swing * 0.30, z: -weightShift * 0.7)
-        rotate("spine01", x: breath * 0.006, y: turn * (swing * 0.34 - follow * 0.28))
-        rotate("neck01", y: -turn * swing * 0.14)
+        rotate("spine03", x: (studio ? 0.075 : 0.035) + bodyMotion.forwardLean,
+               y: turn * swing * 0.30 + bodyMotion.lowerSpineYaw + backhandShoulderLead * 0.45, z: -weightShift * 0.7)
+        rotate("spine01", x: breath * 0.006,
+               y: turn * (swing * 0.34 - follow * 0.28) + bodyMotion.upperSpineYaw + backhandShoulderLead * 0.55)
+        rotate("neck01", y: -turn * swing * 0.14 - bodyMotion.pelvisYaw
+               - bodyMotion.lowerSpineYaw * 0.65 - bodyMotion.upperSpineYaw * 0.70 - backhandShoulderLead * 0.70)
         rotate("head", x: -0.025, y: studio ? 0.06 : 0)
 
         // MakeHuman's rest pose is a relaxed A-pose. Close shoulders, then flex elbows.
@@ -250,8 +264,8 @@ final class RallyAvatarRig {
                 rotate("upperleg01.\(suffix)", x: -0.028 - swing * 0.08, z: -side * 0.012)
                 rotate("lowerleg01.\(suffix)", x: 0.04 + swing * 0.13)
             }
-            // The supporting hand stays relaxed; the anatomical grip below
-            // articulates the dominant fingers around the racket handle.
+            // Begin with relaxed fingers; the grip pass wraps either hand
+            // that is actually holding the handle.
             for finger in 2...5 {
                 for joint in 1...3 {
                     rotate("finger\(finger)-\(joint).\(suffix)", x: -0.16)
@@ -265,19 +279,9 @@ final class RallyAvatarRig {
             solveArm(supportSuffix, target: SIMD3<Float>(0.18 * hand + weightShift * 0.6, 1.09 + breath * 0.004, 0.25))
         } else {
             let dominantTarget = Self.strokeWristTarget(progress: progress, backhand: backhand, leftHanded: leftHanded)
-            solveArm(dominantSuffix, target: dominantTarget)
-            let freeTarget = Self.freeHandTarget(progress: progress, leftHanded: leftHanded)
-            let supportTarget: SIMD3<Float>
-            if backhand, swingProgress != nil {
-                // Join the handle during preparation and release after the finish.
-                // The existing two-handed contact at p=0.5 remains exact.
-                let join = min(1, progress / 0.20) * min(1, (1 - progress) / 0.20)
-                let gripTarget = dominantTarget + SIMD3<Float>(0.055 * hand, 0.065, -0.015)
-                supportTarget = freeTarget + (gripTarget - freeTarget) * (join * join * (3 - 2 * join))
-            } else {
-                supportTarget = freeTarget
-            }
-            solveArm(supportSuffix, target: supportTarget)
+            solveArm(dominantSuffix, target: dominantTarget,
+                     bodyClearance: backhand && swingProgress != nil ? Self.backhandGripEngagement(progress: progress) : 0)
+            solveArm(supportSuffix, target: Self.freeHandTarget(progress: progress, leftHanded: leftHanded))
         }
         let wrist = boneByName[dominantSuffix == "L" ? "wrist.L" : "wrist.R"]
         if racket.parent !== wrist {
@@ -287,6 +291,10 @@ final class RallyAvatarRig {
         let gameplayGrip = -0.22 * hand + (backhand ? 0.34 * hand * swing : 0)
         let gripAngle: Float = studio ? 0.16 * hand : gameplayGrip
         poseRacketGrip(side: dominantSuffix, hand: hand, gripAngle: gripAngle)
+        if backhand, swingProgress != nil, showsRacket {
+            poseSupportingGrip(side: supportSuffix, hand: -hand, progress: progress,
+                               freeTarget: Self.freeHandTarget(progress: progress, leftHanded: leftHanded))
+        }
         for side in ["L", "R"] {
             guard let ankle = bindPosition["foot.\(side)"] else { continue }
             // Studio/nil callers retain the planted split stance. During court
@@ -303,6 +311,45 @@ final class RallyAvatarRig {
         }
     }
 
+    struct BodyMotion: Equatable {
+        var pelvisOffset = SIMD3<Float>.zero
+        var pelvisYaw: Float = 0
+        var lowerSpineYaw: Float = 0
+        var upperSpineYaw: Float = 0
+        var forwardLean: Float = 0
+    }
+
+    /// Loading and finishing are additive to the established contact pose.
+    /// Their envelopes vanish exactly at contact, keeping ball/racket projection
+    /// stable while shoulders and hips visibly coil before the arm accelerates.
+    static func groundstrokeBodyMotion(progress: Float, backhand: Bool, leftHanded: Bool) -> BodyMotion {
+        let p = min(1, max(0, progress.isFinite ? progress : 0))
+        let direction: Float = (backhand ? -1 : 1) * (leftHanded ? -1 : 1)
+        let load = phaseEnvelope(p, start: 0, peak: 0.22, end: 0.5)
+        let finish = phaseEnvelope(p, start: 0.5, peak: 0.76, end: 1)
+        return BodyMotion(
+            pelvisOffset: SIMD3(direction * (-0.025 * load + 0.024 * finish),
+                                -0.020 * load + 0.004 * finish,
+                                -0.012 * load + 0.022 * finish),
+            pelvisYaw: direction * (-0.08 * load + 0.10 * finish),
+            lowerSpineYaw: direction * (-0.40 * load + 0.16 * finish),
+            upperSpineYaw: direction * (-0.38 * load + 0.18 * finish),
+            forwardLean: 0.025 * load + 0.035 * finish
+        )
+    }
+
+    private static func smoothUnit(_ value: Float) -> Float {
+        let t = min(1, max(0, value))
+        return t * t * (3 - 2 * t)
+    }
+
+    private static func phaseEnvelope(_ progress: Float, start: Float, peak: Float, end: Float) -> Float {
+        guard progress > start, progress < end else { return 0 }
+        return progress <= peak
+            ? smoothUnit((progress - start) / (peak - start))
+            : 1 - smoothUnit((progress - peak) / (end - peak))
+    }
+
     // Root-space wrist paths pass through the old contact pose at exactly p=0.5.
     // Hermite tangents carry the racket through contact and settle it back into
     // the ready stance, instead of lifting a fixed arm up and down in place.
@@ -314,7 +361,9 @@ final class RallyAvatarRig {
     ]
     private static let backhandWrists: [SIMD3<Float>] = [
         readyWrist, SIMD3(0.38, 1.20, 0.04), SIMD3(0.26, 1.21 + 0.15, 0.31),
-        SIMD3(-0.36, 1.44, 0.40), readyWrist
+        // Finish toward the opposite shoulder without overextending the
+        // supporting arm as the torso starts to return to ready.
+        SIMD3(-0.30, 1.44, 0.30), readyWrist
     ]
     private static let freeHandWrists: [SIMD3<Float>] = [
         SIMD3(0.23, 1.10, 0.23), SIMD3(0.30, 1.18, 0.22), SIMD3(0.30, 1.10, 0.18),
@@ -360,30 +409,48 @@ final class RallyAvatarRig {
         let dominant = leftHanded ? "L" : "R"
         let support = leftHanded ? "R" : "L"
         let bend = (1 - cos(p * 2 * .pi)) * 0.5
+        let serveActivity = Self.smoothUnit(p / 0.12) * (1 - Self.smoothUnit((p - 0.90) / 0.10))
+        let serveLoad = Self.phaseEnvelope(p, start: 0, peak: 0.44, end: 0.75)
+        let serveFinish = Self.phaseEnvelope(p, start: 0.75, peak: 0.89, end: 1)
         if let hip = boneByName["root"], let neutral = bindPosition["root"] {
-            hip.simdPosition = neutral + SIMD3<Float>(0, -(0.025 + bend * (serve ? 0.045 : 0.085)) * stature, 0)
-        }
-        rotate("spine03", x: 0.035 + bend * 0.055, y: serve ? -hand * sin(p * .pi) * 0.25 : 0)
-        if serve {
-            func blend(_ a: SIMD3<Float>, _ b: SIMD3<Float>, _ t: Float) -> SIMD3<Float> {
-                let t = min(1, max(0, t)); return a + (b - a) * (t * t * (3 - 2 * t))
+            if serve {
+                let lessonDrop = (0.025 + bend * 0.045) * stature
+                let drop = 0.028 + (lessonDrop - 0.028) * serveActivity
+                hip.simdPosition = neutral + SIMD3<Float>(hand * (serveLoad * -0.016 + serveFinish * 0.018) * stature,
+                                                         -drop, serveFinish * 0.022 * stature)
+                hip.eulerAngles.y = hand * (-0.08 * serveLoad + 0.12 * serveFinish)
+            } else {
+                hip.simdPosition = neutral + SIMD3<Float>(0, -(0.025 + bend * 0.085) * stature, 0)
             }
-            let ready = SIMD3<Float>(-0.30 * hand, 1.10, 0.28)
+        }
+        rotate("spine03", x: 0.035 + bend * 0.055 * (serve ? serveActivity : 1) + (serve ? serveFinish * 0.055 : 0),
+               y: serve ? -hand * sin(p * .pi) * 0.25 * serveActivity + hand * (-0.16 * serveLoad + 0.22 * serveFinish) : 0)
+        if serve {
+            rotate("spine01", y: hand * (-0.12 * serveLoad + 0.18 * serveFinish))
+            rotate("neck01", y: hand * (0.14 * serveLoad - 0.18 * serveFinish))
+            func blend(_ a: SIMD3<Float>, _ b: SIMD3<Float>, _ t: Float) -> SIMD3<Float> {
+                a + (b - a) * Self.smoothUnit(t)
+            }
+            let ready = Self.strokeWristTarget(progress: 0, backhand: false, leftHanded: leftHanded)
             let trophy = SIMD3<Float>(-0.30 * hand, 1.48, -0.06)
             let reach = SIMD3<Float>(-0.16 * hand, 1.80, 0.12)
             let finish = SIMD3<Float>(0.12 * hand, 1.12, 0.36)
             let wrist: SIMD3<Float>
             if p < 0.5 { wrist = blend(ready, trophy, p / 0.5) }
             else if p < 0.75 { wrist = blend(trophy, reach, (p - 0.5) / 0.25) }
-            else { wrist = blend(reach, finish, (p - 0.75) / 0.25) }
+            else if p < 0.89 { wrist = blend(reach, finish, (p - 0.75) / 0.14) }
+            else { wrist = blend(finish, ready, (p - 0.89) / 0.11) }
             solveArm(dominant, target: wrist)
             let toss = sin(min(1, p / 0.7) * .pi)
-            solveArm(support, target: SIMD3<Float>(0.24 * hand, 1.12 + toss * 0.55, 0.28))
-            poseRacketGrip(side: dominant, hand: hand, gripAngle: -0.10 * hand)
+            let supportToss = SIMD3<Float>(0.24 * hand, 1.12 + toss * 0.55, 0.28)
+            let supportReady = Self.freeHandTarget(progress: 0, leftHanded: leftHanded)
+            let supportBlend = Self.smoothUnit(p / 0.12) * (1 - Self.smoothUnit((p - 0.85) / 0.15))
+            solveArm(support, target: supportReady + (supportToss - supportReady) * supportBlend)
+            poseRacketGrip(side: dominant, hand: hand, gripAngle: (-0.22 + 0.12 * serveActivity) * hand)
         }
         for side in ["L", "R"] {
             guard let ankle = bindPosition["foot.\(side)"] else { continue }
-            let spread: Float = (side == "L" ? 1 : -1) * 0.04
+            let spread: Float = (side == "L" ? 1 : -1) * (serve ? 0.026 + 0.014 * serveActivity : 0.04)
             solveChain(upperName: "upperleg01.\(side)", lowerName: "lowerleg01.\(side)",
                        endName: "foot.\(side)", target: ankle + SIMD3<Float>(spread, 0, 0),
                        pole: SIMD3<Float>(spread, 0, 1))
@@ -411,14 +478,19 @@ final class RallyAvatarRig {
         boneByName[leftHanded ? "wrist.R" : "wrist.L"]?.convertPosition(SCNVector3Zero, to: nil) ?? SCNVector3Zero
     }
 
+    private struct HandGripFrame {
+        let up: SIMD3<Float>
+        let basis: simd_float3x3
+        let center: SIMD3<Float>
+    }
+
     /// The bind skeleton uses common world axes, not hand-local axes. Recover
     /// the palm's width/length basis before orienting the wrist or curling fingers.
-    private func poseRacketGrip(side: String, hand: Float, gripAngle: Float) {
-        guard let wrist = boneByName["wrist.\(side)"], let parent = wrist.parent,
-              let wristBind = bindPosition["wrist.\(side)"],
+    private func handGripFrame(side: String, hand: Float) -> HandGripFrame? {
+        guard let wristBind = bindPosition["wrist.\(side)"],
               let index = bindPosition["finger2-1.\(side)"],
               let middle = bindPosition["finger3-1.\(side)"],
-              let pinky = bindPosition["finger5-1.\(side)"] else { return }
+              let pinky = bindPosition["finger5-1.\(side)"] else { return nil }
         let restUp = simd_normalize(index - pinky)
         let palmLength = middle - wristBind
         let restForward = simd_normalize(palmLength - restUp * simd_dot(palmLength, restUp))
@@ -427,7 +499,13 @@ final class RallyAvatarRig {
         // the palm. Flex toward the palm on either hand.
         let palmNormal = restNormal * hand
         let restBasis = simd_float3x3(columns: (restNormal, restUp, restForward))
+        let center = (index + pinky) * 0.5 - wristBind + palmNormal * (0.016 * stature)
+        return HandGripFrame(up: restUp, basis: restBasis, center: center)
+    }
 
+    private func poseRacketGrip(side: String, hand: Float, gripAngle: Float) {
+        guard let wrist = boneByName["wrist.\(side)"], let parent = wrist.parent,
+              let frame = handGripFrame(side: side, hand: hand) else { return }
         let racketInRoot = simd_quatf(angle: gripAngle, axis: SIMD3<Float>(0, 0, 1))
             * simd_quatf(angle: -0.16, axis: SIMD3<Float>(1, 0, 0))
         let up = racketInRoot.act(SIMD3<Float>(0, 1, 0))
@@ -435,40 +513,98 @@ final class RallyAvatarRig {
         let forward = simd_normalize(direction - up * simd_dot(direction, up))
         let normal = simd_normalize(simd_cross(up, forward))
         let targetBasis = simd_float3x3(columns: (normal, up, forward))
-        let wristInRoot = simd_quatf(targetBasis * simd_transpose(restBasis))
+        let wristInRoot = simd_quatf(targetBasis * simd_transpose(frame.basis))
         wrist.simdOrientation = simd_inverse(parent.simdWorldOrientation) * root.simdWorldOrientation * wristInRoot
 
-        for finger in 2...5 {
-            for (joint, angle) in [(1, Float(1.20)), (2, Float(1.70)), (3, Float(0.90))] {
-                boneByName["finger\(finger)-\(joint).\(side)"]?.simdOrientation =
-                    simd_quatf(angle: (showsRacket ? angle : 0.14) * hand, axis: restUp)
-            }
-        }
-        // The cylinder sits against the distal palm. Its 0.06m local grip
-        // center is aligned here, independent of wrist rotation and handedness.
-        let gripCenter = (index + pinky) * 0.5 - wristBind + palmNormal * (0.016 * stature)
-        if showsRacket,
-           let thumb = boneByName["finger1-1.\(side)"],
-           let thumbBind = bindPosition["finger1-1.\(side)"],
-           let thumbMiddle = bindPosition["finger1-2.\(side)"] {
-            let towardGrip = gripCenter + restUp * (0.028 * stature) - (thumbBind - wristBind)
-            thumb.simdOrientation = simd_quatf(from: simd_normalize(thumbMiddle - thumbBind),
-                                             to: simd_normalize(towardGrip))
-            boneByName["finger1-2.\(side)"]?.simdOrientation = simd_quatf(angle: 0.25 * hand, axis: restUp)
-            boneByName["finger1-3.\(side)"]?.simdOrientation = simd_quatf(angle: 0.55 * hand, axis: restUp)
-        }
+        curlGripFingers(side: side, hand: hand, frame: frame, blend: 1)
         let racketWorld = root.simdWorldOrientation * racketInRoot
         racket.simdOrientation = simd_inverse(wrist.simdWorldOrientation) * racketWorld
-        racket.simdPosition = gripCenter - racket.simdOrientation.act(SIMD3<Float>(0, 0.06, 0))
+        racket.simdPosition = frame.center - racket.simdOrientation.act(SIMD3<Float>(0, 0.06, 0))
+    }
+
+    private static let upperGripCenter = SIMD3<Float>(0, 0.14, 0)
+
+    static func backhandGripEngagement(progress: Float) -> Float {
+        let p = min(1, max(0, progress.isFinite ? progress : 0))
+        return smoothUnit(p / 0.18) * smoothUnit((1 - p) / 0.18)
+    }
+
+    /// Attach the opposite palm to the actual upper grip after the dominant
+    /// hand places the racket. This preserves the established contact path.
+    private func poseSupportingGrip(side: String, hand: Float, progress: Float, freeTarget: SIMD3<Float>) {
+        let blend = Self.backhandGripEngagement(progress: progress)
+        guard blend > 0, let wrist = boneByName["wrist.\(side)"], let parent = wrist.parent,
+              let shoulder = boneByName["upperarm01.\(side)"],
+              let frame = handGripFrame(side: side, hand: hand) else { return }
+        let rootInverse = simd_inverse(root.simdWorldOrientation)
+        let freeOrientation = rootInverse * wrist.simdWorldOrientation
+        let racketInRoot = rootInverse * racket.simdWorldOrientation
+        let up = racketInRoot.act(SIMD3<Float>(0, 1, 0))
+        let grip = root.simdConvertPosition(racket.simdConvertPosition(Self.upperGripCenter, to: nil), from: nil)
+        let shoulderPosition = root.simdConvertPosition(shoulder.simdWorldPosition, from: nil)
+        // Turn the upper palm toward the grip along the supporting arm's
+        // approach, instead of leaving the wrist twisted in its relaxed pose.
+        let approach = grip - shoulderPosition
+        let projected = approach - up * simd_dot(approach, up)
+        let forward = simd_length_squared(projected) > 0.000001
+            ? simd_normalize(projected) : racketInRoot.act(SIMD3<Float>(0, 0, 1))
+        let normal = simd_normalize(simd_cross(up, forward))
+        let targetBasis = simd_float3x3(columns: (normal, up, forward))
+        let gripOrientation = simd_quatf(targetBasis * simd_transpose(frame.basis))
+        let gripWrist = grip - gripOrientation.act(frame.center)
+        let wristTarget = freeTarget * stature + (gripWrist - freeTarget * stature) * blend
+        solveArm(side, target: wristTarget / stature, bodyClearance: blend)
+        wrist.simdOrientation = simd_inverse(parent.simdWorldOrientation) * root.simdWorldOrientation
+            * simd_slerp(freeOrientation, gripOrientation, blend)
+        curlGripFingers(side: side, hand: hand, frame: frame, blend: blend)
+    }
+
+    /// Actual palm/handle coordinates for attachment regression checks.
+    func backhandGripPositions(leftHanded: Bool) -> (palm: SIMD3<Float>, handle: SIMD3<Float>)? {
+        let side = leftHanded ? "R" : "L"
+        guard let wrist = boneByName["wrist.\(side)"],
+              let frame = handGripFrame(side: side, hand: leftHanded ? 1 : -1) else { return nil }
+        return (wrist.simdConvertPosition(frame.center, to: nil),
+                racket.simdConvertPosition(Self.upperGripCenter, to: nil))
+    }
+
+    private func curlGripFingers(side: String, hand: Float, frame: HandGripFrame, blend: Float) {
+        for finger in 2...5 {
+            for (joint, angle) in [(1, Float(1.20)), (2, Float(1.70)), (3, Float(0.90))] {
+                guard let bone = boneByName["finger\(finger)-\(joint).\(side)"] else { continue }
+                let closed = simd_quatf(angle: (showsRacket ? angle : 0.14) * hand, axis: frame.up)
+                bone.simdOrientation = simd_slerp(bone.simdOrientation, closed, blend)
+            }
+        }
+        if showsRacket,
+           let thumb = boneByName["finger1-1.\(side)"],
+           let wristBind = bindPosition["wrist.\(side)"],
+           let thumbBind = bindPosition["finger1-1.\(side)"],
+           let thumbMiddle = bindPosition["finger1-2.\(side)"] {
+            let towardGrip = frame.center + frame.up * (0.028 * stature) - (thumbBind - wristBind)
+            let closed = simd_quatf(from: simd_normalize(thumbMiddle - thumbBind), to: simd_normalize(towardGrip))
+            thumb.simdOrientation = simd_slerp(thumb.simdOrientation, closed, blend)
+            for (joint, angle) in [(2, Float(0.25)), (3, Float(0.55))] {
+                guard let bone = boneByName["finger1-\(joint).\(side)"] else { continue }
+                bone.simdOrientation = simd_slerp(bone.simdOrientation, simd_quatf(angle: angle * hand, axis: frame.up), blend)
+            }
+        }
     }
 
     /// Two-bone IK in the character's coordinates. Split twist bones keep their authored weights.
-    private func solveArm(_ side: String, target: SIMD3<Float>) {
+    private func solveArm(_ side: String, target: SIMD3<Float>, bodyClearance: Float = 0) {
         let upperName = "upperarm01.\(side)"
         let lowerName = "lowerarm01.\(side)"
         let wristName = "wrist.\(side)"
+        let relaxedPole = SIMD3<Float>(side == "L" ? 0.4 : -0.4, -1, 0.15)
+        // A cross-body stroke needs the elbow in front of the rib cage;
+        // the relaxed downward pole can otherwise route an arm through it.
+        let chestPole = SIMD3<Float>(side == "L" ? 0.18 : -0.18, -0.28, 1)
+        let frontPole = boneByName["spine01"].map {
+            root.simdConvertVector($0.simdConvertVector(chestPole, to: nil), from: nil)
+        } ?? chestPole
         solveChain(upperName: upperName, lowerName: lowerName, endName: wristName,
-                   target: target * stature, pole: SIMD3<Float>(side == "L" ? 0.4 : -0.4, -1, 0.15))
+                   target: target * stature, pole: relaxedPole + (frontPole - relaxedPole) * bodyClearance)
     }
 
     private func solveChain(upperName: String, lowerName: String, endName: String, target: SIMD3<Float>, pole: SIMD3<Float>) {
@@ -850,16 +986,18 @@ final class RallyAvatarRig {
         racketMaterial.clearCoatRoughness.contents = 0.32
         racketGripMaterial = Self.material(color: .darkGray, roughness: 0.92)
         let graphite = Self.material(color: UIColor(white: 0.075, alpha: 1), roughness: 0.76)
-        let grip = SCNCylinder(radius: 0.013, height: 0.17)
+        // An extended overgrip leaves room for the supporting backhand hand.
+        // The lower hand and racket head keep their established anchors.
+        let grip = SCNCylinder(radius: 0.013, height: 0.205)
         let handle = SCNNode(geometry: grip)
-        handle.position.y = 0.06
+        handle.position.y = 0.0775
         handle.geometry?.materials = [racketGripMaterial]
         racket.addChildNode(handle)
         let buttCap = SCNNode(geometry: SCNCylinder(radius: 0.016, height: 0.012))
         buttCap.position.y = -0.026
         buttCap.geometry?.materials = [graphite]
         racket.addChildNode(buttCap)
-        for i in 0..<12 {
+        for i in 0..<16 {
             let torus = SCNTorus(ringRadius: 0.0132, pipeRadius: 0.0007)
             torus.ringSegmentCount = 24
             torus.pipeSegmentCount = 4
@@ -869,7 +1007,7 @@ final class RallyAvatarRig {
             racket.addChildNode(ring)
         }
         for side: Float in [-1, 1] {
-            let throat = Self.rod(from: SCNVector3(side * 0.007, 0.13, 0), to: SCNVector3(side * 0.08, 0.32, 0), radius: 0.006)
+            let throat = Self.rod(from: SCNVector3(side * 0.007, 0.18, 0), to: SCNVector3(side * 0.08, 0.32, 0), radius: 0.006)
             throat.geometry?.materials = [racketMaterial]
             racket.addChildNode(throat)
         }

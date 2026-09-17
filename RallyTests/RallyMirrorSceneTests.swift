@@ -5,6 +5,20 @@ import XCTest
 /// Advances the real scene clock without rendering or relying on GUI gestures.
 @MainActor
 final class RallyMirrorSceneTests: XCTestCase {
+    func testCleanEightUsesRealRallyAndCanReachItsGoal() {
+        for hand in GamePreferences.DominantHand.allCases {
+            let (scene, view) = makeScene(autoPlay: true)
+            defer { removeSceneContents(scene, retaining: view) }
+            scene.dominantHand = hand
+            scene.practiceMode = .cleanEight
+            spawnOpeningBall(in: scene)
+            for frame in 0...1212 { scene.update(100 + Double(frame) / 60) }
+            XCTAssertTrue(scene.sessionIsOver)
+            XCTAssertEqual(RallyChallenge.cleanEight.outcome(for: scene.buildResult()), .goalMet)
+            XCTAssertTrue(ballNodes(in: scene).isEmpty)
+        }
+    }
+
     func testTwentySecondAutoplayCompletesOnceAndClearsEveryBall() throws {
         let (scene, view) = makeScene(autoPlay: true)
         let recorder = ResultRecorder()

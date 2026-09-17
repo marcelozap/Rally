@@ -1,11 +1,12 @@
 import SwiftUI
 
 enum RallyPlayMode: String, CaseIterable, Identifiable {
-    case rallyChallenge, servePractice, targetPractice, copyCoach
+    case rallyChallenge, cleanEight, servePractice, targetPractice, copyCoach
     var id: String { rawValue }
     var title: String {
         switch self {
         case .rallyChallenge: return "Rally Challenge"
+        case .cleanEight: return RallyChallenge.cleanEight.title
         case .servePractice: return "Serve Practice"
         case .targetPractice: return "Target Practice"
         case .copyCoach: return "Copy the Coach"
@@ -14,6 +15,7 @@ enum RallyPlayMode: String, CaseIterable, Identifiable {
     var cue: String {
         switch self {
         case .rallyChallenge: return "Serve, then keep it going for 20 seconds."
+        case .cleanEight: return "Finish 20 seconds with an eight-shot streak."
         case .servePractice: return "Ten serves. Swipe up at the top of the toss."
         case .targetPractice: return "Ten shots. Angle your swipe toward the ring."
         case .copyCoach: return "Watch the example. Replay your attempt. Try again."
@@ -22,17 +24,21 @@ enum RallyPlayMode: String, CaseIterable, Identifiable {
     var icon: String {
         switch self {
         case .rallyChallenge: return "tennisball.fill"
+        case .cleanEight: return "8.circle.fill"
         case .servePractice: return "figure.tennis"
         case .targetPractice: return "scope"
         case .copyCoach: return "play.rectangle"
         }
     }
     var isTargetMode: Bool { self == .servePractice || self == .targetPractice }
+    var challenge: RallyChallenge? { self == .cleanEight ? .cleanEight : nil }
 }
 
 struct RallyPlayHubView: View {
     var onExit: () -> Void
     @State private var selected: RallyPlayMode?
+    @State private var challengeBest = 0
+    @State private var challengeClears = 0
     var body: some View {
         Group {
             if let selected, selected != .copyCoach {
@@ -72,12 +78,21 @@ struct RallyPlayHubView: View {
             }
         }
         .onAppear {
+            refreshChallengeRecord()
             #if DEBUG
             if ProcessInfo.processInfo.arguments.contains("-RallyAutoPlay") || ProcessInfo.processInfo.arguments.contains("-RallyStartGame") {
-                selected = .rallyChallenge
+                selected = ProcessInfo.processInfo.arguments.contains("-RallyCleanEight") ? .cleanEight : .rallyChallenge
             }
             #endif
         }
+        .onChange(of: selected) { _, value in
+            if value == nil { refreshChallengeRecord() }
+        }
+    }
+    private func refreshChallengeRecord() {
+        let record = RallyChallengeStore().record(for: .cleanEight)
+        challengeBest = record.bestStreak
+        challengeClears = record.completions
     }
     private func modeCard(_ mode: RallyPlayMode) -> some View {
         let featured = mode == .rallyChallenge
@@ -89,7 +104,7 @@ struct RallyPlayHubView: View {
                 .background(RoundedRectangle(cornerRadius: 18)
                     .fill(featured ? RallyUIKit.Palette.cyan : RallyUIKit.Palette.cyan.opacity(0.09)))
             VStack(alignment: .leading, spacing: 7) {
-                Text(featured ? "20 SECONDS · YOUR DOUBLE" : mode == .copyCoach ? "WATCH & REPEAT" : "10 ATTEMPTS")
+                Text(mode == .cleanEight ? "STREAK CHALLENGE" : featured ? "20 SECONDS · YOUR DOUBLE" : mode == .copyCoach ? "WATCH & REPEAT" : "10 ATTEMPTS")
                     .font(.system(size: 9, weight: .bold)).tracking(1.3)
                     .foregroundStyle(RallyUIKit.Palette.cyan)
                 Text(mode.title)
@@ -99,6 +114,10 @@ struct RallyPlayHubView: View {
                     .font(.system(size: 13))
                     .foregroundStyle(RallyUIKit.Palette.cloud)
                     .fixedSize(horizontal: false, vertical: true)
+                if mode == .cleanEight, challengeBest > 0 {
+                    Text("Best streak \(challengeBest) · \(challengeClears) clears")
+                        .font(.caption).foregroundStyle(RallyUIKit.Palette.cyan)
+                }
             }
             Spacer(minLength: 0)
             Image(systemName: "arrow.up.right")
@@ -113,6 +132,7 @@ struct RallyPlayHubView: View {
         .overlay(RoundedRectangle(cornerRadius: 24)
             .stroke(featured ? RallyUIKit.Palette.cyan.opacity(0.35) : RallyUIKit.Palette.line, lineWidth: 1))
         .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("playMode.\(mode.rawValue)")
     }
 
 }

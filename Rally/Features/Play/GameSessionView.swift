@@ -76,6 +76,7 @@ struct GameSessionView: View {
                     GameOverView(
                         result: result,
                         outcome: outcome,
+                        challenge: mode.challenge,
                         onPlayAgain: { restart() },
                         onExit: {
                             viewModel.dismiss()
@@ -379,6 +380,10 @@ struct GameSessionView: View {
     }
 
     private func handleSessionEnded(result: GameResult) {
+        if let challenge = mode.challenge, !autoPlayEnabled,
+           !ProcessInfo.processInfo.arguments.contains("-RallyAutoPlay") {
+            RallyChallengeStore().record(result, for: challenge, runID: sessionKey)
+        }
         if mode.isTargetMode {
             JournalAutoLogger.logRallySession(result: result, modelContext: modelContext,
                                              appearance: avatarAppearanceStore.appearance)

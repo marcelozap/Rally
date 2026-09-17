@@ -106,12 +106,12 @@ struct IconicTennisCourt: Identifiable, Hashable {
         }
     }
 
-    /// Opens Apple Maps at the pin.
+    /// Search the named place so Maps can resolve its entrance and business details.
     var appleMapsURL: URL {
         var c = URLComponents(string: "https://maps.apple.com/")!
         c.queryItems = [
-            URLQueryItem(name: "ll", value: "\(latitude),\(longitude)"),
-            URLQueryItem(name: "q", value: name),
+            URLQueryItem(name: "q", value: "\(name), \(subtitle)"),
+            URLQueryItem(name: "sll", value: "\(latitude),\(longitude)"),
             URLQueryItem(name: "utm_source", value: "rally_ios"),
             URLQueryItem(name: "utm_medium", value: "court_atlas"),
         ]
@@ -187,7 +187,7 @@ enum IconicCourtsCatalog {
             vibe: "Summer slam · retractable roof midnight sessions.",
             detail: "Melbourne Park during January turns into a tennis city. AO Ballpark and grounds passes add atmosphere beyond centre court.",
             venueWebsiteURL: URL(string: "https://ausopen.com/"),
-            bookingOrMembershipURL: URL(string: "https://tickets.ausopen.com/"),
+            bookingOrMembershipURL: URL(string: "https://ausopen.com/ticket-info"),
             referralSummary: "Australian Open tickets rotate through official AO releases — subscribe for ballot alerts."
         ),
         IconicTennisCourt(
@@ -199,8 +199,8 @@ enum IconicCourtsCatalog {
             longitude: -116.3116,
             vibe: "Desert palm-lined superseries oasis.",
             detail: "Often called tennis paradise — mountains behind the courts and crisp desert air. BNPP Open weeks fill hotels fast.",
-            venueWebsiteURL: URL(string: "https://bnppopen.com/"),
-            bookingOrMembershipURL: URL(string: "https://bnppopen.com/en/tickets"),
+            venueWebsiteURL: URL(string: "https://bnpparibasopen.com/"),
+            bookingOrMembershipURL: URL(string: "https://bnpparibasopen.com/tickets"),
             referralSummary: "Indian Wells sessions & mini-plans sell on the official tournament site first."
         ),
         IconicTennisCourt(
@@ -238,8 +238,8 @@ enum IconicCourtsCatalog {
             longitude: -0.2118,
             vibe: "Grass tune-up royalty · club roots.",
             detail: "Traditional west London club atmosphere weeks before Wimbledon — hospitality sells early.",
-            venueWebsiteURL: URL(string: "https://www.ltatournaments.co.uk/"),
-            bookingOrMembershipURL: URL(string: "https://www.ltatournaments.co.uk/tickets"),
+            venueWebsiteURL: URL(string: "https://www.lta.org.uk/fan-zone/international/hsbc-championships/"),
+            bookingOrMembershipURL: URL(string: "https://www.lta.org.uk/fan-zone/ticketing-information/"),
             referralSummary: "LTA tournament tickets through official LTA channels."
         ),
         IconicTennisCourt(
@@ -368,11 +368,11 @@ enum IconicCourtsCatalog {
             longitude: -0.8658,
             vibe: "Train-like-a-pro short-stay campus tied to the Ferrero system.",
             detail: "Ferrero’s official short-stay and summer-stage pages describe intensive tennis, physical, and mental training with on-site lodging and multi-week options.",
-            venueWebsiteURL: URL(string: "https://www.equelite.com/"),
-            bookingOrMembershipURL: URL(string: "https://www.equelite.com/competicion-corta-estancia/"),
-            officialProgramURL: URL(string: "https://www.equelite.com/summer-stage/"),
-            sponsorHostName: "Equelite",
-            sponsorHostURL: URL(string: "https://www.equelite.com/"),
+            venueWebsiteURL: URL(string: "https://ferreroacademy.com/en_en/"),
+            bookingOrMembershipURL: URL(string: "https://ferreroacademy.com/competicion-corta-estancia/"),
+            officialProgramURL: URL(string: "https://ferreroacademy.com/en_en/summer-stage/"),
+            sponsorHostName: "Ferrero Tennis Academy",
+            sponsorHostURL: URL(string: "https://ferreroacademy.com/en_en/"),
             campProfile: CampProfile(
                 audience: "Competitive juniors and serious improvers",
                 programFocus: "Short-stay competition training and summer-stage weeks",
@@ -395,9 +395,9 @@ enum IconicCourtsCatalog {
             detail: "Evert’s official site presents holiday, weekly, and summer camp options, plus training-and-academics pathways on the Boca Raton campus.",
             venueWebsiteURL: URL(string: "https://evertacademy.com/"),
             bookingOrMembershipURL: URL(string: "https://evertacademy.com/tennis-camps/"),
-            officialProgramURL: URL(string: "https://www.evertacademy.com/tennis-camps/weekly-pre-tournament-tennis-camps"),
+            officialProgramURL: URL(string: "https://evertacademy.com/tennis-camps/weekly-pre-tournament-camps/"),
             sponsorHostName: "Evert Tennis Academy",
-            sponsorHostURL: URL(string: "https://evertacademy.com/about-us/"),
+            sponsorHostURL: URL(string: "https://evertacademy.com/about-evert-academy/our-mission/"),
             campProfile: CampProfile(
                 audience: "Competitive juniors",
                 programFocus: "Weekly, pre-tournament, holiday, and summer camp options",
@@ -417,12 +417,12 @@ enum IconicCourtsCatalog {
             latitude: 25.1637,
             longitude: 55.3015,
             vibe: "Dubai multi-location coaching hub with academy and clinic pathways.",
-            detail: "Tennis 360’s official Dubai site outlines coaching programs, development squads, advanced clinics, and the Meydan Tennis Academy base.",
-            venueWebsiteURL: URL(string: "https://www.tennisthreesixty.com/"),
-            bookingOrMembershipURL: URL(string: "https://www.tennisthreesixty.com/tennis-dubai/"),
-            officialProgramURL: URL(string: "https://www.tennisthreesixty.com/program/advanced-clinic/"),
-            sponsorHostName: "Meydan Tennis Academy",
-            sponsorHostURL: URL(string: "https://www.tennisthreesixty.com/locations-facilities/meydan-tennis-club/"),
+            detail: "The Meydan Hotel’s official academy page introduces its Tennis 360 coaching partner and tennis facilities in Dubai.",
+            venueWebsiteURL: URL(string: "https://www.themeydanhotel.com/experiences/meydan-tennis-academy"),
+            bookingOrMembershipURL: URL(string: "https://www.themeydanhotel.com/experiences/meydan-tennis-academy"),
+            officialProgramURL: URL(string: "https://www.themeydanhotel.com/experiences/meydan-tennis-academy"),
+            sponsorHostName: "The Meydan Hotel",
+            sponsorHostURL: URL(string: "https://www.themeydanhotel.com/experiences/meydan-tennis-academy"),
             campProfile: CampProfile(
                 audience: "Kids, adults, and club-level competitors",
                 programFocus: "Academy coaching, development squads, clinics, and trials",
@@ -431,7 +431,7 @@ enum IconicCourtsCatalog {
                 stayStyle: "Mostly local-program and trial-session style",
                 bestForTag: .flexible
             ),
-            referralSummary: "Use Tennis 360’s official academy and program pages for trial lessons, clinics, and Dubai location details."
+            referralSummary: "Use The Meydan Hotel’s official tennis academy page for coaching information and contact details."
         ),
         IconicTennisCourt(
             id: "rvta.potchefstroom",
@@ -460,16 +460,16 @@ enum IconicCourtsCatalog {
         IconicTennisCourt(
             id: "sanchez.casal",
             kind: .academy,
-            name: "Sanchez-Casal Academy",
+            name: "Emilio Sánchez Academy",
             subtitle: "Barcelona · Spain",
             region: "Europe",
             latitude: 41.4155,
             longitude: 2.1686,
             vibe: "Red-clay discipline campus behind Barcelona's skyline.",
-            detail: "One of Europe's most recognized junior pathways. The Sanchez-Casal methodology emphasizes tactical-technical development on clay, with international boarding and non-boarding formats.",
-            venueWebsiteURL: URL(string: "https://www.sanchezcasal.com/"),
-            bookingOrMembershipURL: URL(string: "https://www.sanchezcasal.com/en/our-tennis-programs/"),
-            officialProgramURL: URL(string: "https://www.sanchezcasal.com/en/international-programs/"),
+            detail: "Formerly Sánchez-Casal Academy, this Barcelona campus offers tennis development through Emilio Sánchez Academy, with boarding and non-boarding programs.",
+            venueWebsiteURL: URL(string: "https://emiliosanchezacademy.com/barcelona"),
+            bookingOrMembershipURL: URL(string: "https://booking.emiliosanchezacademy.com/"),
+            officialProgramURL: URL(string: "https://emiliosanchezacademy.com/en/barcelona/summer/programs/intensive"),
             campProfile: CampProfile(
                 audience: "Juniors and competitive adults",
                 programFocus: "Clay-court technical-tactical development, international camp weeks",
@@ -478,7 +478,7 @@ enum IconicCourtsCatalog {
                 stayStyle: "Boarding and non-boarding; weekly and multi-week",
                 bestForTag: .allAround
             ),
-            referralSummary: "Use the official Sanchez-Casal program pages for international-camp enrollment. Rally surfaces official pathways only."
+            referralSummary: "Use Emilio Sánchez Academy’s official Barcelona program and enrollment pages for current camp information."
         ),
         IconicTennisCourt(
             id: "rna.costamujeres",
@@ -490,11 +490,11 @@ enum IconicCourtsCatalog {
             longitude: -86.8035,
             vibe: "Resort-linked Nadal methodology camp experience in the Caribbean.",
             detail: "The official Costa Mujeres camp pages describe adult and junior programs built around the Rafa Nadal Academy methodology, delivered as international camp experiences.",
-            venueWebsiteURL: URL(string: "https://camps.rafanadalacademy.com/en/"),
-            bookingOrMembershipURL: URL(string: "https://camps.rafanadalacademy.com/en/programs/adult-programs/"),
-            officialProgramURL: URL(string: "https://camps.rafanadalacademy.com/en/programs/juniors-programs/"),
+            venueWebsiteURL: URL(string: "https://cancun.rafanadaltenniscenter.com/en/"),
+            bookingOrMembershipURL: URL(string: "https://cancun.rafanadaltenniscenter.com/en/programs/adult-programs-2/adult-programs/"),
+            officialProgramURL: URL(string: "https://cancun.rafanadaltenniscenter.com/en/programs/juniors-programs/"),
             sponsorHostName: "Rafa Nadal Tennis Center Costa Mujeres",
-            sponsorHostURL: URL(string: "https://camps.rafanadalacademy.com/en/about-us/"),
+            sponsorHostURL: URL(string: "https://cancun.rafanadaltenniscenter.com/en/about-us/"),
             campProfile: CampProfile(
                 audience: "Juniors and adults",
                 programFocus: "International camps based on Rafa Nadal Academy methodology",

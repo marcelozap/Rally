@@ -242,6 +242,200 @@ final class AvatarRigTests: XCTestCase {
         }
     }
 
+    func testTwoHandedBackhandKeepsTheSupportingPalmOnTheUpperHandle() throws {
+        for spec in presetAssets {
+            let rig = RallyAvatarRig(appearance: RallyAvatarAppearance(athletePreset: spec.preset), presentation: .gameplay)
+            XCTAssertNil(rig.assetError)
+            for leftHanded in [false, true] {
+                let supportSide = leftHanded ? "R" : "L"
+                let dominantSide = leftHanded ? "L" : "R"
+                for p: Float in [0.18, 0.22, 0.34, 0.42, 0.5, 0.6, 0.7, 0.76, 0.82] {
+                    rig.animate(time: 0, swingProgress: p, backhand: true, leftHanded: leftHanded)
+                    let grip = try XCTUnwrap(rig.backhandGripPositions(leftHanded: leftHanded))
+                    XCTAssertLessThan(simd_distance(grip.palm, grip.handle), 0.015,
+                                      "Upper palm must hold the handle: \(spec.preset), left=\(leftHanded), p=\(p)")
+                    if p <= 0.5 {
+                        let chest = try XCTUnwrap(rig.root.childNode(withName: "spine01", recursively: true))
+                        for side in [dominantSide, supportSide] {
+                            let elbow = try XCTUnwrap(rig.root.childNode(withName: "lowerarm01.\(side)", recursively: true))
+                            let elbowInChest = chest.simdConvertPosition(elbow.simdWorldPosition, from: nil)
+                            if abs(elbowInChest.x) < 0.17 {
+                                XCTAssertGreaterThan(elbowInChest.z, 0.13,
+                                                     "Elbow crossing the chest must clear the shirt: \(spec.preset), left=\(leftHanded), side=\(side), p=\(p)")
+                            }
+                        }
+                    }
+                    let finger = try XCTUnwrap(rig.root.childNode(withName: "finger3-2.\(supportSide)", recursively: true))
+                    XCTAssertGreaterThan(abs(finger.simdOrientation.angle), 1.4, "Supporting fingers must wrap, not hover open")
+                    let racket = try XCTUnwrap(rig.root.childNode(withName: "Tennis racket", recursively: true))
+                    XCTAssertEqual(racket.parent?.name, "wrist.\(dominantSide)")
+                    var racketCount = 0
+                    rig.root.enumerateChildNodes { node, _ in
+                        if node.name == "Tennis racket" { racketCount += 1 }
+                    }
+                    XCTAssertEqual(racketCount, 1)
+                    let withSupport = rig.racketHeadWorldPosition
+                    rig.setRacketVisible(false)
+                    rig.animate(time: 0, swingProgress: p, backhand: true, leftHanded: leftHanded)
+                    XCTAssertEqual(rig.racketHeadWorldPosition.x, withSupport.x, accuracy: 0.0001)
+                    XCTAssertEqual(rig.racketHeadWorldPosition.y, withSupport.y, accuracy: 0.0001)
+                    XCTAssertEqual(rig.racketHeadWorldPosition.z, withSupport.z, accuracy: 0.0001)
+                    rig.setRacketVisible(true)
+                }
+            }
+        }
+    }
+
+    func testBackhandGripJoinsAndReleasesWithoutHandOrFingerJumps() throws {
+        XCTAssertEqual(RallyAvatarRig.backhandGripEngagement(progress: 0), 0)
+        XCTAssertEqual(RallyAvatarRig.backhandGripEngagement(progress: 1), 0)
+        XCTAssertEqual(RallyAvatarRig.backhandGripEngagement(progress: .nan), 0)
+        for p: Float in [0.18, 0.5, 0.82] {
+            XCTAssertEqual(RallyAvatarRig.backhandGripEngagement(progress: p), 1, accuracy: 0.00001)
+        }
+        for preset in [RallyAthletePreset.maleEuropean, .femaleBlack] {
+            let rig = RallyAvatarRig(appearance: RallyAvatarAppearance(athletePreset: preset), presentation: .gameplay)
+            for leftHanded in [false, true] {
+                let side = leftHanded ? "R" : "L"
+                let wrist = try XCTUnwrap(rig.root.childNode(withName: "wrist.\(side)", recursively: true))
+                let finger = try XCTUnwrap(rig.root.childNode(withName: "finger3-2.\(side)", recursively: true))
+                rig.animate(time: 0, leftHanded: leftHanded)
+                let readyPosition = wrist.simdWorldPosition
+                let readyOrientation = wrist.simdWorldOrientation
+                let readyFinger = finger.simdOrientation
+                var previousPosition = readyPosition
+                var previousFinger = readyFinger
+                for step in 0...120 {
+                    let p = Float(step) / 120
+                    rig.animate(time: 0, swingProgress: p, backhand: true, leftHanded: leftHanded)
+                    XCTAssertLessThan(simd_distance(previousPosition, wrist.simdWorldPosition), 0.070,
+                                      "No hand teleport while joining/releasing: left=\(leftHanded), p=\(p)")
+                    XCTAssertGreaterThan(abs(simd_dot(previousFinger.vector, finger.simdOrientation.vector)), 0.93)
+                    previousPosition = wrist.simdWorldPosition
+                    previousFinger = finger.simdOrientation
+                }
+                XCTAssertLessThan(simd_distance(readyPosition, wrist.simdWorldPosition), 0.0001)
+                XCTAssertGreaterThan(abs(simd_dot(readyOrientation.vector, wrist.simdWorldOrientation.vector)), 0.9999)
+                XCTAssertGreaterThan(abs(simd_dot(readyFinger.vector, finger.simdOrientation.vector)), 0.9999)
+            }
+        }
+    }
+
+    /// Close render evidence makes both palms/fingers and the single handle
+    /// inspectable for each athlete and handedness at all three held phases.
+    func testRasterizeTwoHandedBackhandsForVisualReview() throws {
+        let device = try XCTUnwrap(MTLCreateSystemDefaultDevice())
+        for spec in presetAssets {
+            try autoreleasepool {
+                let look = RallyAvatarAppearance(athletePreset: spec.preset,
+                    top: RallyGearReference(id: "proof.tee", colorwayHex: "#EFECE3"))
+                let rig = RallyAvatarRig(appearance: look, presentation: .gameplay)
+                XCTAssertNil(rig.assetError)
+                rig.scene.background.contents = UIColor(red: 0.055, green: 0.075, blue: 0.07, alpha: 1)
+                rig.camera.camera?.orthographicScale = 0.78
+                rig.camera.position = SCNVector3(0, 1.40, 3)
+                rig.camera.look(at: SCNVector3(0, 1.40, 0))
+                let renderer = SCNRenderer(device: device, options: nil)
+                renderer.scene = rig.scene
+                renderer.pointOfView = rig.camera
+                renderer.autoenablesDefaultLighting = false
+                for leftHanded in [false, true] {
+                    for (phase, p) in [("load", Float(0.22)), ("contact", Float(0.5)), ("finish", Float(0.76))] {
+                        rig.animate(time: 0, swingProgress: p, backhand: true, leftHanded: leftHanded)
+                        // Front three-quarter evidence avoids hiding the grip
+                        // behind the player's torso as the gameplay camera does.
+                        rig.root.eulerAngles.y = leftHanded ? 0.25 : -0.25
+                        SCNTransaction.flush()
+                        let capture = renderer.snapshot(atTime: 1, with: CGSize(width: 768, height: 768),
+                                                        antialiasingMode: .multisampling4X)
+                        let attachment = XCTAttachment(image: capture)
+                        attachment.name = "backhand-\(spec.preset.rawValue)-\(leftHanded ? "left" : "right")-\(phase)"
+                        attachment.lifetime = .keepAlways
+                        add(attachment)
+                    }
+                }
+            }
+        }
+    }
+
+    func testAthleticLoadingCoilsBeforeContactAndTransfersWeightAfterIt() {
+        for leftHanded in [false, true] {
+            for backhand in [false, true] {
+                let direction: Float = (leftHanded ? -1 : 1) * (backhand ? -1 : 1)
+                for p: Float in [0, 0.5, 1] {
+                    XCTAssertEqual(RallyAvatarRig.groundstrokeBodyMotion(progress: p, backhand: backhand, leftHanded: leftHanded),
+                                   RallyAvatarRig.BodyMotion(), "Contact and ready poses must retain their existing transforms")
+                }
+                let load = RallyAvatarRig.groundstrokeBodyMotion(progress: 0.22, backhand: backhand, leftHanded: leftHanded)
+                let finish = RallyAvatarRig.groundstrokeBodyMotion(progress: 0.76, backhand: backhand, leftHanded: leftHanded)
+                XCTAssertLessThan((load.lowerSpineYaw + load.upperSpineYaw) * direction, -0.6)
+                XCTAssertGreaterThan((finish.lowerSpineYaw + finish.upperSpineYaw) * direction, 0.3)
+                XCTAssertLessThan(load.pelvisOffset.x * direction, 0)
+                XCTAssertGreaterThan(finish.pelvisOffset.x * direction, 0)
+                XCTAssertLessThan(load.pelvisOffset.y, -0.015, "Loading should compress the knees before the hit")
+                XCTAssertGreaterThan(finish.pelvisOffset.z, 0.015, "The finish should carry weight forward")
+                let mirrored = RallyAvatarRig.groundstrokeBodyMotion(progress: 0.22, backhand: backhand, leftHanded: !leftHanded)
+                XCTAssertEqual(load.pelvisOffset.x, -mirrored.pelvisOffset.x)
+                XCTAssertEqual(load.pelvisYaw, -mirrored.pelvisYaw)
+                XCTAssertEqual(load.upperSpineYaw, -mirrored.upperSpineYaw)
+            }
+        }
+    }
+
+    func testLoadedStrokesKeepStationaryShoesAnchoredForBothCourtPlayers() throws {
+        for preset in [RallyAthletePreset.maleEuropean, .femaleBlack] {
+            for presentation in [RallyAvatarRig.Presentation.gameplay, .opponent] {
+                let rig = RallyAvatarRig(appearance: RallyAvatarAppearance(athletePreset: preset), presentation: presentation)
+                let feet = try ["foot.L", "foot.R"].map { try XCTUnwrap(rig.root.childNode(withName: $0, recursively: true)) }
+                rig.animate(time: 0)
+                let anchors = feet.map(\.simdWorldPosition)
+                for leftHanded in [false, true] {
+                    for backhand in [false, true] {
+                        for p: Float in [0, 0.12, 0.22, 0.36, 0.5, 0.64, 0.76, 0.90, 1] {
+                            rig.animate(time: 0, swingProgress: p, backhand: backhand, leftHanded: leftHanded)
+                            for (index, foot) in feet.enumerated() {
+                                XCTAssertLessThan(simd_distance(foot.simdWorldPosition, anchors[index]), 0.002,
+                                                  "Hip loading must not slide or lift a stationary shoe")
+                                let up = simd_normalize(foot.simdConvertVector(SIMD3<Float>(0, 1, 0), to: nil))
+                                XCTAssertGreaterThan(up.y, 0.995)
+                            }
+                            let racket = rig.racketHeadWorldPosition
+                            XCTAssertTrue(racket.x.isFinite && racket.y.isFinite && racket.z.isFinite)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    func testServeFollowThroughSettlesIntoGameplayReadyWithoutAJump() throws {
+        for preset in [RallyAthletePreset.maleEuropean, .femaleBlack] {
+            let rig = RallyAvatarRig(appearance: RallyAvatarAppearance(athletePreset: preset), presentation: .gameplay)
+            let names = ["root", "wrist.L", "wrist.R", "foot.L", "foot.R"]
+            let joints = try names.map { try XCTUnwrap(rig.root.childNode(withName: $0, recursively: true)) }
+            for leftHanded in [false, true] {
+                rig.animate(time: 0, leftHanded: leftHanded)
+                let readyPositions = joints.map(\.simdWorldPosition)
+                let readyRacket = rig.racketHeadWorldPosition
+                rig.animateLesson(progress: 1, leftHanded: leftHanded, serve: true)
+                for (index, joint) in joints.enumerated() {
+                    XCTAssertLessThan(simd_distance(joint.simdWorldPosition, readyPositions[index]), 0.0002, names[index])
+                }
+                XCTAssertEqual(rig.racketHeadWorldPosition.x, readyRacket.x, accuracy: 0.0002)
+                XCTAssertEqual(rig.racketHeadWorldPosition.y, readyRacket.y, accuracy: 0.0002)
+                XCTAssertEqual(rig.racketHeadWorldPosition.z, readyRacket.z, accuracy: 0.0002)
+
+                rig.animateLesson(progress: 0.75, leftHanded: leftHanded, serve: true)
+                let lowerSpine = try XCTUnwrap(rig.root.childNode(withName: "spine03", recursively: true))
+                XCTAssertEqual(lowerSpine.eulerAngles.x, 0.0625, accuracy: 0.0001,
+                               "Serve contact keeps the established extension")
+                XCTAssertEqual(lowerSpine.eulerAngles.y, (leftHanded ? 1 : -1) * sin(Float.pi * 0.75) * 0.25, accuracy: 0.0001)
+                let upperSpine = try XCTUnwrap(rig.root.childNode(withName: "spine01", recursively: true))
+                XCTAssertEqual(upperSpine.eulerAngles.y, 0, accuracy: 0.0001)
+            }
+        }
+    }
+
     func testClippedGarmentEdgesStayOnTheSeamAndRetainNormalizedSkinning() throws {
         for prefix in ["", "female-"] {
             let source = try RallyHumanMesh.load(prefix + "shoes")

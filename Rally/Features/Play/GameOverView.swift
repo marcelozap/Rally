@@ -11,6 +11,7 @@ struct GameOverView: View {
 
     let result: GameResult
     let outcome: Rewards.Outcome
+    var challenge: RallyChallenge? = nil
     let onPlayAgain: () -> Void
     let onExit: () -> Void
 
@@ -51,14 +52,31 @@ struct GameOverView: View {
     private var mirrorSummary: some View {
         VStack(spacing: 26) {
             VStack(spacing: 10) {
-                RallyUIKit.EditorialEyebrow(text: "Mirror Rally", tint: RallyUIKit.Palette.cyan)
-                Text(result.completedMirrorRally ? "CLEAR" : "RUN OVER")
+                RallyUIKit.EditorialEyebrow(text: challenge?.title ?? "Mirror Rally", tint: RallyUIKit.Palette.cyan)
+                Text(challenge == nil ? (result.completedMirrorRally ? "CLEAR" : "RUN OVER") :
+                        challenge?.outcome(for: result) == .goalMet ? "GOAL MET" : "TRY AGAIN")
                     .font(RallyUIKit.Typography.display(42, weight: .bold))
                     .foregroundStyle(result.completedMirrorRally ? RallyUIKit.Palette.cyan : RallyUIKit.Palette.frost)
                     .accessibilityIdentifier("mirrorRally.resultTitle")
                 Text(mirrorDurationText)
                     .font(RallyUIKit.Typography.body(.subheadline, weight: .medium))
                     .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.7))
+            }
+
+            if let challenge {
+                VStack(spacing: 8) {
+                    Text("\(challenge.progress(maxCombo: result.maxCombo)) / \(challenge.targetStreak) in a row")
+                        .font(.title3.bold()).monospacedDigit()
+                    ProgressView(value: Double(challenge.progress(maxCombo: result.maxCombo)), total: Double(challenge.targetStreak))
+                        .tint(RallyUIKit.Palette.cyan)
+                    Text(challenge.outcome(for: result) == .goalMet
+                         ? "Eight clean returns. Full rally finished."
+                         : !result.completedMirrorRally ? "Keep the rally alive for the full 20 seconds."
+                         : "Build an eight-shot streak, then finish the rally.")
+                        .font(.subheadline).multilineTextAlignment(.center)
+                        .foregroundStyle(RallyUIKit.Palette.cloud)
+                }
+                .accessibilityIdentifier("challenge.result")
             }
 
             VStack(spacing: 4) {
@@ -93,7 +111,7 @@ struct GameOverView: View {
                 .accessibilityIdentifier("mirrorRally.playAgain")
 
                 Button(action: onExit) {
-                    Text("Home").frame(maxWidth: .infinity)
+                    Text("Choose a mode").frame(maxWidth: .infinity)
                 }
                 .buttonStyle(GhostButtonStyle())
                 .accessibilityIdentifier("mirrorRally.home")

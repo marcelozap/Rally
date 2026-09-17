@@ -52,6 +52,23 @@ struct AvatarCustomizerView: View {
 
                 athleteSection
                     .padding(.horizontal, 20)
+
+                sectionCard(title: "Playing hand") {
+                    HStack(spacing: 10) {
+                        ForEach(GamePreferences.DominantHand.allCases) { hand in
+                            Chip(label: "\(hand.title)-handed", selected: gamePreferences.dominantHand == hand) {
+                                gamePreferences.dominantHand = hand
+                            }
+                            .accessibilityIdentifier("playingHand.\(hand.rawValue)")
+                            .accessibilityAddTraits(gamePreferences.dominantHand == hand ? .isSelected : [])
+                        }
+                    }
+                    Text("Your serve and forehand use this hand. Your backhand uses both hands.")
+                        .font(.subheadline)
+                        .foregroundStyle(RallyUIKit.Palette.cloud)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                    .padding(.horizontal, 20)
                     .padding(.bottom, 12)
 
             }

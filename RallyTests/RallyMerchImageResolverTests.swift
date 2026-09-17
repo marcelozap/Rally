@@ -1,8 +1,36 @@
 import XCTest
+import UIKit
 @testable import Rally
 
 @MainActor
 final class RallyMerchImageResolverTests: XCTestCase {
+    func testBundledProductPhotographsDecodeForTheirExactCatalogItems() throws {
+        XCTAssertFalse(ShopCatalog.productPhotography.isEmpty)
+        for (id, photograph) in ShopCatalog.productPhotography {
+            let item = try XCTUnwrap(ShopCatalog.item(id: id), id)
+            XCTAssertEqual(photograph.category, item.category, id)
+            XCTAssertEqual(photograph.productURL, item.productURL, id)
+            let image = try XCTUnwrap(RallyMerchImageResolver.bundledProductImage(for: item), id)
+            XCTAssertGreaterThan(image.size.width * image.scale, 100, id)
+            XCTAssertGreaterThan(image.size.height * image.scale, 100, id)
+        }
+        for item in ShopCatalog.allItems where item.category == .top && item.brand != "Rally" {
+            XCTAssertNotNil(RallyMerchImageResolver.bundledProductImage(for: item), item.id)
+        }
+    }
+
+    func testBundledPhotographyRejectsWrongCategoryAndChangedProductDestination() throws {
+        let original = try XCTUnwrap(ShopCatalog.item(id: "nike.advantage.top.fz6910.010"))
+        for (category, url) in [(ShopItem.Category.shoes, original.productURL),
+                                (.top, URL(string: "https://example.com/different-product")!)] {
+            let changed = ShopItem(id: original.id, category: category, name: original.name,
+                                   brand: original.brand, vendorID: original.vendorID, productURL: url,
+                                   priceUSD: original.priceUSD, colorHex: original.colorHex, accentHex: original.accentHex)
+            XCTAssertNil(ShopCatalog.photograph(for: changed))
+            XCTAssertNil(RallyMerchImageResolver.bundledProductImage(for: changed))
+        }
+    }
+
     func testExactProductAndColorwayWinsOverOtherProductsFromTheBrand() throws {
         let item = shopItem(id: "brand.polo.white")
         let black = try referral(id: "brand.polo.black")

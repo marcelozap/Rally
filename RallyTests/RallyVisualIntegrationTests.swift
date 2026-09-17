@@ -4,6 +4,16 @@ import SpriteKit
 
 @MainActor
 final class RallyVisualIntegrationTests: XCTestCase {
+    func testCleanEightShowsItsGoalBeforeFirstContact() {
+        let (scene, view) = makeScene(mode: .cleanEight)
+        defer { scene.willMove(from: view) }
+        let labels = scene.children.compactMap { ($0 as? SKLabelNode)?.text }
+        XCTAssertTrue(labels.contains("0/8"))
+        XCTAssertTrue(labels.contains("BEST STREAK"))
+        XCTAssertTrue(labels.contains("8 IN A ROW"))
+        XCTAssertTrue(labels.contains("CLEAN EIGHT"))
+    }
+
     func testServeClockWaitsForContact() {
         let (scene, view) = makeScene()
         defer { scene.willMove(from: view) }
@@ -16,8 +26,12 @@ final class RallyVisualIntegrationTests: XCTestCase {
         XCTAssertEqual(scene.servePhase, .rally)
         XCTAssertEqual(balls(in: scene).count, 1)
         XCTAssertEqual(scene.buildResult().elapsedSeconds, 0)
+        XCTAssertEqual(scene.serveRecoveryProgress, 0)
         scene.update(101.5)
         XCTAssertEqual(scene.buildResult().elapsedSeconds, 0.25, accuracy: 0.001)
+        XCTAssertEqual(scene.serveRecoveryProgress ?? -1, Float(0.25 / 0.42), accuracy: 0.001)
+        scene.update(101.70)
+        XCTAssertNil(scene.serveRecoveryProgress, "The overhead stroke should settle before the first return")
     }
 
     func testRepeatedContactCannotCreateTwoBalls() {
@@ -124,9 +138,11 @@ final class RallyVisualIntegrationTests: XCTestCase {
         XCTAssertTrue(CoachOutline.points(at: 0, frames: [.init(timestamp: 0, points: points)]).isEmpty)
     }
 
-    func testFourModesHaveDistinctPlayerInstructions() {
-        XCTAssertEqual(RallyPlayMode.allCases.count, 4)
-        XCTAssertEqual(Set(RallyPlayMode.allCases.map(\.cue)).count, 4)
+    func testFiveModesHaveDistinctPlayerInstructions() {
+        XCTAssertEqual(RallyPlayMode.allCases.count, 5)
+        XCTAssertEqual(Set(RallyPlayMode.allCases.map(\.cue)).count, 5)
+        XCTAssertEqual(RallyPlayMode.cleanEight.challenge, .cleanEight)
+        XCTAssertFalse(RallyPlayMode.cleanEight.isTargetMode)
     }
 
     func testSharedLessonRigKeepsModelAndRacketForBothHands() {

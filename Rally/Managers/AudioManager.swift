@@ -223,67 +223,57 @@ final class AudioManager {
     }
 
     private func handleHit(quality: HitQuality, combo: Int, power: CGFloat) {
-        // Transpose the per-hit chime up by 2 semitones per combo tier so
-        // sustained streaks audibly *ascend*. The thump (`patchHit`) is
-        // left at base pitch — its character is the body of the impact;
-        // transposing it just makes it tinny.
-        //
-        // semitones = 2 * tier  →  ratio = 2^(semitones / 12) = 2^(tier/6)
-        let tier = Tunables.comboTier(forCombo: combo)
-        let chimeRatio = pow(2.0, Double(tier) / 6.0)
-        let powerPitch = 0.92 + Double(max(0.25, min(1.45, power))) * 0.22
+        guard let contact = Self.contactSound(for: quality, combo: combo, power: power) else { return }
+        // Both layers dispatch with the contact event. A brief string snap
+        // sits over the ball's softer body; no delayed score chime is added.
+        sfxSynth.play(contact.body)
+        sfxSynth.play(contact.strings)
+    }
 
-        var chime = ToneSynth.patchPoint
-        chime.freqStartHz *= chimeRatio * powerPitch
-        chime.freqEndHz   *= chimeRatio * powerPitch
-        var body = ToneSynth.patchHit
-        body.freqStartHz *= powerPitch
-        body.freqEndHz *= powerPitch
+    struct ContactSound {
+        let body: ToneSynth.Patch
+        let strings: ToneSynth.Patch
+    }
 
+    /// Pure recipes keep contact short, give each grade a distinct attack,
+    /// and leave mixer headroom even at the strongest permitted swing.
+    /// Inspectable without creating an AVAudioEngine or enabling sound.
+    static func contactSound(for quality: HitQuality, combo: Int, power: CGFloat) -> ContactSound? {
+        guard quality != .miss else { return nil }
+        let safePower = power.isFinite ? Double(max(0.25, min(1.45, power))) : 1
+        let gain = Float(0.82 + safePower * 0.18)
+        let pitch = 0.94 + safePower * 0.075
+        let tier = Tunables.comboTier(forCombo: max(0, combo))
+        // Streaks gently brighten the string attack without turning each
+        // contact into the previous rising arcade note.
+        let stringPitch = pitch * (1 + Double(tier) * 0.012)
+        let body: ToneSynth.Patch
+        let strings: ToneSynth.Patch
         switch quality {
         case .perfect:
-            // Body + chime + a short noise transient for physical attack.
-            body.peak *= 1.08
-            body.durationMs *= 1.04
-            body.noiseMix = min(0.60, body.noiseMix + 0.15)
-            chime.peak *= 1.0
-            chime.durationMs *= 0.88
-            var crackle = body
-            crackle.freqStartHz = 520
-            crackle.freqEndHz = 280
-            crackle.durationMs = 54
-            crackle.noiseMix = 0.78
-            crackle.peak *= 0.46
-            sfxSynth.play(body)
-            sfxSynth.play(chime)
-            sfxSynth.play(crackle)
+            body = .init(freqStartHz: 370 * pitch, freqEndHz: 165 * pitch,
+                         durationMs: 74, waveform: .triangle, noiseMix: 0.25,
+                         peak: 0.40 * gain, attackMs: 1, releaseMs: 71)
+            strings = .init(freqStartHz: 950 * stringPitch, freqEndHz: 540 * stringPitch,
+                            durationMs: 24, waveform: .sine, noiseMix: 0.82,
+                            peak: 0.11 * gain, attackMs: 0.5, releaseMs: 23)
         case .great:
-            // Great hits should still sound like contact first, reward second.
-            body.peak *= 0.98
-            body.freqStartHz *= 1.10
-            body.freqEndHz *= 1.16
-            body.durationMs *= 0.94
-            body.noiseMix = min(0.52, body.noiseMix + 0.10)
-            chime.peak *= 0.84
-            chime.durationMs *= 0.94
-            sfxSynth.play(body)
-            sfxSynth.play(chime)
+            body = .init(freqStartHz: 310 * pitch, freqEndHz: 145 * pitch,
+                         durationMs: 86, waveform: .triangle, noiseMix: 0.20,
+                         peak: 0.34 * gain, attackMs: 2, releaseMs: 82)
+            strings = .init(freqStartHz: 740 * stringPitch, freqEndHz: 370 * stringPitch,
+                            durationMs: 21, waveform: .sine, noiseMix: 0.66,
+                            peak: 0.075 * gain, attackMs: 1, releaseMs: 19)
         case .good:
-            // Good hits keep a softer body so even safe contact still feels
-            // physical instead of purely melodic.
-            body.peak *= 0.54
-            body.freqStartHz *= 0.95
-            body.freqEndHz *= 0.93
-            body.durationMs *= 0.80
-            body.noiseMix = min(0.40, body.noiseMix + 0.04)
-            chime.peak *= 0.42
-            chime.freqStartHz *= 0.80
-            chime.freqEndHz   *= 0.80
-            chime.durationMs *= 0.86
-            sfxSynth.play(body)
-            sfxSynth.play(chime)
+            body = .init(freqStartHz: 230 * pitch, freqEndHz: 110 * pitch,
+                         durationMs: 102, waveform: .sine, noiseMix: 0.14,
+                         peak: 0.25 * gain, attackMs: 3, releaseMs: 96)
+            strings = .init(freqStartHz: 550 * stringPitch, freqEndHz: 260 * stringPitch,
+                            durationMs: 18, waveform: .sine, noiseMix: 0.45,
+                            peak: 0.035 * gain, attackMs: 2, releaseMs: 15)
         case .miss:
-            break
+            return nil
         }
+        return ContactSound(body: body, strings: strings)
     }
 }

@@ -37,23 +37,23 @@ struct CourtDetailView: View {
                     }
                 }
 
+                if court.venueWebsiteURL != nil || court.bookingOrMembershipURL != nil || court.officialProgramURL != nil || court.sponsorHostURL != nil {
+                    venueLinks
+                }
+
+                mapsActions
+
                 destinationFactsSection
 
                 if let profile = court.campProfile {
                     campProfileSection(profile)
                 }
 
-                mapsActions
-
                 if court.kind == .venue, ShopCatalog.courtUnlockToShopItem[court.id] != nil {
                     courtUnlockSection
                 }
 
                 referralSection
-
-                if court.venueWebsiteURL != nil || court.bookingOrMembershipURL != nil || court.officialProgramURL != nil || court.sponsorHostURL != nil {
-                    venueLinks
-                }
 
                 if !relatedDestinations.isEmpty {
                     relatedDestinationsSection
@@ -168,12 +168,22 @@ struct CourtDetailView: View {
                         .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.62))
                 }
 
-                Link(destination: court.appleMapsURL) {
-                    linkRow(icon: "map.fill", title: "Open in Apple Maps", subtitle: "Navigate & explore nearby")
+                Button {
+                    RallyReferralLinkRouter.shared.openVenueLink(court.appleMapsURL, venueName: court.name + " map")
+                } label: {
+                    linkRow(icon: "map.fill", title: "View in Apple Maps", subtitle: "Location and directions · maps.apple.com")
                 }
-                Link(destination: court.googleMapsSatelliteURL) {
-                    linkRow(icon: "globe.americas.fill", title: "Satellite view (Google Maps)", subtitle: "Closest web experience to “Earth” — good for scouting the campus")
+                .buttonStyle(.plain)
+                .accessibilityHint("Opens the Apple Maps website for this destination")
+                .accessibilityIdentifier("world.detail.maps.\(court.id)")
+
+                Button {
+                    RallyReferralLinkRouter.shared.openVenueLink(court.googleMapsSatelliteURL, venueName: court.name + " satellite map")
+                } label: {
+                    linkRow(icon: "globe.americas.fill", title: "Satellite view", subtitle: "Explore the grounds · Google Maps")
                 }
+                .buttonStyle(.plain)
+                .accessibilityHint("Opens the Google Maps satellite website")
             }
         }
     }
@@ -457,20 +467,9 @@ struct CourtDetailView: View {
             VStack(alignment: .leading, spacing: 10) {
                 HStack(spacing: 8) {
                     RallyUIKit.IconBadge(systemName: "arrow.up.right.square", tint: headerTint, size: 26)
-                    Text(court.kind == .venue ? "Official actions" : "Official actions")
+                    Text("Official links")
                         .font(RallyUIKit.Typography.label(.headline, weight: .bold))
                         .foregroundStyle(RallyUIKit.Palette.frost)
-                }
-
-                HStack(spacing: 8) {
-                    actionAvailabilityTag("Site", available: court.venueWebsiteURL != nil, tint: headerTint)
-                    actionAvailabilityTag(court.kind == .venue ? "Booking" : "Enrollment", available: court.bookingOrMembershipURL != nil, tint: RallyUIKit.Palette.rose)
-                    if court.officialProgramURL != nil {
-                        actionAvailabilityTag("Program", available: true, tint: RallyUIKit.Palette.gold)
-                    }
-                    if court.sponsorHostURL != nil, court.sponsorHostName != nil {
-                        actionAvailabilityTag("Host", available: true, tint: RallyUIKit.Palette.cyan)
-                    }
                 }
 
                 if let url = court.officialScheduleURL {
@@ -498,25 +497,27 @@ struct CourtDetailView: View {
                     } label: {
                         linkRow(
                             icon: court.kind == .venue ? "safari.fill" : "building.columns.fill",
-                            title: court.kind == .venue ? "Official venue site" : "Official academy site",
-                            subtitle: court.kind == .venue ? "Hours, news & visitor info" : "Campus overview, coaching philosophy, and contact info"
+                            title: "Official website",
+                            subtitle: url.host() ?? "Visitor information and contact details"
                         )
                     }
                     .buttonStyle(.plain)
+                    .accessibilityHint("Opens the official website for \(court.name)")
+                    .accessibilityIdentifier("world.detail.website.\(court.id)")
                 }
-                if let url = court.bookingOrMembershipURL {
+                if let url = court.bookingOrMembershipURL, url != court.venueWebsiteURL {
                     Button {
                         RallyReferralLinkRouter.shared.openVenueLink(court.trackingURL(for: url), venueName: court.name + " booking")
                     } label: {
                         linkRow(
                             icon: court.kind == .venue ? "ticket.fill" : "person.crop.rectangle.badge.plus",
-                            title: court.kind == .venue ? "Tickets / hospitality / membership" : "Official enrollment / booking",
-                            subtitle: court.kind == .venue ? "Purchase paths vary by event" : "Register through the academy or camp operator"
+                            title: court.kind == .venue ? "Tickets & visiting information" : "Programs & enrollment",
+                            subtitle: url.host() ?? "Official destination information"
                         )
                     }
                     .buttonStyle(.plain)
                 }
-                if let url = court.officialProgramURL {
+                if let url = court.officialProgramURL, url != court.venueWebsiteURL, url != court.bookingOrMembershipURL {
                     Button {
                         RallyReferralLinkRouter.shared.openVenueLink(court.trackingURL(for: url), venueName: court.name + " program")
                     } label: {
@@ -524,7 +525,8 @@ struct CourtDetailView: View {
                     }
                     .buttonStyle(.plain)
                 }
-                if let url = court.sponsorHostURL, let name = court.sponsorHostName {
+                if let url = court.sponsorHostURL, let name = court.sponsorHostName,
+                   url != court.venueWebsiteURL, url != court.bookingOrMembershipURL, url != court.officialProgramURL {
                     Button {
                         RallyReferralLinkRouter.shared.openVenueLink(court.trackingURL(for: url), venueName: name)
                     } label: {
@@ -534,24 +536,6 @@ struct CourtDetailView: View {
                 }
             }
         }
-    }
-
-    private func actionAvailabilityTag(_ label: String, available: Bool, tint: Color) -> some View {
-        HStack(spacing: 6) {
-            Image(systemName: available ? "checkmark.circle.fill" : "minus.circle")
-                .font(.system(size: 11, weight: .bold))
-            Text(label)
-                .font(RallyUIKit.Typography.label(.caption2, weight: .bold))
-        }
-        .foregroundStyle(available ? tint : RallyUIKit.Palette.cloud.opacity(0.45))
-        .padding(.horizontal, 9)
-        .padding(.vertical, 6)
-        .background(
-            Capsule().fill((available ? tint : RallyUIKit.Palette.cloud).opacity(available ? 0.11 : 0.08))
-        )
-        .overlay(
-            Capsule().stroke((available ? tint : RallyUIKit.Palette.cloud).opacity(available ? 0.18 : 0.1), lineWidth: 1)
-        )
     }
 
     private func snapshotPill(title: String, value: String, tint: Color) -> some View {

@@ -736,217 +736,261 @@ struct CourtsMapView: View {
     }
 
     private func destinationRow(_ court: IconicTennisCourt) -> some View {
-        Button {
-            selectedCourt = court
-            withAnimation(.easeInOut(duration: 0.35)) {
-                position = .region(
-                    MKCoordinateRegion(
-                        center: court.coordinate,
-                        span: MKCoordinateSpan(latitudeDelta: 2.8, longitudeDelta: 2.8)
+        VStack(alignment: .leading, spacing: 0) {
+            Button {
+                selectedCourt = court
+                withAnimation(.easeInOut(duration: 0.35)) {
+                    position = .region(
+                        MKCoordinateRegion(
+                            center: court.coordinate,
+                            span: MKCoordinateSpan(latitudeDelta: 2.8, longitudeDelta: 2.8)
+                        )
                     )
-                )
-            }
-        } label: {
-            HStack(alignment: .top, spacing: 14) {
-                RallyUIKit.IconBadge(
-                    systemName: court.kind == .venue ? "sportscourt.fill" : "figure.tennis",
-                    tint: court.kind == .venue ? RallyUIKit.Palette.cyan : RallyUIKit.Palette.gold,
-                    size: 42
-                )
+                }
+            } label: {
+                HStack(alignment: .top, spacing: 14) {
+                    RallyUIKit.IconBadge(
+                        systemName: court.kind == .venue ? "sportscourt.fill" : "figure.tennis",
+                        tint: court.kind == .venue ? RallyUIKit.Palette.cyan : RallyUIKit.Palette.gold,
+                        size: 42
+                    )
 
-                VStack(alignment: .leading, spacing: 8) {
-                    HStack(alignment: .top, spacing: 8) {
-                        VStack(alignment: .leading, spacing: 5) {
-                            Text(court.name)
-                                .font(RallyUIKit.Typography.body(.subheadline, weight: .bold))
-                                .foregroundStyle(RallyUIKit.Palette.frost)
-                                .lineLimit(1)
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack(alignment: .top, spacing: 8) {
+                            VStack(alignment: .leading, spacing: 5) {
+                                Text(court.name)
+                                    .font(RallyUIKit.Typography.body(.subheadline, weight: .bold))
+                                    .foregroundStyle(RallyUIKit.Palette.frost)
+                                    .lineLimit(1)
 
-                            Text("\(court.subtitle) · \(court.region)")
-                                .font(RallyUIKit.Typography.body(.caption, weight: .medium))
-                                .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.58))
-                                .lineLimit(1)
+                                Text("\(court.subtitle) · \(court.region)")
+                                    .font(RallyUIKit.Typography.body(.caption, weight: .medium))
+                                    .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.58))
+                                    .lineLimit(1)
+                            }
+
+                            Spacer(minLength: 0)
+
+                            Text(court.kind.rawValue.uppercased())
+                                .font(.system(.caption2, design: .rounded).weight(.bold))
+                                .tracking(0.9)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 5)
+                                .background(
+                                    Capsule().fill((court.kind == .venue ? RallyUIKit.Palette.cyan : RallyUIKit.Palette.gold).opacity(0.16))
+                                )
+                                .foregroundStyle(court.kind == .venue ? RallyUIKit.Palette.cyan : RallyUIKit.Palette.gold)
                         }
 
-                        Spacer(minLength: 0)
+                        if let profile = court.campProfile {
+                            HStack(spacing: 8) {
+                                atlasFactTag(profile.bestForTag.rawValue, tint: RallyUIKit.Palette.gold)
+                                atlasFactTag(profile.audience, tint: RallyUIKit.Palette.cyan)
+                                atlasFactTag("Official links", tint: RallyUIKit.Palette.rose)
+                            }
+                        } else {
+                            HStack(spacing: 8) {
+                                atlasFactTag(court.vibe, tint: RallyUIKit.Palette.cyan)
+                                atlasFactTag("Official links", tint: RallyUIKit.Palette.rose)
+                            }
+                        }
 
-                        Text(court.kind.rawValue.uppercased())
-                            .font(.system(.caption2, design: .rounded).weight(.bold))
-                            .tracking(0.9)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 5)
-                            .background(
-                                Capsule().fill((court.kind == .venue ? RallyUIKit.Palette.cyan : RallyUIKit.Palette.gold).opacity(0.16))
-                            )
-                            .foregroundStyle(court.kind == .venue ? RallyUIKit.Palette.cyan : RallyUIKit.Palette.gold)
-                    }
-
-                    if let profile = court.campProfile {
                         HStack(spacing: 8) {
-                            atlasFactTag(profile.bestForTag.rawValue, tint: RallyUIKit.Palette.gold)
-                            atlasFactTag(profile.audience, tint: RallyUIKit.Palette.cyan)
-                            atlasFactTag("Official links", tint: RallyUIKit.Palette.rose)
-                        }
-                    } else {
-                        HStack(spacing: 8) {
-                            atlasFactTag(court.vibe, tint: RallyUIKit.Palette.cyan)
-                            atlasFactTag("Official links", tint: RallyUIKit.Palette.rose)
-                        }
-                    }
-
-                    HStack(spacing: 8) {
-                        actionStatusTag("Site", available: court.venueWebsiteURL != nil, tint: RallyUIKit.Palette.cyan)
-                        actionStatusTag(court.kind == .venue ? "Booking" : "Enrollment", available: court.bookingOrMembershipURL != nil, tint: RallyUIKit.Palette.rose)
-                        if court.officialProgramURL != nil {
-                            actionStatusTag("Program", available: true, tint: RallyUIKit.Palette.gold)
-                        }
-                        // Reward badge — visible for any court with a court-gated shop item.
-                        if hasCollectedReward(court) {
-                            rewardTag(collected: true)
-                        } else if hasLockedReward(court) {
-                            rewardTag(collected: false)
+                            // Reward badge — visible for any court with a court-gated shop item.
+                            if hasCollectedReward(court) {
+                                rewardTag(collected: true)
+                            } else if hasLockedReward(court) {
+                                rewardTag(collected: false)
+                            }
                         }
                     }
                 }
+                .padding(14)
             }
-            .padding(14)
-            .background(
-                RoundedRectangle(cornerRadius: 18)
-                    .fill(Color.white.opacity(0.055))
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 18)
-                    .stroke(Color.white.opacity(0.08), lineWidth: 1)
-            )
-            .shadow(color: .black.opacity(0.16), radius: 10, x: 0, y: 5)
+            .buttonStyle(.plain)
+            .accessibilityHint("Opens destination details")
+
+            destinationQuickActions(court)
+                .padding(.horizontal, 14)
+                .padding(.bottom, 14)
         }
-        .buttonStyle(.plain)
+        .background(
+            RoundedRectangle(cornerRadius: 18)
+                .fill(Color.white.opacity(0.055))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 18)
+                .stroke(Color.white.opacity(0.08), lineWidth: 1)
+        )
+        .shadow(color: .black.opacity(0.16), radius: 10, x: 0, y: 5)
     }
 
     private func featuredDestinationCard(_ court: IconicTennisCourt) -> some View {
         let surface = court.surfaceAccent
         let tint = court.kind == .venue ? surface.primary : RallyUIKit.Palette.gold
 
-        return Button {
-            selectedCourt = court
-            focus(on: [court])
-        } label: {
-            VStack(alignment: .leading, spacing: 12) {
-                ZStack(alignment: .topTrailing) {
-                    RoundedRectangle(cornerRadius: 22)
-                        .fill(
-                            LinearGradient(
-                                colors: [
-                                    RallyUIKit.Palette.obsidian,
-                                    surface.primary.opacity(0.28),
-                                    surface.secondary.opacity(0.12),
-                                    Color.white.opacity(0.04)
-                                ],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
+        return VStack(alignment: .leading, spacing: 12) {
+            Button {
+                selectedCourt = court
+                focus(on: [court])
+            } label: {
+                VStack(alignment: .leading, spacing: 12) {
+                    ZStack(alignment: .topTrailing) {
+                        RoundedRectangle(cornerRadius: 22)
+                            .fill(
+                                LinearGradient(
+                                    colors: [
+                                        RallyUIKit.Palette.obsidian,
+                                        surface.primary.opacity(0.28),
+                                        surface.secondary.opacity(0.12),
+                                        Color.white.opacity(0.04)
+                                    ],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
                             )
-                        )
-                        .frame(height: 158)
+                            .frame(height: 158)
 
-                    Circle()
-                        .fill(surface.primary.opacity(0.24))
-                        .frame(width: 110, height: 110)
-                        .blur(radius: 18)
-                        .offset(x: 18, y: -18)
+                        Circle()
+                            .fill(surface.primary.opacity(0.24))
+                            .frame(width: 110, height: 110)
+                            .blur(radius: 18)
+                            .offset(x: 18, y: -18)
 
-                    VStack(alignment: .leading, spacing: 10) {
-                        HStack {
-                            Text(court.kind.rawValue.uppercased())
-                                .font(RallyUIKit.Typography.label(.caption2, weight: .bold))
-                                .tracking(1.2)
-                                .padding(.horizontal, 8)
-                                .padding(.vertical, 5)
-                                .background(Capsule().fill(tint.opacity(0.14)))
-                                .foregroundStyle(tint)
-                            atlasFactTag(surface.label, tint: surface.primary)
-                            Spacer()
-                            RallyUIKit.IconBadge(
-                                systemName: court.kind == .venue ? surface.symbol : "figure.tennis",
-                                tint: tint,
-                                size: 28
-                            )
+                        VStack(alignment: .leading, spacing: 10) {
+                            HStack {
+                                Text(court.kind.rawValue.uppercased())
+                                    .font(RallyUIKit.Typography.label(.caption2, weight: .bold))
+                                    .tracking(1.2)
+                                    .padding(.horizontal, 8)
+                                    .padding(.vertical, 5)
+                                    .background(Capsule().fill(tint.opacity(0.14)))
+                                    .foregroundStyle(tint)
+                                atlasFactTag(surface.label, tint: surface.primary)
+                                Spacer()
+                                RallyUIKit.IconBadge(
+                                    systemName: court.kind == .venue ? surface.symbol : "figure.tennis",
+                                    tint: tint,
+                                    size: 28
+                                )
+                            }
+
+                            Spacer(minLength: 0)
+
+                            VStack(alignment: .leading, spacing: 6) {
+                                Text(court.name)
+                                    .font(RallyUIKit.Typography.title(.headline, weight: .bold))
+                                    .foregroundStyle(RallyUIKit.Palette.frost)
+                                    .lineLimit(2)
+                                Text("\(court.subtitle) · \(court.region)")
+                                    .font(RallyUIKit.Typography.body(.caption, weight: .semibold))
+                                    .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.7))
+                                    .lineLimit(1)
+                            }
                         }
-
-                        Spacer(minLength: 0)
-
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text(court.name)
-                                .font(RallyUIKit.Typography.title(.headline, weight: .bold))
-                                .foregroundStyle(RallyUIKit.Palette.frost)
-                                .lineLimit(2)
-                            Text("\(court.subtitle) · \(court.region)")
-                                .font(RallyUIKit.Typography.body(.caption, weight: .semibold))
-                                .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.7))
-                                .lineLimit(1)
-                        }
-                    }
-                    .padding(16)
-                }
-
-                VStack(alignment: .leading, spacing: 8) {
-                    Text(court.vibe)
-                        .font(RallyUIKit.Typography.body(.subheadline, weight: .semibold))
-                        .foregroundStyle(RallyUIKit.Palette.frost)
-                        .lineLimit(2)
-
-                    HStack(spacing: 8) {
-                        if let profile = court.campProfile {
-                            atlasFactTag(profile.bestForTag.rawValue, tint: RallyUIKit.Palette.gold)
-                            atlasFactTag(profile.audience, tint: RallyUIKit.Palette.cyan)
-                        } else {
-                            atlasFactTag("Iconic venue", tint: RallyUIKit.Palette.cyan)
-                        }
-                        atlasFactTag("Official links", tint: RallyUIKit.Palette.rose)
+                        .padding(16)
                     }
 
-                    if let sponsorHostName = court.sponsorHostName {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(court.vibe)
+                            .font(RallyUIKit.Typography.body(.subheadline, weight: .semibold))
+                            .foregroundStyle(RallyUIKit.Palette.frost)
+                            .lineLimit(2)
+
+                        HStack(spacing: 8) {
+                            if let profile = court.campProfile {
+                                atlasFactTag(profile.bestForTag.rawValue, tint: RallyUIKit.Palette.gold)
+                                atlasFactTag(profile.audience, tint: RallyUIKit.Palette.cyan)
+                            } else {
+                                atlasFactTag("Iconic venue", tint: RallyUIKit.Palette.cyan)
+                            }
+                            atlasFactTag("Official links", tint: RallyUIKit.Palette.rose)
+                        }
+
+                        if let sponsorHostName = court.sponsorHostName {
+                            HStack(spacing: 6) {
+                                Image(systemName: "checkmark.seal.fill")
+                                    .font(.system(size: 12, weight: .bold))
+                                Text("Official host: \(sponsorHostName)")
+                                    .font(RallyUIKit.Typography.body(.caption2, weight: .semibold))
+                                    .lineLimit(1)
+                            }
+                            .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.76))
+                        } else if court.bookingOrMembershipURL != nil {
+                            HStack(spacing: 6) {
+                                Image(systemName: "checkmark.seal.fill")
+                                    .font(.system(size: 12, weight: .bold))
+                                Text(court.kind == .venue ? "Official visitor information" : "Official program information")
+                                    .font(RallyUIKit.Typography.body(.caption2, weight: .semibold))
+                                    .lineLimit(1)
+                            }
+                            .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.76))
+                        }
+
                         HStack(spacing: 6) {
-                            Image(systemName: "checkmark.seal.fill")
-                                .font(.system(size: 12, weight: .bold))
-                            Text("Official host: \(sponsorHostName)")
-                                .font(RallyUIKit.Typography.body(.caption2, weight: .semibold))
-                                .lineLimit(1)
+                            Text("View details →")
+                                .font(RallyUIKit.Typography.label(.caption, weight: .bold))
+                            Spacer(minLength: 0)
+                            Image(systemName: "arrow.right.circle.fill")
+                                .font(.system(size: 14, weight: .bold))
                         }
-                        .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.76))
-                    } else if court.bookingOrMembershipURL != nil {
-                        HStack(spacing: 6) {
-                            Image(systemName: "checkmark.seal.fill")
-                                .font(.system(size: 12, weight: .bold))
-                            Text(court.kind == .venue ? "Official booking available" : "Official enrollment available")
-                                .font(RallyUIKit.Typography.body(.caption2, weight: .semibold))
-                                .lineLimit(1)
-                        }
-                        .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.76))
+                        .foregroundStyle(tint)
                     }
-
-                    HStack(spacing: 6) {
-                        Text("View details →")
-                            .font(RallyUIKit.Typography.label(.caption, weight: .bold))
-                        Spacer(minLength: 0)
-                        Image(systemName: "arrow.right.circle.fill")
-                            .font(.system(size: 14, weight: .bold))
-                    }
-                    .foregroundStyle(tint)
                 }
             }
-            .padding(14)
-            .frame(width: 278, alignment: .leading)
-            .background(
-                RoundedRectangle(cornerRadius: 24)
-                    .fill(Color.white.opacity(0.055))
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 24)
-                    .stroke(tint.opacity(0.18), lineWidth: 1)
-            )
-            .shadow(color: .black.opacity(0.16), radius: 12, x: 0, y: 6)
+            .buttonStyle(.plain)
+            .accessibilityHint("Opens destination details")
+
+            destinationQuickActions(court)
         }
-        .buttonStyle(.plain)
+        .padding(14)
+        .frame(width: 278, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 24)
+                .fill(Color.white.opacity(0.055))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 24)
+                .stroke(tint.opacity(0.18), lineWidth: 1)
+        )
+        .shadow(color: .black.opacity(0.16), radius: 12, x: 0, y: 6)
+    }
+
+    /// These are siblings of the detail button so a link tap cannot also navigate.
+    private func destinationQuickActions(_ court: IconicTennisCourt) -> some View {
+        HStack(spacing: 8) {
+            if let url = court.venueWebsiteURL {
+                Button {
+                    RallyReferralLinkRouter.shared.openVenueLink(court.trackingURL(for: url), venueName: court.name)
+                } label: {
+                    destinationActionLabel("Official site", icon: "arrow.up.right.square", tint: RallyUIKit.Palette.cyan)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Official website for \(court.name)")
+                .accessibilityHint("Opens the official destination website")
+                .accessibilityIdentifier("world.website.\(court.id)")
+            }
+
+            Button {
+                RallyReferralLinkRouter.shared.openVenueLink(court.appleMapsURL, venueName: court.name + " map")
+            } label: {
+                destinationActionLabel("Maps", icon: "map", tint: RallyUIKit.Palette.gold)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Map for \(court.name)")
+            .accessibilityHint("Opens the Apple Maps website for this destination")
+            .accessibilityIdentifier("world.maps.\(court.id)")
+        }
+    }
+
+    private func destinationActionLabel(_ title: String, icon: String, tint: Color) -> some View {
+        Label(title, systemImage: icon)
+            .font(RallyUIKit.Typography.label(.caption, weight: .bold))
+            .foregroundStyle(tint)
+            .frame(maxWidth: .infinity, minHeight: 44)
+            .background(RoundedRectangle(cornerRadius: 12).fill(tint.opacity(0.1)))
+            .overlay(RoundedRectangle(cornerRadius: 12).stroke(tint.opacity(0.22), lineWidth: 1))
+            .contentShape(RoundedRectangle(cornerRadius: 12))
     }
 
     private func atlasFactTag(_ text: String, tint: Color) -> some View {
@@ -1002,23 +1046,6 @@ struct CourtsMapView: View {
         )
     }
 
-    private func actionStatusTag(_ label: String, available: Bool, tint: Color) -> some View {
-        HStack(spacing: 5) {
-            Image(systemName: available ? "checkmark.circle.fill" : "minus.circle")
-                .font(.system(size: 10, weight: .bold))
-            Text(label)
-                .font(RallyUIKit.Typography.label(.caption2, weight: .bold))
-        }
-        .foregroundStyle(available ? tint : RallyUIKit.Palette.cloud.opacity(0.42))
-        .padding(.horizontal, 8)
-        .padding(.vertical, 6)
-        .background(
-            Capsule().fill((available ? tint : RallyUIKit.Palette.cloud).opacity(available ? 0.11 : 0.08))
-        )
-        .overlay(
-            Capsule().stroke((available ? tint : RallyUIKit.Palette.cloud).opacity(available ? 0.18 : 0.1), lineWidth: 1)
-        )
-    }
 
     private func focusWorld() {
         let region = Self.worldRegion

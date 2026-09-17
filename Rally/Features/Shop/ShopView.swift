@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import UIKit
 
 struct ShopView: View {
     @EnvironmentObject private var avatarAppearanceStore: RallyAvatarAppearanceStore
@@ -178,7 +179,7 @@ struct ShopView: View {
 
     private func filtered(_ items: [ShopItem]) -> [ShopItem] {
         let visible = ShopCatalog.visibleItems(
-            items,
+            items.filter { !ShopCatalog.legacyDuplicateItemIDs.contains($0.id) },
             unlockedCourtIDs: unlocks.unlockedCourtIDs,
             equippedIDs: equippedIDs
         )
@@ -512,7 +513,12 @@ struct ShopView: View {
             if let heroItem {
                 // Same S-3 rule as apparelSwatch: real imagery first,
                 // custom court-gear silhouette only while loading/failing.
-                if let imageURL = RallyMerchImageResolver.productImageURL(for: heroItem) {
+                if let photograph = RallyMerchImageResolver.bundledProductImage(for: heroItem) {
+                    Image(uiImage: photograph)
+                        .resizable()
+                        .scaledToFit()
+                        .padding(10)
+                } else if let imageURL = RallyMerchImageResolver.productImageURL(for: heroItem) {
                     AsyncImage(url: imageURL) { phase in
                         switch phase {
                         case .success(let image):
@@ -716,7 +722,7 @@ struct ShopView: View {
     private func apparelSwatch(_ item: ShopItem, width: CGFloat, height: CGFloat) -> some View {
         let accent = item.accentColor ?? categoryTint(item.category)
         // Photography must belong to this exact product and colorway.
-        // Unmatched items keep the drawn category silhouette.
+        // Bundled photographs keep the product visible without a connection.
         let referralItem = RallyMerchImageResolver.referralItem(for: item)
         let productImageURL = RallyMerchImageResolver.productImageURL(for: item)
         let productAccent = referralItem.flatMap { Color(hex: $0.accentColorHex) } ?? accent
@@ -736,7 +742,12 @@ struct ShopView: View {
             RoundedRectangle(cornerRadius: 24)
                 .stroke(Color.white.opacity(0.14), lineWidth: 1)
 
-            if let productImageURL {
+            if let photograph = RallyMerchImageResolver.bundledProductImage(for: item) {
+                Image(uiImage: photograph)
+                    .resizable()
+                    .scaledToFit()
+                    .padding(min(width, height) * 0.10)
+            } else if let productImageURL {
                 AsyncImage(url: productImageURL) { phase in
                     switch phase {
                     case .success(let image):
@@ -985,6 +996,11 @@ private struct FloatingKitFigure: View {
 }
 
 enum RallyMerchImageResolver {
+    static func bundledProductImage(for item: ShopItem) -> UIImage? {
+        guard let photo = ShopCatalog.photograph(for: item) else { return nil }
+        return UIImage(named: photo.assetName)
+    }
+
     static func productImageURL(
         for item: ShopItem,
         referenceImages: (String, RallyGearSlot) -> [URL] = { id, slot in
@@ -992,6 +1008,7 @@ enum RallyMerchImageResolver {
         },
         referralCatalog: [RallyGearItem] = RallyReferralCatalog.allItems
     ) -> URL? {
+        if let photo = ShopCatalog.photograph(for: item) { return photo.imageURL }
         guard let slot = referralSlot(for: item.category) else { return nil }
         if let photo = referenceImages(item.id, slot.avatarSlot).first { return photo }
         return referralItem(for: item, in: referralCatalog)?.productImageURL

@@ -30,6 +30,7 @@ struct ShopItemDetailView: View {
     private var relatedItems: [ShopItem] {
         ShopCatalog.allItems.filter {
             $0.id != item.id &&
+            !ShopCatalog.legacyDuplicateItemIDs.contains($0.id) &&
             $0.vendorID == item.vendorID &&
             $0.category != item.category
         }
@@ -183,7 +184,13 @@ struct ShopItemDetailView: View {
                     .blur(radius: 40)
                     .offset(x: 80, y: -20)
 
-                if let imageURL = productImageURL {
+                if let photograph = RallyMerchImageResolver.bundledProductImage(for: item) {
+                    Image(uiImage: photograph)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(maxHeight: 188)
+                        .padding(12)
+                } else if let imageURL = productImageURL {
                     AsyncImage(url: imageURL) { phase in
                         switch phase {
                         case .success(let image):
@@ -212,6 +219,18 @@ struct ShopItemDetailView: View {
                 RoundedRectangle(cornerRadius: RallyUIKit.Radius.xl, style: .continuous)
                     .stroke(Color.white.opacity(0.10), lineWidth: 1)
             )
+
+            if let photograph = ShopCatalog.photograph(for: item) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("\(photograph.colorway) · \(photograph.styleID)")
+                        .font(RallyUIKit.Typography.label(.caption, weight: .semibold))
+                        .foregroundStyle(RallyUIKit.Palette.frost)
+                    Text("Official product photo. Your Rally outfit is a style preview with its saved colors. Check the retailer for current price and availability.")
+                        .font(RallyUIKit.Typography.body(.caption))
+                        .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.66))
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
         }
     }
 
@@ -254,20 +273,15 @@ struct ShopItemDetailView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    /// Branded gradient + category icon shown when no productImageURL is available.
+    /// Drawn Rally gear used for originals and unavailable product imagery.
     @ViewBuilder
     private func productIconFallback(accent: Color) -> some View {
-        Image(systemName: item.category.iconSystemName)
-            .font(.system(size: item.category == .racket ? 92 : 76, weight: .bold))
-            .foregroundStyle(
-                LinearGradient(
-                    colors: productImageURL == nil
-                        ? [RallyUIKit.Palette.frost, RallyUIKit.Palette.frost.opacity(0.86)]
-                        : [RallyUIKit.Palette.obsidian, RallyUIKit.Palette.ink],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-            )
+        RallyMerchFallbackGlyph(
+            category: item.category,
+            primary: productImageURL == nil ? RallyUIKit.Palette.frost : RallyUIKit.Palette.obsidian,
+            accent: accent
+        )
+            .frame(width: 140, height: 150)
             .shadow(color: accent.opacity(0.36), radius: 18, y: 10)
     }
 
@@ -752,11 +766,21 @@ struct ShopItemDetailView: View {
                         )
                         .frame(width: 120, height: 120)
 
-                    Image(systemName: related.category.iconSystemName)
-                        .font(.system(size: 36, weight: .bold))
-                        .foregroundStyle(.white)
-                        .shadow(color: Color.black.opacity(0.25), radius: 8, y: 5)
+                    if let photograph = RallyMerchImageResolver.bundledProductImage(for: related) {
+                        Image(uiImage: photograph)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 104, height: 104)
+                    } else {
+                        RallyMerchFallbackGlyph(
+                            category: related.category,
+                            primary: RallyUIKit.Palette.frost,
+                            accent: accent
+                        )
+                        .frame(width: 76, height: 76)
+                    }
                 }
+                .clipShape(RoundedRectangle(cornerRadius: 20))
 
                 Text(related.name)
                     .font(RallyUIKit.Typography.label(.caption2, weight: .bold))
