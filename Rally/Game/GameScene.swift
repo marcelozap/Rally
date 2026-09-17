@@ -6723,7 +6723,8 @@ final class BallNode: SKShapeNode {
             coreNode.fillColor = UIColor.white.withAlphaComponent(0.88)
         }
         if wallStyleMode {
-            glowWidth = 4
+            strokeColor = UIColor.white.withAlphaComponent(0.45)
+            glowWidth = 0.6
             auraNode.glowWidth = 5
             warningRingNode.glowWidth = 4
             tailNode.glowWidth = 3
@@ -6832,8 +6833,7 @@ final class BallNode: SKShapeNode {
 
     func applyReentryFrame(_ frame: RallyReentryBallFrame, trackTime: Double) {
         position = frame.point
-        xScale = frame.xScale
-        yScale = frame.yScale
+        applyOwnedMotionScale(x: frame.xScale, y: frame.yScale)
         alpha = 1
         warningRingNode.alpha = frame.armed ? 0.22 : 0.08
         focusRingNode.alpha = frame.armed ? 0.14 : 0
@@ -6879,8 +6879,7 @@ final class BallNode: SKShapeNode {
         guard let normalizationState else { return false }
         let frame = normalizationState.frame(at: trackTime)
         position = frame.point
-        xScale = frame.xScale
-        yScale = frame.yScale
+        applyOwnedMotionScale(x: frame.xScale, y: frame.yScale)
         alpha = 1
         warningRingNode.alpha = frame.armed ? 0.14 : 0.06
         focusRingNode.alpha = frame.armed ? 0.12 : 0
@@ -7000,8 +6999,7 @@ final class BallNode: SKShapeNode {
 
     func applyLiveExchangeFrame(_ frame: RallyContinuousBallExchangeFrame) {
         position = frame.point
-        xScale = frame.xScale
-        yScale = frame.yScale
+        applyOwnedMotionScale(x: frame.xScale, y: frame.yScale)
         alpha = frame.alpha
 
         warningRingNode.alpha = 0
@@ -7359,13 +7357,34 @@ final class BallNode: SKShapeNode {
         }
     }
 
+    /// Motion models return deformation/depth around 1, not a screen size.
+    /// Keep the same visual basis through every owner of the live wall ball.
+    private func applyOwnedMotionScale(x: CGFloat, y: CGFloat) {
+        let visualScale = wallStyleMode ? strikeScaleForShape() : 1
+        xScale = x * visualScale
+        yScale = y * visualScale
+    }
+
+    private var wallStrikeVisualScale: CGFloat {
+        // The serve constructs its ball with unit scale before attaching it
+        // to the court. That same ball is reused for all subsequent returns.
+        if role == .serve, let scene {
+            return scene.size.width * Tunables.ballStrikeDiameterSceneWidthRatio
+                / max(1, Tunables.ballRadiusPoints * 2)
+        }
+        return strikeScale
+    }
+
     private func strikeScaleForShape() -> CGFloat {
+        // A normalization baseline carries a model scale of 1. Preserve the
+        // original display size instead of letting that reset a 22pt ball to 44pt.
+        let referenceScale = wallStyleMode ? wallStrikeVisualScale : effectiveStrikeScale
         let base: CGFloat
         switch shotShape {
-        case .drive: base = effectiveStrikeScale * 1.03
-        case .topspin: base = effectiveStrikeScale * 1.02
-        case .skid: base = effectiveStrikeScale * 0.98
-        case .floater: base = effectiveStrikeScale * 0.94
+        case .drive: base = referenceScale * 1.03
+        case .topspin: base = referenceScale * 1.02
+        case .skid: base = referenceScale * 0.98
+        case .floater: base = referenceScale * 0.94
         }
         switch role {
         case .serve: return base * 1.04
@@ -7376,12 +7395,15 @@ final class BallNode: SKShapeNode {
     }
 
     private func overrunScaleForShape() -> CGFloat {
+        let referenceScale = wallStyleMode
+            ? wallStrikeVisualScale * effectiveOverrunScale
+            : effectiveOverrunScale
         let base: CGFloat
         switch shotShape {
-        case .drive: base = effectiveOverrunScale * 1.02
-        case .topspin: base = effectiveOverrunScale * 1.03
-        case .skid: base = effectiveOverrunScale * 0.97
-        case .floater: base = effectiveOverrunScale * 0.95
+        case .drive: base = referenceScale * 1.02
+        case .topspin: base = referenceScale * 1.03
+        case .skid: base = referenceScale * 0.97
+        case .floater: base = referenceScale * 0.95
         }
         switch role {
         case .serve: return base * 1.02

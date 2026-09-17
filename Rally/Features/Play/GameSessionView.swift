@@ -58,6 +58,8 @@ struct GameSessionView: View {
                         .overlay {
                             matchAtmosphere
                         }
+                        .accessibilityHidden(viewModel.lastResult != nil || (mode == .servePractice && !practiceIntroDismissed))
+                        .allowsHitTesting(viewModel.lastResult == nil && (mode != .servePractice || practiceIntroDismissed))
                 } else {
                     loadingState
                 }

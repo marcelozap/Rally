@@ -4,6 +4,7 @@ import SwiftUI
 /// Global map of **curated tennis venues only** — satellite-style layers evoke “Earth” browsing;
 /// Google Earth itself isn’t embedded (would require their SDK & keys).
 struct CourtsMapView: View {
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     /// Observes unlock state so rows update reactively when a check-in succeeds.
     @ObservedObject private var unlocks = CourtUnlocks.shared
 
@@ -958,7 +959,10 @@ struct CourtsMapView: View {
 
     /// These are siblings of the detail button so a link tap cannot also navigate.
     private func destinationQuickActions(_ court: IconicTennisCourt) -> some View {
-        HStack(spacing: 8) {
+        let layout = dynamicTypeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: 8))
+            : AnyLayout(HStackLayout(spacing: 8))
+        return layout {
             if let url = court.venueWebsiteURL {
                 Button {
                     RallyReferralLinkRouter.shared.openVenueLink(court.trackingURL(for: url), venueName: court.name)
@@ -987,6 +991,10 @@ struct CourtsMapView: View {
         Label(title, systemImage: icon)
             .font(RallyUIKit.Typography.label(.caption, weight: .bold))
             .foregroundStyle(tint)
+            .multilineTextAlignment(.center)
+            .fixedSize(horizontal: false, vertical: true)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 6)
             .frame(maxWidth: .infinity, minHeight: 44)
             .background(RoundedRectangle(cornerRadius: 12).fill(tint.opacity(0.1)))
             .overlay(RoundedRectangle(cornerRadius: 12).stroke(tint.opacity(0.22), lineWidth: 1))

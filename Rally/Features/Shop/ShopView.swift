@@ -169,7 +169,10 @@ struct ShopView: View {
                     .padding(.vertical, 6)
                     .background(Capsule().fill(accent.opacity(0.18)))
                     .overlay(Capsule().stroke(accent.opacity(0.28), lineWidth: 1))
+                    .frame(minWidth: 44, minHeight: 44)
+                    .contentShape(Rectangle())
                 }
+                .accessibilityLabel("Details for \(item.name)")
             }
         }
         .padding(.horizontal, 18)
@@ -311,21 +314,36 @@ struct ShopView: View {
     @ViewBuilder
     private func desireTile(_ item: ShopItem) -> some View {
         let accent = item.accentColor ?? categoryTint(item.category)
-        let isTryingOn = tryOnItem?.id == item.id
+        let canTryOn = item.category != .bag && item.category != .accessory
+        let isTryingOn = canTryOn && tryOnItem?.id == item.id
         VStack(spacing: 0) {
-            Button {
-                withAnimation(.spring(response: 0.28, dampingFraction: 0.82)) {
-                    tryOnItem = item
-                    avatarAppearanceStore.tryOn(item, from: avatar)
-                    stageEmote = .shopLook
+            if canTryOn {
+                Button {
+                    withAnimation(.spring(response: 0.28, dampingFraction: 0.82)) {
+                        tryOnItem = item
+                        avatarAppearanceStore.tryOn(item, from: avatar)
+                        stageEmote = .shopLook
+                    }
+                } label: {
+                    desireTileContent(item, accent: accent, isTryingOn: isTryingOn)
                 }
-            } label: {
-                desireTileContent(item, accent: accent, isTryingOn: isTryingOn)
+                .buttonStyle(.plain)
+                .accessibilityLabel("\(item.brand), \(item.name)")
+                .accessibilityValue("\(item.priceUSD == 0 ? "Included" : item.priceDisplay)\(isEquipped(item) ? ", equipped" : "")\(isTryingOn ? ", previewing" : "")")
+                .accessibilityHint("Preview on your player")
+            } else if let avatar {
+                NavigationLink {
+                    ShopItemDetailView(item: item, avatar: avatar)
+                } label: {
+                    desireTileContent(item, accent: accent, isTryingOn: false)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("\(item.brand), \(item.name)")
+                .accessibilityValue(item.priceUSD == 0 ? "Included" : item.priceDisplay)
+                .accessibilityHint("View product details")
+            } else {
+                desireTileContent(item, accent: accent, isTryingOn: false)
             }
-            .buttonStyle(.plain)
-            .accessibilityLabel("\(item.brand), \(item.name)")
-            .accessibilityValue("\(item.priceUSD == 0 ? "Included" : item.priceDisplay)\(isEquipped(item) ? ", equipped" : "")\(isTryingOn ? ", previewing" : "")")
-            .accessibilityHint("Preview on your player")
 
             if let avatar {
                 NavigationLink {
@@ -435,8 +453,11 @@ struct ShopView: View {
                     Capsule()
                         .stroke(selected ? Color.clear : tint.opacity(0.2), lineWidth: 1)
                 )
+                .frame(minWidth: 44, minHeight: 44)
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .accessibilityAddTraits(selected ? .isSelected : [])
     }
 
     private func rowMeta(_ item: ShopItem) -> String {

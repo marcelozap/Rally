@@ -225,6 +225,7 @@ struct CourtDetailView: View {
     private func linkRow(icon: String, title: String, subtitle: String) -> some View {
         HStack(spacing: 12) {
             RallyUIKit.IconBadge(systemName: icon, tint: headerTint, size: 34)
+                .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
                     .font(RallyUIKit.Typography.body(.subheadline, weight: .bold))
@@ -233,10 +234,12 @@ struct CourtDetailView: View {
                     .font(RallyUIKit.Typography.body(.caption, weight: .medium))
                     .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.5))
             }
-            Spacer()
+            .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 0)
             Image(systemName: "arrow.up.right")
                 .font(.caption.weight(.bold))
                 .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.34))
+                .accessibilityHidden(true)
         }
         .padding(15)
         .background(RoundedRectangle(cornerRadius: 14).fill(Color.white.opacity(0.06)))

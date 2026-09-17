@@ -99,6 +99,124 @@ final class RallyContinuousBallExchangeTests: XCTestCase {
         XCTAssertEqual(exchange.ball.position, originalBallPosition)
     }
 
+    func testWallBallStaysCourtSizedThroughContactReturnAndNormalization() throws {
+        for width in [CGFloat(375), 430] {
+            for role in [BeatmapNote.Role.serve, .returnBall] {
+                let scene = SKScene(size: CGSize(width: width, height: 874))
+                let start = CGPoint(x: 310, y: 236)
+                let contact = CGPoint(x: 320, y: 230)
+                // Match both real constructors: serves begin with unit scale;
+                // ordinary incoming feeds already carry their court size.
+                let ball = makeVisualBall(width: width, role: role, wallStyle: true)
+                scene.addChild(ball)
+                ball.updatePresentation(progress: 1)
+                let incomingWidth = solidWidth(of: ball)
+                let exchange = RallyContinuousBallExchange(
+                    ball: ball, startPoint: start, contactPoint: contact, wallContactPoint: farPoint,
+                    direction: 1, inboundSpeed: 480, offsetFromCenter: 0,
+                    startTime: originTime
+                )
+                let first = exchange.frame(at: originTime)
+                ball.applyLiveExchangeFrame(first)
+                let contactWidth = solidWidth(of: ball)
+                XCTAssertEqual(contactWidth / incomingWidth, 1, accuracy: 0.08,
+                               "Contact must not double the incoming ball's size")
+                XCTAssertGreaterThan(solidWidth(of: ball), width * 0.045)
+                XCTAssertLessThan(solidWidth(of: ball), width * 0.065)
+
+                for sample in 0...60 {
+                    let frame = exchange.frame(at: originTime + exchange.totalDuration * Double(sample) / 60)
+                    ball.applyLiveExchangeFrame(frame)
+                    // SpriteKit stores transforms as Float32. At this court
+                    // size, rounding is <0.000031pt, far below one pixel.
+                    XCTAssertEqual(ball.position.x, frame.point.x, accuracy: 0.000_1,
+                                   "Display scale must not alter the trajectory")
+                    XCTAssertEqual(ball.position.y, frame.point.y, accuracy: 0.000_1,
+                                   "Display scale must not alter the trajectory")
+                    XCTAssertEqual(ball.xScale / ball.yScale, frame.xScale / frame.yScale, accuracy: 0.000_001,
+                                   "Retain the authored squash and stretch")
+                    XCTAssertLessThan(solidWidth(of: ball), width * 0.085,
+                                      "Contact deformation must stay within a readable ball diameter")
+                }
+
+                let terminal = exchange.frame(at: originTime + exchange.totalDuration)
+                let exchangeSize = CGSize(width: ball.xScale, height: ball.yScale)
+                let reentry = RallyReentryBallState(
+                    startTime: 10, arrivalTime: 10.54, strikeTime: 10.495,
+                    startPoint: terminal.point, strikePoint: contact, config: .rallyDefault,
+                    handoffXScale: terminal.xScale, handoffYScale: terminal.yScale,
+                    handoffShadowAlpha: terminal.shadowAlpha
+                )
+                ball.beginReentry(reentry)
+                ball.applyReentryFrame(reentry.frame(at: reentry.startTime), trackTime: reentry.startTime)
+                XCTAssertEqual(ball.xScale, exchangeSize.width, accuracy: 0.000_001)
+                XCTAssertEqual(ball.yScale, exchangeSize.height, accuracy: 0.000_001)
+                XCTAssertFalse(ball.isHittable(at: reentry.startTime))
+                XCTAssertTrue(ball.isHittable(at: reentry.rearmTime + 0.001))
+
+                let handoffTime = reentry.startTime + reentry.travelSeconds * 0.70
+                ball.applyReentryFrame(reentry.frame(at: handoffTime), trackTime: handoffTime)
+                let reentrySize = CGSize(width: ball.xScale, height: ball.yScale)
+                let normalization = RallyBallNormalizationState(reentry: reentry, at: handoffTime)
+                ball.beginNormalization(normalization)
+                ball.updateNormalization(trackTime: handoffTime)
+                XCTAssertEqual(ball.xScale, reentrySize.width, accuracy: 0.000_001)
+                XCTAssertEqual(ball.yScale, reentrySize.height, accuracy: 0.000_001)
+                ball.updateNormalization(trackTime: reentry.arrivalTime)
+                XCTAssertEqual(ball.position, normalization.frame(at: reentry.arrivalTime).point)
+                XCTAssertEqual(ball.effectiveArrivalTime, reentry.arrivalTime)
+                XCTAssertEqual(solidWidth(of: ball), contactWidth, accuracy: 0.000_001,
+                               "The next incoming ball returns to its original contact size")
+                XCTAssertGreaterThan(solidWidth(of: ball), width * 0.045)
+                XCTAssertLessThan(solidWidth(of: ball), width * 0.065)
+
+                ball.updateNormalization(trackTime: normalization.expirationTime + 0.001)
+                XCTAssertNil(ball.normalizationState)
+                XCTAssertEqual(try XCTUnwrap(ball.liveTravelBaselineOverride).strikeScale, 1,
+                               "The model keeps its normalized scale contract")
+                ball.updatePresentation(progress: 1.18)
+                XCTAssertEqual(ball.effectiveArrivalTime, reentry.arrivalTime)
+                XCTAssertLessThan(solidWidth(of: ball), width * 0.075,
+                                  "An expired normalization must not restore the old oversized geometry")
+                XCTAssertLessThanOrEqual(ball.glowWidth, 0.75)
+                XCTAssertGreaterThan(ball.strokeColor.cgColor.alpha, 0.25)
+                XCTAssertLessThan(ball.strokeColor.cgColor.alpha, 0.65)
+            }
+        }
+    }
+
+    func testNonWallBallKeepsItsExistingMotionPresentation() {
+        let ball = makeVisualBall(width: 375, role: .returnBall, wallStyle: false)
+        let exchange = makeExchange()
+        for sample in 0...20 {
+            let frame = exchange.frame(at: originTime + exchange.totalDuration * Double(sample) / 20)
+            ball.applyLiveExchangeFrame(frame)
+            // Only allow Float32 transform-storage rounding, not a visual
+            // rescale (observed maximum scale error is <0.000000047).
+            XCTAssertEqual(ball.xScale, frame.xScale, accuracy: 0.000_000_1)
+            XCTAssertEqual(ball.yScale, frame.yScale, accuracy: 0.000_000_1)
+            XCTAssertEqual(ball.position.x, frame.point.x, accuracy: 0.000_1)
+            XCTAssertEqual(ball.position.y, frame.point.y, accuracy: 0.000_1)
+        }
+        XCTAssertEqual(ball.glowWidth, 10)
+        XCTAssertEqual(ball.strokeColor.cgColor.alpha, 1)
+    }
+
+    private func solidWidth(of ball: BallNode) -> CGFloat {
+        (ball.path?.boundingBox.width ?? 0) * ball.xScale
+    }
+
+    private func makeVisualBall(width: CGFloat, role: BeatmapNote.Role, wallStyle: Bool) -> BallNode {
+        BallNode(
+            lane: .right, kind: .normal, role: role, wallStyleMode: wallStyle, shotShape: .drive,
+            arrivalTime: 4, spawnTime: 3, travelSeconds: 1,
+            spawnPoint: CGPoint(x: 310, y: 236), strikePoint: CGPoint(x: 320, y: 230),
+            spawnScale: role == .serve ? 1 : 0.4,
+            strikeScale: role == .serve ? 1 : width * Tunables.ballStrikeDiameterSceneWidthRatio / 44,
+            overrunScale: role == .serve ? 1 : 1.2, curveAmount: 0
+        )
+    }
+
     private func makeExchange(config: RallyExchangeConfig = .rallyDefault) -> RallyContinuousBallExchange {
         let start = CGPoint(x: 310, y: 236)
         let contact = CGPoint(x: 320, y: 230)
