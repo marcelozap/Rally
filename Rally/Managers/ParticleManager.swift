@@ -14,6 +14,7 @@ final class ParticleManager {
 
     weak var scene: SKScene?
     weak var shakeTarget: SKNode?
+    private var restrainedHits = false
 
     private init() {
         GameEventBus.shared.subscribe(self) { [weak self] event in
@@ -21,9 +22,10 @@ final class ParticleManager {
         }
     }
 
-    func attach(scene: SKScene, shakeTarget: SKNode) {
+    func attach(scene: SKScene, shakeTarget: SKNode, restrainedHits: Bool = false) {
         self.scene = scene
         self.shakeTarget = shakeTarget
+        self.restrainedHits = restrainedHits
     }
 
     // MARK: - Event routing
@@ -50,12 +52,25 @@ final class ParticleManager {
     private func emitHitBurst(quality: HitQuality, at point: CGPoint, in scene: SKScene) {
         let burst = SKShapeNode(circleOfRadius: 4)
         burst.position = point
-        burst.strokeColor = color(for: quality)
+        burst.strokeColor = restrainedHits
+            ? UIColor(red: 0.93, green: 0.96, blue: 0.70, alpha: 0.62)
+            : color(for: quality)
         burst.fillColor = .clear
-        burst.glowWidth = quality == .perfect ? 12 : 7
-        burst.lineWidth = quality == .perfect ? 2.2 : 1.8
-        burst.zPosition = 100
+        burst.glowWidth = restrainedHits ? 0.4 : (quality == .perfect ? 12 : 7)
+        burst.lineWidth = restrainedHits ? 1 : (quality == .perfect ? 2.2 : 1.8)
+        burst.zPosition = restrainedHits ? 12 : 100
         scene.addChild(burst)
+
+        // A small contact ring leaves the athlete and racket visible. The
+        // gameplay scene already provides shot-quality and streak feedback.
+        if restrainedHits {
+            burst.run(.sequence([
+                .group([.scale(to: quality == .perfect ? 3 : 2, duration: 0.16),
+                        .fadeOut(withDuration: 0.16)]),
+                .removeFromParent()
+            ]))
+            return
+        }
 
         let scaleTo: CGFloat
         let durationMs: Double

@@ -41,9 +41,18 @@ struct RallyPlayHubView: View {
                 NavigationStack {
                     ScrollView {
                         VStack(alignment: .leading, spacing: 18) {
-                            Text("Find your next rally.").font(RallyUIKit.Typography.title(.largeTitle))
-                            Text("Fun tennis mini-games, swipe timing, your player and your style.")
-                                .foregroundStyle(RallyUIKit.Palette.cloud)
+                            VStack(alignment: .leading, spacing: 10) {
+                                Text("ON COURT")
+                                    .font(.system(size: 11, weight: .bold)).tracking(3)
+                                    .foregroundStyle(RallyUIKit.Palette.cyan)
+                                Text("Make your next\nshot count.")
+                                    .font(RallyUIKit.Typography.display(38, weight: .medium))
+                                    .fixedSize(horizontal: false, vertical: true)
+                                Text("A quick rally or a little focused practice.")
+                                    .font(.subheadline)
+                                    .foregroundStyle(RallyUIKit.Palette.cloud)
+                            }
+                            .padding(.vertical, 14)
                             ForEach(RallyPlayMode.allCases) { mode in
                                 if mode == .copyCoach {
                                     NavigationLink { CoachView() } label: { modeCard(mode) }
@@ -71,19 +80,41 @@ struct RallyPlayHubView: View {
         }
     }
     private func modeCard(_ mode: RallyPlayMode) -> some View {
-        RallyUIKit.SectionCard {
-            HStack(spacing: 14) {
-                Image(systemName: mode.icon).font(.title2).foregroundStyle(RallyUIKit.Palette.cyan)
-                VStack(alignment: .leading, spacing: 6) {
-                    Text(mode.title).font(.headline)
-                    Text(mode.cue).font(.subheadline).foregroundStyle(RallyUIKit.Palette.cloud)
-                }
-                Spacer(minLength: 0)
-                Image(systemName: "chevron.right")
+        let featured = mode == .rallyChallenge
+        return HStack(spacing: 16) {
+            Image(systemName: mode.icon)
+                .font(.system(size: featured ? 30 : 22, weight: .medium))
+                .foregroundStyle(featured ? RallyUIKit.Palette.obsidian : RallyUIKit.Palette.cyan)
+                .frame(width: 58, height: 64)
+                .background(RoundedRectangle(cornerRadius: 18)
+                    .fill(featured ? RallyUIKit.Palette.cyan : RallyUIKit.Palette.cyan.opacity(0.09)))
+            VStack(alignment: .leading, spacing: 7) {
+                Text(featured ? "20 SECONDS · YOUR DOUBLE" : mode == .copyCoach ? "WATCH & REPEAT" : "10 ATTEMPTS")
+                    .font(.system(size: 9, weight: .bold)).tracking(1.3)
+                    .foregroundStyle(RallyUIKit.Palette.cyan)
+                Text(mode.title)
+                    .font(RallyUIKit.Typography.display(featured ? 25 : 22, weight: .semibold))
+                    .foregroundStyle(RallyUIKit.Palette.frost)
+                Text(mode.cue)
+                    .font(.system(size: 13))
+                    .foregroundStyle(RallyUIKit.Palette.cloud)
+                    .fixedSize(horizontal: false, vertical: true)
             }
-            .frame(maxWidth: .infinity, minHeight: 62, alignment: .leading)
+            Spacer(minLength: 0)
+            Image(systemName: "arrow.up.right")
+                .font(.system(size: 15, weight: .medium))
+                .foregroundStyle(RallyUIKit.Palette.cyan)
         }
+        .padding(20)
+        .frame(maxWidth: .infinity, minHeight: featured ? 148 : 124, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: 24)
+            .fill(LinearGradient(colors: [RallyUIKit.Palette.slate.opacity(featured ? 1 : 0.65), RallyUIKit.Palette.ink],
+                                 startPoint: .topLeading, endPoint: .bottomTrailing)))
+        .overlay(RoundedRectangle(cornerRadius: 24)
+            .stroke(featured ? RallyUIKit.Palette.cyan.opacity(0.35) : RallyUIKit.Palette.line, lineWidth: 1))
+        .accessibilityElement(children: .combine)
     }
+
 }
 
 struct RallyServeIntroduction: View {

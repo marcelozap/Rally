@@ -78,6 +78,8 @@ struct ShopItemDetailView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: RallyUIKit.Spacing.xl) {
+                productVisualHero
+
                 AvatarShopStageView(
                     config: avatar,
                     preview: tryingOn && item.category != .bag && item.category != .accessory
@@ -86,8 +88,6 @@ struct ShopItemDetailView: View {
                     tone: isLocker ? .calm : .shop,
                     emote: $stageEmote
                 )
-
-                productVisualHero
 
                 if let garmentReference {
                     garmentDetails(garmentReference)
@@ -167,9 +167,8 @@ struct ShopItemDetailView: View {
                     .fill(
                         RadialGradient(
                             colors: [
-                                item.color.opacity(0.58),
-                                RallyUIKit.Palette.obsidian,
-                                Color.black
+                                productImageURL == nil ? RallyUIKit.Palette.slate : RallyUIKit.Palette.champagne.opacity(0.92),
+                                productImageURL == nil ? RallyUIKit.Palette.ink : RallyUIKit.Palette.frost
                             ],
                             center: .topLeading,
                             startRadius: 24,
@@ -179,7 +178,7 @@ struct ShopItemDetailView: View {
                     .frame(height: 220)
 
                 Circle()
-                    .fill(accent.opacity(0.16))
+                    .fill(accent.opacity(0.035))
                     .frame(width: 180, height: 180)
                     .blur(radius: 40)
                     .offset(x: 80, y: -20)
@@ -199,7 +198,7 @@ struct ShopItemDetailView: View {
                             productIconFallback(accent: accent)
                         case .empty:
                             ProgressView()
-                                .tint(accent)
+                                .tint(RallyUIKit.Palette.obsidian)
                         @unknown default:
                             productIconFallback(accent: accent)
                         }
@@ -211,7 +210,7 @@ struct ShopItemDetailView: View {
             .clipShape(RoundedRectangle(cornerRadius: RallyUIKit.Radius.xl, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: RallyUIKit.Radius.xl, style: .continuous)
-                    .stroke(accent.opacity(0.18), lineWidth: 1)
+                    .stroke(Color.white.opacity(0.10), lineWidth: 1)
             )
         }
     }
@@ -262,7 +261,9 @@ struct ShopItemDetailView: View {
             .font(.system(size: item.category == .racket ? 92 : 76, weight: .bold))
             .foregroundStyle(
                 LinearGradient(
-                    colors: [.white, .white.opacity(0.86)],
+                    colors: productImageURL == nil
+                        ? [RallyUIKit.Palette.frost, RallyUIKit.Palette.frost.opacity(0.86)]
+                        : [RallyUIKit.Palette.obsidian, RallyUIKit.Palette.ink],
                     startPoint: .top,
                     endPoint: .bottom
                 )

@@ -284,7 +284,8 @@ final class GameScene: SKScene {
         #endif
         setupSwipeRecognizers(in: view)
 
-        ParticleManager.shared.attach(scene: self, shakeTarget: cameraNode)
+        ParticleManager.shared.attach(scene: self, shakeTarget: cameraNode,
+                                      restrainedHits: sessionMode == .wallRally)
 
         if sessionMode == .phasedMatch {
             // Phase coordinator drives BPM, density, timing windows, double-ball
@@ -337,7 +338,7 @@ final class GameScene: SKScene {
         GameEventBus.shared.publish(.sessionStart)
         if sessionMode == .wallRally {
             allTimeHighCombo = UserDefaults.standard.integer(forKey: Tunables.wallHighComboKey)
-            wallBestLabel?.text = allTimeHighCombo > 0 ? "BEST \(allTimeHighCombo)" : ""
+            wallBestLabel?.text = allTimeHighCombo > 0 ? "STREAK ×\(allTimeHighCombo)" : ""
         }
         runCountdown()
     }
@@ -587,7 +588,7 @@ final class GameScene: SKScene {
     private func setServeCue(_ text: String) {
         if serveCue == nil {
             let label = SKLabelNode(fontNamed: "AvenirNext-DemiBold")
-            label.fontSize = 17; label.fontColor = .white
+            label.fontSize = 15; label.fontColor = UIColor(red: 0.98, green: 0.97, blue: 0.91, alpha: 1)
             label.numberOfLines = 2; label.preferredMaxLayoutWidth = size.width - 70
             label.zPosition = 160; addChild(label); serveCue = label
         }
@@ -688,18 +689,11 @@ final class GameScene: SKScene {
             y: size.height * Tunables.wallSurfaceYRatio - 22
         )
         layoutWallHUDPositions()
-        hudTopPlate?.path = CGPath(
-            roundedRect: CGRect(
-                x: -(usesMinimalWallHUD ? 148.0 / 2 : 288.0 / 2),
-                y: -(usesMinimalWallHUD ? 58.0 / 2 : 104.0 / 2),
-                width: usesMinimalWallHUD ? 148 : 288,
-                height: usesMinimalWallHUD ? 58 : 104
-            ),
-            cornerWidth: usesMinimalWallHUD ? 22 : 30,
-            cornerHeight: usesMinimalWallHUD ? 22 : 30,
-            transform: nil
-        )
         if !usesMinimalWallHUD {
+            hudTopPlate?.path = CGPath(
+                roundedRect: CGRect(x: -144, y: -52, width: 288, height: 104),
+                cornerWidth: 30, cornerHeight: 30, transform: nil
+            )
             hudTopPlate?.position = CGPoint(x: size.width / 2, y: size.height * 0.885)
         }
         if !usesMinimalWallHUD {
@@ -998,25 +992,37 @@ final class GameScene: SKScene {
 
     private func layoutWallHUDPositions() {
         guard usesMinimalWallHUD else { return }
-        let courtScoreY = size.height * 0.795
-        hudCaptionLabel?.text = "MIRROR RALLY"
+        // The compact scoreboard sits beside the safe-area controls, above the
+        // opponent's head, instead of covering the court or device cutout.
+        let visibleTop = cameraHomePosition.y + size.height / 2
+        let scoreY = visibleTop - 51
+        let scoreX = size.width * 0.39
+        let timeX = size.width * 0.59
+        hudCaptionLabel?.text = "SCORE"
+        hudCaptionLabel?.fontColor = UIColor(white: 1, alpha: 0.82)
         hudCaptionLabel?.alpha = 1
         hudCaptionLabel?.isHidden = false
-        hudCaptionLabel?.position = CGPoint(x: size.width / 2, y: courtScoreY + 29)
+        hudCaptionLabel?.position = CGPoint(x: scoreX, y: scoreY + 20)
         timeLabel?.isHidden = false
         timeLabel?.alpha = 1
-        timeLabel?.fontSize = 22
-        timeLabel?.position = CGPoint(x: size.width * 0.80, y: courtScoreY)
-        scoreLabel?.position = CGPoint(x: size.width / 2, y: courtScoreY)
-        hudTopPlate?.position = CGPoint(x: size.width / 2, y: courtScoreY)
-        hudMaxLabel?.position = CGPoint(x: size.width * 0.78, y: courtScoreY)
-        hudMaxValueLabel?.position = CGPoint(x: size.width * 0.78, y: courtScoreY)
-        comboLabel?.position = CGPoint(x: size.width / 2, y: courtScoreY - 30)
-        livesLabel?.position = CGPoint(x: size.width / 2, y: courtScoreY - 22)
-        survivalBestLabel?.position = CGPoint(x: size.width * 0.20, y: courtScoreY + 25)
-        // Addictiveness HUD
-        wallStreakLabel?.position = CGPoint(x: size.width * 0.22, y: courtScoreY)
-        wallBestLabel?.position = CGPoint(x: size.width * 0.80, y: courtScoreY - 19)
+        timeLabel?.fontSize = 18
+        timeLabel?.position = CGPoint(x: timeX, y: scoreY)
+        scoreLabel?.position = CGPoint(x: scoreX, y: scoreY)
+        hudTopPlate?.path = CGPath(roundedRect: CGRect(x: -size.width * 0.24, y: -34,
+                                                     width: size.width * 0.48, height: 68),
+                                  cornerWidth: 17, cornerHeight: 17, transform: nil)
+        hudTopPlate?.position = CGPoint(x: size.width * 0.48, y: scoreY + 4)
+        hudTopPlate?.isHidden = false
+        hudTopPlate?.alpha = 1
+        hudTopPlate?.fillColor = UIColor(red: 0.035, green: 0.075, blue: 0.055, alpha: 0.80)
+        hudTopPlate?.strokeColor = UIColor(white: 1, alpha: 0.12)
+        hudTopPlate?.glowWidth = 0
+        comboLabel?.position = CGPoint(x: scoreX, y: scoreY - 18)
+        livesLabel?.position = CGPoint(x: scoreX, y: scoreY - 17)
+        // Score PB and best streak are separate records, with distinct labels.
+        survivalBestLabel?.position = CGPoint(x: timeX, y: scoreY + 20)
+        wallStreakLabel?.position = CGPoint(x: size.width * 0.18, y: scoreY - 15)
+        wallBestLabel?.position = CGPoint(x: timeX, y: scoreY - 17)
         wallMomentLabel?.position = CGPoint(x: size.width / 2, y: size.height * Tunables.wallMomentBannerYRatio)
     }
 
@@ -1029,7 +1035,7 @@ final class GameScene: SKScene {
             return
         }
         survivalBestLabel.isHidden = false
-        survivalBestLabel.text = "BEST \(wallFormattedScore(bestScore))"
+        survivalBestLabel.text = "\(usesMinimalWallHUD ? "PB" : "BEST") \(wallFormattedScore(bestScore))"
     }
 
     /// Fires once per run the instant the live score passes the stored best —
@@ -3464,7 +3470,7 @@ final class GameScene: SKScene {
             if previous > allTimeHighCombo {
                 allTimeHighCombo = previous
                 UserDefaults.standard.set(allTimeHighCombo, forKey: Tunables.wallHighComboKey)
-                wallBestLabel?.text = "BEST \(allTimeHighCombo)"
+                wallBestLabel?.text = "STREAK ×\(allTimeHighCombo)"
                 showWallNewBestBanner(combo: allTimeHighCombo)
             } else if missCopyPriority.showResetBanner {
                 // RESET banner only on meaningful combo breaks.
@@ -3656,7 +3662,7 @@ final class GameScene: SKScene {
             hudPhaseValueLabel?.text = ""
             hudPhaseValueLabel?.alpha = 0
             timeLabel?.alpha = 1
-            hudTopPlate?.alpha = 0
+            hudTopPlate?.alpha = 1
             hudMaxLabel?.alpha = 0
             hudMaxValueLabel?.alpha = 0
             comboLabel?.alpha = 0
@@ -3703,7 +3709,7 @@ final class GameScene: SKScene {
             : UIColor(red: 0.03, green: 0.05, blue: 0.09, alpha: 0.42)
         hudCaptionLabel?.fontColor = combo > 1
             ? comboAccentColor(for: combo).withAlphaComponent(0.46)
-            : UIColor(white: 1.0, alpha: 0.34)
+            : UIColor(white: 1.0, alpha: 0.82)
         hudMaxValueLabel?.fontColor = combo > 1
             ? comboAccentColor(for: combo).withAlphaComponent(0.82)
             : UIColor(white: 1.0, alpha: 0.78)
@@ -3714,7 +3720,11 @@ final class GameScene: SKScene {
         )
         let hudImpactWindow = max(0.16, wallHUDImpactDuration(for: recentContactQuality ?? .good))
         let hudImpact = max(0, min(1, (recentHUDImpactUntil - currentTimeSnapshot) / hudImpactWindow))
-        hudTopPlate?.glowWidth = 4 + hudImpact * hudImpactGlowBoost()
+        hudTopPlate?.glowWidth = usesMinimalWallHUD ? 0 : 4 + hudImpact * hudImpactGlowBoost()
+        if usesMinimalWallHUD {
+            hudTopPlate?.fillColor = UIColor(red: 0.035, green: 0.075, blue: 0.055, alpha: 0.80)
+            hudTopPlate?.strokeColor = UIColor(white: 1, alpha: 0.12)
+        }
         if hudImpact > 0.01 {
             hudCaptionLabel?.fontColor = (hudCaptionLabel?.fontColor ?? UIColor(white: 1.0, alpha: 0.34))
                 .blended(withFraction: CGFloat(hudImpact * 0.4), of: .white)
@@ -3840,7 +3850,7 @@ final class GameScene: SKScene {
         }
         if allTimeHighCombo <= 0 {
             return maxCombo > 0
-                ? ("BEST \(maxCombo)", UIColor(red: 1.0, green: 0.86, blue: 0.42, alpha: 0.52))
+                ? ("STREAK ×\(maxCombo)", UIColor(red: 1.0, green: 0.86, blue: 0.42, alpha: 0.52))
                 : ("", UIColor.clear)
         }
         if maxCombo > allTimeHighCombo {
@@ -3853,7 +3863,7 @@ final class GameScene: SKScene {
         if gap > 0, gap <= Tunables.wallNearBestComboWindow {
             return ("\(gap) TO BEST", UIColor(red: 1.0, green: 0.86, blue: 0.42, alpha: 0.86))
         }
-        return ("BEST \(allTimeHighCombo)", UIColor(red: 1.0, green: 0.86, blue: 0.42, alpha: 0.56))
+        return ("STREAK ×\(allTimeHighCombo)", UIColor(red: 1.0, green: 0.86, blue: 0.42, alpha: 0.56))
     }
 
     private func hudImpactGlowBoost() -> CGFloat {

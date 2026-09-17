@@ -22,6 +22,88 @@ final class RallyFootworkRenderTests: XCTestCase {
         }
     }
 
+    /// Close-up evidence for human review of the shipped model and equipment.
+    /// This checks renderability; appearance quality is judged from attachments.
+    func testRenderEquipmentAndCharacterDetailForVisualReview() throws {
+        let device = try XCTUnwrap(MTLCreateSystemDefaultDevice())
+        let frames: [(name: String, scale: Double, camera: SCNVector3, target: SCNVector3)] = [
+            ("upper", 0.73, SCNVector3(-0.04, 1.38, 4), SCNVector3(-0.04, 1.28, 0)),
+            ("shoes", 0.47, SCNVector3(0.55, 0.48, 3), SCNVector3(0, 0.23, 0.03)),
+            ("full", 1.04, SCNVector3(0, 1.14, 4), SCNVector3(0, 0.91, 0))
+        ]
+        for preset in [RallyAthletePreset.maleEuropean, .femaleEuropean] {
+            try autoreleasepool {
+                let look = RallyAvatarAppearance(
+                    athletePreset: preset,
+                    top: RallyGearReference(id: "uniqlo.dry.polo.white", colorwayHex: "#F4F4F2"),
+                    shorts: RallyGearReference(id: "default-shorts", colorwayHex: "#15171B")
+                )
+                let rig = RallyAvatarRig(appearance: look, presentation: .studio)
+                XCTAssertNil(rig.assetError)
+                XCTAssertFalse(rig.root.isHidden)
+                for name in ["Human skin", "Polo", "Court shorts", "Court shoes"] {
+                    let node = try XCTUnwrap(rig.root.childNode(withName: name, recursively: true))
+                    let geometry = try XCTUnwrap(node.geometry)
+                    XCTAssertFalse(geometry.sources(for: .vertex).isEmpty, "\(name) needs live mesh vertices")
+                    XCTAssertFalse(geometry.elements.isEmpty, "\(name) needs renderable mesh elements")
+                }
+                let racket = try XCTUnwrap(rig.root.childNode(withName: "Tennis racket", recursively: true))
+                XCTAssertFalse(racket.isHidden)
+                XCTAssertFalse(racket.childNodes.isEmpty)
+                rig.scene.background.contents = UIColor(red: 0.045, green: 0.075, blue: 0.063, alpha: 1)
+                rig.yaw = -0.16
+                rig.animate(time: 0.6)
+                SCNTransaction.flush()
+
+                let renderer = SCNRenderer(device: device, options: nil)
+                renderer.scene = rig.scene
+                renderer.pointOfView = rig.camera
+                renderer.autoenablesDefaultLighting = false
+                XCTAssertTrue(renderer.prepare(rig.scene, shouldAbortBlock: nil))
+                let model = preset.athleteModel == .male ? "male" : "female"
+                for frame in frames {
+                    rig.camera.camera?.orthographicScale = frame.scale
+                    rig.camera.position = frame.camera
+                    rig.camera.look(at: frame.target)
+                    SCNTransaction.flush()
+                    let image = renderer.snapshot(atTime: 0.6, with: CGSize(width: 768, height: 1024),
+                                                  antialiasingMode: .multisampling4X)
+                    _ = try XCTUnwrap(image.cgImage, "\(model) \(frame.name) must produce a render")
+                    let attachment = XCTAttachment(image: image)
+                    attachment.name = "equipment-\(model)-\(frame.name)"
+                    attachment.lifetime = .keepAlways
+                    add(attachment)
+                }
+
+                // Match the production near player's back-facing rig and SDR
+                // camera. Contact is 0.5; the live follow-through advances to 1.
+                let gameplayRig = RallyAvatarRig(appearance: look, presentation: .gameplay)
+                XCTAssertNil(gameplayRig.assetError)
+                XCTAssertFalse(gameplayRig.root.isHidden)
+                gameplayRig.scene.background.contents = UIColor(red: 0.045, green: 0.075, blue: 0.063, alpha: 1)
+                gameplayRig.camera.camera?.wantsHDR = false
+                let gameplayRenderer = SCNRenderer(device: device, options: nil)
+                gameplayRenderer.scene = gameplayRig.scene
+                gameplayRenderer.pointOfView = gameplayRig.camera
+                gameplayRenderer.autoenablesDefaultLighting = false
+                XCTAssertTrue(gameplayRenderer.prepare(gameplayRig.scene, shouldAbortBlock: nil))
+                let swingFrames: [(name: String, progress: Float)] = [("contact", 0.5), ("followthrough", 0.88)]
+                for frame in swingFrames {
+                    let time = Double(frame.progress)
+                    gameplayRig.animate(time: time, swingProgress: frame.progress, courtPosition: 0)
+                    SCNTransaction.flush()
+                    let image = gameplayRenderer.snapshot(atTime: time, with: CGSize(width: 768, height: 1024),
+                                                          antialiasingMode: .multisampling4X)
+                    _ = try XCTUnwrap(image.cgImage, "\(model) \(frame.name) must produce a render")
+                    let attachment = XCTAttachment(image: image)
+                    attachment.name = "equipment-\(model)-gameplay-\(frame.name)"
+                    attachment.lifetime = .keepAlways
+                    add(attachment)
+                }
+            }
+        }
+    }
+
     private func renderTravel(preset: RallyAthletePreset,
                               presentation: RallyAvatarRig.Presentation,
                               device: MTLDevice) throws {

@@ -21,18 +21,29 @@ struct AvatarCustomizerView: View {
                     welcomeHero
                 }
 
-                VStack(spacing: 6) {
+                VStack(spacing: 0) {
+                    HStack {
+                        RallyUIKit.EditorialEyebrow(text: "Player studio", tint: RallyUIKit.Palette.champagne)
+                        Spacer()
+                        Image(systemName: "rotate.3d")
+                            .font(.system(size: 16, weight: .medium))
+                            .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.65))
+                            .accessibilityHidden(true)
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.top, 18)
                     RallyAvatarView(
                         appearance: avatarAppearanceStore.appearance(for: config),
-                        targetHeight: 288,
+                        targetHeight: 304,
                         showsRacket: true,
                         breathingPhase: Date().timeIntervalSinceReferenceDate * 1.8,
                         leftHanded: gamePreferences.dominantHand == .left
                     )
-                    .frame(height: 288)
+                    .frame(height: 304)
 
                     playerReadout
-                        .padding(.bottom, 14)
+                        .padding(.horizontal, 18)
+                        .padding(.bottom, 18)
                 }
                 .frame(maxWidth: .infinity)
                 .background(heroBackdrop)
@@ -51,7 +62,7 @@ struct AvatarCustomizerView: View {
                 .padding(.vertical, 12)
                 .background(RallyUIKit.screenBackground)
         }
-        .navigationTitle(isFirstLaunch ? "" : "Your model")
+        .navigationTitle(isFirstLaunch ? "" : "Your player")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(isFirstLaunch ? .hidden : .visible, for: .navigationBar)
         .background(RallyUIKit.screenBackground.ignoresSafeArea())
@@ -68,7 +79,7 @@ struct AvatarCustomizerView: View {
     private var welcomeHero: some View {
         VStack(spacing: 6) {
             RallyUIKit.EditorialEyebrow(text: "Welcome to Rally", tint: RallyUIKit.Palette.cyan)
-            Text("Choose your model")
+            Text("Choose your player")
                 .font(RallyUIKit.Typography.display(28, weight: .bold))
                 .foregroundStyle(RallyUIKit.Palette.frost)
                 .multilineTextAlignment(.center)
@@ -84,41 +95,41 @@ struct AvatarCustomizerView: View {
                 .fill(
                     LinearGradient(
                         colors: [
+                            Color(red: 0.13, green: 0.24, blue: 0.20),
                             RallyUIKit.Palette.slate,
-                            RallyUIKit.Palette.ink,
-                            Color.black
+                            RallyUIKit.Palette.ink
                         ],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     )
                 )
 
-            Circle()
-                .fill(RallyUIKit.Palette.cyan.opacity(0.24))
-                .frame(width: 220, height: 220)
-                .blur(radius: 48)
-                .offset(x: -90, y: -70)
+            RadialGradient(colors: [RallyUIKit.Palette.champagne.opacity(0.13), .clear],
+                           center: .init(x: 0.5, y: 0.32), startRadius: 8, endRadius: 220)
 
-            Circle()
-                .fill(RallyUIKit.Palette.champagne.opacity(0.18))
-                .frame(width: 200, height: 200)
-                .blur(radius: 42)
-                .offset(x: 96, y: -48)
+            GeometryReader { geometry in
+                Ellipse()
+                    .fill(RallyUIKit.Palette.champagne.opacity(0.035))
+                    .overlay(Ellipse().stroke(RallyUIKit.Palette.champagne.opacity(0.10), lineWidth: 1))
+                    .frame(width: geometry.size.width * 0.74, height: 38)
+                    .position(x: geometry.size.width / 2, y: geometry.size.height - 94)
+            }
 
             RoundedRectangle(cornerRadius: 26, style: .continuous)
-                .stroke(Color.white.opacity(0.09), lineWidth: 1)
+                .stroke(RallyUIKit.Palette.champagne.opacity(0.14), lineWidth: 1)
         }
     }
 
     private var playerReadout: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 10) {
+        VStack(spacing: 6) {
             Text("\(config.athletePreset.athleteModel == .male ? "Men" : "Women") · \(config.athletePreset.displayName)")
                 .font(RallyUIKit.Typography.label(.headline, weight: .bold))
                 .foregroundStyle(RallyUIKit.Palette.frost)
-            Text("Tennis athlete")
+            Text("Drag to rotate · Pinch to zoom")
                 .font(RallyUIKit.Typography.label(.caption, weight: .medium))
                 .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.66))
         }
+        .multilineTextAlignment(.center)
     }
 
     // MARK: - Model and color selection
@@ -149,27 +160,35 @@ struct AvatarCustomizerView: View {
 
             Divider().overlay(RallyUIKit.Palette.line)
 
-            HStack(spacing: 2) {
+            HStack(spacing: 8) {
                 colorRowLabel("Skin")
-                ForEach(AvatarSkinTone.allCases) { tone in
-                    colorSwatch(hex: tone.hex, label: "Skin, \(tone.displayName)",
-                                selected: config.skinToneOverride == tone) {
-                        config.skinToneOverride = tone
-                        avatarAppearanceStore.sync(from: config)
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 2) {
+                        ForEach(AvatarSkinTone.allCases) { tone in
+                            colorSwatch(hex: tone.hex, label: "Skin, \(tone.displayName)",
+                                        selected: config.skinToneOverride == tone) {
+                                config.skinToneOverride = tone
+                                avatarAppearanceStore.sync(from: config)
+                            }
+                            .accessibilityIdentifier("skinColor.\(tone.rawValue)")
+                        }
                     }
-                    .accessibilityIdentifier("skinColor.\(tone.rawValue)")
                 }
             }
 
-            HStack(spacing: 2) {
+            HStack(spacing: 8) {
                 colorRowLabel("Hair")
-                ForEach(AvatarHairColor.allCases) { color in
-                    colorSwatch(hex: color.hex, label: "Hair, \(color.displayName)",
-                                selected: config.hairColorOverrideHex == color.hex) {
-                        config.hairColorOverrideHex = color.hex
-                        avatarAppearanceStore.sync(from: config)
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 2) {
+                        ForEach(AvatarHairColor.allCases) { color in
+                            colorSwatch(hex: color.hex, label: "Hair, \(color.displayName)",
+                                        selected: config.hairColorOverrideHex == color.hex) {
+                                config.hairColorOverrideHex = color.hex
+                                avatarAppearanceStore.sync(from: config)
+                            }
+                            .accessibilityIdentifier("hairColor.\(color.rawValue)")
+                        }
                     }
-                    .accessibilityIdentifier("hairColor.\(color.rawValue)")
                 }
             }
         }
@@ -253,20 +272,27 @@ struct Chip: View {
 
     var body: some View {
         Button(action: action) {
-            Text(label)
-                .font(.system(.subheadline, design: .rounded).weight(.semibold))
-                .tracking(0.2)
+            HStack(spacing: 5) {
+                Image(systemName: "checkmark")
+                    .font(.system(size: 10, weight: .bold))
+                    .opacity(selected ? 1 : 0)
+                Text(label)
+                    .font(RallyUIKit.Typography.label(.subheadline, weight: .semibold))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.9)
+            }
                 .padding(.vertical, 9)
-                .padding(.horizontal, 14)
+                .padding(.horizontal, 8)
+                .frame(maxWidth: .infinity, minHeight: 44)
                 .background(
-                    RoundedRectangle(cornerRadius: 20)
-                        .fill(selected ? AnyShapeStyle(RallyUIKit.accentGradient(RallyUIKit.Palette.cyan)) : AnyShapeStyle(Color.white.opacity(0.08)))
+                    RoundedRectangle(cornerRadius: 13, style: .continuous)
+                        .fill(selected ? RallyUIKit.Palette.cyan : Color.white.opacity(0.045))
                 )
                 .overlay(
-                    RoundedRectangle(cornerRadius: 20)
-                        .stroke(selected ? Color.white.opacity(0.18) : Color.white.opacity(0.08), lineWidth: 1)
+                    RoundedRectangle(cornerRadius: 13, style: .continuous)
+                        .stroke(selected ? RallyUIKit.Palette.cyan.opacity(0.8) : Color.white.opacity(0.12), lineWidth: 1)
                 )
-                .foregroundStyle(selected ? .black : .white.opacity(0.88))
+                .foregroundStyle(selected ? RallyUIKit.Palette.ink : RallyUIKit.Palette.frost)
         }
         .buttonStyle(.plain)
     }

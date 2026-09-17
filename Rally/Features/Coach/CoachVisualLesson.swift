@@ -224,7 +224,15 @@ struct CoachVisualLesson: View {
                         .font(RallyUIKit.Typography.title(.title2))
                     CoachDemonstrator(appearance: appearance, progress: Float(exampleTime / 4),
                                       leftHanded: model.hittingHand == .left, sideView: sideView)
-                        .frame(height: 280)
+                        .frame(height: 320)
+                        .background(RoundedRectangle(cornerRadius: 22).fill(
+                            LinearGradient(colors: [RallyUIKit.Palette.slate, RallyUIKit.Palette.ink],
+                                           startPoint: .topLeading, endPoint: .bottomTrailing)))
+                        .overlay(alignment: .topLeading) {
+                            Label("MOVEMENT STUDIO", systemImage: "figure.tennis")
+                                .font(.system(size: 9, weight: .bold)).tracking(1.5)
+                                .foregroundStyle(RallyUIKit.Palette.cloud).padding(16)
+                        }
                         .accessibilityLabel("Practice example: soften your knees, then return to ready")
                     HStack {
                         Button(examplePlaying ? "Pause example" : "Play example") { examplePlaying.toggle(); lastTick = nil }
@@ -235,13 +243,10 @@ struct CoachVisualLesson: View {
                         .font(.subheadline)
                 }
                 Picker("Demonstrator", selection: $girl) {
-                    Text("Boy example").tag(false)
-                    Text("Girl example").tag(true)
+                    Text("Male athlete").tag(false)
+                    Text("Female athlete").tag(true)
                 }
                 .pickerStyle(.segmented)
-                Text("Uses Rally's existing adult athlete models.")
-                    .font(.caption)
-                    .foregroundStyle(RallyUIKit.Palette.cloud)
                 Picker("Example view", selection: $sideView) {
                     Text("Front").tag(false)
                     Text("Side").tag(true)

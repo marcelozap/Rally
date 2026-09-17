@@ -48,10 +48,12 @@ struct GameSessionView: View {
                     SpriteView(scene: scene, options: [.ignoresSiblingOrder])
                         .accessibilityLabel(mode.title + ". " + mode.cue)
                         .frame(width: size.width, height: size.height)
-                        .ignoresSafeArea()
                         .id(sessionKey)
                         .overlay(alignment: .top) {
                             sessionChrome
+                        }
+                        .overlay(alignment: .bottomTrailing) {
+                            if autoPlayEnabled { aiButton.padding(16) }
                         }
                         .overlay {
                             matchAtmosphere
@@ -151,27 +153,33 @@ struct GameSessionView: View {
     }
 
     private var sessionChrome: some View {
-        HStack(alignment: .top) {
-            Spacer()
-            VStack(alignment: .trailing, spacing: 10) {
-                exitButton
-                Button(pausedByPlayer ? "Resume" : "Pause") {
-                    pausedByPlayer.toggle()
-                    if pausedByPlayer { scene?.pauseSession() } else { scene?.resumeSession() }
-                }.buttonStyle(.bordered).frame(minHeight: 44)
-                Button { scene?.pauseSession(); showingSettings = true } label: {
-                    Image(systemName: "gearshape").frame(width: 44, height: 44)
-                }.accessibilityLabel("Game settings")
-                if autoPlayEnabled {
-                    aiButton
-                        .scaleEffect(0.88)
-                        .opacity(0.78)
-                }
+        HStack(spacing: 10) {
+            exitButton
+            Spacer(minLength: 8)
+            Button {
+                pausedByPlayer.toggle()
+                if pausedByPlayer { scene?.pauseSession() } else { scene?.resumeSession() }
+            } label: {
+                sessionControlIcon(pausedByPlayer ? "play.fill" : "pause.fill")
             }
+            .accessibilityLabel(pausedByPlayer ? "Resume match" : "Pause match")
+            Button { scene?.pauseSession(); showingSettings = true } label: {
+                sessionControlIcon("slider.horizontal.3")
+            }
+            .accessibilityLabel("Game settings")
         }
-        .frame(maxWidth: .infinity, alignment: .topTrailing)
-        .padding(.trailing, 14)
-        .padding(.top, 42)
+        .buttonStyle(.plain)
+        .padding(.horizontal, 16)
+        .padding(.top, 8)
+    }
+
+    private func sessionControlIcon(_ name: String) -> some View {
+        Image(systemName: name)
+            .font(.system(size: 14, weight: .semibold))
+            .foregroundStyle(RallyUIKit.Palette.frost)
+            .frame(width: 44, height: 44)
+            .background(Circle().fill(RallyUIKit.Palette.obsidian.opacity(0.65)))
+            .overlay(Circle().stroke(RallyUIKit.Palette.line, lineWidth: 1))
     }
 
     private var topInfoStrip: some View {
@@ -226,7 +234,7 @@ struct GameSessionView: View {
 
             RadialGradient(
                 colors: [
-                    atmosphere.accentColor.opacity(atmosphere.intensity * 0.22),
+                    atmosphere.accentColor.opacity(atmosphere.intensity * 0.06),
                     .clear
                 ],
                 center: .center,
@@ -240,7 +248,7 @@ struct GameSessionView: View {
             }
 
             LinearGradient(
-                colors: [.clear, atmosphere.accentColor.opacity(atmosphere.intensity * 0.08)],
+                colors: [.clear, atmosphere.accentColor.opacity(atmosphere.intensity * 0.025)],
                 startPoint: .leading,
                 endPoint: .trailing
             )
@@ -271,13 +279,13 @@ struct GameSessionView: View {
 
     private var exitButton: some View {
         Button(action: onExit) {
-            Image(systemName: "xmark")
-                .font(.system(size: 10, weight: .black))
+            Image(systemName: "chevron.left")
+                .font(.system(size: 14, weight: .semibold))
                 .foregroundStyle(RallyUIKit.Palette.frost.opacity(0.82))
                 .frame(width: 44, height: 44)
                 .background(
                     Circle()
-                        .fill(Color.black.opacity(0.18))
+                        .fill(RallyUIKit.Palette.obsidian.opacity(0.65))
                 )
                 .overlay(
                     Circle()

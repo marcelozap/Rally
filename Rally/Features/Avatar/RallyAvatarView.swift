@@ -98,9 +98,8 @@ private final class RallyFittingSceneView: SCNView {
     @objc func zoom(_ gesture: UIPinchGestureRecognizer) {
         if gesture.state == .began { zoomAtGestureStart = rig?.camera.camera?.orthographicScale ?? 1.05 }
         let scale = min(1.15, max(0.48, zoomAtGestureStart / Double(gesture.scale)))
-        rig?.camera.camera?.orthographicScale = scale
         // Zoom towards chest/garments while keeping normal framing grounded at full height.
-        rig?.camera.position.y = Float(0.93 + (1.05 - scale) * 0.62)
+        rig?.setStudioZoom(scale)
         drawFrame()
     }
 }

@@ -178,6 +178,118 @@ final class AvatarRigTests: XCTestCase {
         }
     }
 
+    func testStrokePathsKeepTheEstablishedContactAndReturnToReady() {
+        for leftHanded in [false, true] {
+            let hand: Float = leftHanded ? -1 : 1
+            for backhand in [false, true] {
+                let contact = RallyAvatarRig.strokeWristTarget(progress: 0.5, backhand: backhand, leftHanded: leftHanded)
+                XCTAssertEqual(contact.x, (backhand ? 0.26 : -0.46) * hand, accuracy: 0.000001)
+                XCTAssertEqual(contact.y, 1.21 + 0.15, accuracy: 0.000001)
+                XCTAssertEqual(contact.z, 0.31, accuracy: 0.000001)
+                let ready = RallyAvatarRig.strokeWristTarget(progress: 0, backhand: backhand, leftHanded: leftHanded)
+                let recovered = RallyAvatarRig.strokeWristTarget(progress: 1, backhand: backhand, leftHanded: leftHanded)
+                XCTAssertLessThan(simd_distance(ready, recovered), 0.000001)
+                let prepared = RallyAvatarRig.strokeWristTarget(progress: 0.22, backhand: backhand, leftHanded: leftHanded)
+                let finish = RallyAvatarRig.strokeWristTarget(progress: 0.78, backhand: backhand, leftHanded: leftHanded)
+                XCTAssertGreaterThan(contact.z - prepared.z, 0.20, "Preparation must travel into contact")
+                XCTAssertGreaterThan(abs(finish.x - contact.x), 0.5, "The finish must cross through the stroke")
+            }
+        }
+    }
+
+    func testStrokePathsAreContinuousThroughContactAndMirrorForLeftHandedPlayers() {
+        for backhand in [false, true] {
+            var previous = RallyAvatarRig.strokeWristTarget(progress: 0, backhand: backhand, leftHanded: false)
+            for frame in 1...240 {
+                let p = Float(frame) / 240
+                let right = RallyAvatarRig.strokeWristTarget(progress: p, backhand: backhand, leftHanded: false)
+                let left = RallyAvatarRig.strokeWristTarget(progress: p, backhand: backhand, leftHanded: true)
+                XCTAssertTrue(right.x.isFinite && right.y.isFinite && right.z.isFinite)
+                XCTAssertLessThan(simd_distance(previous, right), 0.025, "No arm teleport between neighboring poses")
+                XCTAssertEqual(left.x, -right.x, accuracy: 0.000001)
+                XCTAssertEqual(left.y, right.y, accuracy: 0.000001)
+                XCTAssertEqual(left.z, right.z, accuracy: 0.000001)
+                previous = right
+            }
+            for knot: Float in [0.22, 0.5, 0.78] {
+                let epsilon: Float = 0.0001
+                let before = RallyAvatarRig.strokeWristTarget(progress: knot - epsilon, backhand: backhand, leftHanded: false)
+                let at = RallyAvatarRig.strokeWristTarget(progress: knot, backhand: backhand, leftHanded: false)
+                let after = RallyAvatarRig.strokeWristTarget(progress: knot + epsilon, backhand: backhand, leftHanded: false)
+                XCTAssertLessThan(simd_length((at - before) / epsilon - (after - at) / epsilon), 0.025,
+                                  "Stroke velocity should not stop or jump at a phase boundary")
+            }
+        }
+    }
+
+    func testStrokeRecoveryDoesNotSnapTheRacketOrHandsAtTheReadyBoundary() throws {
+        for preset in [RallyAthletePreset.maleEuropean, .femaleBlack] {
+            let rig = RallyAvatarRig(appearance: RallyAvatarAppearance(athletePreset: preset), presentation: .gameplay)
+            for leftHanded in [false, true] {
+                for backhand in [false, true] {
+                    rig.animate(time: 1.0, swingProgress: 1, backhand: backhand, leftHanded: leftHanded)
+                    let racketFinish = rig.racketHeadWorldPosition
+                    let wrist = try XCTUnwrap(rig.root.childNode(withName: leftHanded ? "wrist.R" : "wrist.L", recursively: true))
+                    let handFinish = wrist.simdWorldPosition
+                    rig.animate(time: 1.0, leftHanded: leftHanded)
+                    let racketReady = rig.racketHeadWorldPosition
+                    XCTAssertEqual(racketFinish.x, racketReady.x, accuracy: 0.0001)
+                    XCTAssertEqual(racketFinish.y, racketReady.y, accuracy: 0.0001)
+                    XCTAssertEqual(racketFinish.z, racketReady.z, accuracy: 0.0001)
+                    XCTAssertLessThan(simd_distance(handFinish, wrist.simdWorldPosition), 0.0001)
+                }
+            }
+        }
+    }
+
+    func testClippedGarmentEdgesStayOnTheSeamAndRetainNormalizedSkinning() throws {
+        for prefix in ["", "female-"] {
+            let source = try RallyHumanMesh.load(prefix + "shoes")
+            let cut: Float = 0.012
+            for keepAbove in [false, true] {
+                let mesh = source.clipped(atY: cut, keepAbove: keepAbove)
+                XCTAssertFalse(mesh.indices.isEmpty)
+                let count = mesh.positions.count / 3
+                XCTAssertEqual(mesh.normals.count, count * 3)
+                XCTAssertEqual(mesh.uvs.count, count * 2)
+                let weights = try XCTUnwrap(mesh.boneWeights)
+                let joints = try XCTUnwrap(mesh.boneIndices)
+                XCTAssertEqual(weights.count, count * 4)
+                XCTAssertEqual(joints.count, count * 4)
+                XCTAssertTrue(mesh.positions.allSatisfy(\.isFinite))
+                XCTAssertTrue(mesh.normals.allSatisfy(\.isFinite))
+                var seamCount = 0
+                for vertex in Set(mesh.indices) {
+                    let y = mesh.positions[Int(vertex) * 3 + 1]
+                    XCTAssertTrue(keepAbove ? y >= cut - 0.000001 : y <= cut + 0.000001,
+                                  "No original triangle may cross the new material seam")
+                    if abs(y - cut) < 0.000001 { seamCount += 1 }
+                    let start = Int(vertex) * 4
+                    XCTAssertEqual(weights[start..<(start + 4)].reduce(0, +), 1, accuracy: 0.00001)
+                }
+                XCTAssertGreaterThan(seamCount, 8, "A cut must insert a connected boundary, not discard intersecting faces")
+            }
+        }
+    }
+
+    func testCoveredFeetCannotBreakThroughMandatoryFootwear() throws {
+        for spec in presetAssets {
+            let rig = RallyAvatarRig(appearance: RallyAvatarAppearance(athletePreset: spec.preset))
+            let geometry = try XCTUnwrap(rig.root.childNode(withName: "Human skin", recursively: true)?.geometry)
+            let source = try XCTUnwrap(geometry.sources(for: .vertex).first)
+            let element = try XCTUnwrap(geometry.elements.first)
+            let indices = element.data.withUnsafeBytes { Array($0.bindMemory(to: UInt32.self)) }
+            source.data.withUnsafeBytes { buffer in
+                for index in Set(indices) {
+                    let y = buffer.loadUnaligned(fromByteOffset: source.dataOffset + Int(index) * source.dataStride + MemoryLayout<Float>.size, as: Float.self)
+                    XCTAssertGreaterThan(y, 0.12, "Hidden feet must not reappear through shoes during a pose")
+                }
+            }
+            XCTAssertNotNil(rig.root.childNode(withName: "Court shoes", recursively: true))
+            XCTAssertNotNil(rig.root.childNode(withName: "Court shoe soles", recursively: true))
+        }
+    }
+
     private func assertCorrectContactSide(_ rig: RallyAvatarRig) {
         for leftHanded in [false, true] {
             for lateral: Float in [-1, 0, 1] {

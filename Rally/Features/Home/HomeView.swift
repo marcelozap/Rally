@@ -86,34 +86,54 @@ struct HomeView: View {
         GeometryReader { proxy in
             let stageHeight = min(HomeCraft.stageMaxHeight, max(HomeCraft.stageMinHeight, proxy.size.height * HomeCraft.stageHeightShare))
 
-            VStack(spacing: HomeCraft.verticalRhythm) {
-                loadoutTopChrome
-
-                livingPregameStage
-                    .frame(height: stageHeight)
-
-                wardrobeRail
-
-                courtRail
-
-                playDock
-
-                Spacer(minLength: 0)
+            ScrollView(showsIndicators: false) {
+                VStack(spacing: HomeCraft.verticalRhythm) {
+                    loadoutTopChrome
+                    livingPregameStage
+                        .frame(height: stageHeight)
+                    wardrobeRail
+                    courtRail
+                }
+                .padding(.horizontal, HomeCraft.horizontalPadding)
+                .padding(.top, 12)
+                .padding(.bottom, 20)
+                .frame(maxWidth: 640)
+                .frame(maxWidth: .infinity)
             }
-            .padding(.horizontal, HomeCraft.horizontalPadding)
-            .padding(.top, 8)
-            .padding(.bottom, 72)
-            .frame(width: proxy.size.width, height: proxy.size.height, alignment: .top)
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                playDock
+                    .padding(.horizontal, HomeCraft.horizontalPadding)
+                    .padding(.top, 12)
+                    .padding(.bottom, 10)
+                    .frame(maxWidth: 640)
+                    .frame(maxWidth: .infinity)
+                    .background(RallyUIKit.Palette.obsidian.opacity(0.96))
+            }
         }
     }
 
     private var loadoutTopChrome: some View {
-        Text("\(avatar?.athletePreset.displayName.uppercased() ?? "MODEL 1") · LOADOUT")
-            .font(.system(size: 11, weight: .black, design: .rounded))
-            .tracking(2.2)
-            .foregroundStyle(RallyUIKit.Palette.cyan.opacity(0.82))
-            .frame(maxWidth: .infinity)
-        .padding(.horizontal, 2)
+        HStack(alignment: .bottom, spacing: 12) {
+            VStack(alignment: .leading, spacing: 6) {
+                Text("THE CLUBHOUSE")
+                    .font(.system(size: 10, weight: .semibold))
+                    .tracking(2.3)
+                    .foregroundStyle(RallyUIKit.Palette.lime)
+                Text("Ready to rally.")
+                    .font(.system(size: 30, weight: .semibold))
+                    .tracking(-0.8)
+                    .foregroundStyle(RallyUIKit.Palette.frost)
+            }
+            Spacer(minLength: 0)
+            Text("YOUR\nLOADOUT")
+                .font(.system(size: 9, weight: .medium))
+                .tracking(1.4)
+                .lineSpacing(3)
+                .multilineTextAlignment(.trailing)
+                .foregroundStyle(RallyUIKit.Palette.cloud)
+                .padding(.bottom, 3)
+        }
+        .accessibilityElement(children: .combine)
     }
 
     private func topChromeIcon(systemName: String, isFilled: Bool = false) -> some View {
@@ -283,32 +303,25 @@ struct HomeView: View {
 
     private func courtBackdrop(for venue: CourtVenue) -> some View {
         ZStack {
-            stageGradient(for: venue)
-            RadialGradient(
-                colors: [courtAccent(for: venue).opacity(0.28), .clear],
-                center: .top,
-                startRadius: 20,
-                endRadius: 460
-            )
+            RallyUIKit.screenBackground
             LinearGradient(
-                colors: [.clear, Color.black.opacity(0.62)],
+                colors: [courtAccent(for: venue).opacity(0.055), .clear],
                 startPoint: .top,
-                endPoint: .bottom
+                endPoint: .center
             )
         }
     }
 
     private func stageGradient(for venue: CourtVenue) -> LinearGradient {
-        switch venue {
-        case .miamiHard:
-            return LinearGradient(colors: [Color(red: 0.08, green: 0.35, blue: 0.58), Color(red: 0.03, green: 0.13, blue: 0.25), Color(red: 0.01, green: 0.02, blue: 0.05)], startPoint: .topLeading, endPoint: .bottomTrailing)
-        case .wimbledonGrass:
-            return LinearGradient(colors: [Color(red: 0.08, green: 0.34, blue: 0.12), Color(red: 0.03, green: 0.12, blue: 0.05), Color(red: 0.01, green: 0.025, blue: 0.015)], startPoint: .topLeading, endPoint: .bottomTrailing)
-        case .redClay:
-            return LinearGradient(colors: [Color(red: 0.38, green: 0.16, blue: 0.08), Color(red: 0.10, green: 0.04, blue: 0.035), Color.black], startPoint: .topLeading, endPoint: .bottomTrailing)
-        case .barcelonaClay:
-            return LinearGradient(colors: [Color(red: 0.58, green: 0.20, blue: 0.08), Color(red: 0.18, green: 0.06, blue: 0.035), Color(red: 0.035, green: 0.015, blue: 0.010)], startPoint: .topLeading, endPoint: .bottomTrailing)
-        }
+        LinearGradient(
+            colors: [
+                RallyUIKit.Palette.slate,
+                courtAccent(for: venue).opacity(0.13),
+                RallyUIKit.Palette.ink
+            ],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
     }
 
     private func courtSwatch(for venue: CourtVenue) -> LinearGradient {
@@ -321,10 +334,10 @@ struct HomeView: View {
 
     private func courtAccent(for venue: CourtVenue) -> Color {
         switch venue {
-        case .miamiHard: return RallyUIKit.Palette.cyan
-        case .wimbledonGrass: return RallyUIKit.Palette.lime
-        case .redClay: return RallyUIKit.Palette.rose
-        case .barcelonaClay: return RallyUIKit.Palette.rose
+        case .miamiHard: return Color(red: 0.38, green: 0.58, blue: 0.64)
+        case .wimbledonGrass: return Color(red: 0.49, green: 0.64, blue: 0.41)
+        case .redClay: return Color(red: 0.76, green: 0.43, blue: 0.30)
+        case .barcelonaClay: return Color(red: 0.76, green: 0.43, blue: 0.30)
         }
     }
 
@@ -366,21 +379,7 @@ struct HomeView: View {
                     .padding(.horizontal, 16)
                     .padding(.top, 14)
 
-                ZStack {
-                    rhythmAvatar
-
-                    HStack {
-                        stageArrow(systemName: "chevron.left") {
-                            cycleLoadout(-1)
-                        }
-                        Spacer()
-                        stageArrow(systemName: "chevron.right") {
-                            cycleLoadout(1)
-                        }
-                    }
-                    .padding(.horizontal, 10)
-                    .offset(y: 16)
-                }
+                rhythmAvatar
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
@@ -397,7 +396,7 @@ struct HomeView: View {
                     .lineLimit(1)
                     .minimumScaleFactor(0.68)
 
-                Text(selectedLoadoutCategory.displayName.uppercased())
+                Text(avatar?.athletePreset.displayName.uppercased() ?? "YOUR PLAYER")
                     .font(.system(size: 10, weight: .black, design: .rounded))
                     .tracking(1.4)
                     .foregroundStyle(courtAccent(for: selectedCourt).opacity(0.78))
@@ -439,26 +438,20 @@ struct HomeView: View {
     }
 
     private var movingStageLight: some View {
-        TimelineView(.animation) { timeline in
-            let t = timeline.date.timeIntervalSinceReferenceDate
-            let sweep = CGFloat(sin(t * 0.62))
-            ZStack {
-                RadialGradient(
-                    colors: [courtAccent(for: selectedCourt).opacity(0.15), .clear],
-                    center: UnitPoint(x: 0.48 + sweep * 0.20, y: 0.30),
-                    startRadius: 20,
-                    endRadius: 240
-                )
-
-                Capsule()
-                    .fill(Color.white.opacity(0.045))
-                    .frame(width: 72, height: 480)
-                    .blur(radius: 32)
-                    .rotationEffect(.degrees(-12))
-                    .offset(x: sweep * 120, y: -36)
-            }
-            .allowsHitTesting(false)
+        ZStack {
+            RadialGradient(
+                colors: [RallyUIKit.Palette.champagne.opacity(0.12), .clear],
+                center: UnitPoint(x: 0.30, y: 0.12),
+                startRadius: 10,
+                endRadius: 320
+            )
+            Rectangle()
+                .fill(RallyUIKit.Palette.champagne.opacity(0.035))
+                .frame(width: 90, height: 540)
+                .rotationEffect(.degrees(28))
+                .offset(x: 85)
         }
+        .allowsHitTesting(false)
     }
 
     private var rhythmAvatar: some View {
@@ -495,7 +488,7 @@ struct HomeView: View {
                         .foregroundStyle(categoryAccent(for: selectedLoadoutCategory))
 
                     Text(selectedLoadoutItem?.name ?? "Choose \(shortLabel(for: selectedLoadoutCategory))")
-                        .font(.system(size: 15, weight: .black, design: .rounded))
+                        .font(.system(size: 16, weight: .semibold))
                         .foregroundStyle(RallyUIKit.Palette.frost)
                         .lineLimit(1)
 
@@ -565,7 +558,7 @@ struct HomeView: View {
             Image(systemName: systemName)
                 .font(.system(size: 12, weight: .black))
                 .foregroundStyle(RallyUIKit.Palette.frost)
-                .frame(width: 34, height: 34)
+                .frame(width: 44, height: 44)
                 .background(
                     Circle()
                         .fill(Color.white.opacity(0.10))
@@ -602,9 +595,9 @@ struct HomeView: View {
                     )
                     .overlay(
                         RoundedRectangle(cornerRadius: HomeCraft.smallRadius, style: .continuous)
-                            .stroke(isSelected ? accent.opacity(0.95) : Color.clear, lineWidth: 2)
+                            .stroke(isSelected ? RallyUIKit.Palette.lime.opacity(0.75) : Color.clear, lineWidth: 1)
                     )
-                    .shadow(color: isSelected ? accent.opacity(0.24) : .clear, radius: 13, y: 6)
+                    .shadow(color: .clear, radius: 0)
 
                 loadoutGlyph(for: category, isSelected: isSelected, accent: accent)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -665,104 +658,86 @@ struct HomeView: View {
     }
 
     private var courtRail: some View {
-        HStack(spacing: 9) {
-            ForEach(featuredCourtVenues) { venue in
-                Button {
-                    withAnimation(.spring(response: 0.24, dampingFraction: 0.82)) {
-                        setCourt(venue)
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Text("Choose your court")
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundStyle(RallyUIKit.Palette.frost)
+                Spacer()
+                Text("03 SURFACES")
+                    .font(.system(size: 9, weight: .medium))
+                    .tracking(1.2)
+                    .foregroundStyle(RallyUIKit.Palette.cloud)
+            }
+            HStack(spacing: 10) {
+                ForEach(featuredCourtVenues) { venue in
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.22)) { setCourt(venue) }
+                    } label: {
+                        VStack(alignment: .leading, spacing: 9) {
+                            ZStack {
+                                RoundedRectangle(cornerRadius: 9)
+                                    .fill(courtAccent(for: venue).opacity(0.65))
+                                Rectangle()
+                                    .stroke(RallyUIKit.Palette.frost.opacity(0.6), lineWidth: 0.8)
+                                    .padding(8)
+                                HStack(spacing: 0) {
+                                    Rectangle().fill(RallyUIKit.Palette.frost.opacity(0.5)).frame(width: 0.8)
+                                }
+                                .padding(.vertical, 8)
+                                Rectangle()
+                                    .fill(RallyUIKit.Palette.frost.opacity(0.7))
+                                    .frame(height: 1)
+                                    .padding(.horizontal, 8)
+                            }
+                            .frame(height: 48)
+                            HStack(spacing: 3) {
+                                Text(venueShortName(venue))
+                                    .font(.system(size: 11, weight: .semibold))
+                                    .lineLimit(1)
+                                    .minimumScaleFactor(0.85)
+                                Spacer(minLength: 0)
+                                if venue == selectedCourt {
+                                    Image(systemName: "checkmark")
+                                        .font(.system(size: 9, weight: .bold))
+                                        .foregroundStyle(RallyUIKit.Palette.lime)
+                                }
+                            }
+                            .foregroundStyle(RallyUIKit.Palette.frost)
+                        }
+                        .padding(9)
+                        .background(RallyUIKit.Palette.ink, in: RoundedRectangle(cornerRadius: 15))
+                        .overlay(RoundedRectangle(cornerRadius: 15)
+                            .stroke(venue == selectedCourt ? RallyUIKit.Palette.lime.opacity(0.6) : Color.white.opacity(0.09), lineWidth: 1))
                     }
-                } label: {
-                    HStack(spacing: 7) {
-                        Circle()
-                            .fill(courtAccent(for: venue))
-                            .frame(width: 7, height: 7)
-                        Text(venueShortName(venue))
-                            .font(.system(size: 11, weight: .black, design: .rounded))
-                            .tracking(0.2)
-                            .foregroundStyle(venue == selectedCourt ? RallyUIKit.Palette.frost : RallyUIKit.Palette.cloud.opacity(0.62))
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 8)
-                    .background(
-                        Capsule(style: .continuous)
-                            .fill(
-                                venue == selectedCourt
-                                    ? AnyShapeStyle(
-                                        LinearGradient(
-                                            colors: [
-                                                courtAccent(for: venue).opacity(0.84),
-                                                courtAccent(for: venue).opacity(0.48)
-                                            ],
-                                            startPoint: .topLeading,
-                                            endPoint: .bottomTrailing
-                                        )
-                                    )
-                                    : AnyShapeStyle(RallyUIKit.Palette.obsidian.opacity(0.72))
-                            )
-                    )
-                    .overlay(
-                        Capsule(style: .continuous)
-                            .stroke(venue == selectedCourt ? Color.white.opacity(0.26) : Color.white.opacity(0.12), lineWidth: 1)
-                    )
-                    .shadow(color: venue == selectedCourt ? courtAccent(for: venue).opacity(0.18) : .clear, radius: 10, y: 5)
+                    .buttonStyle(LoadoutPlayButtonStyle())
+                    .accessibilityLabel(venue.displayName)
+                    .accessibilityAddTraits(venue == selectedCourt ? [.isSelected] : [])
                 }
-                .buttonStyle(LoadoutPlayButtonStyle())
             }
         }
-        .padding(.top, 2)
+        .padding(.top, 6)
     }
 
     private var playDock: some View {
-        TimelineView(.animation) { timeline in
-            let t = timeline.date.timeIntervalSinceReferenceDate
-            let pulse = CGFloat((sin(t * 3.0) + 1) * 0.5)
-
-            Button(action: startPractice) {
-                HStack(spacing: 13) {
-                    Image(systemName: "play.fill")
-                        .font(.system(size: 21, weight: .black))
-                    Text("PLAY")
-                        .font(.system(size: 24, weight: .black, design: .rounded))
-                        .tracking(2.6)
-                    Spacer()
-                    Text(venueShortName(selectedCourt).uppercased())
-                        .font(.system(size: 10, weight: .black, design: .rounded))
-                        .tracking(1.2)
-                        .foregroundStyle(.white.opacity(0.68))
-                }
-                .foregroundStyle(.white)
-                .padding(.horizontal, 24)
-                .frame(maxWidth: .infinity)
-                .frame(height: 60)
-                .background(
-                    RoundedRectangle(cornerRadius: HomeCraft.largeRadius, style: .continuous)
-                        .fill(
-                            LinearGradient(
-                                colors: [
-                                    courtAccent(for: selectedCourt).opacity(0.98),
-                                    RallyUIKit.Palette.cyan.opacity(0.82),
-                                    RallyUIKit.Palette.ink
-                                ],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: HomeCraft.largeRadius, style: .continuous)
-                        .stroke(Color.white.opacity(0.22), lineWidth: 1)
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: HomeCraft.largeRadius, style: .continuous)
-                        .stroke(courtAccent(for: selectedCourt).opacity(0.24), lineWidth: 3)
-                        .blur(radius: 8)
-                        .opacity(0.45 + pulse * 0.20)
-                )
-                .shadow(color: courtAccent(for: selectedCourt).opacity(0.24 + pulse * 0.10), radius: 18 + pulse * 4, y: 8)
+        Button(action: startPractice) {
+            HStack(spacing: 12) {
+                Image(systemName: "play.fill")
+                    .font(.system(size: 17, weight: .semibold))
+                Text("Play Rally")
+                    .font(.system(size: 19, weight: .bold))
+                    .tracking(-0.3)
+                Spacer()
+                Image(systemName: "arrow.right")
+                    .font(.system(size: 17, weight: .semibold))
             }
-            .buttonStyle(LoadoutPlayButtonStyle())
+            .foregroundStyle(RallyUIKit.Palette.obsidian)
+            .padding(.horizontal, 22)
+            .frame(maxWidth: .infinity, minHeight: 58)
+            .background(RallyUIKit.Palette.lime, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
         }
-        .padding(.top, 8)
+        .buttonStyle(LoadoutPlayButtonStyle())
+        .accessibilityIdentifier("home.playRally")
     }
 
     private func displayName(for avatar: AvatarConfig?) -> String {
@@ -904,14 +879,14 @@ private struct LoadoutTennisShoeGlyph: View {
 
 private enum HomeCraft {
     static let horizontalPadding: CGFloat = 16
-    static let verticalRhythm: CGFloat = 9
+    static let verticalRhythm: CGFloat = 18
     static let headerTapTarget: CGFloat = 44
-    static let largeRadius: CGFloat = 30
+    static let largeRadius: CGFloat = 24
     static let smallRadius: CGFloat = 18
     static let loadoutTileHeight: CGFloat = 52
-    static let stageHeightShare: CGFloat = 0.49
+    static let stageHeightShare: CGFloat = 0.52
     static let stageMinHeight: CGFloat = 300
-    static let stageMaxHeight: CGFloat = 370
+    static let stageMaxHeight: CGFloat = 390
 }
 
 private struct PerspectiveCourtPlate: Shape {

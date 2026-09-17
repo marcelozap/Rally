@@ -19,23 +19,24 @@ struct RallyUIKit {
     }
 
     struct Palette {
-        static let obsidian = Color(red: 0.015, green: 0.02, blue: 0.035)
-        static let ink = Color(red: 0.04, green: 0.055, blue: 0.095)
-        static let slate = Color(red: 0.09, green: 0.11, blue: 0.17)
-        static let graphite = Color(red: 0.16, green: 0.18, blue: 0.25)
-        static let mist = Color.white.opacity(0.09)
-        static let line = Color.white.opacity(0.15)
-        static let cloud = Color(red: 0.84, green: 0.87, blue: 0.93)
-        static let frost = Color(red: 0.97, green: 0.98, blue: 0.99)
-        static let cyan = Color(red: 0.35, green: 0.86, blue: 0.97)
-        static let iconCyan = Color(red: 0.45, green: 0.91, blue: 0.99)
-        static let teal = Color(red: 0.18, green: 0.69, blue: 0.73)
-        static let lime = Color(red: 0.78, green: 0.92, blue: 0.42)
-        static let coral = Color(red: 0.98, green: 0.54, blue: 0.42)
-        static let rose = Color(red: 0.84, green: 0.36, blue: 0.58)
-        static let gold = Color(red: 0.89, green: 0.73, blue: 0.41)
-        static let champagne = Color(red: 0.96, green: 0.89, blue: 0.77)
-        static let smoke = Color(red: 0.55, green: 0.61, blue: 0.70)
+        // Shared tennis-club colors keep every surface in the same visual world.
+        static let obsidian = Color(red: 0.035, green: 0.065, blue: 0.055)
+        static let ink = Color(red: 0.055, green: 0.105, blue: 0.090)
+        static let slate = Color(red: 0.105, green: 0.175, blue: 0.145)
+        static let graphite = Color(red: 0.19, green: 0.26, blue: 0.22)
+        static let mist = Color.white.opacity(0.07)
+        static let line = Color(red: 0.84, green: 0.88, blue: 0.79).opacity(0.16)
+        static let cloud = Color(red: 0.78, green: 0.83, blue: 0.77)
+        static let frost = Color(red: 0.97, green: 0.96, blue: 0.91)
+        static let cyan = Color(red: 0.79, green: 0.89, blue: 0.56)
+        static let iconCyan = Color(red: 0.85, green: 0.94, blue: 0.64)
+        static let teal = Color(red: 0.37, green: 0.65, blue: 0.55)
+        static let lime = Color(red: 0.82, green: 0.92, blue: 0.48)
+        static let coral = Color(red: 0.86, green: 0.52, blue: 0.36)
+        static let rose = Color(red: 0.73, green: 0.49, blue: 0.43)
+        static let gold = Color(red: 0.83, green: 0.73, blue: 0.47)
+        static let champagne = Color(red: 0.95, green: 0.91, blue: 0.79)
+        static let smoke = Color(red: 0.57, green: 0.65, blue: 0.59)
     }
 
     enum Typography {
@@ -62,7 +63,7 @@ struct RallyUIKit {
         static let depthY: CGFloat = 10
 
         static func glow(_ tint: Color) -> Color {
-            tint.opacity(0.18)
+            tint.opacity(0.07)
         }
     }
 
@@ -72,7 +73,7 @@ struct RallyUIKit {
             colors: [
                 Palette.champagne.opacity(0.12),
                 Palette.cyan.opacity(0.20),
-                Palette.rose.opacity(0.12),
+                Palette.teal.opacity(0.08),
                 Palette.obsidian
             ],
             startPoint: .topLeading,
@@ -82,62 +83,14 @@ struct RallyUIKit {
 
     static var screenBackground: some View {
         ZStack {
-            LinearGradient(
-                colors: [Palette.obsidian, Palette.ink, Palette.slate, Palette.obsidian],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-            .ignoresSafeArea()
-
-            RadialGradient(
-                colors: [Palette.champagne.opacity(0.08), .clear],
-                center: .top,
-                startRadius: 10,
-                endRadius: 360
-            )
-            .ignoresSafeArea()
-
-            RadialGradient(
-                colors: [Palette.cyan.opacity(0.14), .clear],
-                center: .topLeading,
-                startRadius: 20,
-                endRadius: 420
-            )
-            .ignoresSafeArea()
-
-            RadialGradient(
-                colors: [Palette.rose.opacity(0.12), .clear],
-                center: .bottomTrailing,
-                startRadius: 40,
-                endRadius: 380
-            )
-            .ignoresSafeArea()
-
-            LinearGradient(
-                colors: [
-                    Color.white.opacity(0.08),
-                    Color.clear,
-                    Color.black.opacity(0.28)
-                ],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .ignoresSafeArea()
-
-            VStack(spacing: 0) {
-                Rectangle()
-                    .fill(
-                        LinearGradient(
-                            colors: [Palette.champagne.opacity(0.12), .clear],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-                    )
-                    .frame(height: 180)
-                Spacer()
-            }
-            .ignoresSafeArea()
+            LinearGradient(colors: [Palette.ink, Palette.obsidian],
+                           startPoint: .topLeading, endPoint: .bottomTrailing)
+            RadialGradient(colors: [Palette.teal.opacity(0.12), .clear],
+                           center: .topLeading, startRadius: 0, endRadius: 460)
+            LinearGradient(colors: [Palette.champagne.opacity(0.035), .clear],
+                           startPoint: .top, endPoint: .center)
         }
+        .ignoresSafeArea()
     }
 
     /// Glassmorphic card effect (frosted glass)
@@ -239,7 +192,7 @@ struct RallyUIKit {
 
     static func accentGradient(_ color: Color) -> LinearGradient {
         LinearGradient(
-            colors: [Palette.champagne.opacity(0.18), color.opacity(0.98), color.opacity(0.55)],
+            colors: [color, color.opacity(0.88)],
             startPoint: .topLeading,
             endPoint: .bottomTrailing
         )
@@ -332,7 +285,7 @@ struct RallyUIKit {
                         .stroke(
                             LinearGradient(
                                 colors: [
-                                    tint.opacity(0.42),
+                                    tint.opacity(0.24),
                                     Color.white.opacity(0.10),
                                     Color.clear
                                 ],
@@ -342,7 +295,7 @@ struct RallyUIKit {
                             lineWidth: 1
                         )
                 )
-                .shadow(color: Shadow.glow(tint), radius: 22, x: 0, y: 10)
+                .shadow(color: Shadow.glow(tint), radius: 12, x: 0, y: 5)
                 .shadow(color: Color.black.opacity(0.28), radius: 32, x: 0, y: 18)
         }
     }
@@ -549,7 +502,7 @@ struct SecondaryButtonStyle: ButtonStyle {
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 12)
-                    .stroke(tint.opacity(0.42), lineWidth: 1)
+                    .stroke(tint.opacity(0.24), lineWidth: 1)
             )
             .shadow(color: Color.black.opacity(0.16), radius: 14, x: 0, y: 10)
             .scaleEffect(configuration.isPressed ? 0.98 : 1.0)

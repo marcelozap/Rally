@@ -12,126 +12,49 @@ struct PremiumAvatarStageContainer<Content: View>: View {
     var height: CGFloat = 480
     @ViewBuilder var content: () -> Content
 
-    private var stageGradient: [Color] {
-        switch tone {
-        case .calm:
-            return [
-                Color(red: 0.13, green: 0.12, blue: 0.15),
-                Color(red: 0.06, green: 0.06, blue: 0.09),
-                Color(red: 0.02, green: 0.02, blue: 0.04),
-                Color.black
-            ]
-        case .shop:
-            return [
-                Color(red: 0.12, green: 0.13, blue: 0.17),
-                Color(red: 0.07, green: 0.08, blue: 0.12),
-                Color(red: 0.03, green: 0.03, blue: 0.06),
-                Color.black
-            ]
-        }
-    }
-
     var body: some View {
-        ZStack(alignment: .bottom) {
-            RoundedRectangle(cornerRadius: RallyUIKit.Radius.xl, style: .continuous)
-                .fill(
-                    LinearGradient(
-                        colors: stageGradient,
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
+        ZStack {
+            LinearGradient(
+                colors: [RallyUIKit.Palette.slate, RallyUIKit.Palette.ink, RallyUIKit.Palette.obsidian],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
 
-            // Top light wash — editorial studio key
-            RoundedRectangle(cornerRadius: RallyUIKit.Radius.xl, style: .continuous)
-                .fill(
-                    LinearGradient(
-                        colors: [
-                            Color.white.opacity(tone == .calm ? 0.07 : 0.05),
-                            Color.clear
-                        ],
-                        startPoint: .top,
-                        endPoint: .center
-                    )
-                )
+            GeometryReader { geometry in
+                let width = geometry.size.width
+                let floor = geometry.size.height * 0.82
+                Path { path in
+                    path.move(to: CGPoint(x: 0, y: floor))
+                    path.addLine(to: CGPoint(x: width, y: floor))
+                    for fraction in [CGFloat(0.15), 0.5, 0.85] {
+                        path.move(to: CGPoint(x: width * fraction, y: floor))
+                        path.addLine(to: CGPoint(x: width * (fraction - 0.5) * 1.8 + width * 0.5, y: geometry.size.height))
+                    }
+                }
+                .stroke(RallyUIKit.Palette.champagne.opacity(0.10), lineWidth: 1)
 
-            Circle()
-                .fill((tone == .calm ? RallyUIKit.Palette.champagne : accent).opacity(tone == .calm ? 0.20 : 0.22))
-                .frame(width: height * 0.72, height: height * 0.72)
-                .blur(radius: 54)
-                .offset(x: -height * 0.14, y: -height * 0.20)
+                RoundedRectangle(cornerRadius: width * 0.44)
+                    .fill(RallyUIKit.Palette.champagne.opacity(tone == .calm ? 0.035 : 0.06))
+                    .frame(width: width * 0.70, height: height * 0.85)
+                    .position(x: width * 0.5, y: height * 0.47)
+            }
+            .allowsHitTesting(false)
 
-            Circle()
-                .fill(accent.opacity(tone == .calm ? 0.10 : 0.18))
-                .frame(width: height * 0.88, height: height * 0.88)
-                .blur(radius: 64)
-                .offset(x: height * 0.24, y: -height * 0.02)
-
-            Ellipse()
-                .fill((tone == .calm ? RallyUIKit.Palette.cyan : accent).opacity(tone == .calm ? 0.07 : 0.11))
-                .frame(width: height * 0.86, height: height * 0.20)
-                .blur(radius: 34)
-                .offset(y: height * 0.36)
-
-            // Floor reflection pool
-            Ellipse()
-                .fill(accent.opacity(tone == .calm ? 0.05 : 0.08))
-                .frame(width: height * 0.52, height: height * 0.06)
-                .blur(radius: 18)
-                .offset(y: height * 0.42)
+            RadialGradient(
+                colors: [RallyUIKit.Palette.champagne.opacity(0.10), .clear],
+                center: .topLeading,
+                startRadius: 12,
+                endRadius: height * 0.8
+            )
+            .allowsHitTesting(false)
 
             content()
-
-            // Soft vignette
-            RoundedRectangle(cornerRadius: RallyUIKit.Radius.xl, style: .continuous)
-                .fill(
-                    RadialGradient(
-                        colors: [.clear, Color.black.opacity(tone == .calm ? 0.38 : 0.32)],
-                        center: .center,
-                        startRadius: height * 0.18,
-                        endRadius: height * 0.72
-                    )
-                )
-                .allowsHitTesting(false)
-
-            VStack(spacing: 0) {
-                Spacer()
-                Rectangle()
-                    .fill(Color.white.opacity(0.06))
-                    .frame(height: 1)
-                    .padding(.horizontal, 28)
-                Rectangle()
-                    .fill(
-                        LinearGradient(
-                            colors: [
-                                Color.clear,
-                                accent.opacity(tone == .calm ? 0.06 : 0.10),
-                                Color.black.opacity(0.36)
-                            ],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-                    )
-                    .frame(height: height * 0.14)
-            }
         }
         .frame(height: height)
-        .clipShape(RoundedRectangle(cornerRadius: RallyUIKit.Radius.xl, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: RallyUIKit.Radius.xl, style: .continuous)
-                .stroke(
-                    LinearGradient(
-                        colors: [
-                            Color.white.opacity(tone == .calm ? 0.10 : 0.12),
-                            Color.white.opacity(0.04)
-                        ],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    ),
-                    lineWidth: 1
-                )
-        )
-        .shadow(color: Color.black.opacity(0.32), radius: 32, y: 20)
+        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 24, style: .continuous)
+            .stroke(Color.white.opacity(0.11), lineWidth: 1))
+        .shadow(color: Color.black.opacity(0.16), radius: 18, y: 10)
     }
 }
 
@@ -143,31 +66,43 @@ struct AvatarShopStageView: View {
     @EnvironmentObject private var avatarAppearanceStore: RallyAvatarAppearanceStore
 
     var body: some View {
-        VStack(spacing: 0) {
-            PremiumAvatarStageContainer(
-                tone: tone,
-                accent: currentAccent,
-                height: preview == nil ? 540 : 520
-            ) {
-                VStack(spacing: 8) {
-                    RallyAvatarView(
-                        appearance: avatarAppearanceStore.appearance(for: config, previewItem: preview?.item),
-                        targetHeight: preview == nil ? 420 : 400,
-                        showsRacket: preview?.slot == .racket
-                    )
-                    .frame(maxWidth: .infinity)
+        PremiumAvatarStageContainer(tone: tone, accent: currentAccent, height: 438) {
+            VStack(spacing: 0) {
+                HStack {
+                    Text(preview == nil ? "YOUR PLAYER" : "FITTING ROOM")
+                        .font(.system(size: 10, weight: .semibold))
+                        .tracking(1.7)
+                        .foregroundStyle(RallyUIKit.Palette.champagne)
+                    Spacer()
+                    Text(config.athletePreset.displayName)
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(RallyUIKit.Palette.cloud)
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 18)
+
+                RallyAvatarView(
+                    appearance: avatarAppearanceStore.appearance(for: config, previewItem: preview?.item),
+                    targetHeight: 340,
+                    showsRacket: preview == nil || preview?.slot == .racket
+                )
+                .frame(maxWidth: .infinity)
+                .frame(height: 340)
+
+                VStack(spacing: 5) {
                     if usesStylePreview {
                         Text("Style preview · Garment details may differ")
-                            .font(.system(size: 11, weight: .medium))
-                            .foregroundStyle(.white.opacity(0.78))
+                            .font(.system(size: 10, weight: .medium))
+                            .foregroundStyle(RallyUIKit.Palette.champagne)
                     }
-                    Text("Drag to rotate · Pinch to zoom")
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundStyle(.white.opacity(0.62))
-                        .padding(.bottom, 18)
+                    Label("Drag to rotate · Pinch to zoom", systemImage: "rotate.3d")
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundStyle(RallyUIKit.Palette.cloud)
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 16)
+                .padding(.bottom, 15)
+                Spacer(minLength: 0)
             }
         }
         .onAppear {

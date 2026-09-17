@@ -12,6 +12,7 @@ struct ShopView: View {
     // Live try-on state — updated when the player taps any item card.
     @State private var tryOnItem: ShopItem?
     @State private var stageEmote: AvatarShopEmote = .idle
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     private var avatar: AvatarConfig? { avatarConfigs.first }
 
@@ -22,10 +23,12 @@ struct ShopView: View {
 
     var body: some View {
         NavigationStack {
+            ScrollViewReader { scrollProxy in
             ScrollView {
                 LazyVStack(spacing: RallyUIKit.Spacing.xl, pinnedViews: [.sectionHeaders]) {
                     shopHero
                         .padding(.top, 4)
+                        .id("shopStage")
 
                     categoryFilter
 
@@ -56,8 +59,16 @@ struct ShopView: View {
                 .padding(.horizontal, RallyUIKit.Spacing.md)
                 .padding(.bottom, 40)
             }
+            .onChange(of: tryOnItem?.id) { _, itemID in
+                guard itemID != nil else { return }
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    scrollProxy.scrollTo("shopStage", anchor: .top)
+                }
+            }
+            }
             .background(RallyUIKit.screenBackground)
             .navigationTitle("Shop")
+            .navigationBarTitleDisplayMode(.inline)
             .onAppear { shopHasUnseenUnlock = false }
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -68,7 +79,7 @@ struct ShopView: View {
                             .font(.body.weight(.semibold))
                             .foregroundStyle(groupByVendor ? RallyUIKit.Palette.rose : RallyUIKit.Palette.cyan)
                     }
-                    .accessibilityLabel(groupByVendor ? "Group by brand" : "Group by category")
+                    .accessibilityLabel(groupByVendor ? "Group by category" : "Group by brand")
                 }
             }
         }
@@ -77,7 +88,20 @@ struct ShopView: View {
     // MARK: - Shop Hero (full avatar stage)
 
     private var shopHero: some View {
-        Group {
+        VStack(alignment: .leading, spacing: 18) {
+            VStack(alignment: .leading, spacing: 7) {
+                Text("THE PRO SHOP")
+                    .font(.system(size: 10, weight: .semibold))
+                    .tracking(2.2)
+                    .foregroundStyle(RallyUIKit.Palette.lime)
+                Text("Find your match.")
+                    .font(.system(size: 30, weight: .semibold))
+                    .tracking(-0.8)
+                    .foregroundStyle(RallyUIKit.Palette.frost)
+                Text("Explore the gear. See it on your player.")
+                    .font(.system(size: 13))
+                    .foregroundStyle(RallyUIKit.Palette.cloud)
+            }
             if let avatar {
                 AvatarShopStageView(
                     config: avatar,
@@ -85,13 +109,10 @@ struct ShopView: View {
                     tone: .shop,
                     emote: $stageEmote
                 )
-                .overlay(alignment: .bottom) {
-                    if let item = tryOnItem {
-                        tryOnBanner(item: item)
-                            .transition(.move(edge: .bottom).combined(with: .opacity))
-                    }
-                }
                 .animation(.spring(response: 0.32, dampingFraction: 0.78), value: tryOnItem?.id)
+                if let item = tryOnItem {
+                    tryOnBanner(item: item)
+                }
             } else {
                 // Placeholder while SwiftData loads the avatar config.
                 PremiumAvatarStageContainer(tone: .shop, accent: RallyUIKit.Palette.cyan, height: 440) {
@@ -142,7 +163,7 @@ struct ShopView: View {
                         Image(systemName: "arrow.up.right")
                             .font(.system(size: 9, weight: .bold))
                     }
-                    .foregroundStyle(accent)
+                    .foregroundStyle(RallyUIKit.Palette.lime)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 6)
                     .background(Capsule().fill(accent.opacity(0.18)))
@@ -152,7 +173,7 @@ struct ShopView: View {
         }
         .padding(.horizontal, 18)
         .padding(.vertical, 12)
-        .background(.ultraThinMaterial)
+        .background(RallyUIKit.Palette.ink, in: RoundedRectangle(cornerRadius: 16))
     }
 
     private func filtered(_ items: [ShopItem]) -> [ShopItem] {
@@ -276,10 +297,7 @@ struct ShopView: View {
 
     private func desireGrid(items: [ShopItem]) -> some View {
         LazyVGrid(
-            columns: [
-                GridItem(.flexible(), spacing: 14),
-                GridItem(.flexible(), spacing: 14)
-            ],
+            columns: [GridItem(.adaptive(minimum: dynamicTypeSize.isAccessibilitySize ? 260 : 150), spacing: 14)],
             spacing: 22
         ) {
             ForEach(items) { item in
@@ -293,127 +311,89 @@ struct ShopView: View {
     private func desireTile(_ item: ShopItem) -> some View {
         let accent = item.accentColor ?? categoryTint(item.category)
         let isTryingOn = tryOnItem?.id == item.id
-
-        // Primary tap = live try-on in the hero stage above.
-        // Details link lives inside the tile info row.
-        Button {
-            withAnimation(.spring(response: 0.28, dampingFraction: 0.72)) {
-                tryOnItem = item
-                avatarAppearanceStore.tryOn(item, from: avatar)
-                stageEmote = .shopLook
+        VStack(spacing: 0) {
+            Button {
+                withAnimation(.spring(response: 0.28, dampingFraction: 0.82)) {
+                    tryOnItem = item
+                    avatarAppearanceStore.tryOn(item, from: avatar)
+                    stageEmote = .shopLook
+                }
+            } label: {
+                desireTileContent(item, accent: accent, isTryingOn: isTryingOn)
             }
-        } label: {
-            desireTileContent(item, accent: accent, isTryingOn: isTryingOn)
+            .buttonStyle(.plain)
+            .accessibilityLabel("\(item.brand), \(item.name)")
+            .accessibilityValue("\(item.priceUSD == 0 ? "Included" : item.priceDisplay)\(isEquipped(item) ? ", equipped" : "")\(isTryingOn ? ", previewing" : "")")
+            .accessibilityHint("Preview on your player")
+
+            if let avatar {
+                NavigationLink {
+                    ShopItemDetailView(item: item, avatar: avatar)
+                } label: {
+                    HStack {
+                        Text("Details & fit")
+                            .font(.caption.weight(.medium))
+                        Spacer()
+                        Image(systemName: "arrow.up.right")
+                            .font(.system(size: 10, weight: .semibold))
+                    }
+                    .foregroundStyle(RallyUIKit.Palette.champagne)
+                    .padding(.horizontal, 14)
+                    .frame(minHeight: 44)
+                    .background(Color.white.opacity(0.035))
+                }
+                .buttonStyle(.plain)
+            }
         }
-        .buttonStyle(.plain)
+        .background(RallyUIKit.Palette.ink)
+        .clipShape(RoundedRectangle(cornerRadius: 20))
+        .overlay(RoundedRectangle(cornerRadius: 20)
+            .stroke(isTryingOn ? RallyUIKit.Palette.lime.opacity(0.65) : Color.white.opacity(0.10), lineWidth: 1))
     }
 
     private func desireTileContent(_ item: ShopItem, accent: Color, isTryingOn: Bool) -> some View {
         VStack(alignment: .leading, spacing: 0) {
-            ZStack(alignment: .topLeading) {
-                RoundedRectangle(cornerRadius: 24, style: .continuous)
+            ZStack(alignment: .topTrailing) {
+                Rectangle()
                     .fill(shopTileGradient(accent: accent, itemColor: item.color))
-                    .frame(height: 236)
-
-                // Soft color bloom behind the product image
-                Circle()
-                    .fill(item.color.opacity(isTryingOn ? 0.34 : 0.22))
-                    .frame(width: 120, height: 120)
-                    .blur(radius: 36)
-                    .offset(x: -20, y: -10)
-                    .animation(.easeInOut(duration: 0.3), value: isTryingOn)
-
-                apparelSwatch(item, width: 148, height: 168)
-                    .scaleEffect(isTryingOn ? 0.96 : 0.92)
+                apparelSwatch(item, width: 138, height: 160)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .shadow(color: accent.opacity(isTryingOn ? 0.38 : 0.24), radius: 22, y: 12)
-                    .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isTryingOn)
-
-                HStack {
-                    vendorDot(for: item)
-                    Spacer()
-                    if isTryingOn {
-                        Text("ON")
-                            .font(RallyUIKit.Typography.label(.caption2, weight: .bold))
-                            .tracking(1.2)
-                            .foregroundStyle(accent)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 5)
-                            .background(Capsule().fill(accent.opacity(0.18)))
-                            .overlay(Capsule().stroke(accent.opacity(0.32), lineWidth: 1))
-                            .transition(.scale.combined(with: .opacity))
-                    }
-                }
-                .padding(14)
-
-                if isEquipped(item) && !isTryingOn {
-                    HStack {
-                        Spacer()
-                        detailPill("Equipped", tint: RallyUIKit.Palette.cyan)
-                    }
-                    .padding(14)
+                if isTryingOn || isEquipped(item) {
+                    Text(isTryingOn ? "PREVIEW" : "EQUIPPED")
+                        .font(.caption2.weight(.semibold))
+                        .tracking(0.8)
+                        .foregroundStyle(RallyUIKit.Palette.champagne)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 6)
+                        .background(RallyUIKit.Palette.obsidian.opacity(0.85), in: Capsule())
+                        .padding(10)
                 }
             }
+            .frame(height: 204)
 
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: 7) {
+                Text(item.brand.uppercased())
+                    .font(.caption2.weight(.semibold))
+                    .tracking(1.1)
+                    .foregroundStyle(RallyUIKit.Palette.cloud)
+                    .lineLimit(1)
                 Text(item.name)
-                    .font(RallyUIKit.Typography.title(.headline, weight: .bold))
+                    .font(.headline.weight(.semibold))
                     .foregroundStyle(RallyUIKit.Palette.frost)
                     .lineLimit(2)
-                    .minimumScaleFactor(0.9)
-                Text(rowMeta(item))
-                    .font(RallyUIKit.Typography.body(.caption2, weight: .medium))
-                    .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.54))
-                    .lineLimit(1)
+                    .frame(minHeight: 36, alignment: .topLeading)
                 HStack(alignment: .firstTextBaseline) {
                     Text(item.priceUSD == 0 ? "Included" : item.priceDisplay)
-                        .font(RallyUIKit.Typography.title(.subheadline, weight: .bold))
-                        .foregroundStyle(accent)
-                    Spacer()
-                    // Details link — secondary action, navigates to full item sheet.
-                    if let avatar {
-                        NavigationLink {
-                            ShopItemDetailView(item: item, avatar: avatar)
-                        } label: {
-                            HStack(spacing: 4) {
-                                Text("Details")
-                                    .font(RallyUIKit.Typography.label(.caption2, weight: .bold))
-                                Image(systemName: "arrow.up.right")
-                                    .font(.system(size: 9, weight: .bold))
-                            }
-                            .foregroundStyle(accent.opacity(0.78))
-                        }
-                    }
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(RallyUIKit.Palette.champagne)
+                    Spacer(minLength: 3)
+                    Circle().fill(item.color).frame(width: 8, height: 8)
+                        .overlay(Circle().stroke(Color.white.opacity(0.3), lineWidth: 0.5))
                 }
             }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 14)
+            .padding(14)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(
-                RoundedRectangle(cornerRadius: 24, style: .continuous)
-                    .fill(Color.white.opacity(isTryingOn ? 0.06 : 0.035))
-            )
         }
-        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .stroke(
-                    isTryingOn
-                        ? AnyShapeStyle(accent.opacity(0.55))
-                        : AnyShapeStyle(LinearGradient(
-                            colors: [accent.opacity(0.22), Color.white.opacity(0.06)],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )),
-                    lineWidth: isTryingOn ? 1.5 : 1
-                )
-        )
-        .shadow(
-            color: isTryingOn ? accent.opacity(0.22) : Color.black.opacity(0.20),
-            radius: isTryingOn ? 20 : 14,
-            y: 8
-        )
-        .animation(.spring(response: 0.28, dampingFraction: 0.72), value: isTryingOn)
     }
 
     private func overviewStat(value: String, label: String, tint: Color) -> some View {
@@ -745,9 +725,9 @@ struct ShopView: View {
                 .fill(
                     LinearGradient(
                         colors: [
-                            item.color.opacity(0.96),
-                            productAccent.opacity(0.5),
-                            RallyUIKit.Palette.obsidian.opacity(0.9)
+                            RallyUIKit.Palette.slate,
+                            item.color.opacity(0.12),
+                            RallyUIKit.Palette.ink
                         ],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
@@ -774,7 +754,7 @@ struct ShopView: View {
         }
         .frame(width: width, height: height)
         .clipShape(RoundedRectangle(cornerRadius: 24))
-        .shadow(color: productAccent.opacity(0.14), radius: 16, x: 0, y: 10)
+        .shadow(color: .black.opacity(0.14), radius: 10, x: 0, y: 6)
     }
 
     /// Custom tennis-gear silhouette used as the swatch's loading/failure
@@ -792,10 +772,9 @@ struct ShopView: View {
     private func shopTileGradient(accent: Color, itemColor: Color) -> LinearGradient {
         LinearGradient(
             colors: [
-                itemColor.opacity(0.28),
-                RallyUIKit.Palette.obsidian,
-                Color(red: 0.06, green: 0.07, blue: 0.10),
-                accent.opacity(0.20)
+                RallyUIKit.Palette.slate,
+                RallyUIKit.Palette.ink,
+                itemColor.opacity(0.08)
             ],
             startPoint: .topLeading,
             endPoint: .bottomTrailing

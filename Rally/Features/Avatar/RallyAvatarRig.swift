@@ -113,11 +113,15 @@ final class RallyAvatarRig {
                 groundOffset = 0.0177 * stature
             }
             createSkeleton(human)
-            skinMaterial = Self.material(color: .white, roughness: 0.60)
+            skinMaterial = Self.material(color: .white, roughness: 0.72)
             if let image = Self.image(skinTextureName) { skinMaterial.diffuse.contents = image }
-            skinMaterial.specular.contents = UIColor(white: 0.24, alpha: 1)
+            skinMaterial.specular.contents = UIColor(white: 0.16, alpha: 1)
+            skinMaterial.diffuse.maxAnisotropy = 4
             // Clothing is mandatory on every surface, including the first rendered frame.
-            let body = skin(human, material: skinMaterial)
+            // Socks and shoes are mandatory. Occlude the covered feet instead of
+            // letting toes and ankle skin punch through the fitted footwear.
+            let visibleBody = human.selected { _, y, _ in y >= 0.18 * stature }
+            let body = skin(visibleBody, material: skinMaterial)
             body.name = "Human skin"
             root.addChildNode(body)
             createEyes()
@@ -222,8 +226,8 @@ final class RallyAvatarRig {
         // movement back through the avatar's yaw, including the local Z term.
         let courtToRoot = simd_inverse(root.simdWorldOrientation)
         let pelvisTravel = courtToRoot.act(SIMD3<Float>(gait.pelvisOffset, 0, 0))
-        let weightShift = studio ? Float(sin(time * 1.35)) * 0.035 : lateral * 0.018 + pelvisTravel.x
-        let readyDrop: Float = studio ? 0.052 + Float(cos(time * 2.7)) * 0.010 : 0.028 + gait.pelvisDrop
+        let weightShift = studio ? Float(sin(time * 0.94)) * 0.025 : lateral * 0.018 + pelvisTravel.x
+        let readyDrop: Float = studio ? 0.046 + Float(cos(time * 1.88)) * 0.005 : 0.028 + gait.pelvisDrop
         if let hip = boneByName["root"], let neutral = bindPosition["root"] {
             hip.simdPosition = neutral + SIMD3<Float>(weightShift, -readyDrop - swing * 0.014 + breath * 0.002, pelvisTravel.z)
         }
@@ -257,16 +261,22 @@ final class RallyAvatarRig {
         let dominantSuffix = leftHanded ? "L" : "R"
         let supportSuffix = leftHanded ? "R" : "L"
         if studio && swingProgress == nil {
-            solveArm(dominantSuffix, target: SIMD3<Float>(-0.29 * hand + weightShift * 0.6, 1.15 + breath * 0.006, 0.32))
-            solveArm(supportSuffix, target: SIMD3<Float>(0.18 * hand + weightShift * 0.6, 1.15 + breath * 0.005, 0.30))
+            solveArm(dominantSuffix, target: SIMD3<Float>(-0.26 * hand + weightShift * 0.6, 1.07 + breath * 0.004, 0.30))
+            solveArm(supportSuffix, target: SIMD3<Float>(0.18 * hand + weightShift * 0.6, 1.09 + breath * 0.004, 0.25))
         } else {
-            let dominantX: Float = (backhand ? 0.26 : -0.46) * hand
-            let wristY: Float = 1.21 + swing * 0.15
-            let dominantTarget = SIMD3<Float>(dominantX, wristY, 0.31)
+            let dominantTarget = Self.strokeWristTarget(progress: progress, backhand: backhand, leftHanded: leftHanded)
             solveArm(dominantSuffix, target: dominantTarget)
-            let supportTarget = backhand && swingProgress != nil
-                ? dominantTarget + SIMD3<Float>(0.055 * hand, 0.065, -0.015)
-                : SIMD3<Float>(0.30 * hand, 1.10, 0.18)
+            let freeTarget = Self.freeHandTarget(progress: progress, leftHanded: leftHanded)
+            let supportTarget: SIMD3<Float>
+            if backhand, swingProgress != nil {
+                // Join the handle during preparation and release after the finish.
+                // The existing two-handed contact at p=0.5 remains exact.
+                let join = min(1, progress / 0.20) * min(1, (1 - progress) / 0.20)
+                let gripTarget = dominantTarget + SIMD3<Float>(0.055 * hand, 0.065, -0.015)
+                supportTarget = freeTarget + (gripTarget - freeTarget) * (join * join * (3 - 2 * join))
+            } else {
+                supportTarget = freeTarget
+            }
             solveArm(supportSuffix, target: supportTarget)
         }
         let wrist = boneByName[dominantSuffix == "L" ? "wrist.L" : "wrist.R"]
@@ -274,7 +284,8 @@ final class RallyAvatarRig {
             racket.removeFromParentNode()
             wrist?.addChildNode(racket)
         }
-        let gripAngle: Float = studio ? 0.28 * hand : (backhand ? 0.12 * hand : -0.22 * hand)
+        let gameplayGrip = -0.22 * hand + (backhand ? 0.34 * hand * swing : 0)
+        let gripAngle: Float = studio ? 0.16 * hand : gameplayGrip
         poseRacketGrip(side: dominantSuffix, hand: hand, gripAngle: gripAngle)
         for side in ["L", "R"] {
             guard let ankle = bindPosition["foot.\(side)"] else { continue }
@@ -290,6 +301,53 @@ final class RallyAvatarRig {
                 foot.simdOrientation = simd_inverse(parent.simdWorldOrientation) * root.simdWorldOrientation
             }
         }
+    }
+
+    // Root-space wrist paths pass through the old contact pose at exactly p=0.5.
+    // Hermite tangents carry the racket through contact and settle it back into
+    // the ready stance, instead of lifting a fixed arm up and down in place.
+    private static let strokeTimes: [Float] = [0, 0.22, 0.5, 0.78, 1]
+    private static let readyWrist = SIMD3<Float>(-0.27, 1.12, 0.28)
+    private static let forehandWrists: [SIMD3<Float>] = [
+        readyWrist, SIMD3(-0.48, 1.18, 0.035), SIMD3(-0.46, 1.21 + 0.15, 0.31),
+        SIMD3(0.18, 1.45, 0.38), readyWrist
+    ]
+    private static let backhandWrists: [SIMD3<Float>] = [
+        readyWrist, SIMD3(0.38, 1.20, 0.04), SIMD3(0.26, 1.21 + 0.15, 0.31),
+        SIMD3(-0.36, 1.44, 0.40), readyWrist
+    ]
+    private static let freeHandWrists: [SIMD3<Float>] = [
+        SIMD3(0.23, 1.10, 0.23), SIMD3(0.30, 1.18, 0.22), SIMD3(0.30, 1.10, 0.18),
+        SIMD3(0.34, 1.23, 0.08), SIMD3(0.23, 1.10, 0.23)
+    ]
+
+    static func strokeWristTarget(progress: Float, backhand: Bool, leftHanded: Bool) -> SIMD3<Float> {
+        var target = sampleStroke(backhand ? backhandWrists : forehandWrists, progress: progress)
+        if leftHanded { target.x = -target.x }
+        return target
+    }
+
+    private static func freeHandTarget(progress: Float, leftHanded: Bool) -> SIMD3<Float> {
+        var target = sampleStroke(freeHandWrists, progress: progress)
+        if leftHanded { target.x = -target.x }
+        return target
+    }
+
+    private static func sampleStroke(_ points: [SIMD3<Float>], progress: Float) -> SIMD3<Float> {
+        let p = min(1, max(0, progress.isFinite ? progress : 0))
+        let segment = min(strokeTimes.count - 2, strokeTimes.dropFirst().prefix { p > $0 }.count)
+        let duration = strokeTimes[segment + 1] - strokeTimes[segment]
+        let t = (p - strokeTimes[segment]) / duration
+        func tangent(_ index: Int) -> SIMD3<Float> {
+            guard index > 0, index < points.count - 1 else { return .zero }
+            return (points[index + 1] - points[index - 1]) / (strokeTimes[index + 1] - strokeTimes[index - 1])
+        }
+        let t2 = t * t
+        let t3 = t2 * t
+        return points[segment] * (2 * t3 - 3 * t2 + 1)
+            + tangent(segment) * duration * (t3 - 2 * t2 + t)
+            + points[segment + 1] * (-2 * t3 + 3 * t2)
+            + tangent(segment + 1) * duration * (t3 - t2)
     }
 
     /// Slow instructional motion uses the same skeleton and grounded IK as play.
@@ -442,6 +500,7 @@ final class RallyAvatarRig {
     }
 
     private func configureStudio() {
+        let studio = presentation == .studio
         scene.background.contents = UIColor.clear
         camera.camera = SCNCamera()
         camera.camera?.usesOrthographicProjection = true
@@ -450,13 +509,49 @@ final class RallyAvatarRig {
         camera.camera?.zFar = 20
         camera.camera?.wantsHDR = true
         camera.camera?.wantsExposureAdaptation = false
-        camera.camera?.exposureOffset = 0.10
+        // Preserve highlights on white tennis clothing instead of washing away its folds.
+        camera.camera?.exposureOffset = -0.18
         camera.position = SCNVector3(0, 0.93, 4)
+        if studio {
+            camera.position.y = 1.14
+            camera.look(at: SCNVector3(0, 0.93, 0))
+            camera.camera?.screenSpaceAmbientOcclusionIntensity = 0.32
+            camera.camera?.screenSpaceAmbientOcclusionRadius = 0.055
+            camera.camera?.screenSpaceAmbientOcclusionBias = 0.012
+            createStudioGrounding()
+        }
         scene.rootNode.addChildNode(camera)
-        addLight(.ambient, position: SCNVector3Zero, intensity: 300, color: UIColor(white: 0.90, alpha: 1))
-        addLight(.directional, position: SCNVector3(-2, 3.5, 4), intensity: 900, color: UIColor(red: 1, green: 0.95, blue: 0.89, alpha: 1))
-        addLight(.directional, position: SCNVector3(3, 2, 1), intensity: 450, color: UIColor(red: 0.85, green: 0.92, blue: 1, alpha: 1))
-        addLight(.directional, position: SCNVector3(0, 3, -3), intensity: 700, color: .white)
+        // A broad front fill keeps every skin tone and both eyes readable on a phone.
+        // The quieter side key and ivory rim retain athletic shape without a plastic sheen.
+        addLight(.ambient, position: SCNVector3Zero, intensity: 340, color: UIColor(white: 0.96, alpha: 1))
+        addLight(.directional, position: SCNVector3(-2.5, 3.4, 4), intensity: 760, color: UIColor(red: 1, green: 0.96, blue: 0.90, alpha: 1))
+        addLight(.directional, position: SCNVector3(2.4, 1.8, 4), intensity: 510, color: UIColor(red: 0.94, green: 0.97, blue: 1, alpha: 1))
+        addLight(.directional, position: SCNVector3(0.7, 2.8, -3), intensity: 640, color: UIColor(red: 1, green: 0.98, blue: 0.92, alpha: 1))
+    }
+
+    func setStudioZoom(_ scale: Double) {
+        guard presentation == .studio else { return }
+        let zoom = min(1.15, max(0.48, scale))
+        camera.camera?.orthographicScale = zoom
+        camera.position.y = Float(1.14 + (1.05 - zoom) * 0.62)
+    }
+
+    private func createStudioGrounding() {
+        // One cached feathered texture grounds all fitting views. The court supplies
+        // gameplay shadows, so this transparent studio floor never enters SK3DNode.
+        let plane = SCNPlane(width: 1.24, height: 0.80)
+        let shadow = SCNMaterial()
+        shadow.lightingModel = .constant
+        shadow.diffuse.contents = Self.contactShadow
+        shadow.isDoubleSided = true
+        shadow.writesToDepthBuffer = false
+        plane.materials = [shadow]
+        let node = SCNNode(geometry: plane)
+        node.name = "Studio contact shadow"
+        node.eulerAngles.x = -.pi / 2
+        node.position = SCNVector3(0, 0.001, 0.02)
+        node.renderingOrder = -1
+        scene.rootNode.addChildNode(node)
     }
 
     private func addLight(_ type: SCNLight.LightType, position: SCNVector3, intensity: CGFloat, color: UIColor) {
@@ -508,8 +603,10 @@ final class RallyAvatarRig {
 
     private func createEyes() {
         guard let mesh = try? loadMesh("eyes") else { return }
-        let material = Self.material(color: .white, roughness: 0.24)
+        let material = Self.material(color: .white, roughness: 0.32)
         material.diffuse.contents = Self.image("eyes-diffuse") ?? UIColor(white: 0.86, alpha: 1)
+        material.clearCoat.contents = 0.18
+        material.clearCoatRoughness.contents = 0.22
         let node = SCNNode(geometry: mesh.geometry())
         node.geometry?.materials = [material]
         attachAtBindPosition(node, to: "head")
@@ -625,17 +722,34 @@ final class RallyAvatarRig {
         }.inflated(0.013)
         // Let the shirt fall outside the waistband instead of intersecting the shorts.
         if specificTop == nil {
+            if authoredShirt != nil, !tank,
+               let hem = shirt.highestLowerBoundary(below: 1.06 * stature) {
+                // Trim across triangles, then retain a little overlap at the waist.
+                // Pin the lower band to the pelvis so alternating leg weights do
+                // not pull adjacent hem vertices into a sawtooth during a stroke.
+                shirt = shirt.clipped(atY: hem + 0.0005, keepAbove: true)
+                if !polo {
+                    for i in stride(from: 1, to: shirt.positions.count, by: 3) {
+                        let ease = max(0, min(1, (1.11 * stature - shirt.positions[i]) / (0.12 * stature)))
+                        shirt.positions[i] -= 0.014 * stature * ease
+                    }
+                }
+                shirt = shirt.weightedTowardBone("root", below: hem + 0.025 * stature, transition: 0.075 * stature)
+            }
             for i in stride(from: 0, to: shirt.positions.count, by: 3) {
                 let ease = max(0, min(1, (1.16 * stature - shirt.positions[i + 1]) / (0.20 * stature)))
-                shirt.positions[i] *= 1 + 0.04 * ease
-                shirt.positions[i + 2] += shirt.normals[i + 2] * 0.006 * ease
+                shirt.positions[i] *= 1 + 0.055 * ease
+                shirt.positions[i + 2] += shirt.normals[i + 2] * 0.022 * ease
             }
         }
         let topMaterial = Self.fabric(look.topUIColor, knit: true)
         if let normal = Self.image(polo ? "polo-normal" : "shirt-normal"), !tank, specificTop == nil {
             topMaterial.normal.contents = normal
             topMaterial.normal.contentsTransform = SCNMatrix4Identity
-            topMaterial.normal.intensity = 0.6
+            topMaterial.normal.intensity = 0.42
+            if polo, let roughness = Self.image("polo-roughness") {
+                topMaterial.roughness.contents = roughness
+            }
         }
         let top = skin(shirt, material: topMaterial)
         top.name = tank ? "Tank" : (polo ? "Polo" : "Performance tee")
@@ -643,18 +757,44 @@ final class RallyAvatarRig {
 
         let bottomReference = look.shorts.flatMap { catalog.reference(for: $0.id, slot: .shorts) }
         let specificBottom = bottomReference?.meshName(for: athleteModel).flatMap { try? assetLoader($0) }
-        let shorts = specificBottom ?? (try? loadMesh("shorts")) ?? shell.selected { _, y, _ in y > 0.70 * stature && y < 0.98 * stature }.hemmed(lower: 0.70 * stature, upper: 0.98 * stature).inflated(0.008)
+        let authoredShorts = try? loadMesh("shorts")
+        var shorts = specificBottom ?? authoredShorts ?? shell
+            .clipped(atY: 0.70 * stature, keepAbove: true)
+            .clipped(atY: 0.98 * stature, keepAbove: false)
+        if specificBottom == nil, authoredShorts == nil {
+            for vertex in stride(from: 0, to: shorts.positions.count, by: 3) {
+                // Legs need room over moving thighs; the waistband must stay
+                // under the top, especially on the fitted women's polo.
+                let waist = max(0, min(1, (shorts.positions[vertex + 1] - 0.84 * stature) / (0.10 * stature)))
+                let clearance: Float = 0.018 - 0.012 * waist
+                for axis in 0..<3 { shorts.positions[vertex + axis] += shorts.normals[vertex + axis] * clearance }
+            }
+        }
         let bottom = skin(shorts, material: Self.fabric(look.shortsUIColor, knit: false))
         bottom.name = "Court shorts"
         wardrobe.addChildNode(bottom)
         let shoes = (try? loadMesh("shoes")) ?? shell.selected { _, y, _ in y < 0.095 * stature }.inflated(0.011)
-        let shoeMaterial = Self.material(color: look.shoesUIColor, roughness: 0.58)
+        let shoeMaterial = Self.material(color: look.shoesUIColor, roughness: 0.79)
+        shoeMaterial.specular.contents = UIColor(white: 0.12, alpha: 1)
         if let texture = Self.image("shoes-diffuse") {
             shoeMaterial.diffuse.contents = texture
             shoeMaterial.multiply.contents = look.shoesUIColor
         }
-        let shoe = skin(shoes, material: shoeMaterial)
+        // The authored upper and the rubber sole share one skinned mesh. Give
+        // their existing triangles separate finishes so the heel does not read
+        // as one dark block. No extra shoe body is stacked over the original.
+        let soleFloor = stride(from: 1, to: shoes.positions.count, by: 3).map { shoes.positions[$0] }.min() ?? -0.018
+        let soleCut = soleFloor + 0.028 * stature
+        let upperMesh = shoes.clipped(atY: soleCut, keepAbove: true)
+        let soleMesh = shoes.clipped(atY: soleCut, keepAbove: false)
+        let shoe = skin(upperMesh.indices.isEmpty ? shoes : upperMesh, material: shoeMaterial)
         shoe.name = "Court shoes"
+        if !upperMesh.indices.isEmpty, !soleMesh.indices.isEmpty {
+            let rubber = Self.material(color: UIColor(red: 0.86, green: 0.87, blue: 0.83, alpha: 1), roughness: 0.96)
+            let sole = skin(soleMesh, material: rubber)
+            sole.name = "Court shoe soles"
+            wardrobe.addChildNode(sole)
+        }
         wardrobe.addChildNode(shoe)
         let socks = (try? loadMesh("socks")) ?? shell.selected { _, y, _ in y >= 0.08 * stature && y < 0.205 * stature }.inflated(0.004)
         let sockColor = look.socks.flatMap { UIColor(hexString: $0.colorwayHex) } ?? UIColor(white: 0.93, alpha: 1)
@@ -705,20 +845,27 @@ final class RallyAvatarRig {
 
     private func createRacket() {
         racket.name = "Tennis racket"
-        racketMaterial = Self.material(color: .gray, roughness: 0.31, metalness: 0.45)
+        racketMaterial = Self.material(color: .gray, roughness: 0.38, metalness: 0.16)
+        racketMaterial.clearCoat.contents = 0.28
+        racketMaterial.clearCoatRoughness.contents = 0.32
         racketGripMaterial = Self.material(color: .darkGray, roughness: 0.92)
+        let graphite = Self.material(color: UIColor(white: 0.075, alpha: 1), roughness: 0.76)
         let grip = SCNCylinder(radius: 0.013, height: 0.17)
         let handle = SCNNode(geometry: grip)
         handle.position.y = 0.06
         handle.geometry?.materials = [racketGripMaterial]
         racket.addChildNode(handle)
+        let buttCap = SCNNode(geometry: SCNCylinder(radius: 0.016, height: 0.012))
+        buttCap.position.y = -0.026
+        buttCap.geometry?.materials = [graphite]
+        racket.addChildNode(buttCap)
         for i in 0..<12 {
             let torus = SCNTorus(ringRadius: 0.0132, pipeRadius: 0.0007)
             torus.ringSegmentCount = 24
             torus.pipeSegmentCount = 4
             let ring = SCNNode(geometry: torus)
             ring.position.y = Float(i) * 0.012 - 0.01
-            ring.geometry?.materials = [Self.material(color: UIColor(white: 0.12, alpha: 1), roughness: 0.9)]
+            ring.geometry?.materials = [graphite]
             racket.addChildNode(ring)
         }
         for side: Float in [-1, 1] {
@@ -733,7 +880,12 @@ final class RallyAvatarRig {
         hoop.scale.z = 1.30
         hoop.geometry?.materials = [racketMaterial]
         racketHead.addChildNode(hoop)
-        let strings = Self.material(color: UIColor(white: 0.83, alpha: 1), roughness: 0.84)
+        let grommet = SCNNode(geometry: SCNTorus(ringRadius: 0.118, pipeRadius: 0.0025))
+        grommet.eulerAngles.x = .pi / 2
+        grommet.scale.z = 1.30
+        grommet.geometry?.materials = [graphite]
+        racketHead.addChildNode(grommet)
+        let strings = Self.material(color: UIColor(red: 0.90, green: 0.89, blue: 0.83, alpha: 1), roughness: 0.80)
         for i in -7...7 {
             let x = Float(i) * 0.015
             let halfY = sqrt(max(0, 1 - x * x / (0.119 * 0.119))) * 0.156
@@ -769,16 +921,33 @@ final class RallyAvatarRig {
     }
 
     private static func fabric(_ color: UIColor, knit: Bool) -> SCNMaterial {
-        let material = self.material(color: color, roughness: knit ? 0.90 : 0.78)
+        let material = self.material(color: color, roughness: knit ? 0.94 : 0.86)
+        material.specular.contents = UIColor(white: 0.10, alpha: 1)
         material.isDoubleSided = true
         // Microweave modulates normals in tangent space without painting fake brand marks.
         material.normal.contents = knit ? knitNormal : wovenNormal
         material.normal.wrapS = .repeat
         material.normal.wrapT = .repeat
         material.normal.contentsTransform = SCNMatrix4MakeScale(32, 32, 1)
-        material.normal.intensity = 0.18
+        material.normal.intensity = 0.13
+        material.normal.mipFilter = .linear
         return material
     }
+
+    private static let contactShadow: UIImage = {
+        let size = CGSize(width: 128, height: 128)
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = 1
+        return UIGraphicsImageRenderer(size: size, format: format).image { context in
+            let colors = [UIColor.black.withAlphaComponent(0.34).cgColor,
+                          UIColor.black.withAlphaComponent(0.12).cgColor,
+                          UIColor.clear.cgColor] as CFArray
+            let locations: [CGFloat] = [0, 0.45, 1]
+            guard let gradient = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(), colors: colors, locations: locations) else { return }
+            context.cgContext.drawRadialGradient(gradient, startCenter: CGPoint(x: 64, y: 64), startRadius: 0,
+                                                 endCenter: CGPoint(x: 64, y: 64), endRadius: 64, options: [])
+        }
+    }()
 
     private static let knitNormal = weaveTexture(knit: true)
     private static let wovenNormal = weaveTexture(knit: false)
@@ -865,11 +1034,143 @@ struct RallyHumanMesh: Decodable {
         return result
     }
 
+    private struct Edge: Hashable {
+        let low: Int
+        let high: Int
+        init(_ a: Int, _ b: Int) { low = min(a, b); high = max(a, b) }
+    }
+
+    /// UV seams duplicate vertices. Weld by position when finding a garment's
+    /// actual open lower edge, otherwise texture seams look like cut fabric.
+    func highestLowerBoundary(below limit: Float) -> Float? {
+        var canonical: [SIMD3<Float>: Int] = [:]
+        var vertexMap: [Int] = []
+        for index in stride(from: 0, to: positions.count, by: 3) {
+            let point = SIMD3<Float>(positions[index], positions[index + 1], positions[index + 2])
+            if canonical[point] == nil { canonical[point] = index / 3 }
+            vertexMap.append(canonical[point]!)
+        }
+        var edgeCounts: [Edge: Int] = [:]
+        for triangle in stride(from: 0, to: indices.count, by: 3) {
+            let a = vertexMap[Int(indices[triangle])]
+            let b = vertexMap[Int(indices[triangle + 1])]
+            let c = vertexMap[Int(indices[triangle + 2])]
+            for edge in [Edge(a, b), Edge(b, c), Edge(c, a)] { edgeCounts[edge, default: 0] += 1 }
+        }
+        var result: Float?
+        for (edge, count) in edgeCounts where count == 1 {
+            let a = positions[edge.low * 3 + 1]
+            let b = positions[edge.high * 3 + 1]
+            if a < limit, b < limit { result = max(result ?? a, max(a, b)) }
+        }
+        return result
+    }
+
+    /// Clip intersecting triangles at a real seam plane. Interpolating UVs,
+    /// normals and normalized skin weights retains the authored fit in motion.
+    func clipped(atY height: Float, keepAbove: Bool) -> Self {
+        var result = self
+        result.positions = []; result.normals = []; result.uvs = []; result.indices = []
+        let skinned = boneWeights != nil && boneIndices != nil
+        result.boneWeights = skinned ? [] : nil
+        result.boneIndices = skinned ? [] : nil
+        var originalVertices: [Int: UInt32] = [:]
+        var seamVertices: [Edge: UInt32] = [:]
+
+        func appendVertex(_ a: Int, _ b: Int, _ t: Float) -> UInt32 {
+            let index = UInt32(result.positions.count / 3)
+            for axis in 0..<3 {
+                let first = positions[a * 3 + axis]
+                result.positions.append(first + (positions[b * 3 + axis] - first) * t)
+            }
+            let firstNormal = SIMD3<Float>(normals[a * 3], normals[a * 3 + 1], normals[a * 3 + 2])
+            let lastNormal = SIMD3<Float>(normals[b * 3], normals[b * 3 + 1], normals[b * 3 + 2])
+            let normal = simd_normalize(firstNormal + (lastNormal - firstNormal) * t)
+            result.normals.append(contentsOf: [normal.x, normal.y, normal.z])
+            for axis in 0..<2 {
+                let first = uvs[a * 2 + axis]
+                result.uvs.append(first + (uvs[b * 2 + axis] - first) * t)
+            }
+            if let weights = boneWeights, let joints = boneIndices {
+                var blended: [Int: Float] = [:]
+                for influence in 0..<4 {
+                    blended[joints[a * 4 + influence], default: 0] += weights[a * 4 + influence] * (1 - t)
+                    blended[joints[b * 4 + influence], default: 0] += weights[b * 4 + influence] * t
+                }
+                let strongest = blended.sorted { $0.value == $1.value ? $0.key < $1.key : $0.value > $1.value }.prefix(4)
+                let total = max(0.000001, strongest.reduce(Float(0)) { $0 + $1.value })
+                for joint in strongest {
+                    result.boneIndices?.append(joint.key)
+                    result.boneWeights?.append(joint.value / total)
+                }
+                for _ in strongest.count..<4 {
+                    result.boneIndices?.append(0); result.boneWeights?.append(0)
+                }
+            }
+            return index
+        }
+        func original(_ vertex: Int) -> UInt32 {
+            if let cached = originalVertices[vertex] { return cached }
+            let index = appendVertex(vertex, vertex, 0)
+            originalVertices[vertex] = index
+            return index
+        }
+        func intersection(_ a: Int, _ b: Int) -> UInt32 {
+            let edge = Edge(a, b)
+            if let cached = seamVertices[edge] { return cached }
+            let t = (height - positions[a * 3 + 1]) / (positions[b * 3 + 1] - positions[a * 3 + 1])
+            let index = appendVertex(a, b, t)
+            result.positions[Int(index) * 3 + 1] = height
+            seamVertices[edge] = index
+            return index
+        }
+        func inside(_ vertex: Int) -> Bool {
+            keepAbove ? positions[vertex * 3 + 1] >= height : positions[vertex * 3 + 1] <= height
+        }
+        for triangle in stride(from: 0, to: indices.count, by: 3) {
+            let vertices = (0..<3).map { Int(indices[triangle + $0]) }
+            var polygon: [UInt32] = []
+            var previous = vertices[2]
+            for current in vertices {
+                if inside(current) != inside(previous) { polygon.append(intersection(previous, current)) }
+                if inside(current) { polygon.append(original(current)) }
+                previous = current
+            }
+            if polygon.count >= 3 {
+                for index in 1..<(polygon.count - 1) {
+                    result.indices.append(contentsOf: [polygon[0], polygon[index], polygon[index + 1]])
+                }
+            }
+        }
+        return result
+    }
+
+    func weightedTowardBone(_ name: String, below height: Float, transition: Float) -> Self {
+        guard let joint = bones?.firstIndex(where: { $0.name == name }),
+              let weights = boneWeights, let joints = boneIndices else { return self }
+        var result = self
+        for vertex in 0..<(positions.count / 3) {
+            let strength = max(0, min(1, (height + transition - positions[vertex * 3 + 1]) / transition))
+            guard strength > 0 else { continue }
+            var blended: [Int: Float] = [joint: strength]
+            for influence in 0..<4 {
+                blended[joints[vertex * 4 + influence], default: 0] += weights[vertex * 4 + influence] * (1 - strength)
+            }
+            let strongest = Array(blended.sorted { $0.value == $1.value ? $0.key < $1.key : $0.value > $1.value }.prefix(4))
+            let total = max(0.000001, strongest.reduce(Float(0)) { $0 + $1.value })
+            for influence in 0..<4 {
+                result.boneIndices?[vertex * 4 + influence] = influence < strongest.count ? strongest[influence].key : 0
+                result.boneWeights?[vertex * 4 + influence] = influence < strongest.count ? strongest[influence].value / total : 0
+            }
+        }
+        return result
+    }
+
     func hemmed(lower: Float, upper: Float) -> Self {
         var result = self
         for i in stride(from: 1, to: positions.count, by: 3) {
-            if abs(positions[i] - lower) < 0.035 { result.positions[i] = lower }
-            if abs(positions[i] - upper) < 0.035 { result.positions[i] = upper }
+            if positions[i] < lower + 0.035 { result.positions[i] = lower }
+            if positions[i] > upper - 0.035 { result.positions[i] = upper }
         }
         return result
     }

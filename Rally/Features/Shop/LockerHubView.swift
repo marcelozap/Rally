@@ -7,6 +7,8 @@ struct LockerHubView: View {
 
     @State private var selectedCategory: ShopItem.Category? = nil
     @State private var groupByVendor: Bool = false
+    @State private var stageEmote: AvatarShopEmote = .idle
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @ObservedObject private var unlocks = CourtUnlocks.shared
 
     var onPlay: () -> Void
@@ -70,7 +72,7 @@ struct LockerHubView: View {
             }
             .background(
                 LinearGradient(
-                    colors: [Color(red: 0.03, green: 0.04, blue: 0.07), .black],
+                    colors: [RallyUIKit.Palette.ink, RallyUIKit.Palette.obsidian],
                     startPoint: .top,
                     endPoint: .bottom
                 )
@@ -91,14 +93,14 @@ struct LockerHubView: View {
                             } label: {
                                 Image(systemName: "person.crop.circle")
                                     .font(.body.weight(.semibold))
-                                    .foregroundStyle(.cyan)
+                                    .foregroundStyle(RallyUIKit.Palette.champagne)
                             }
                         }
                         Button {
                             groupByVendor.toggle()
                         } label: {
                             Image(systemName: groupByVendor ? "square.grid.2x2.fill" : "person.2.fill")
-                                .foregroundStyle(.cyan)
+                                .foregroundStyle(RallyUIKit.Palette.champagne)
                         }
                     }
                 }
@@ -107,56 +109,22 @@ struct LockerHubView: View {
     }
 
     private var lockerHero: some View {
-        PremiumAvatarStageContainer(tone: .calm, accent: RallyUIKit.Palette.champagne, height: 220) {
-            ZStack {
-                LinearGradient(
-                    colors: [
-                        RallyUIKit.Palette.obsidian.opacity(0.98),
-                        RallyUIKit.Palette.ink.opacity(0.94)
-                    ],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-
-                VStack(spacing: 0) {
-                    Spacer(minLength: 16)
-
-                    VStack(spacing: 8) {
-                        Text("Match kit")
-                            .font(RallyUIKit.Typography.label(.caption2, weight: .bold))
-                            .tracking(1.8)
-                            .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.58))
-
-                        HStack(spacing: 12) {
-                            lockerKitGlyph(.racket, tint: RallyUIKit.Palette.gold)
-                            lockerKitGlyph(.top, tint: RallyUIKit.Palette.cyan)
-                            lockerKitGlyph(.bottom, tint: RallyUIKit.Palette.rose)
-                            lockerKitGlyph(.shoes, tint: RallyUIKit.Palette.lime)
-                        }
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 12)
-                        .background(
-                            RoundedRectangle(cornerRadius: 24, style: .continuous)
-                                .fill(Color.black.opacity(0.26))
-                        )
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 24, style: .continuous)
-                                .stroke(RallyUIKit.Palette.champagne.opacity(0.22), lineWidth: 1)
-                        )
-                        .shadow(color: RallyUIKit.Palette.champagne.opacity(0.12), radius: 18, y: 8)
-                    }
-
-                    Spacer(minLength: 12)
-
-                    HStack {
-                        Text("Locker")
-                            .font(RallyUIKit.Typography.title(.headline, weight: .bold))
-                            .foregroundStyle(RallyUIKit.Palette.frost)
-                        Spacer()
-                    }
-                    .padding(.horizontal, 18)
-                    .padding(.bottom, 16)
-                }
+        VStack(alignment: .leading, spacing: 18) {
+            VStack(alignment: .leading, spacing: 7) {
+                Text("YOUR LOCKER")
+                    .font(.system(size: 10, weight: .semibold))
+                    .tracking(2.2)
+                    .foregroundStyle(RallyUIKit.Palette.lime)
+                Text("Court-ready.")
+                    .font(.system(size: 30, weight: .semibold))
+                    .tracking(-0.8)
+                    .foregroundStyle(RallyUIKit.Palette.frost)
+                Text("Your player. Your current match kit.")
+                    .font(.system(size: 13))
+                    .foregroundStyle(RallyUIKit.Palette.cloud)
+            }
+            if let avatar {
+                AvatarShopStageView(config: avatar, tone: .calm, emote: $stageEmote)
             }
         }
     }
@@ -188,18 +156,18 @@ struct LockerHubView: View {
                     .font(RallyUIKit.Typography.title(.title3, weight: .bold))
                 Spacer(minLength: 0)
             }
-            .foregroundStyle(Color.white)
+            .foregroundStyle(RallyUIKit.Palette.obsidian)
             .frame(maxWidth: .infinity, minHeight: 58)
             .padding(.horizontal, 18)
                 .background(
                     RoundedRectangle(cornerRadius: RallyUIKit.Radius.xl, style: .continuous)
-                        .fill(RallyUIKit.accentGradient(RallyUIKit.Palette.cyan))
+                        .fill(RallyUIKit.Palette.lime)
                 )
                 .overlay(
                     RoundedRectangle(cornerRadius: RallyUIKit.Radius.xl, style: .continuous)
                         .stroke(Color.white.opacity(0.30), lineWidth: 1)
                 )
-                .shadow(color: RallyUIKit.Palette.cyan.opacity(0.32), radius: 16, y: 6)
+                .shadow(color: .black.opacity(0.15), radius: 12, y: 6)
         }
         .buttonStyle(PlayNowButtonStyle())
         .accessibilityLabel("Play")
@@ -313,10 +281,7 @@ struct LockerHubView: View {
 
     private func lockerDesireGridContent(items: [ShopItem]) -> some View {
         LazyVGrid(
-            columns: [
-                GridItem(.flexible(), spacing: 12),
-                GridItem(.flexible(), spacing: 12)
-            ],
+            columns: [GridItem(.adaptive(minimum: dynamicTypeSize.isAccessibilitySize ? 260 : 150), spacing: 12)],
             spacing: 18
         ) {
             ForEach(items) { item in
@@ -349,16 +314,15 @@ struct LockerHubView: View {
             ZStack(alignment: .topLeading) {
                 RoundedRectangle(cornerRadius: 24, style: .continuous)
                     .fill(lockerTileGradient(accent: accent, itemColor: item.color))
-                    .frame(height: 236)
+                    .frame(height: 204)
 
                 Circle()
-                    .fill(item.color.opacity(0.20))
+                    .fill(item.color.opacity(0.06))
                     .frame(width: 110, height: 110)
                     .blur(radius: 32)
                     .offset(x: -16, y: -8)
 
-                lockerApparelSwatch(item, tint: accent, width: 156, height: 172)
-                    .scaleEffect(item.category == .racket ? 1.02 : 1.08)
+                lockerApparelSwatch(item, tint: accent, width: 136, height: 160)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
 
                 if isEquipped(item) {
@@ -407,14 +371,14 @@ struct LockerHubView: View {
                                 endPoint: .bottomTrailing
                             )
                           )
-                        : AnyShapeStyle(accent.opacity(0.28)),
+                        : AnyShapeStyle(Color.white.opacity(0.10)),
                     lineWidth: isEquipped(item) ? 2 : 1
                 )
         )
         .shadow(
             color: isEquipped(item)
-                ? RallyUIKit.Palette.champagne.opacity(0.22)
-                : Color.black.opacity(0.18),
+                ? Color.black.opacity(0.16)
+                : Color.black.opacity(0.12),
             radius: isEquipped(item) ? 18 : 12,
             y: 6
         )
@@ -423,10 +387,9 @@ struct LockerHubView: View {
     private func lockerTileGradient(accent: Color, itemColor: Color) -> LinearGradient {
         LinearGradient(
             colors: [
-                itemColor.opacity(0.24),
-                Color(red: 0.08, green: 0.08, blue: 0.11),
-                RallyUIKit.Palette.obsidian,
-                accent.opacity(0.16)
+                RallyUIKit.Palette.slate,
+                RallyUIKit.Palette.ink,
+                itemColor.opacity(0.08)
             ],
             startPoint: .topLeading,
             endPoint: .bottomTrailing
@@ -437,7 +400,7 @@ struct LockerHubView: View {
         Button(action: action) {
             Text(label)
                 .font(RallyUIKit.Typography.label(.caption, weight: .bold))
-                .foregroundStyle(selected ? Color.white : RallyUIKit.Palette.cloud.opacity(0.72))
+                .foregroundStyle(selected ? RallyUIKit.Palette.obsidian : RallyUIKit.Palette.cloud.opacity(0.72))
                 .padding(.horizontal, 12)
                 .padding(.vertical, 9)
                 .background(
@@ -506,9 +469,9 @@ struct LockerHubView: View {
                 .fill(
                     LinearGradient(
                         colors: [
-                            item.color.opacity(0.96),
-                            productAccent.opacity(0.65),
-                            RallyUIKit.Palette.obsidian.opacity(0.9)
+                            RallyUIKit.Palette.slate,
+                            item.color.opacity(0.12),
+                            RallyUIKit.Palette.ink
                         ],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing

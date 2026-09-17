@@ -130,7 +130,7 @@ struct ContentView: View {
                     .tracking(0.4)
                     .foregroundStyle(.white)
 
-                Text("Preparing your avatar profile and loading the season dashboard.")
+                Text("Getting your player and court ready.")
                     .font(RallyUIKit.Typography.body(.subheadline, weight: .medium))
                     .multilineTextAlignment(.center)
                     .foregroundStyle(.white.opacity(0.68))
