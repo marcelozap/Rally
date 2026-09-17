@@ -235,7 +235,9 @@ final class RallyAvatarRig {
         let courtToRoot = simd_inverse(root.simdWorldOrientation)
         let pelvisTravel = courtToRoot.act(SIMD3<Float>(gait.pelvisOffset, 0, 0))
         let weightShift = studio ? Float(sin(time * 0.94)) * 0.025 : lateral * 0.018 + pelvisTravel.x + bodyMotion.pelvisOffset.x * stature
-        let readyDrop: Float = studio ? 0.046 + Float(cos(time * 1.88)) * 0.005 : 0.028 + gait.pelvisDrop
+        // A fitting preview stands at ease. The deeper court crouch compressed
+        // the visible thighs and made the shorts-to-knee taper look abrupt.
+        let readyDrop: Float = studio ? 0.020 + Float(cos(time * 1.88)) * 0.003 : 0.028 + gait.pelvisDrop
         if let hip = boneByName["root"], let neutral = bindPosition["root"] {
             hip.simdPosition = neutral + SIMD3<Float>(weightShift,
                 -readyDrop - swing * 0.014 + breath * 0.002 + bodyMotion.pelvisOffset.y * stature,
@@ -307,12 +309,13 @@ final class RallyAvatarRig {
             guard let ankle = bindPosition["foot.\(side)"] else { continue }
             // Studio/nil callers retain the planted split stance. During court
             // travel the supporting shoe compensates for outer-root movement.
-            let spread: Float = (side == "L" ? 1 : -1) * (studio ? 0.045 : 0.026)
+            let sideSign: Float = side == "L" ? 1 : -1
+            let spread: Float = sideSign * (studio ? 0.035 : 0.026)
             let footPose = side == "L" ? gait.left : gait.right
             let travel = courtToRoot.act(SIMD3<Float>(footPose.offset, 0, 0))
             solveChain(upperName: "upperleg01.\(side)", lowerName: "lowerleg01.\(side)",
                        endName: "foot.\(side)", target: ankle + SIMD3<Float>(spread, footPose.lift, 0) + travel,
-                       pole: SIMD3<Float>(spread, 0, 1))
+                       pole: SIMD3<Float>(studio ? sideSign * 0.26 : spread, 0, 1))
             if let foot = boneByName["foot.\(side)"], let parent = foot.parent {
                 let pivot = twoHandedStroke ? bodyMotion.pelvisYaw * (side == dominantSuffix ? 0.65 : 0.9) : 0
                 foot.simdOrientation = simd_inverse(parent.simdWorldOrientation) * root.simdWorldOrientation
@@ -971,11 +974,20 @@ final class RallyAvatarRig {
             .clipped(atY: 0.98 * stature, keepAbove: false)
         if specificBottom == nil, authoredShorts == nil {
             for vertex in stride(from: 0, to: shorts.positions.count, by: 3) {
-                // Legs need room over moving thighs; the waistband must stay
-                // under the top, especially on the fitted women's polo.
-                let waist = max(0, min(1, (shorts.positions[vertex + 1] - 0.84 * stature) / (0.10 * stature)))
-                let clearance: Float = 0.018 - 0.012 * waist
-                for axis in 0..<3 { shorts.positions[vertex + axis] += shorts.normals[vertex + axis] * clearance }
+                // The helper already clears the thigh. Extra room belongs in
+                // the seat, tapering toward the cuff so skin does not appear
+                // to emerge from an oversized, flared opening.
+                let height = shorts.positions[vertex + 1]
+                let aboveHem = max(0, height - 0.70 * stature)
+                let hemEase = Self.smoothUnit(aboveHem / (0.09 * stature))
+                let waist = max(0, min(1, (height - 0.84 * stature) / (0.10 * stature)))
+                let clearance: Float = 0.010 + 0.008 * hemEase - 0.012 * waist
+                shorts.positions[vertex] += shorts.normals[vertex] * clearance
+                shorts.positions[vertex + 2] += shorts.normals[vertex + 2] * clearance
+                // Preserve the clipped hem plane; varying downward normals
+                // previously turned this clean edge into an uneven lip.
+                let verticalEase = Self.smoothUnit(aboveHem / (0.025 * stature))
+                shorts.positions[vertex + 1] += shorts.normals[vertex + 1] * clearance * verticalEase
             }
         }
         let bottom = skin(shorts, material: Self.fabric(look.shortsUIColor, knit: false))

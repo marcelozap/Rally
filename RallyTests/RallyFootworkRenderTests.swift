@@ -11,6 +11,100 @@ import UniformTypeIdentifiers
 /// alone cannot demonstrate that a shoe remains planted in court coordinates.
 @MainActor
 final class RallyFootworkRenderTests: XCTestCase {
+    /// Production meshes and poses, framed for human review of the shorts hem,
+    /// thigh silhouette and knee alignment. No appearance-quality thresholds.
+    func testRenderThighHemAndKneeAlignmentForVisualReview() throws {
+        let device = try XCTUnwrap(MTLCreateSystemDefaultDevice())
+        let poses: [(name: String, presentation: RallyAvatarRig.Presentation)] = [
+            ("studio-idle", .studio), ("gameplay-ready", .gameplay)
+        ]
+        let views: [(name: String, position: SCNVector3)] = [
+            ("front", SCNVector3(0, 0.57, 3)),
+            ("threequarter", SCNVector3(2.12, 0.57, 2.12)),
+            ("back", SCNVector3(0, 0.57, -3))
+        ]
+        let poseTime = 0.6
+        for preset in [RallyAthletePreset.maleAsian, .femaleAsian] {
+            for pose in poses {
+                try autoreleasepool {
+                    let look = RallyAvatarAppearance(
+                        athletePreset: preset,
+                        top: RallyGearReference(id: "uniqlo.dry.polo.white", colorwayHex: "#F4F4F2"),
+                        shorts: RallyGearReference(id: "default-shorts", colorwayHex: "#15171B")
+                    )
+                    let rig = RallyAvatarRig(appearance: look, presentation: pose.presentation)
+                    XCTAssertNil(rig.assetError)
+                    XCTAssertFalse(rig.root.isHidden)
+                    for name in ["Human skin", "Court shorts", "Court shoes"] {
+                        let node = try XCTUnwrap(rig.root.childNode(withName: name, recursively: true))
+                        let geometry = try XCTUnwrap(node.geometry)
+                        XCTAssertFalse(geometry.sources(for: .vertex).isEmpty)
+                        XCTAssertFalse(geometry.elements.isEmpty)
+                    }
+                    rig.scene.background.contents = UIColor(red: 0.045, green: 0.075, blue: 0.063, alpha: 1)
+                    rig.camera.camera?.orthographicScale = 0.64
+                    if pose.presentation == .gameplay { rig.camera.camera?.wantsHDR = false }
+                    rig.animate(time: poseTime, courtPosition: pose.presentation == .gameplay ? 0 : nil)
+                    SCNTransaction.flush()
+
+                    let name = "thigh-hem-\(preset.rawValue)-\(pose.name)"
+                    let body = try XCTUnwrap(rig.root.childNode(withName: "Human skin", recursively: true))
+                    let bones = try XCTUnwrap(body.skinner).bones
+                    let required = ["root", "upperleg01.L", "upperleg01.R", "lowerleg01.L",
+                                    "lowerleg01.R", "foot.L", "foot.R"]
+                    for joint in required {
+                        XCTAssertTrue(bones.contains { $0.name == joint }, "\(name) missing \(joint)")
+                    }
+                    var joints: [[String: Any]] = []
+                    for bone in bones {
+                        guard let joint = bone.name,
+                              joint == "root" || joint.hasPrefix("pelvis") || joint.hasPrefix("upperleg")
+                                || joint.hasPrefix("lowerleg") || joint.hasPrefix("foot") || joint.hasPrefix("toe") else { continue }
+                        let world = bone.worldPosition
+                        let character = rig.root.convertPosition(SCNVector3Zero, from: bone)
+                        XCTAssertTrue([world.x, world.y, world.z, character.x, character.y, character.z].allSatisfy(\.isFinite))
+                        joints.append([
+                            "name": joint,
+                            "parent": bone.parent?.name ?? "",
+                            "world": [Double(world.x), Double(world.y), Double(world.z)],
+                            "character": [Double(character.x), Double(character.y), Double(character.z)]
+                        ])
+                    }
+                    let sample: [String: Any] = [
+                        "preset": preset.rawValue, "pose": pose.name, "timeSeconds": poseTime,
+                        "units": "meters", "characterAxes": "Y up, +Z forward, anatomical right at negative X",
+                        "rootYawRadians": Double(rig.root.eulerAngles.y), "joints": joints
+                    ]
+                    let data = try JSONSerialization.data(withJSONObject: sample, options: [.prettyPrinted, .sortedKeys])
+                    let coordinates = XCTAttachment(data: data, uniformTypeIdentifier: UTType.json.identifier)
+                    coordinates.name = "\(name)-leg-joints"
+                    coordinates.lifetime = .keepAlways
+                    add(coordinates)
+
+                    let renderer = SCNRenderer(device: device, options: nil)
+                    renderer.scene = rig.scene
+                    renderer.pointOfView = rig.camera
+                    renderer.autoenablesDefaultLighting = false
+                    XCTAssertTrue(renderer.prepare(rig.scene, shouldAbortBlock: nil))
+                    for view in views {
+                        // Orbit the camera, preserving the complete production
+                        // pose and foot placement in both presentation modes.
+                        rig.camera.position = rig.root.convertPosition(view.position, to: nil)
+                        rig.camera.look(at: rig.root.convertPosition(SCNVector3(0, 0.57, 0), to: nil))
+                        SCNTransaction.flush()
+                        let image = renderer.snapshot(atTime: poseTime, with: CGSize(width: 768, height: 1024),
+                                                      antialiasingMode: .multisampling4X)
+                        _ = try XCTUnwrap(image.cgImage, "\(name) \(view.name) must render")
+                        let attachment = XCTAttachment(image: image)
+                        attachment.name = "\(name)-\(view.name)"
+                        attachment.lifetime = .keepAlways
+                        add(attachment)
+                    }
+                }
+            }
+        }
+    }
+
     func testRenderTravelAndStopsForNearAndFarAthletes() throws {
         let device = try XCTUnwrap(MTLCreateSystemDefaultDevice())
         for preset in [RallyAthletePreset.maleEuropean, .femaleEuropean] {
