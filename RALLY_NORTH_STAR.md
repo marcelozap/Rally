@@ -1,5 +1,9 @@
 # RALLY NORTH STAR
 
+## Initial public release — owner decision, October 13, 2026
+
+The owner chose the fastest local-database release and original Vela gear after App Review requested evidence and permissions. For this release, ship persistent on-device player/match/journal data without login, registration, cloud backup or syncing. Use original free Vela digital gear and documented CC0 character/garment assets. Remove unlicensed retailer photos, merchant catalogs, promo codes and purchase links. Preserve saved outfit IDs internally. Keep phone/tablet presentation consistent, make equipping a single clear action, and treat the accessory band as an equippable headband. This release decision overrides the real-merchandise/referral goals below until a licensed catalog and live account service are approved by the owner.
+
 ## Purpose
 
 Rally is a premium tennis iOS game built around one tight loop:

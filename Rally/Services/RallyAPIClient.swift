@@ -55,6 +55,20 @@ enum RallyAPIClient {
         try await postCredentials(path: "api/auth/login", email: email, password: password)
     }
 
+    static func deleteAccount(token: String, password: String) async throws {
+        var request = URLRequest(url: RallyAPIConfig.baseURL.appendingPathComponent("api/me"))
+        request.httpMethod = "DELETE"
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = try JSONSerialization.data(withJSONObject: ["password": password])
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let http = response as? HTTPURLResponse else { throw RallyAPIError.http(-1, nil) }
+        guard http.statusCode == 204 else {
+            let message = try? jsonDecoder.decode(APIErrorPayload.self, from: data).error
+            throw RallyAPIError.http(http.statusCode, message)
+        }
+    }
+
     private static func postCredentials(path: String, email: String, password: String) async throws -> AuthTokenResponse {
         let url = RallyAPIConfig.baseURL.appendingPathComponent(path)
         var req = URLRequest(url: url)

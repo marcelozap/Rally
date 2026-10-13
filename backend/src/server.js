@@ -112,6 +112,9 @@ function authMiddleware(req, res, next) {
   }
   try {
     const payload = jwt.verify(header.slice(7), JWT_SECRET);
+    if (!selectUserById.get(payload.sub)) {
+      return res.status(401).json({ error: "Account no longer exists" });
+    }
     req.user = payload;
     next();
   } catch {
@@ -240,6 +243,17 @@ app.post("/api/auth/login", (req, res) => {
   }
   const user = { id: row.id, email: row.email };
   res.json({ token: signToken(user), user });
+});
+
+// Deletes the authenticated account and cascades to its stored sync snapshot.
+app.delete("/api/me", authMiddleware, (req, res) => {
+  const user = selectUserById.get(req.user.sub);
+  const password = String(req.body?.password || "");
+  if (!user || !bcrypt.compareSync(password, user.password_hash)) {
+    return res.status(403).json({ error: "Enter your current password to delete your account" });
+  }
+  db.prepare("DELETE FROM users WHERE id = ?").run(user.id);
+  res.status(204).end();
 });
 
 app.get("/api/me/sync", authMiddleware, (req, res) => {

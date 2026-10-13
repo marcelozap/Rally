@@ -63,14 +63,25 @@ struct HomeView: View {
                     }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
-                    if let avatar = avatar {
-                        NavigationLink {
-                            AvatarCustomizerView(config: avatar)
-                        } label: {
-                            topChromeIcon(systemName: "person.crop.circle")
+                    HStack(spacing: 12) {
+                        if let avatar = avatar {
+                            NavigationLink {
+                                AvatarCustomizerView(config: avatar)
+                            } label: {
+                                Text("Player")
+                                    .font(.subheadline.weight(.semibold))
+                                    .foregroundStyle(RallyUIKit.Palette.champagne)
+                                    .frame(minHeight: HomeCraft.headerTapTarget)
+                            }
+                            .buttonStyle(LoadoutPlayButtonStyle())
+                            .accessibilityLabel("Choose player")
                         }
-                        .buttonStyle(LoadoutPlayButtonStyle())
-                        .accessibilityLabel("Choose player")
+                        NavigationLink {
+                            LockerHubView(onPlay: { isPlaying = true })
+                        } label: {
+                            topChromeIcon(systemName: "person.text.rectangle")
+                        }
+                        .accessibilityLabel(RallyAPIConfig.supportsAccounts ? "Account and locker" : "Locker")
                     }
                 }
             }

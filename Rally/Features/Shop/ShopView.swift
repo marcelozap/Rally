@@ -4,6 +4,8 @@ import UIKit
 
 struct ShopView: View {
     @EnvironmentObject private var avatarAppearanceStore: RallyAvatarAppearanceStore
+    @Environment(\.modelContext) private var modelContext
+    @State private var equipError: String?
     @Query private var avatarConfigs: [AvatarConfig]
     @State private var selectedCategory: ShopItem.Category? = nil
     @State private var groupByVendor: Bool = false
@@ -19,7 +21,7 @@ struct ShopView: View {
 
     private var equippedIDs: Set<String> {
         guard let a = avatar else { return [] }
-        return Set([a.equippedTopID, a.equippedBottomID, a.equippedShoesID, a.equippedRacketID])
+        return Set([a.equippedTopID, a.equippedBottomID, a.equippedShoesID, a.equippedRacketID] + [a.equippedHeadbandID].compactMap { $0 })
     }
 
     var body: some View {
@@ -57,6 +59,8 @@ struct ShopView: View {
                         }
                     }
                 }
+                .frame(maxWidth: 620)
+                .frame(maxWidth: .infinity)
                 .padding(.horizontal, RallyUIKit.Spacing.md)
                 .padding(.bottom, 40)
             }
@@ -70,7 +74,13 @@ struct ShopView: View {
             .background(RallyUIKit.screenBackground)
             .navigationTitle("Shop")
             .navigationBarTitleDisplayMode(.inline)
-            .onAppear { shopHasUnseenUnlock = false }
+             .onAppear {
+                shopHasUnseenUnlock = false
+                avatarAppearanceStore.commitPersisted(from: avatar)
+            }
+            .alert("Could not save outfit", isPresented: Binding(get: { equipError != nil }, set: { if !$0 { equipError = nil } })) {
+                Button("OK") { equipError = nil }
+            } message: { Text(equipError ?? "") }
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
@@ -91,7 +101,7 @@ struct ShopView: View {
     private var shopHero: some View {
         VStack(alignment: .leading, spacing: 18) {
             VStack(alignment: .leading, spacing: 7) {
-                Text("THE PRO SHOP")
+                Text("VELA ORIGINALS")
                     .font(.system(size: 10, weight: .semibold))
                     .tracking(2.2)
                     .foregroundStyle(RallyUIKit.Palette.lime)
@@ -99,7 +109,7 @@ struct ShopView: View {
                     .font(.system(size: 30, weight: .semibold))
                     .tracking(-0.8)
                     .foregroundStyle(RallyUIKit.Palette.frost)
-                Text("Explore the gear. See it on your player.")
+                Text("Original digital gear. Try it on and equip it for free.")
                     .font(.system(size: 13))
                     .foregroundStyle(RallyUIKit.Palette.cloud)
             }
@@ -263,6 +273,17 @@ struct ShopView: View {
                 .font(RallyUIKit.Typography.title(.headline, weight: .bold))
                 .foregroundStyle(RallyUIKit.Palette.frost)
             Spacer()
+            if category == .accessory, let avatar, avatar.equippedHeadbandID != nil {
+                Button("No headband") {
+                    do {
+                        try avatar.removeHeadband(in: modelContext)
+                        avatarAppearanceStore.commitPersisted(from: avatar)
+                    } catch { equipError = "Your outfit could not be saved. Please try again." }
+                }
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(RallyUIKit.Palette.lime)
+                .frame(minHeight: 44)
+            }
         }
         .padding(.horizontal, 4)
         .padding(.vertical, 8)
@@ -277,13 +298,7 @@ struct ShopView: View {
                 .font(RallyUIKit.Typography.title(.subheadline, weight: .bold))
                 .foregroundStyle(RallyUIKit.Palette.frost)
             Spacer()
-            Button {
-                RallyReferralLinkRouter.shared.openVenueLink(vendor.websiteURL, venueName: vendor.displayName)
-            } label: {
-                Image(systemName: "arrow.up.right")
-                    .font(.caption2.weight(.bold))
-                    .foregroundStyle(RallyUIKit.Palette.cyan.opacity(0.7))
-            }
+
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 12)
@@ -301,7 +316,7 @@ struct ShopView: View {
 
     private func desireGrid(items: [ShopItem]) -> some View {
         LazyVGrid(
-            columns: [GridItem(.adaptive(minimum: dynamicTypeSize.isAccessibilitySize ? 260 : 150), spacing: 14)],
+            columns: Array(repeating: GridItem(.flexible(), spacing: 14), count: dynamicTypeSize.isAccessibilitySize ? 1 : 2),
             spacing: 22
         ) {
             ForEach(items) { item in
@@ -311,63 +326,45 @@ struct ShopView: View {
         .padding(.vertical, RallyUIKit.Spacing.xs)
     }
 
+    private func equip(_ item: ShopItem) {
+        guard let avatar else { return }
+        do {
+            guard try avatar.equip(item, in: modelContext) else { return }
+            tryOnItem = nil
+            stageEmote = .idle
+            avatarAppearanceStore.commitPersisted(from: avatar)
+            RallySyncTriggers.pushAvatarAfterLocalSave(modelContext: modelContext)
+        } catch { equipError = "Your outfit could not be saved. Please try again." }
+    }
+
     @ViewBuilder
     private func desireTile(_ item: ShopItem) -> some View {
         let accent = item.accentColor ?? categoryTint(item.category)
-        let canTryOn = item.category != .bag && item.category != .accessory
-        let isTryingOn = canTryOn && tryOnItem?.id == item.id
-        VStack(spacing: 0) {
-            if canTryOn {
-                Button {
-                    withAnimation(.spring(response: 0.28, dampingFraction: 0.82)) {
-                        tryOnItem = item
-                        avatarAppearanceStore.tryOn(item, from: avatar)
-                        stageEmote = .shopLook
-                    }
-                } label: {
-                    desireTileContent(item, accent: accent, isTryingOn: isTryingOn)
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("\(item.brand), \(item.name)")
-                .accessibilityValue("\(item.priceUSD == 0 ? "Included" : item.priceDisplay)\(isEquipped(item) ? ", equipped" : "")\(isTryingOn ? ", previewing" : "")")
-                .accessibilityHint("Preview on your player")
-            } else if let avatar {
-                NavigationLink {
-                    ShopItemDetailView(item: item, avatar: avatar)
-                } label: {
+        if item.category != .bag {
+            Button { equip(item) } label: {
+                VStack(spacing: 0) {
                     desireTileContent(item, accent: accent, isTryingOn: false)
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("\(item.brand), \(item.name)")
-                .accessibilityValue(item.priceUSD == 0 ? "Included" : item.priceDisplay)
-                .accessibilityHint("View product details")
-            } else {
-                desireTileContent(item, accent: accent, isTryingOn: false)
-            }
-
-            if let avatar {
-                NavigationLink {
-                    ShopItemDetailView(item: item, avatar: avatar)
-                } label: {
                     HStack {
-                        Text("Details & fit")
-                            .font(.caption.weight(.medium))
+                        Text(isEquipped(item) ? "Equipped" : "Equip")
                         Spacer()
-                        Image(systemName: "arrow.up.right")
-                            .font(.system(size: 10, weight: .semibold))
+                        Image(systemName: isEquipped(item) ? "checkmark.circle.fill" : "plus.circle")
                     }
-                    .foregroundStyle(RallyUIKit.Palette.champagne)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(RallyUIKit.Palette.lime)
                     .padding(.horizontal, 14)
-                    .frame(minHeight: 44)
+                    .frame(minHeight: 48)
                     .background(Color.white.opacity(0.035))
                 }
-                .buttonStyle(.plain)
+                .background(RallyUIKit.Palette.ink)
+                .clipShape(RoundedRectangle(cornerRadius: 20))
+                .overlay(RoundedRectangle(cornerRadius: 20).stroke(isEquipped(item) ? RallyUIKit.Palette.lime.opacity(0.65) : Color.white.opacity(0.10), lineWidth: 1))
             }
+            .buttonStyle(.plain)
+            .accessibilityLabel("\(item.name), \(isEquipped(item) ? "equipped" : "equip")")
+            .accessibilityHint("Saves this gear to your player")
+        } else {
+            desireTileContent(item, accent: accent, isTryingOn: false)
         }
-        .background(RallyUIKit.Palette.ink)
-        .clipShape(RoundedRectangle(cornerRadius: 20))
-        .overlay(RoundedRectangle(cornerRadius: 20)
-            .stroke(isTryingOn ? RallyUIKit.Palette.lime.opacity(0.65) : Color.white.opacity(0.10), lineWidth: 1))
     }
 
     private func desireTileContent(_ item: ShopItem, accent: Color, isTryingOn: Bool) -> some View {
@@ -488,7 +485,8 @@ struct ShopView: View {
         case .bottom: return avatar.equippedBottomID == item.id
         case .shoes: return avatar.equippedShoesID == item.id
         case .racket: return avatar.equippedRacketID == item.id
-        case .bag, .accessory: return false
+        case .accessory: return avatar.equippedHeadbandID == item.id
+        case .bag: return false
         }
     }
 
@@ -794,7 +792,7 @@ struct ShopView: View {
     private func swatchCategoryIcon(_ item: ShopItem, accent: Color, width: CGFloat, height: CGFloat) -> some View {
         RallyMerchFallbackGlyph(
             category: item.category,
-            primary: RallyUIKit.Palette.frost,
+            primary: item.color,
             accent: accent
         )
         .padding(min(width, height) * 0.20)

@@ -14,6 +14,7 @@ final class AvatarConfig {
     var skinToneOverrideRaw: String?
     var hairColorOverrideHex: String?
 
+    var equippedHeadbandID: String? = nil
     var equippedTopID: String = ShopCatalog.defaultTopID
     var equippedBottomID: String = ShopCatalog.defaultBottomID
     var equippedShoesID: String = ShopCatalog.defaultShoesID
@@ -23,6 +24,33 @@ final class AvatarConfig {
 
     init() {
         self.id = UUID()
+    }
+
+    /// One shared equip path for the storefront and detail screen.
+    @discardableResult
+    func equip(_ item: ShopItem, in context: ModelContext) throws -> Bool {
+        let previous = (equippedTopID, equippedBottomID, equippedShoesID, equippedRacketID, equippedHeadbandID)
+        switch item.category {
+        case .top: equippedTopID = item.id
+        case .bottom: equippedBottomID = item.id
+        case .shoes: equippedShoesID = item.id
+        case .racket: equippedRacketID = item.id
+        case .accessory: equippedHeadbandID = item.id
+        case .bag: return false
+        }
+        do { try context.save() }
+        catch {
+            (equippedTopID, equippedBottomID, equippedShoesID, equippedRacketID, equippedHeadbandID) = previous
+            throw error
+        }
+        return true
+    }
+
+    func removeHeadband(in context: ModelContext) throws {
+        let previous = equippedHeadbandID
+        equippedHeadbandID = nil
+        do { try context.save() }
+        catch { equippedHeadbandID = previous; throw error }
     }
 
     var isUsingStarterLoadout: Bool {

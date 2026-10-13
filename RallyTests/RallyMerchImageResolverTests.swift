@@ -1,22 +1,84 @@
 import XCTest
 import UIKit
+import SwiftData
 @testable import Rally
 
 @MainActor
 final class RallyMerchImageResolverTests: XCTestCase {
-    func testBundledProductPhotographsDecodeForTheirExactCatalogItems() throws {
-        XCTAssertFalse(ShopCatalog.productPhotography.isEmpty)
-        for (id, photograph) in ShopCatalog.productPhotography {
-            let item = try XCTUnwrap(ShopCatalog.item(id: id), id)
-            XCTAssertEqual(photograph.category, item.category, id)
-            XCTAssertEqual(photograph.productURL, item.productURL, id)
-            let image = try XCTUnwrap(RallyMerchImageResolver.bundledProductImage(for: item), id)
-            XCTAssertGreaterThan(image.size.width * image.scale, 100, id)
-            XCTAssertGreaterThan(image.size.height * image.scale, 100, id)
+    func testReleaseCatalogUsesOriginalFreeGearWithoutRetailerImages() {
+        XCTAssertFalse(ShopCatalog.allItems.isEmpty)
+        XCTAssertTrue(ShopCatalog.productPhotography.isEmpty)
+        XCTAssertTrue(RallyReferralCatalog.allItems.isEmpty)
+        XCTAssertEqual(Set(ShopCatalog.allItems.map(\.id)).count, ShopCatalog.allItems.count)
+        for item in ShopCatalog.allItems {
+            XCTAssertEqual(item.brand, "Vela", item.id)
+            XCTAssertEqual(item.vendorID, "vela", item.id)
+            XCTAssertEqual(item.priceUSD, 0, item.id)
+            XCTAssertNil(item.checkoutPromoCode, item.id)
+            XCTAssertNil(RallyMerchImageResolver.bundledProductImage(for: item), item.id)
+            XCTAssertNil(RallyMerchImageResolver.productImageURL(for: item), item.id)
+            XCTAssertEqual(item.productURL.host, "apps.apple.com", item.id)
         }
-        for item in ShopCatalog.allItems where item.category == .top && item.brand != "Rally" {
-            XCTAssertNotNil(RallyMerchImageResolver.bundledProductImage(for: item), item.id)
+        XCTAssertNil(UIImage(named: "ShopPhoto-FZ6910-010"))
+        XCTAssertNotNil(ShopCatalog.item(id: ShopCatalog.defaultRacketID))
+        XCTAssertNotNil(ShopCatalog.item(id: ShopCatalog.defaultShoesID))
+    }
+
+    func testOneTapEquipmentAndHeadbandPersistAcrossDatabaseReopen() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let url = directory.appendingPathComponent("wardrobe.store")
+        let top = try XCTUnwrap(ShopCatalog.item(id: "newbalance.tournament.tank.white"))
+        let band = try XCTUnwrap(ShopCatalog.items(in: .accessory).first)
+        let racket = try XCTUnwrap(ShopCatalog.items(in: .racket).first { $0.id != ShopCatalog.defaultRacketID })
+        let pants = try XCTUnwrap(ShopCatalog.items(in: .bottom).first { $0.id != ShopCatalog.defaultBottomID })
+        try autoreleasepool {
+            let container = try ModelContainer(for: AvatarConfig.self, MatchEntry.self, JournalEntry.self, configurations: ModelConfiguration(url: url))
+            let context = ModelContext(container)
+            let config = AvatarConfig()
+            config.athletePreset = .femaleBlack
+            context.insert(config)
+            context.insert(MatchEntry(opponentName: "Local opponent", notes: "Saved without an account"))
+            context.insert(JournalEntry(title: "Local practice", body: "Saved without a server"))
+            XCTAssertTrue(try config.equip(racket, in: context))
+            XCTAssertTrue(try config.equip(pants, in: context))
+            let store = RallyAvatarAppearanceStore()
+            store.tryOn(top, from: config)
+            XCTAssertEqual(config.equippedRacketID, racket.id)
+            XCTAssertEqual(config.equippedBottomID, pants.id)
+            XCTAssertEqual(config.equippedTopID, ShopCatalog.defaultTopID)
+            XCTAssertEqual(store.appearance.racket?.id, racket.id)
+            XCTAssertEqual(store.appearance.shorts?.id, pants.id)
+            XCTAssertEqual(store.appearance.top?.id, top.id)
+            store.clearTryOn(from: config)
+            XCTAssertEqual(store.appearance.top?.id, ShopCatalog.defaultTopID)
+            XCTAssertTrue(try config.equip(top, in: context))
+            XCTAssertTrue(try config.equip(band, in: context))
         }
+        let reopened = try ModelContainer(for: AvatarConfig.self, MatchEntry.self, JournalEntry.self, configurations: ModelConfiguration(url: url))
+        let reopenedContext = ModelContext(reopened)
+        let config = try XCTUnwrap(reopenedContext.fetch(FetchDescriptor<AvatarConfig>()).first)
+        XCTAssertEqual(try reopenedContext.fetch(FetchDescriptor<MatchEntry>()).first?.notes, "Saved without an account")
+        XCTAssertEqual(try reopenedContext.fetch(FetchDescriptor<JournalEntry>()).first?.body, "Saved without a server")
+        XCTAssertEqual(config.equippedRacketID, racket.id)
+        XCTAssertEqual(config.equippedBottomID, pants.id)
+        XCTAssertEqual(config.equippedTopID, top.id)
+        XCTAssertEqual(config.equippedHeadbandID, band.id)
+        XCTAssertEqual(config.athletePreset, .femaleBlack)
+        let appearance = RallyAvatarAppearance(config: config)
+        XCTAssertEqual(appearance.racket?.id, racket.id)
+        XCTAssertEqual(appearance.shorts?.id, pants.id)
+        XCTAssertEqual(appearance.top?.id, top.id)
+        XCTAssertEqual(appearance.headband?.id, band.id)
+        XCTAssertEqual(appearance.headband?.colorwayHex, band.colorHex)
+        XCTAssertEqual(RallyGarmentCatalog.shared.garmentKind(for: top.id, slot: .top), .tee)
+        try config.removeHeadband(in: reopenedContext)
+        XCTAssertNil(config.equippedHeadbandID)
+        XCTAssertNil(RallyAvatarAppearance(config: config).headband)
+        let finalContainer = try ModelContainer(for: AvatarConfig.self, MatchEntry.self, JournalEntry.self, configurations: ModelConfiguration(url: url))
+        let finalContext = ModelContext(finalContainer)
+        XCTAssertNil(try finalContext.fetch(FetchDescriptor<AvatarConfig>()).first?.equippedHeadbandID)
     }
 
     func testBundledPhotographyRejectsWrongCategoryAndChangedProductDestination() throws {

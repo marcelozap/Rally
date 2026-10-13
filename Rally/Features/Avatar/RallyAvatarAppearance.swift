@@ -189,7 +189,10 @@ struct RallyAvatarAppearance: Codable, Equatable {
                 id: config.equippedShoesID,
                 fallbackColorHex: RallyAvatarRebuildDefaults.Identity.shoesColorHex,
                 fallbackAccentHex: RallyAvatarRebuildDefaults.Identity.shoesAccentHex
-            )
+            ),
+            headband: config.equippedHeadbandID.map {
+                Self.gearReference(id: $0, fallbackColorHex: "#F5EFE0", fallbackAccentHex: "#65DFF2")
+            }
         )
 
         if let itemToPreview = previewItem {

@@ -202,302 +202,144 @@ enum ShopCatalog {
     /// has a canonical card in the storefront.
     static let legacyDuplicateItemIDs: Set<String> = ["newbalance.tournament.skort.white"]
 
+    // Original digital gear. Historical IDs stay opaque so existing outfits survive.
     static let vendors: [Vendor] = [
-        .init(
-            id: "nike",
-            displayName: "Nike Tennis",
-            websiteURL: URL(string: "https://www.nike.com/w/tennis-1320s")!,
-            loyaltyProgramURL: URL(string: "https://www.nike.com/membership")!,
-            referralSummary: "Nike Membership & the Nike app — official source for member promos and early access."
-        ),
-        .init(
-            id: "newbalance",
-            displayName: "New Balance Tennis",
-            websiteURL: URL(string: "https://www.newbalance.com/tennis/")!,
-            loyaltyProgramURL: nil,
-            referralSummary: "Official New Balance tennis footwear and apparel — seasonal pricing and account perks vary on newbalance.com."
-        ),
-        .init(
-            id: "adidas",
-            displayName: "adidas Tennis",
-            websiteURL: URL(string: "https://www.adidas.com/us/tennis")!,
-            loyaltyProgramURL: URL(string: "https://www.adidas.com/us/creators-club")!,
-            referralSummary: "adidas Creators Club — points and member offers; verify any code at checkout on adidas.com."
-        ),
-        .init(
-            id: "uniqlo",
-            displayName: "UNIQLO Tennis",
-            websiteURL: URL(string: "https://www.uniqlo.com/us/en/feature/lifewear/sports/tennis.html")!,
-            loyaltyProgramURL: URL(string: "https://www.uniqlo.com/us/en/special-feature/app")!,
-            referralSummary: "UNIQLO app & mailers — limited-time coupons vary by region and season."
-        ),
-        .init(
-            id: "wilson",
-            displayName: "Wilson",
-            websiteURL: URL(string: "https://www.wilson.com/en-us/tennis")!,
-            loyaltyProgramURL: URL(string: "https://www.wilson.com/en-us/account")!,
-            referralSummary: "Create a Wilson account for alerts; promotions rotate on wilson.com."
-        ),
-        .init(
-            id: "babolat",
-            displayName: "Babolat",
-            websiteURL: URL(string: "https://www.babolat.com/us/tennis")!,
-            loyaltyProgramURL: URL(string: "https://www.babolat.com/us/account/login")!,
-            referralSummary: "Subscribe at Babolat — seasonal sales & bundles vary by region."
-        ),
-        .init(
-            id: "head",
-            displayName: "HEAD",
-            websiteURL: URL(string: "https://www.head.com/en_US/sports/tennis/")!,
-            loyaltyProgramURL: URL(string: "https://www.head.com/en_US/customer/account/login")!,
-            referralSummary: "HEAD newsletter & account — regional promos announced on head.com."
-        ),
-        .init(
-            id: "yonex",
-            displayName: "Yonex",
-            websiteURL: URL(string: "https://www.yonex.com/tennis")!,
-            loyaltyProgramURL: URL(string: "https://www.yonex.com/account/register")!,
-            referralSummary: "Yonex USA promotions — follow official channels for authorized discounts."
-        ),
-        .init(
-            id: "lacoste",
-            displayName: "Lacoste",
-            websiteURL: URL(string: "https://www.lacoste.com/us/lacoste/men/clothing/sport/tennis/")!,
-            loyaltyProgramURL: URL(string: "https://www.lacoste.com/us/account-login")!,
-            referralSummary: "Lacoste Le Club — rewards & exclusive offers when logged in."
-        ),
-        .init(
-            id: "asics",
-            displayName: "ASICS Tennis",
-            websiteURL: URL(string: "https://www.asics.com/us/en-us/c/tennis/")!,
-            loyaltyProgramURL: URL(string: "https://www.asics.com/us/en-us/mk/oneasics/rewards-program")!,
-            referralSummary: "OneASICS Rewards — official loyalty perks on asics.com."
-        ),
-        .init(
-            id: "rally-co",
-            displayName: "Rally Originals",
-            websiteURL: URL(string: "https://rally.app")!,
-            loyaltyProgramURL: nil,
-            referralSummary: "In-app cosmetics — fictional promo codes below demo the UX until live commerce ships."
-        )
+        .init(id: "vela", displayName: "Vela Originals",
+              websiteURL: URL(string: "https://apps.apple.com/app/id6822144057")!)
     ]
 
-    static let editorialEdits: [ShopEditorialEdit] = [
-        .init(
-            id: "nb-club-whites",
-            vendorID: "newbalance",
-            title: "New Balance Club Whites",
-            eyebrow: "Featured fit",
-            subtitle: "Quiet luxury for first ball",
-            body: "Tournament whites with Coco CG2 finish the look fast.",
-            tintHex: "#E8D9B8",
-            itemIDs: [
-                "newbalance.tournament.tank.white",
-                "newbalance.tournament.skort.wb61s4jj.white",
-                "newbalance.coco.cg2.sea.salt"
-            ]
-        ),
-        .init(
-            id: "nike-night-session",
-            vendorID: "nike",
-            title: "Nike Night Session",
-            eyebrow: "Match edit",
-            subtitle: "Sharper contrast, faster silhouette",
-            body: "Advantage top and six-inch shorts in black, with a white Vapor Pro finish.",
-            tintHex: "#00E5FF",
-            itemIDs: [
-                "nike.advantage.top.fz6910.010",
-                "nike.advantage.short.fz6913.010",
-                "nike.vapor.pro.white"
-            ]
-        ),
-        .init(
-            id: "wilson-center-court",
-            vendorID: "wilson",
-            title: "Wilson Center Court",
-            eyebrow: "Hero frame",
-            subtitle: "Big-match racket energy",
-            body: "RF 01 Pro leads the floor with heavyweight match-point presence.",
-            tintHex: "#F2C14E",
-            itemIDs: [
-                "wilson.rf01.pro",
-                "wilson.blade.98.16x19.v9"
-            ]
-        )
-    ]
+    static let editorialEdits: [ShopEditorialEdit] = []
 
     static let allItems: [ShopItem] = [
-        // Default kit (free) ---------------------------------------------
-        .init(id: defaultTopID,    category: .top,    name: "Rally Tee",      brand: "Rally", vendorID: "rally-co",
-              productURL: URL(string: "https://rally.app/shop/default-top")!,
-              priceUSD: 0, colorHex: "#121820", accentHex: "#65D8EA",
-              checkoutPromoCode: "RALLYKIT",
-              promoNote: "Rally-original — demo code for in-app cosmetics."),
-        .init(id: defaultBottomID, category: .bottom, name: "Court Shorts",   brand: "Rally", vendorID: "rally-co",
-              productURL: URL(string: "https://rally.app/shop/default-bottom")!,
-              priceUSD: 0, colorHex: "#1A1A1A", accentHex: nil,
-              checkoutPromoCode: "RALLYKIT",
-              promoNote: "Rally-original — demo code for in-app cosmetics."),
-        .init(id: "rally.default.shoes",  category: .shoes,  name: "Baseliners",     brand: "Rally", vendorID: "rally-co",
-              productURL: URL(string: "https://rally.app/shop/default-shoes")!,
-              priceUSD: 0, colorHex: "#FFFFFF", accentHex: "#00E5FF",
-              checkoutPromoCode: "RALLYKIT",
-              promoNote: "Rally-original — demo code for in-app cosmetics."),
-        .init(id: "rally.default.racket", category: .racket, name: "Rally R-1",      brand: "Rally", vendorID: "rally-co",
-              productURL: URL(string: "https://rally.app/shop/default-racket")!,
-              priceUSD: 0, colorHex: "#C0C0C0", accentHex: "#00E5FF",
-              checkoutPromoCode: "RALLYKIT",
-              promoNote: "Rally-original — demo code for in-app cosmetics."),
-
-        // Tops -----------------------------------------------------------
-        // Exact product/colorway references verified 2026-09-05. Their current
-        // avatar garments remain generic style previews; see RallyGarmentCatalog.
-        .init(id: "nike.advantage.top.fz6910.010", category: .top, name: "NikeCourt Advantage Top", brand: "Nike", vendorID: "nike",
-              productURL: URL(string: "https://www.nike.com/t/nikecourt-advantage-mens-dri-fit-tennis-top-TcVn1mOS/FZ6910-010")!,
-              priceUSD: 75, colorHex: "#171717", accentHex: "#FFFFFF"),
-        .init(id: "newbalance.tournament.tank.white", category: .top, name: "Tournament Tank", brand: "New Balance", vendorID: "newbalance",
-              productURL: URL(string: "https://www.newbalance.com/pd/tournament-tank/WT61K74K-WT.html")!,
-              priceUSD: 59.99, colorHex: "#F6F5F1", accentHex: "#C7CCD1"),
-        .init(id: "nike.dri-fit.tee.cobalt", category: .top, name: "NikeCourt Victory Top", brand: "Nike", vendorID: "nike",
-              productURL: URL(string: "https://www.nike.com/t/nikecourt-victory-mens-dri-fit-tennis-top-slxolFfn/FZ6921-451")!,
-              priceUSD: 55, colorHex: "#0044AA", accentHex: "#FFFFFF",
-              promoNote: "Third-party SKU — only use codes issued by Nike; none are bundled here."),
-        .init(id: "adidas.club.polo.lime",   category: .top, name: "Club Tennis 3-Stripes Polo", brand: "adidas", vendorID: "adidas",
-              productURL: URL(string: "https://www.adidas.com/us/club-tennis-3-stripes-polo-shirt/JY2900.html")!,
-              priceUSD: 60, colorHex: "#C8FF36", accentHex: "#000000"),
-        .init(id: "uniqlo.dry.polo.white",   category: .top, name: "DRY-EX Polo Shirt", brand: "UNIQLO", vendorID: "uniqlo",
-              productURL: URL(string: "https://www.uniqlo.com/us/en/products/E482305-000/00?colorDisplayCode=00")!,
-              priceUSD: 30, colorHex: "#F4F4F4", accentHex: "#222222"),
-        .init(id: "lacoste.croc.polo.green", category: .top, name: "Ultra Dry Tennis Heritage Polo", brand: "Lacoste", vendorID: "lacoste",
-              productURL: URL(string: "https://www.lacoste.com/us/lacoste/men/clothing/polos/DH8960-51.html?color=381")!,
-              priceUSD: 125, colorHex: "#0C5E2A", accentHex: "#FFFFFF"),
-
-        // Bottoms --------------------------------------------------------
-        .init(id: "nike.advantage.short.fz6913.010", category: .bottom, name: "NikeCourt Advantage 6″ Shorts", brand: "Nike", vendorID: "nike",
-              productURL: URL(string: "https://www.nike.com/t/nikecourt-advantage-mens-dri-fit-6-tennis-shorts-cCYH6Bt5/FZ6913-010")!,
-              priceUSD: 75, colorHex: "#171717", accentHex: "#FFFFFF"),
-        .init(id: "adidas.ergo.pro.short.kv4294", category: .bottom, name: "Climacool Ergo Shorts Pro", brand: "adidas", vendorID: "adidas",
-              productURL: URL(string: "https://www.adidas.com/us/tennis-climacool-ergo-shorts-pro/KV4294.html")!,
-              priceUSD: 65, colorHex: "#F4F4F2", accentHex: "#262626"),
-        .init(id: "newbalance.tournament.skort.wb61s4jj.white", category: .bottom, name: "Tournament Skort", brand: "New Balance", vendorID: "newbalance",
-              productURL: URL(string: "https://www.newbalance.com/pd/tournament-skort/WB61S4JJ-WT.html")!,
-              priceUSD: 59.99, colorHex: "#F7F6F2", accentHex: "#C7CCD1"),
-        .init(id: "newbalance.tournament.skort.white", category: .bottom, name: "Tournament Skort", brand: "New Balance", vendorID: "newbalance",
-              productURL: URL(string: "https://www.newbalance.com/pd/tournament-skort/WB61S4JJ-WT.html")!,
-              priceUSD: 55, colorHex: "#F7F6F2", accentHex: "#D7DADF"),
-        .init(id: "nike.court.short.black",  category: .bottom, name: "NikeCourt Victory 9″ Shorts", brand: "Nike", vendorID: "nike",
-              productURL: URL(string: "https://www.nike.com/t/nikecourt-victory-mens-dri-fit-9-tennis-shorts-I4ijxgde/FD5384-010")!,
-              priceUSD: 60, colorHex: "#111111", accentHex: "#FFFFFF"),
-        .init(id: "adidas.gameset.short.navy", category: .bottom, name: "Tennis Climacool Ergo Shorts", brand: "adidas", vendorID: "adidas",
-              productURL: URL(string: "https://www.adidas.com/us/tennis-climacool-ergo-shorts/KC5811.html")!,
-              priceUSD: 50, colorHex: "#1E2A55", accentHex: "#FFFFFF"),
-        .init(id: "uniqlo.dry.short.gray",   category: .bottom, name: "Ultra Stretch Active 5″ Shorts", brand: "UNIQLO", vendorID: "uniqlo",
-              productURL: URL(string: "https://www.uniqlo.com/us/en/products/E477753-000/00?colorDisplayCode=08")!,
-              priceUSD: 30, colorHex: "#646464", accentHex: nil),
-
-        // Shoes ----------------------------------------------------------
-        .init(id: "asics.court.ff.3.novak", category: .shoes, name: "COURT FF 3 Novak", brand: "ASICS", vendorID: "asics",
-              productURL: URL(string: "https://www.asics.com/us/en-us/court-ff-3/c/aa50104000/")!,
-              priceUSD: 180, colorHex: "#F3F6F4", accentHex: "#17D8E8"),
-        .init(id: "nike.vapor.pro.3", category: .shoes, name: "Nike Vapor Pro 3", brand: "Nike", vendorID: "nike",
-              productURL: URL(string: "https://www.nike.com/t/vapor-pro-3-mens-hard-court-tennis-shoes-SpZRz675/FZ2161-101")!,
-              priceUSD: 135, colorHex: "#FFFFFF", accentHex: "#111111"),
-        .init(id: "adidas.adizero.ubersonic.5", category: .shoes, name: "Adizero Ubersonic 5", brand: "adidas", vendorID: "adidas",
-              productURL: URL(string: "https://www.adidas.com/us/adizero-ubersonic-5-tennis-shoes/IE1376.html")!,
-              priceUSD: 150, colorHex: "#FAF7EC", accentHex: "#F05A28"),
-        .init(id: "newbalance.coco.cg2.sea.salt", category: .shoes, name: "Coco CG2", brand: "New Balance", vendorID: "newbalance",
-              productURL: URL(string: "https://www.newbalance.com/pd/coco-cg2/WCOC9AL-D-11.html")!,
-              priceUSD: 160, colorHex: "#F2EEE7", accentHex: "#7FA9D8"),
-        .init(id: "newbalance.fuelcell.996v6.white", category: .shoes, name: "FuelCell 996v6", brand: "New Balance", vendorID: "newbalance",
-              productURL: URL(string: "https://www.newbalance.com/pd/fuelcell-996v6/WCH996W6-B-09.html")!,
-              priceUSD: 135, colorHex: "#FFFFFF", accentHex: "#1E1E1E"),
-        .init(id: "nike.vapor.pro.white",    category: .shoes, name: "NikeCourt Air Zoom Vapor Pro", brand: "Nike", vendorID: "nike",
-              productURL: URL(string: "https://www.nike.com.br/tenis-air-zoom-vapor-pro-hc-011419.html")!,
-              priceUSD: 130, colorHex: "#FFFFFF", accentHex: "#FF1A55"),
-        .init(id: "adidas.barricade.red",    category: .shoes, name: "Barricade 13", brand: "adidas", vendorID: "adidas",
-              productURL: URL(string: "https://www.adidas.com/us/barricade-13-tennis-shoes/IF9131.html")!,
-              priceUSD: 140, colorHex: "#E32B2B", accentHex: "#000000"),
-        .init(id: "asics.gel.resolution",    category: .shoes, name: "GEL-Resolution 9", brand: "ASICS", vendorID: "asics",
-              productURL: URL(string: "https://www.asics.com/us/en-us/mens-tennis-shoes/c/aa10000000/")!,
-              priceUSD: 150, colorHex: "#0A2B5C", accentHex: "#FFD400"),
-
-        // Rackets --------------------------------------------------------
-        .init(id: "wilson.rf01.pro", category: .racket, name: "RF 01 Pro", brand: "Wilson", vendorID: "wilson",
-              productURL: URL(string: "https://www.wilson.com/en-us/product/rf-01-pro-frm-wr15130")!,
-              priceUSD: 299, colorHex: "#161616", accentHex: "#D8C89A"),
-        .init(id: "wilson.blade.98.16x19.v9", category: .racket, name: "Blade 98 16x19 V9", brand: "Wilson", vendorID: "wilson",
-              productURL: URL(string: "https://id.wilson.com/en/products/blade-98-16x19-v9?sku=18076411945912702133331885")!,
-              priceUSD: 259, colorHex: "#10251E", accentHex: "#8AE0C0"),
-        .init(id: "yonex.percept.97h", category: .racket, name: "PERCEPT 97H", brand: "Yonex", vendorID: "yonex",
-              productURL: URL(string: "https://us.yonex.com/products/percept-97h?variant=46064978231517")!,
-              priceUSD: 340, colorHex: "#253B67", accentHex: "#7FD26A"),
-        .init(id: "wilson.pro.staff.97",     category: .racket, name: "Clash 100 V3", brand: "Wilson", vendorID: "wilson",
-              productURL: URL(string: "https://www.wilson.com/en-us/product/clash-100-v3-0-frm-wr17280")!,
-              priceUSD: 269, colorHex: "#1B1B1B", accentHex: "#C0392B"),
-        .init(id: "babolat.pure.aero",       category: .racket, name: "Pure Aero 98 Gen9", brand: "Babolat", vendorID: "babolat",
-              productURL: URL(string: "https://www.babolat.com/us/pure-aero-98-gen9-unstrung/101567.html")!,
-              priceUSD: 299, colorHex: "#F5C518", accentHex: "#1B1B1B"),
-        .init(id: "head.speed.mp",           category: .racket, name: "Speed MP", brand: "HEAD", vendorID: "head",
-              productURL: URL(string: "https://www.head.com/en_PT/product/speed-mp-2026-232026")!,
-              priceUSD: 249, colorHex: "#FFFFFF", accentHex: "#000000"),
-        .init(id: "yonex.ezone.98",          category: .racket, name: "EZONE 100", brand: "Yonex", vendorID: "yonex",
-              productURL: URL(string: "https://us.yonex.com/products/ezone-100?variant=46064969351389")!,
-              priceUSD: 305, colorHex: "#1F73C2", accentHex: "#FFFFFF"),
-        .init(id: "babolat.pure.drive.gen11", category: .racket, name: "Pure Drive Gen11", brand: "Babolat", vendorID: "babolat",
-              productURL: URL(string: "https://www.babolat.com/us/pure-drive-gen11-unstrung/3324922165546.html")!,
-              priceUSD: 299, colorHex: "#1A61D8", accentHex: "#E53935"),
-        .init(id: "yonex.percept.100",        category: .racket, name: "PERCEPT 100", brand: "Yonex", vendorID: "yonex",
-              productURL: URL(string: "https://us.yonex.com/products/percept-100?variant=46700337266909")!,
-              priceUSD: 305, colorHex: "#253B67", accentHex: "#7FD26A"),
-        .init(id: "yonex.vcore.100",          category: .racket, name: "VCORE 100", brand: "Yonex", vendorID: "yonex",
-              productURL: URL(string: "https://us.yonex.com/products/08vcore-100?variant=47131433992413")!,
-              priceUSD: 305, colorHex: "#A41222", accentHex: "#FFFFFF"),
-
-        // Bags / accessories ---------------------------------------------
-        .init(id: "babolat.bag.6pack",       category: .bag, name: "RH6 Pure Aero Bag", brand: "Babolat", vendorID: "babolat",
-              productURL: URL(string: "https://www.babolat.com/us/rh6-pure-aero/751239.html")!,
-              priceUSD: 100, colorHex: "#F5C518", accentHex: "#1B1B1B"),
-        .init(id: "nike.headband.white",     category: .accessory, name: "Fury Classic Dri-FIT Headband", brand: "Nike", vendorID: "nike",
-              productURL: URL(string: "https://www.nike.com/t/fury-classic-dri-fit-nba-headband-UpW0QG6J/N1013635-101")!,
-              priceUSD: 18, colorHex: "#FFFFFF", accentHex: nil),
-        .init(id: "rally.wristband.neon",    category: .accessory, name: "Neon Wristband", brand: "Rally", vendorID: "rally-co",
-              productURL: URL(string: "https://rally.app/shop/neon-wristband")!,
-              priceUSD: 12, colorHex: "#00E5FF", accentHex: "#FF1A8C",
-              checkoutPromoCode: "NEON10",
-              promoNote: "Rally-original accessory — demo promo field."),
-
-        // Tour-edition cosmetics — gated by court-atlas check-ins. Hidden
-        // until `CourtUnlocks` reports the matching `courtID` is unlocked.
-        //
-        // Tier 1 — unlocked by visiting Wimbledon or Roland-Garros.
-        .init(id: "rally.wristband.tour.wimbledon", category: .accessory, name: "Lawn Tour Band", brand: "Rally", vendorID: "rally-co",
-              productURL: URL(string: "https://rally.app/shop/tour-wimbledon")!,
-              priceUSD: 18, colorHex: "#1F6F3A", accentHex: "#FFFFFF",
-              checkoutPromoCode: "TOURGRASS",
-              promoNote: "Tour edition — unlocked by checking in at Centre Court."),
-        .init(id: "rally.wristband.tour.roland",    category: .accessory, name: "Terre Battue Band", brand: "Rally", vendorID: "rally-co",
-              productURL: URL(string: "https://rally.app/shop/tour-roland")!,
-              priceUSD: 18, colorHex: "#B14424", accentHex: "#FFFFFF",
-              checkoutPromoCode: "TOURCLAY",
-              promoNote: "Tour edition — unlocked by checking in at Philippe Chatrier."),
-
-        // Tier 2 — unlocked by visiting Arthur Ashe, Rod Laver Arena, or Indian Wells.
-        // Hard-court venues; colour palette reflects stadium blues and desert palms.
-        .init(id: "rally.wristband.tour.ashe",      category: .accessory, name: "Night Session Band", brand: "Rally", vendorID: "rally-co",
-              productURL: URL(string: "https://rally.app/shop/tour-ashe")!,
-              priceUSD: 18, colorHex: "#13295E", accentHex: "#E8C84A",
-              checkoutPromoCode: "TOURNIGHT",
-              promoNote: "Tour edition — unlocked by checking in at Arthur Ashe Stadium."),
-        .init(id: "rally.wristband.tour.laver",     category: .accessory, name: "Summer Slam Band", brand: "Rally", vendorID: "rally-co",
-              productURL: URL(string: "https://rally.app/shop/tour-laver")!,
-              priceUSD: 18, colorHex: "#0057A8", accentHex: "#FFFFFF",
-              checkoutPromoCode: "TOURSLAM",
-              promoNote: "Tour edition — unlocked by checking in at Rod Laver Arena."),
-        .init(id: "rally.wristband.tour.indianwells", category: .accessory, name: "Desert Oasis Band", brand: "Rally", vendorID: "rally-co",
-              productURL: URL(string: "https://rally.app/shop/tour-indianwells")!,
-              priceUSD: 18, colorHex: "#2E7D6B", accentHex: "#F5E6C8",
-              checkoutPromoCode: "TOURDESERT",
-              promoNote: "Tour edition — unlocked by checking in at Indian Wells Tennis Garden."),
+        .init(id: defaultTopID, category: .top, name: "Court Tee 01", brand: "Vela", vendorID: "vela",
+              productURL: URL(string: "https://apps.apple.com/app/id6822144057")!,
+              priceUSD: 0, colorHex: "#121820", accentHex: "#65D8EA"),
+        .init(id: defaultBottomID, category: .bottom, name: "Court Shorts 01", brand: "Vela", vendorID: "vela",
+              productURL: URL(string: "https://apps.apple.com/app/id6822144057")!,
+              priceUSD: 0, colorHex: "#1A1A1A", accentHex: nil),
+        .init(id: "rally.default.shoes", category: .shoes, name: "Court Shoes 01", brand: "Vela", vendorID: "vela",
+              productURL: URL(string: "https://apps.apple.com/app/id6822144057")!,
+              priceUSD: 0, colorHex: "#FFFFFF", accentHex: "#00E5FF"),
+        .init(id: "rally.default.racket", category: .racket, name: "Match Racket 01", brand: "Vela", vendorID: "vela",
+              productURL: URL(string: "https://apps.apple.com/app/id6822144057")!,
+              priceUSD: 0, colorHex: "#C0C0C0", accentHex: "#00E5FF"),
+        .init(id: "nike.advantage.top.fz6910.010", category: .top, name: "Court Tee 02", brand: "Vela", vendorID: "vela",
+              productURL: URL(string: "https://apps.apple.com/app/id6822144057")!,
+              priceUSD: 0, colorHex: "#171717", accentHex: "#FFFFFF"),
+        .init(id: "newbalance.tournament.tank.white", category: .top, name: "Court Tee 03", brand: "Vela", vendorID: "vela",
+              productURL: URL(string: "https://apps.apple.com/app/id6822144057")!,
+              priceUSD: 0, colorHex: "#F6F5F1", accentHex: "#C7CCD1"),
+        .init(id: "nike.dri-fit.tee.cobalt", category: .top, name: "Court Tee 04", brand: "Vela", vendorID: "vela",
+              productURL: URL(string: "https://apps.apple.com/app/id6822144057")!,
+              priceUSD: 0, colorHex: "#0044AA", accentHex: "#FFFFFF"),
+        .init(id: "adidas.club.polo.lime", category: .top, name: "Court Tee 05", brand: "Vela", vendorID: "vela",
+              productURL: URL(string: "https://apps.apple.com/app/id6822144057")!,
+              priceUSD: 0, colorHex: "#C8FF36", accentHex: "#000000"),
+        .init(id: "uniqlo.dry.polo.white", category: .top, name: "Court Tee 06", brand: "Vela", vendorID: "vela",
+              productURL: URL(string: "https://apps.apple.com/app/id6822144057")!,
+              priceUSD: 0, colorHex: "#F4F4F4", accentHex: "#222222"),
+        .init(id: "lacoste.croc.polo.green", category: .top, name: "Court Tee 07", brand: "Vela", vendorID: "vela",
+              productURL: URL(string: "https://apps.apple.com/app/id6822144057")!,
+              priceUSD: 0, colorHex: "#0C5E2A", accentHex: "#FFFFFF"),
+        .init(id: "nike.advantage.short.fz6913.010", category: .bottom, name: "Court Shorts 02", brand: "Vela", vendorID: "vela",
+              productURL: URL(string: "https://apps.apple.com/app/id6822144057")!,
+              priceUSD: 0, colorHex: "#171717", accentHex: "#FFFFFF"),
+        .init(id: "adidas.ergo.pro.short.kv4294", category: .bottom, name: "Court Shorts 03", brand: "Vela", vendorID: "vela",
+              productURL: URL(string: "https://apps.apple.com/app/id6822144057")!,
+              priceUSD: 0, colorHex: "#F4F4F2", accentHex: "#262626"),
+        .init(id: "newbalance.tournament.skort.wb61s4jj.white", category: .bottom, name: "Court Shorts 04", brand: "Vela", vendorID: "vela",
+              productURL: URL(string: "https://apps.apple.com/app/id6822144057")!,
+              priceUSD: 0, colorHex: "#F7F6F2", accentHex: "#C7CCD1"),
+        .init(id: "newbalance.tournament.skort.white", category: .bottom, name: "Court Shorts 05", brand: "Vela", vendorID: "vela",
+              productURL: URL(string: "https://apps.apple.com/app/id6822144057")!,
+              priceUSD: 0, colorHex: "#F7F6F2", accentHex: "#D7DADF"),
+        .init(id: "nike.court.short.black", category: .bottom, name: "Court Shorts 06", brand: "Vela", vendorID: "vela",
+              productURL: URL(string: "https://apps.apple.com/app/id6822144057")!,
+              priceUSD: 0, colorHex: "#111111", accentHex: "#FFFFFF"),
+        .init(id: "adidas.gameset.short.navy", category: .bottom, name: "Court Shorts 07", brand: "Vela", vendorID: "vela",
+              productURL: URL(string: "https://apps.apple.com/app/id6822144057")!,
+              priceUSD: 0, colorHex: "#1E2A55", accentHex: "#FFFFFF"),
+        .init(id: "uniqlo.dry.short.gray", category: .bottom, name: "Court Shorts 08", brand: "Vela", vendorID: "vela",
+              productURL: URL(string: "https://apps.apple.com/app/id6822144057")!,
+              priceUSD: 0, colorHex: "#646464", accentHex: nil),
+        .init(id: "asics.court.ff.3.novak", category: .shoes, name: "Court Shoes 02", brand: "Vela", vendorID: "vela",
+              productURL: URL(string: "https://apps.apple.com/app/id6822144057")!,
+              priceUSD: 0, colorHex: "#F3F6F4", accentHex: "#17D8E8"),
+        .init(id: "nike.vapor.pro.3", category: .shoes, name: "Court Shoes 03", brand: "Vela", vendorID: "vela",
+              productURL: URL(string: "https://apps.apple.com/app/id6822144057")!,
+              priceUSD: 0, colorHex: "#FFFFFF", accentHex: "#111111"),
+        .init(id: "adidas.adizero.ubersonic.5", category: .shoes, name: "Court Shoes 04", brand: "Vela", vendorID: "vela",
+              productURL: URL(string: "https://apps.apple.com/app/id6822144057")!,
+              priceUSD: 0, colorHex: "#FAF7EC", accentHex: "#F05A28"),
+        .init(id: "newbalance.coco.cg2.sea.salt", category: .shoes, name: "Court Shoes 05", brand: "Vela", vendorID: "vela",
+              productURL: URL(string: "https://apps.apple.com/app/id6822144057")!,
+              priceUSD: 0, colorHex: "#F2EEE7", accentHex: "#7FA9D8"),
+        .init(id: "newbalance.fuelcell.996v6.white", category: .shoes, name: "Court Shoes 06", brand: "Vela", vendorID: "vela",
+              productURL: URL(string: "https://apps.apple.com/app/id6822144057")!,
+              priceUSD: 0, colorHex: "#FFFFFF", accentHex: "#1E1E1E"),
+        .init(id: "nike.vapor.pro.white", category: .shoes, name: "Court Shoes 07", brand: "Vela", vendorID: "vela",
+              productURL: URL(string: "https://apps.apple.com/app/id6822144057")!,
+              priceUSD: 0, colorHex: "#FFFFFF", accentHex: "#FF1A55"),
+        .init(id: "adidas.barricade.red", category: .shoes, name: "Court Shoes 08", brand: "Vela", vendorID: "vela",
+              productURL: URL(string: "https://apps.apple.com/app/id6822144057")!,
+              priceUSD: 0, colorHex: "#E32B2B", accentHex: "#000000"),
+        .init(id: "asics.gel.resolution", category: .shoes, name: "Court Shoes 09", brand: "Vela", vendorID: "vela",
+              productURL: URL(string: "https://apps.apple.com/app/id6822144057")!,
+              priceUSD: 0, colorHex: "#0A2B5C", accentHex: "#FFD400"),
+        .init(id: "wilson.rf01.pro", category: .racket, name: "Match Racket 02", brand: "Vela", vendorID: "vela",
+              productURL: URL(string: "https://apps.apple.com/app/id6822144057")!,
+              priceUSD: 0, colorHex: "#161616", accentHex: "#D8C89A"),
+        .init(id: "wilson.blade.98.16x19.v9", category: .racket, name: "Match Racket 03", brand: "Vela", vendorID: "vela",
+              productURL: URL(string: "https://apps.apple.com/app/id6822144057")!,
+              priceUSD: 0, colorHex: "#10251E", accentHex: "#8AE0C0"),
+        .init(id: "yonex.percept.97h", category: .racket, name: "Match Racket 04", brand: "Vela", vendorID: "vela",
+              productURL: URL(string: "https://apps.apple.com/app/id6822144057")!,
+              priceUSD: 0, colorHex: "#253B67", accentHex: "#7FD26A"),
+        .init(id: "wilson.pro.staff.97", category: .racket, name: "Match Racket 05", brand: "Vela", vendorID: "vela",
+              productURL: URL(string: "https://apps.apple.com/app/id6822144057")!,
+              priceUSD: 0, colorHex: "#1B1B1B", accentHex: "#C0392B"),
+        .init(id: "babolat.pure.aero", category: .racket, name: "Match Racket 06", brand: "Vela", vendorID: "vela",
+              productURL: URL(string: "https://apps.apple.com/app/id6822144057")!,
+              priceUSD: 0, colorHex: "#F5C518", accentHex: "#1B1B1B"),
+        .init(id: "head.speed.mp", category: .racket, name: "Match Racket 07", brand: "Vela", vendorID: "vela",
+              productURL: URL(string: "https://apps.apple.com/app/id6822144057")!,
+              priceUSD: 0, colorHex: "#FFFFFF", accentHex: "#000000"),
+        .init(id: "yonex.ezone.98", category: .racket, name: "Match Racket 08", brand: "Vela", vendorID: "vela",
+              productURL: URL(string: "https://apps.apple.com/app/id6822144057")!,
+              priceUSD: 0, colorHex: "#1F73C2", accentHex: "#FFFFFF"),
+        .init(id: "babolat.pure.drive.gen11", category: .racket, name: "Match Racket 09", brand: "Vela", vendorID: "vela",
+              productURL: URL(string: "https://apps.apple.com/app/id6822144057")!,
+              priceUSD: 0, colorHex: "#1A61D8", accentHex: "#E53935"),
+        .init(id: "yonex.percept.100", category: .racket, name: "Match Racket 10", brand: "Vela", vendorID: "vela",
+              productURL: URL(string: "https://apps.apple.com/app/id6822144057")!,
+              priceUSD: 0, colorHex: "#253B67", accentHex: "#7FD26A"),
+        .init(id: "yonex.vcore.100", category: .racket, name: "Match Racket 11", brand: "Vela", vendorID: "vela",
+              productURL: URL(string: "https://apps.apple.com/app/id6822144057")!,
+              priceUSD: 0, colorHex: "#A41222", accentHex: "#FFFFFF"),
+        .init(id: "babolat.bag.6pack", category: .bag, name: "Court Bag 01", brand: "Vela", vendorID: "vela",
+              productURL: URL(string: "https://apps.apple.com/app/id6822144057")!,
+              priceUSD: 0, colorHex: "#F5C518", accentHex: "#1B1B1B"),
+        .init(id: "nike.headband.white", category: .accessory, name: "Headband 01", brand: "Vela", vendorID: "vela",
+              productURL: URL(string: "https://apps.apple.com/app/id6822144057")!,
+              priceUSD: 0, colorHex: "#FFFFFF", accentHex: nil),
+        .init(id: "rally.wristband.neon", category: .accessory, name: "Headband 02", brand: "Vela", vendorID: "vela",
+              productURL: URL(string: "https://apps.apple.com/app/id6822144057")!,
+              priceUSD: 0, colorHex: "#00E5FF", accentHex: "#FF1A8C"),
+        .init(id: "rally.wristband.tour.wimbledon", category: .accessory, name: "Headband 03", brand: "Vela", vendorID: "vela",
+              productURL: URL(string: "https://apps.apple.com/app/id6822144057")!,
+              priceUSD: 0, colorHex: "#1F6F3A", accentHex: "#FFFFFF"),
+        .init(id: "rally.wristband.tour.roland", category: .accessory, name: "Headband 04", brand: "Vela", vendorID: "vela",
+              productURL: URL(string: "https://apps.apple.com/app/id6822144057")!,
+              priceUSD: 0, colorHex: "#B14424", accentHex: "#FFFFFF"),
+        .init(id: "rally.wristband.tour.ashe", category: .accessory, name: "Headband 05", brand: "Vela", vendorID: "vela",
+              productURL: URL(string: "https://apps.apple.com/app/id6822144057")!,
+              priceUSD: 0, colorHex: "#13295E", accentHex: "#E8C84A"),
+        .init(id: "rally.wristband.tour.laver", category: .accessory, name: "Headband 06", brand: "Vela", vendorID: "vela",
+              productURL: URL(string: "https://apps.apple.com/app/id6822144057")!,
+              priceUSD: 0, colorHex: "#0057A8", accentHex: "#FFFFFF"),
+        .init(id: "rally.wristband.tour.indianwells", category: .accessory, name: "Headband 07", brand: "Vela", vendorID: "vela",
+              productURL: URL(string: "https://apps.apple.com/app/id6822144057")!,
+              priceUSD: 0, colorHex: "#2E7D6B", accentHex: "#F5E6C8"),
     ]
 
     /// Court-atlas → shop-item gating. Items listed as a value here are
@@ -566,14 +408,14 @@ enum ShopCatalog {
     private static let racketProfiles: [String: RacketProfile] = [
         defaultRacketID: .init(
             id: defaultRacketID,
-            family: "RF",
+            family: "Vela Match",
             playerFit: "Advanced players who want controlled weight",
             performanceFocus: "Precision + plow",
             headSizeSqIn: 100,
             weightGrams: 320,
             balanceMM: 315,
             stringPattern: "16x19",
-            summary: "Wilson RF 01 Pro-style tuning: heavier, stable, precise, and deliberate through contact.",
+            summary: "Original Vela racket tuning for this digital court setup.",
             gameplayTuning: .init(
                 travelScalar: 0.985,
                 timingAssistScalar: 1.02,
@@ -587,14 +429,14 @@ enum ShopCatalog {
         ),
         "wilson.blade.98.16x19.v9": .init(
             id: "wilson.blade.98.16x19.v9",
-            family: "Blade",
+            family: "Vela Match",
             playerFit: "All-court players who want feel and shape",
             performanceFocus: "Control + feel",
             headSizeSqIn: 98,
             weightGrams: 305,
             balanceMM: 320,
             stringPattern: "16x19",
-            summary: "Blade-style tuning emphasizes clean timing, controlled launch, and a sharper contact read.",
+            summary: "Original Vela racket tuning for this digital court setup.",
             gameplayTuning: .init(
                 travelScalar: 1.0,
                 timingAssistScalar: 1.03,
@@ -608,14 +450,14 @@ enum ShopCatalog {
         ),
         "yonex.percept.97h": .init(
             id: "yonex.percept.97h",
-            family: "PERCEPT",
+            family: "Vela Match",
             playerFit: "Strong control players who create their own pace",
             performanceFocus: "Feel + stability",
             headSizeSqIn: 97,
             weightGrams: 330,
             balanceMM: 310,
             stringPattern: "16x19",
-            summary: "PERCEPT 97H-style tuning is heavy, grounded, and surgical with a smaller timing assist.",
+            summary: "Original Vela racket tuning for this digital court setup.",
             gameplayTuning: .init(
                 travelScalar: 1.01,
                 timingAssistScalar: 0.99,
@@ -629,14 +471,14 @@ enum ShopCatalog {
         ),
         "wilson.pro.staff.97": .init(
             id: "wilson.pro.staff.97",
-            family: "Clash",
+            family: "Vela Match",
             playerFit: "Club players wanting comfort and easy power",
             performanceFocus: "Comfort + power",
             headSizeSqIn: 100,
             weightGrams: 295,
             balanceMM: 310,
             stringPattern: "16x19",
-            summary: "Wilson positions Clash 100 V3 as the versatile club-player option for power, comfort, and control.",
+            summary: "Original Vela racket tuning for this digital court setup.",
             gameplayTuning: .init(
                 travelScalar: 0.99,
                 timingAssistScalar: 1.03,
@@ -650,14 +492,14 @@ enum ShopCatalog {
         ),
         "babolat.pure.aero": .init(
             id: "babolat.pure.aero",
-            family: "Pure Aero",
+            family: "Vela Match",
             playerFit: "Fast modern attackers",
             performanceFocus: "Spin + precision",
             headSizeSqIn: 98,
             weightGrams: 305,
             balanceMM: 315,
             stringPattern: "16x20",
-            summary: "Babolat describes the Pure Aero 98 as a spin-friendly 98 with tighter pattern control for aggressive hitters.",
+            summary: "Original Vela racket tuning for this digital court setup.",
             gameplayTuning: .init(
                 travelScalar: 1.0,
                 timingAssistScalar: 0.98,
@@ -671,14 +513,14 @@ enum ShopCatalog {
         ),
         "head.speed.mp": .init(
             id: "head.speed.mp",
-            family: "Speed",
+            family: "Vela Match",
             playerFit: "Balanced tournament baseliners",
             performanceFocus: "Speed + control",
             headSizeSqIn: 100,
             weightGrams: 300,
             balanceMM: 320,
             stringPattern: "16x19",
-            summary: "HEAD's Speed family sits in the quick, modern all-court lane with balanced pace and control.",
+            summary: "Original Vela racket tuning for this digital court setup.",
             gameplayTuning: .init(
                 travelScalar: 0.99,
                 timingAssistScalar: 1.0,
@@ -692,14 +534,14 @@ enum ShopCatalog {
         ),
         "yonex.ezone.98": .init(
             id: "yonex.ezone.98",
-            family: "EZONE",
+            family: "Vela Match",
             playerFit: "Intermediate to advanced all-around hitters",
             performanceFocus: "Power + comfort",
             headSizeSqIn: 100,
             weightGrams: 300,
             balanceMM: 320,
             stringPattern: "16x19",
-            summary: "Yonex positions EZONE 100 as effortless power with a bigger sweet spot and plush comfort.",
+            summary: "Original Vela racket tuning for this digital court setup.",
             gameplayTuning: .init(
                 travelScalar: 0.98,
                 timingAssistScalar: 1.01,
@@ -713,14 +555,14 @@ enum ShopCatalog {
         ),
         "babolat.pure.drive.gen11": .init(
             id: "babolat.pure.drive.gen11",
-            family: "Pure Drive",
+            family: "Vela Match",
             playerFit: "Aggressive players chasing easy depth",
             performanceFocus: "Power + versatility",
             headSizeSqIn: 100,
             weightGrams: 300,
             balanceMM: 320,
             stringPattern: "16x19",
-            summary: "Babolat sells Pure Drive Gen11 around explosive baseline power with enough feel to shape deep heavy shots.",
+            summary: "Original Vela racket tuning for this digital court setup.",
             gameplayTuning: .init(
                 travelScalar: 0.97,
                 timingAssistScalar: 0.99,
@@ -734,14 +576,14 @@ enum ShopCatalog {
         ),
         "yonex.percept.100": .init(
             id: "yonex.percept.100",
-            family: "PERCEPT",
+            family: "Vela Match",
             playerFit: "Intermediate to advanced control players",
             performanceFocus: "Control + feel",
             headSizeSqIn: 100,
             weightGrams: 300,
             balanceMM: 320,
             stringPattern: "16x19",
-            summary: "Yonex frames PERCEPT 100 as control and feel with flex and snapback for players who create their own game.",
+            summary: "Original Vela racket tuning for this digital court setup.",
             gameplayTuning: .init(
                 travelScalar: 1.01,
                 timingAssistScalar: 1.04,
@@ -755,14 +597,14 @@ enum ShopCatalog {
         ),
         "yonex.vcore.100": .init(
             id: "yonex.vcore.100",
-            family: "VCORE",
+            family: "Vela Match",
             playerFit: "All-around players who want heavier spin action",
             performanceFocus: "Spin",
             headSizeSqIn: 100,
             weightGrams: 300,
             balanceMM: 320,
             stringPattern: "16x19",
-            summary: "Yonex markets VCORE 100 around spin, snapback, speed, and stability for all-around competitors.",
+            summary: "Original Vela racket tuning for this digital court setup.",
             gameplayTuning: .init(
                 travelScalar: 0.99,
                 timingAssistScalar: 0.98,
@@ -807,237 +649,5 @@ extension ShopCatalog {
 
     /// Reviewed 2026-09-17; provenance and legacy-ID mappings are recorded in
     /// Docs/SHOP_PHOTOGRAPHY.md. Retailer prices and availability may change.
-    static let productPhotography: [String: ShopProductPhotograph] = [
-        "nike.advantage.top.fz6910.010": .init(
-            category: .top, assetName: "ShopPhoto-FZ6910-010",
-            styleID: "FZ6910-010", colorway: "Black/White",
-            productURL: URL(string: "https://www.nike.com/t/nikecourt-advantage-mens-dri-fit-tennis-top-TcVn1mOS/FZ6910-010")!,
-            sourceURL: URL(string: "https://www.nike.com/t/nikecourt-advantage-mens-dri-fit-tennis-top-TcVn1mOS/FZ6910-010")!,
-            imageURL: URL(string: "https://static.nike.com/a/images/t_web_pdp_535_v2/f_auto%2Cu_9ddf04c7-2a9a-4d76-add1-d15af8f0263d%2Cc_scale%2Cfl_relative%2Cw_1.0%2Ch_1.0%2Cfl_layer_apply/1271419f-6075-42ef-807d-f9b54a668afd/M%2BNKCT%2BDF%2BADVTG%2BTOP.png")!
-        ),
-        "nike.advantage.short.fz6913.010": .init(
-            category: .bottom, assetName: "ShopPhoto-FZ6913-010",
-            styleID: "FZ6913-010", colorway: "Black/White",
-            productURL: URL(string: "https://www.nike.com/t/nikecourt-advantage-mens-dri-fit-6-tennis-shorts-cCYH6Bt5/FZ6913-010")!,
-            sourceURL: URL(string: "https://www.nike.com/t/nikecourt-advantage-mens-dri-fit-6-tennis-shorts-cCYH6Bt5/FZ6913-010")!,
-            imageURL: URL(string: "https://static.nike.com/a/images/t_web_pdp_535_v2/f_auto%2Cu_9ddf04c7-2a9a-4d76-add1-d15af8f0263d%2Cc_scale%2Cfl_relative%2Cw_1.0%2Ch_1.0%2Cfl_layer_apply/2b7e3ce9-5868-4066-b0ef-7b99dab9acdc/M%2BNKCT%2BDF%2BADVTG%2B6IN%2BSHORT.png")!
-        ),
-        "adidas.ergo.pro.short.kv4294": .init(
-            category: .bottom, assetName: "ShopPhoto-KV4294",
-            styleID: "KV4294", colorway: "White",
-            productURL: URL(string: "https://www.adidas.com/us/tennis-climacool-ergo-shorts-pro/KV4294.html")!,
-            sourceURL: URL(string: "https://www.adidas.com/us/tennis-climacool-ergo-shorts-pro/KV4294.html")!,
-            imageURL: URL(string: "https://assets.adidas.com/images/w_500%2Cf_auto%2Cq_auto/fc6e5c9b0cb8452585699b3258717a37_9366/Tennis_Climacool_Ergo_Shorts_Pro_White_KV4294_21_model.jpg")!
-        ),
-        "newbalance.tournament.tank.white": .init(
-            category: .top, assetName: "ShopPhoto-WT61K74KWT",
-            styleID: "WT61K74KWT", colorway: "WHITE with GREY MATTER",
-            productURL: URL(string: "https://www.newbalance.com/pd/tournament-tank/WT61K74K-WT.html")!,
-            sourceURL: URL(string: "https://www.newbalance.com/pd/tournament-tank/WT61K74K-WT.html")!,
-            imageURL: URL(string: "https://nb.scene7.com/is/image/NB/wt61k74kwt_nb_70_i?%24pdpflexf2%24=&hei=440&wid=440")!
-        ),
-        "newbalance.tournament.skort.wb61s4jj.white": .init(
-            category: .bottom, assetName: "ShopPhoto-WB61S4JJWT",
-            styleID: "WB61S4JJWT", colorway: "WHITE with GREY MATTER",
-            productURL: URL(string: "https://www.newbalance.com/pd/tournament-skort/WB61S4JJ-WT.html")!,
-            sourceURL: URL(string: "https://www.newbalance.com/pd/tournament-skort/WB61S4JJ-WT.html")!,
-            imageURL: URL(string: "https://nb.scene7.com/is/image/NB/wb61s4jjwt_nb_70_i?%24pdpflexf2%24=&hei=440&wid=440")!
-        ),
-        "nike.dri-fit.tee.cobalt": .init(
-            category: .top, assetName: "ShopPhoto-FZ6921-451",
-            styleID: "FZ6921-451", colorway: "Obsidian / White",
-            productURL: URL(string: "https://www.nike.com/t/nikecourt-victory-mens-dri-fit-tennis-top-slxolFfn/FZ6921-451")!,
-            sourceURL: URL(string: "https://www.nike.com/t/nikecourt-victory-mens-dri-fit-tennis-top-slxolFfn/FZ6921-451")!,
-            imageURL: URL(string: "https://static.nike.com/a/images/t_web_pdp_535_v2/f_jpg,u_9ddf04c7-2a9a-4d76-add1-d15af8f0263d,c_scale,fl_relative,w_1.0,h_1.0,fl_layer_apply/be24862f-8cab-46ec-b71d-597b54db32e3/M+NKCT+DRY+VICTORY+TOP.png")!
-        ),
-        "lacoste.croc.polo.green": .init(
-            category: .top, assetName: "ShopPhoto-DH8960-381",
-            styleID: "DH8960-51-381", colorway: "Green / Navy Blue",
-            productURL: URL(string: "https://www.lacoste.com/us/lacoste/men/clothing/polos/DH8960-51.html?color=381")!,
-            sourceURL: URL(string: "https://www.lacoste.com/us/lacoste/men/clothing/polos/DH8960-51.html?color=381")!,
-            imageURL: URL(string: "https://www.lacoste.in/media/catalog/product/d/h/dh8960_381_20.jpg?width=600&optimize=medium")!
-        ),
-        "adidas.club.polo.lime": .init(
-            category: .top, assetName: "ShopPhoto-JY2900",
-            styleID: "JY2900", colorway: "Powder Teal",
-            productURL: URL(string: "https://www.adidas.com/us/club-tennis-3-stripes-polo-shirt/JY2900.html")!,
-            sourceURL: URL(string: "https://www.adidas.com/us/club-tennis-3-stripes-polo-shirt/JY2900.html")!,
-            imageURL: URL(string: "https://assets.adidas.com/images/w_600,f_jpg,q_auto/3a6cfb4868374f11aba68a1230c5bf44_9366/Club_Tennis_3-Stripes_Polo_Shirt_Turquoise_JY2900_01_laydown.jpg")!
-        ),
-        "uniqlo.dry.polo.white": .init(
-            category: .top, assetName: "ShopPhoto-482305-00",
-            styleID: "482305-00", colorway: "White",
-            productURL: URL(string: "https://www.uniqlo.com/us/en/products/E482305-000/00?colorDisplayCode=00")!,
-            sourceURL: URL(string: "https://www.uniqlo.com/us/en/products/E482305-000/00?colorDisplayCode=00")!,
-            imageURL: URL(string: "https://image.uniqlo.com/UQ/ST3/us/imagesgoods/482305/item/usgoods_00_482305_3x4.jpg?width=600")!
-        ),
-        "uniqlo.dry.short.gray": .init(
-            category: .bottom, assetName: "ShopPhoto-477753-08",
-            styleID: "477753-08", colorway: "Dark Gray",
-            productURL: URL(string: "https://www.uniqlo.com/us/en/products/E477753-000/00?colorDisplayCode=08")!,
-            sourceURL: URL(string: "https://www.uniqlo.com/us/en/products/E477753-000/00?colorDisplayCode=08")!,
-            imageURL: URL(string: "https://image.uniqlo.com/UQ/ST3/us/imagesgoods/477753/item/usgoods_08_477753_3x4.jpg?width=600")!
-        ),
-        "nike.court.short.black": .init(
-            category: .bottom, assetName: "ShopPhoto-FD5384-010",
-            styleID: "FD5384-010", colorway: "Black / White",
-            productURL: URL(string: "https://www.nike.com/t/nikecourt-victory-mens-dri-fit-9-tennis-shorts-I4ijxgde/FD5384-010")!,
-            sourceURL: URL(string: "https://www.nike.com/t/nikecourt-victory-mens-dri-fit-9-tennis-shorts-I4ijxgde/FD5384-010")!,
-            imageURL: URL(string: "https://static.nike.com/a/images/t_default/be0965d3-2ae4-4a51-9e7e-9351408e8655/M+NKCT+DF+VCTRY+SHORT+9IN.png")!
-        ),
-        "newbalance.coco.cg2.sea.salt": .init(
-            category: .shoes, assetName: "ShopPhoto-WCOC9AL",
-            styleID: "WCOC9AL", colorway: "Sea Salt / Glint Blue",
-            productURL: URL(string: "https://www.newbalance.com/pd/coco-cg2/WCOC9AL-D-11.html")!,
-            sourceURL: URL(string: "https://www.newbalance.com/pd/coco-cg2/WCOC9AL-D-11.html")!,
-            imageURL: URL(string: "https://nb.scene7.com/is/image/NB/wcoc9al_nb_02_i?wid=600&hei=600")!
-        ),
-        "newbalance.fuelcell.996v6.white": .init(
-            category: .shoes, assetName: "ShopPhoto-WCH996W6",
-            styleID: "WCH996W6", colorway: "White / Black",
-            productURL: URL(string: "https://www.newbalance.com/pd/fuelcell-996v6/WCH996W6-B-09.html")!,
-            sourceURL: URL(string: "https://www.newbalance.com/pd/fuelcell-996v6/WCH996W6-B-09.html")!,
-            imageURL: URL(string: "https://nb.scene7.com/is/image/NB/wch996w6_nb_02_i?wid=600&hei=600")!
-        ),
-        "nike.vapor.pro.3": .init(
-            category: .shoes, assetName: "ShopPhoto-FZ2161-101",
-            styleID: "FZ2161-101", colorway: "White / Black",
-            productURL: URL(string: "https://www.nike.com/t/vapor-pro-3-mens-hard-court-tennis-shoes-SpZRz675/FZ2161-101")!,
-            sourceURL: URL(string: "https://www.nike.com/t/vapor-pro-3-mens-hard-court-tennis-shoes-SpZRz675/FZ2161-101")!,
-            imageURL: URL(string: "https://static.nike.com/a/images/t_web_pdp_535_v2/f_jpg,u_9ddf04c7-2a9a-4d76-add1-d15af8f0263d,c_scale,fl_relative,w_1.0,h_1.0,fl_layer_apply/9c4f300d-f94a-4809-b0fc-c00fb605bc94/M+ZOOM+VAPOR+PRO+3+HC.png")!
-        ),
-        "wilson.rf01.pro": .init(
-            category: .racket, assetName: "ShopPhoto-WR151311U",
-            styleID: "WR151311U", colorway: "Black",
-            productURL: URL(string: "https://www.wilson.com/en-us/product/rf-01-pro-frm-wr15130")!,
-            sourceURL: URL(string: "https://www.wilson.com/en-us/product/rf-01-pro-frm-wr15130")!,
-            imageURL: URL(string: "https://www.wilson.com/en-us/media/catalog/product/article_images/WR151311U_/WR151311U__2cb4e2aa3b9b83f7dd1dae1589b8937b.png?quality=80&bg-color=F3F1ED&fit=bounds&height=600&width=600")!
-        ),
-        "wilson.pro.staff.97": .init(
-            category: .racket, assetName: "ShopPhoto-WR172811U",
-            styleID: "WR172811U", colorway: "Black / Red",
-            productURL: URL(string: "https://www.wilson.com/en-us/product/clash-100-v3-0-frm-wr17280")!,
-            sourceURL: URL(string: "https://www.wilson.com/en-us/product/clash-100-v3-0-frm-wr17280")!,
-            imageURL: URL(string: "https://www.wilson.com/en-us/media/catalog/product/article_images/WR172811U_/WR172811U__802dcd3540332b169b557739efda665a.png?quality=80&bg-color=F3F1ED&fit=bounds&height=600&width=600")!
-        ),
-        "yonex.ezone.98": .init(
-            category: .racket, assetName: "ShopPhoto-ezone-100",
-            styleID: "08EZ100YX_786__G1", colorway: "Blast Blue",
-            productURL: URL(string: "https://us.yonex.com/products/ezone-100?variant=46064969351389")!,
-            sourceURL: URL(string: "https://us.yonex.com/products/ezone-100?variant=46064969351389")!,
-            imageURL: URL(string: "https://cdn.shopify.com/s/files/1/0710/8457/2893/files/EZ08100_Blast_Blue_1.jpg?v=1739910270&width=600")!
-        ),
-        "yonex.percept.100": .init(
-            category: .racket, assetName: "ShopPhoto-percept-100",
-            styleID: "01PE100YX_472__G1", colorway: "Midnight Navy",
-            productURL: URL(string: "https://us.yonex.com/products/percept-100?variant=46700337266909")!,
-            sourceURL: URL(string: "https://us.yonex.com/products/percept-100?variant=46700337266909")!,
-            imageURL: URL(string: "https://cdn.shopify.com/s/files/1/0710/8457/2893/files/ALL_01PE100_472-2_545ae070-15a7-48a7-a7e0-1de4479696a6.jpg?v=1759595991&width=600")!
-        ),
-        "yonex.percept.97h": .init(
-            category: .racket, assetName: "ShopPhoto-percept-97h",
-            styleID: "01PE97HYX_268__G2", colorway: "Olive Green",
-            productURL: URL(string: "https://us.yonex.com/products/percept-97h?variant=46064978231517")!,
-            sourceURL: URL(string: "https://us.yonex.com/products/percept-97h?variant=46064978231517")!,
-            imageURL: URL(string: "https://cdn.shopify.com/s/files/1/0710/8457/2893/files/INT_01PE97H_268-1_901aed47-031c-4441-a1ec-3d229ba0ba90.png?v=1741047903&width=600")!
-        ),
-        "yonex.vcore.100": .init(
-            category: .racket, assetName: "ShopPhoto-08vcore-100",
-            styleID: "08VC100YX_338__G1", colorway: "Ruby Red",
-            productURL: URL(string: "https://us.yonex.com/products/08vcore-100?variant=47131433992413")!,
-            sourceURL: URL(string: "https://us.yonex.com/products/08vcore-100?variant=47131433992413")!,
-            imageURL: URL(string: "https://cdn.shopify.com/s/files/1/0710/8457/2893/files/ALL_08VC100_338-2.jpg?v=1765575203&width=600")!
-        ),
-        "babolat.pure.drive.gen11": .init(
-            category: .racket, assetName: "ShopPhoto-101552",
-            styleID: "101552-100", colorway: "Blue",
-            productURL: URL(string: "https://www.babolat.com/us/pure-drive-gen11-unstrung/3324922165546.html")!,
-            sourceURL: URL(string: "https://www.babolat.com/us/pure-drive-gen11-unstrung/3324922165546.html")!,
-            imageURL: URL(string: "https://media.babolat.com/image/upload/w_600/v1707748921/Product_Media/2025/Tennis/Racquets/Expert/101552-PD_GEN11_STRUNG-100-1-Face.png")!
-        ),
-        "babolat.bag.6pack": .init(
-            category: .bag, assetName: "ShopPhoto-751239",
-            styleID: "751239-100", colorway: "Metallic Grey / Black / Fluo Yellow",
-            productURL: URL(string: "https://www.babolat.com/us/rh6-pure-aero/751239.html")!,
-            sourceURL: URL(string: "https://www.babolat.com/us/rh6-pure-aero/751239.html")!,
-            imageURL: URL(string: "https://media.babolat.com/image/upload/w_600/v1740584592/Product_Media/2026/Tennis/BAGS/751239-RH6_PURE_AERO-100-1-3_4_Face.png")!
-        ),
-        "nike.headband.white": .init(
-            category: .accessory, assetName: "ShopPhoto-N1013635-101",
-            styleID: "N1013635-101", colorway: "White",
-            productURL: URL(string: "https://www.nike.com/t/fury-classic-dri-fit-nba-headband-UpW0QG6J/N1013635-101")!,
-            sourceURL: URL(string: "https://www.nike.com/t/fury-classic-dri-fit-nba-headband-UpW0QG6J/N1013635-101")!,
-            imageURL: URL(string: "https://static.nike.com/a/images/t_web_pdp_535_v2/f_jpg,u_9ddf04c7-2a9a-4d76-add1-d15af8f0263d,c_scale,fl_relative,w_1.0,h_1.0,fl_layer_apply/4218d02b-3bdc-4142-85c9-f2c85320ff08/NIKE+FURY+LEAGUE+HEADBAND.png")!
-        ),
-        "newbalance.tournament.skort.white": .init(
-            category: .bottom, assetName: "ShopPhoto-WB61S4JJWT",
-            styleID: "WB61S4JJWT", colorway: "WHITE with GREY MATTER",
-            productURL: URL(string: "https://www.newbalance.com/pd/tournament-skort/WB61S4JJ-WT.html")!,
-            sourceURL: URL(string: "https://www.newbalance.com/pd/tournament-skort/WB61S4JJ-WT.html")!,
-            imageURL: URL(string: "https://nb.scene7.com/is/image/NB/wb61s4jjwt_nb_70_i?%24pdpflexf2%24=&hei=440&wid=440")!
-        ),
-        "adidas.gameset.short.navy": .init(
-            category: .bottom, assetName: "ShopPhoto-KC5811",
-            styleID: "KC5811", colorway: "Legend Ink",
-            productURL: URL(string: "https://www.adidas.com/us/tennis-climacool-ergo-shorts/KC5811.html")!,
-            sourceURL: URL(string: "https://www.adidas.com/us/tennis-climacool-ergo-shorts/KC5811.html")!,
-            imageURL: URL(string: "https://assets.adidas.com/images/w_600,f_jpg,q_auto/632ba79f619b4c93ac4d69ee69094ced_9366/Tennis_Climacool_Ergo_Shorts_Blue_KC5811_01_laydown.jpg")!
-        ),
-        "adidas.adizero.ubersonic.5": .init(
-            category: .shoes, assetName: "ShopPhoto-IE1376",
-            styleID: "IE1376", colorway: "Cloud White / Core Black / Silver Metallic",
-            productURL: URL(string: "https://www.adidas.com/us/adizero-ubersonic-5-tennis-shoes/IE1376.html")!,
-            sourceURL: URL(string: "https://www.adidas.com/us/adizero-ubersonic-5-tennis-shoes/IE1376.html")!,
-            imageURL: URL(string: "https://assets.adidas.com/images/w_600,f_jpg,q_auto/a3780789531d470389b4ad251a2e8d96_9366/Adizero_Ubersonic_5_Tennis_Shoes_White_IE1376_HM1.jpg")!
-        ),
-        "adidas.barricade.red": .init(
-            category: .shoes, assetName: "ShopPhoto-IF9131",
-            styleID: "IF9131", colorway: "Burgundy",
-            productURL: URL(string: "https://www.adidas.com/us/barricade-13-tennis-shoes/IF9131.html")!,
-            sourceURL: URL(string: "https://www.adidas.com/us/barricade-13-tennis-shoes/IF9131.html")!,
-            imageURL: URL(string: "https://assets.adidas.com/images/w_600,f_jpg,q_auto/8f26cd5890e346d58313f7f1014106f7_9366/Barricade_13_Tennis_Shoes_Burgundy_IF9131_HM1.jpg")!
-        ),
-        "nike.vapor.pro.white": .init(
-            category: .shoes, assetName: "ShopPhoto-CZ0220-136",
-            styleID: "CZ0220-136", colorway: "White",
-            productURL: URL(string: "https://www.nike.com.br/tenis-air-zoom-vapor-pro-hc-011419.html")!,
-            sourceURL: URL(string: "https://www.nike.com.br/tenis-air-zoom-vapor-pro-hc-011419.html")!,
-            imageURL: URL(string: "https://imgnike-a.akamaihd.net/768x768/01141954A8.jpg")!
-        ),
-        "head.speed.mp": .init(
-            category: .racket, assetName: "ShopPhoto-232026",
-            styleID: "232026", colorway: "Black & White",
-            productURL: URL(string: "https://www.head.com/en_PT/product/speed-mp-2026-232026")!,
-            sourceURL: URL(string: "https://www.head.com/en_PT/product/speed-mp-2026-232026")!,
-            imageURL: URL(string: "https://cdn-mdb.head.com/CDN3/D/232026/1/683x911/speed-mp-2026.webp")!
-        ),
-        "wilson.blade.98.16x19.v9": .init(
-            category: .racket, assetName: "ShopPhoto-WR149811U",
-            styleID: "WR149811U", colorway: "Emerald Night",
-            productURL: URL(string: "https://id.wilson.com/en/products/blade-98-16x19-v9?sku=18076411945912702133331885")!,
-            sourceURL: URL(string: "https://id.wilson.com/en/products/blade-98-16x19-v9?sku=18076411945912702133331885")!,
-            imageURL: URL(string: "https://img.myshopline.com/image/store/1749020664963/WR149811U-1-Blade-98-16x19-V9-GR.png?h=2000&q=90&w=2000")!
-        ),
-        "babolat.pure.aero": .init(
-            category: .racket, assetName: "ShopPhoto-101567-100",
-            styleID: "101567-100", colorway: "Metallic Grey / Fluo Yellow",
-            productURL: URL(string: "https://www.babolat.com/us/pure-aero-98-gen9-unstrung/101567.html")!,
-            sourceURL: URL(string: "https://www.babolat.com/us/pure-aero-98-gen9-unstrung/101567.html")!,
-            imageURL: URL(string: "https://media.babolat.com/image/upload/f_auto,q_auto,c_pad,w_576,h_576/v1739968467/Product_Media/2026/Tennis/RACQUETS/Expert/101567-PURE_AERO_98_GEN9-100-1-Face.png")!
-        ),
-        "asics.court.ff.3.novak": .init(
-            category: .shoes, assetName: "ShopPhoto-1041A361",
-            styleID: "1041A361", colorway: "Tuna Blue / White",
-            productURL: URL(string: "https://www.asics.com/us/en-us/court-ff-3/c/aa50104000/")!,
-            sourceURL: URL(string: "https://corp.asics.com/jp/press/article/2022-12-13")!,
-            imageURL: URL(string: "https://assets.asics.com/system/media_libraries/18604/file.press.jpg?20250327225537")!
-        ),
-        "asics.gel.resolution": .init(
-            category: .shoes, assetName: "ShopPhoto-1041A330",
-            styleID: "1041A330", colorway: "Steel Blue / Hazard Green",
-            productURL: URL(string: "https://www.asics.com/us/en-us/mens-tennis-shoes/c/aa10000000/")!,
-            sourceURL: URL(string: "https://corp.asics.com/jp/press/article/2022-12-13-1")!,
-            imageURL: URL(string: "https://assets.asics.com/system/media_libraries/18596/file.jpg")!
-        ),
-    ]
+    static let productPhotography: [String: ShopProductPhotograph] = [:]
 }

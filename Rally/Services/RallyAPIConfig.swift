@@ -46,6 +46,16 @@ enum RallyDefaults {
 }
 
 enum RallyAPIConfig {
+    /// The first public release stores player data locally. Cloud accounts remain
+    /// available only for development until an HTTPS service is deployed.
+    static var supportsAccounts: Bool {
+        #if DEBUG
+        return !ProcessInfo.processInfo.arguments.contains("-VelaOfflineRelease")
+        #else
+        return false
+        #endif
+    }
+
     /// Simulator default; override with UserDefaults (`baseURLKey`) or Auth → Developer.
     private static let developmentDefault = "http://127.0.0.1:8787"
 

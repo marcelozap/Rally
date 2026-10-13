@@ -23,6 +23,10 @@ final class AuthSession: ObservableObject {
 
     func bootstrap(modelContext: ModelContext) async {
         defer { isBootstrapped = true }
+        guard RallyAPIConfig.supportsAccounts else {
+            enterGuestMode()
+            return
+        }
 
         #if DEBUG
         if ProcessInfo.processInfo.arguments.contains("-RallyAutoPlay") {
@@ -67,6 +71,9 @@ final class AuthSession: ObservableObject {
     }
 
     func register(email: String, password: String, modelContext: ModelContext) async throws {
+        guard RallyAPIConfig.supportsAccounts else {
+            throw RallyAPIError.http(503, "This version saves on your device and does not offer accounts.")
+        }
         lastErrorMessage = nil
         UserDefaults.standard.removeObject(forKey: UserDefaultsKeys.guestMode)
         isGuestMode = false
@@ -77,6 +84,9 @@ final class AuthSession: ObservableObject {
     }
 
     func login(email: String, password: String, modelContext: ModelContext) async throws {
+        guard RallyAPIConfig.supportsAccounts else {
+            throw RallyAPIError.http(503, "This version saves on your device and does not offer accounts.")
+        }
         lastErrorMessage = nil
         UserDefaults.standard.removeObject(forKey: UserDefaultsKeys.guestMode)
         isGuestMode = false
@@ -86,7 +96,35 @@ final class AuthSession: ObservableObject {
         isAuthenticated = true
     }
 
+    func deleteAccount(password: String, modelContext: ModelContext) async throws {
+        guard let token = KeychainStore.shared.token else { throw RallyAPIError.unauthorized }
+        // Preserve the session and data if the server refuses or cannot be reached.
+        try await RallyAPIClient.deleteAccount(token: token, password: password)
+        defer { logout() }
+        RallySyncRevisionStore.clear()
+        for courtID in CourtUnlocks.shared.unlockedCourtIDs { CourtUnlocks.shared.forget(courtID: courtID) }
+        let reports = CoachReportStore()
+        for report in try await reports.load() { try await reports.delete(id: report.id) }
+        try modelContext.delete(model: AvatarConfig.self)
+        try modelContext.delete(model: PlayerProgress.self)
+        try modelContext.delete(model: TrainingSession.self)
+        try modelContext.delete(model: MatchEntry.self)
+        try modelContext.delete(model: JournalEntry.self)
+        try modelContext.delete(model: Achievement.self)
+        try modelContext.delete(model: DailyChallenge.self)
+        try modelContext.delete(model: LeaderboardEntry.self)
+        try modelContext.delete(model: BattlePass.self)
+        try modelContext.delete(model: SeasonalEvent.self)
+        try modelContext.delete(model: RivalChallenge.self)
+        let avatar = AvatarConfig()
+        avatar.refreshForCurrentVisualSystem()
+        modelContext.insert(avatar)
+        modelContext.insert(PlayerProgress())
+        try modelContext.save()
+    }
+
     func logout() {
+        if !RallyAPIConfig.supportsAccounts { enterGuestMode(); return }
         KeychainStore.shared.clearToken()
         UserDefaults.standard.removeObject(forKey: UserDefaultsKeys.savedEmail)
         UserDefaults.standard.removeObject(forKey: UserDefaultsKeys.guestMode)

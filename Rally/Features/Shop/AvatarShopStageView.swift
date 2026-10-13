@@ -84,7 +84,7 @@ struct AvatarShopStageView: View {
                 RallyAvatarView(
                     appearance: avatarAppearanceStore.appearance(for: config, previewItem: preview?.item),
                     targetHeight: 340,
-                    showsRacket: preview == nil || preview?.slot == .racket
+                    showsRacket: true
                 )
                 .frame(maxWidth: .infinity)
                 .frame(height: 340)

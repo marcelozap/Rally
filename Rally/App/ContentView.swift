@@ -101,6 +101,7 @@ struct ContentView: View {
                 .tag(RallyTab.shop)
                 .transition(.asymmetric(insertion: .opacity.combined(with: .scale(scale: 0.95)), removal: .opacity))
         }
+        .environment(\.horizontalSizeClass, .compact)
         .tint(RallyUIKit.Palette.iconCyan)
         .toolbarBackground(
             LinearGradient(

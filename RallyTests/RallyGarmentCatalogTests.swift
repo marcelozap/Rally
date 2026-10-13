@@ -2,34 +2,11 @@ import XCTest
 @testable import Rally
 
 final class RallyGarmentCatalogTests: XCTestCase {
-    func testBundledReferencesMatchSixExactProductsAndShopSlots() throws {
-        let catalog = RallyGarmentCatalog.shared
-        let expectedIDs: Set<String> = [
-            "nike.advantage.top.fz6910.010",
-            "nike.advantage.short.fz6913.010",
-            "adidas.ergo.pro.short.kv4294",
-            "uniqlo.dryex.quarterzip.482306.00",
-            "newbalance.tournament.tank.white",
-            "newbalance.tournament.skort.wb61s4jj.white",
-        ]
-        XCTAssertEqual(Set(catalog.references.map(\.id)), expectedIDs)
-        XCTAssertEqual(catalog.references.count, 6, "Missing or malformed bundled manifest must be caught before shipping")
-
-        for reference in catalog.references {
-            XCTAssertNotNil(catalog.reference(for: reference.id, slot: reference.slot.gearSlot))
-            XCTAssertFalse(reference.referenceImageURLs.isEmpty, reference.id)
-            XCTAssertEqual(reference.representation, .referenceOnly, reference.id)
-            XCTAssertNil(reference.meshes.male, reference.id)
-            XCTAssertNil(reference.meshes.female, reference.id)
-            if reference.id == "uniqlo.dryex.quarterzip.482306.00" {
-                XCTAssertNil(ShopCatalog.item(id: reference.id), "The source-only item has no verified price")
-                continue
-            }
-            let item = try XCTUnwrap(ShopCatalog.item(id: reference.id), reference.id)
-            XCTAssertEqual(item.brand, reference.brand, reference.id)
-            XCTAssertEqual(item.productURL, reference.officialURL, reference.id)
-            XCTAssertEqual(item.category, reference.slot == .top ? .top : .bottom, reference.id)
-        }
+    func testReleaseManifestContainsNoUnlicensedRetailerReferences() {
+        XCTAssertTrue(RallyGarmentCatalog.shared.references.isEmpty)
+        // Saved clothing still resolves to generic original garment shapes.
+        XCTAssertEqual(RallyGarmentCatalog.shared.garmentKind(for: "rally.default.top", slot: .top), .tee)
+        XCTAssertEqual(RallyGarmentCatalog.shared.garmentKind(for: "rally.default.bottom", slot: .shorts), .shorts)
     }
 
     func testDuplicateIDsAreRejectedBeforeLookup() throws {
@@ -58,9 +35,9 @@ final class RallyGarmentCatalogTests: XCTestCase {
 
     func testLegacyKindsUseExplicitIDsAndNeverCrossSlots() throws {
         let empty = try catalog([])
-        XCTAssertEqual(empty.garmentKind(for: "adidas.club.polo.lime", slot: .top), .polo)
-        XCTAssertEqual(empty.garmentKind(for: "newbalance.tournament.tank.white", slot: .top), .tank)
-        XCTAssertEqual(empty.garmentKind(for: "newbalance.tournament.skort.white", slot: .shorts), .skort)
+        XCTAssertEqual(empty.garmentKind(for: "adidas.club.polo.lime", slot: .top), .tee)
+        XCTAssertEqual(empty.garmentKind(for: "newbalance.tournament.tank.white", slot: .top), .tee)
+        XCTAssertEqual(empty.garmentKind(for: "newbalance.tournament.skort.white", slot: .shorts), .shorts)
         XCTAssertEqual(empty.garmentKind(for: "adidas.club.polo.lime", slot: .shorts), .shorts)
         XCTAssertEqual(empty.garmentKind(for: "newbalance.tournament.skort.white", slot: .top), .tee)
         XCTAssertEqual(empty.garmentKind(for: "unknown.polo.tank", slot: .top), .tee)

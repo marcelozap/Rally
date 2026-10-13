@@ -152,8 +152,18 @@ struct AvatarCustomizerView: View {
     // MARK: - Model and color selection
 
     private var athleteSection: some View {
-        sectionCard(title: "Models") {
-            ForEach(RallyAthleteModel.allCases) { model in
+        sectionCard(title: "Player model") {
+            HStack(spacing: 10) {
+                ForEach(RallyAthleteModel.allCases) { model in
+                    Chip(label: model == .male ? "Male" : "Female", selected: config.athletePreset.athleteModel == model) {
+                        let index = RallyAthletePreset.allCases.filter { $0.athleteModel == config.athletePreset.athleteModel }.firstIndex(of: config.athletePreset) ?? 0
+                        config.athletePreset = RallyAthletePreset.allCases.filter { $0.athleteModel == model }[index]
+                        avatarAppearanceStore.sync(from: config)
+                    }
+                    .accessibilityIdentifier("playerModel.\(model.rawValue)")
+                }
+            }
+            ForEach([config.athletePreset.athleteModel]) { model in
                 VStack(alignment: .leading, spacing: 8) {
                     Text(model == .male ? "Men" : "Women")
                         .font(RallyUIKit.Typography.label(.caption, weight: .semibold))

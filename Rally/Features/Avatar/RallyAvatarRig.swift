@@ -855,9 +855,17 @@ final class RallyAvatarRig {
 
         }
         if look.headband != nil {
-            let capSelected = look.headband?.id.lowercased().contains("cap") == true
-            let band = SCNTorus(ringRadius: 0.085, pipeRadius: capSelected ? 0.018 : 0.008)
-            band.ringSegmentCount = 48
+            let capSelected = look.headband?.id.lowercased().contains("cap") == true && look.headband.flatMap { ShopCatalog.item(id: $0.id) }?.brand != "Vela"
+            let band: SCNGeometry
+            if capSelected {
+                let capBand = SCNTorus(ringRadius: 0.085, pipeRadius: 0.018)
+                capBand.ringSegmentCount = 48
+                band = capBand
+            } else {
+                let sweatband = SCNTube(innerRadius: 0.080, outerRadius: 0.087, height: 0.028)
+                sweatband.radialSegmentCount = 48
+                band = sweatband
+            }
             let node = SCNNode(geometry: band)
             node.geometry?.materials = [Self.material(color: look.headbandUIColor, roughness: 0.85)]
             node.scale = SCNVector3(0.87, 1.0, 1.02)

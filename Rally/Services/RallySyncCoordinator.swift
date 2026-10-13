@@ -26,7 +26,7 @@ enum RallySyncRevisionStore {
 enum RallySyncCoordinator {
 
     static func pull(modelContext: ModelContext) async throws {
-        guard let token = KeychainStore.shared.token else {
+        guard RallyAPIConfig.supportsAccounts, let token = KeychainStore.shared.token else {
             throw RallyAPIError.unauthorized
         }
         let response = try await RallyAPIClient.fetchSyncWithRevision(token: token)
@@ -36,7 +36,7 @@ enum RallySyncCoordinator {
     }
 
     static func push(modelContext: ModelContext, enforceAvatarRevision: Bool = false) async throws {
-        guard let token = KeychainStore.shared.token else { return }
+        guard RallyAPIConfig.supportsAccounts, let token = KeychainStore.shared.token else { return }
         let envelope = try encode(modelContext: modelContext)
         let expectedRevision = enforceAvatarRevision ? RallySyncRevisionStore.load() : nil
         let response = try await RallyAPIClient.putSync(
@@ -61,7 +61,7 @@ enum RallySyncCoordinator {
 
     /// Soft-fail push for UI hooks (avatar save, etc.).
     static func pushIfAuthenticated(modelContext: ModelContext, enforceAvatarRevision: Bool = false) async {
-        guard KeychainStore.shared.token != nil else { return }
+        guard RallyAPIConfig.supportsAccounts, KeychainStore.shared.token != nil else { return }
         do {
             try await push(modelContext: modelContext, enforceAvatarRevision: enforceAvatarRevision)
         } catch let conflict as RallyAPIClient.RevisionConflict {

@@ -70,7 +70,7 @@ final class RemoteTunables: ObservableObject {
     /// On success the manifest is persisted to `UserDefaults` so the next
     /// cold launch (even offline) starts with the last known overrides.
     func refreshIfEnabled() async {
-        guard UserDefaults.standard.bool(forKey: Self.featureFlagDefaultsKey) else {
+        guard RallyAPIConfig.supportsAccounts, UserDefaults.standard.bool(forKey: Self.featureFlagDefaultsKey) else {
             return
         }
         let url = RallyAPIConfig.baseURL.appendingPathComponent("api/tunables")

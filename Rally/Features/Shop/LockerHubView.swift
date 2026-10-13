@@ -2,6 +2,11 @@ import SwiftUI
 import SwiftData
 
 struct LockerHubView: View {
+    @Environment(\.modelContext) private var modelContext
+    @State private var showsDeleteAccount = false
+    @State private var deletionPassword = ""
+    @State private var isDeletingAccount = false
+    @State private var deletionError: String?
     @EnvironmentObject private var auth: AuthSession
     @Query private var avatarConfigs: [AvatarConfig]
 
@@ -22,7 +27,7 @@ struct LockerHubView: View {
 
     private var equippedIDs: Set<String> {
         guard let a = avatar else { return [] }
-        return Set([a.equippedTopID, a.equippedBottomID, a.equippedShoesID, a.equippedRacketID])
+        return Set([a.equippedTopID, a.equippedBottomID, a.equippedShoesID, a.equippedRacketID] + [a.equippedHeadbandID].compactMap { $0 })
     }
 
     var body: some View {
@@ -78,6 +83,40 @@ struct LockerHubView: View {
                 )
                 .ignoresSafeArea()
             )
+            .sheet(isPresented: $showsDeleteAccount) {
+                NavigationStack {
+                    Form {
+                        Section("Permanently delete account") {
+                            Text("This removes your account and cloud data, and resets your player, progress and journal on this device. This cannot be undone.")
+                            SecureField("Current password", text: $deletionPassword)
+                                .textContentType(.password)
+                            if let deletionError { Text(deletionError).foregroundStyle(.red) }
+                            Button("Delete account permanently", role: .destructive) {
+                                isDeletingAccount = true
+                                deletionError = nil
+                                Task {
+                                    defer { isDeletingAccount = false }
+                                    do {
+                                        try await auth.deleteAccount(password: deletionPassword, modelContext: modelContext)
+                                        deletionPassword = ""
+                                        showsDeleteAccount = false
+                                    } catch { deletionError = auth.mapAPIError(error) }
+                                }
+                            }
+                            .disabled(deletionPassword.isEmpty || isDeletingAccount)
+                            if isDeletingAccount { ProgressView("Deleting account…") }
+                        }
+                    }
+                    .navigationTitle("Delete account")
+                    .toolbar {
+                        ToolbarItem(placement: .cancellationAction) {
+                            Button("Cancel") { showsDeleteAccount = false; deletionPassword = "" }
+                                .disabled(isDeletingAccount)
+                        }
+                    }
+                    .interactiveDismissDisabled(isDeletingAccount)
+                }
+            }
             .navigationTitle(lockerTitle)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -119,6 +158,11 @@ struct LockerHubView: View {
                     .font(.system(size: 30, weight: .semibold))
                     .tracking(-0.8)
                     .foregroundStyle(RallyUIKit.Palette.frost)
+                if !RallyAPIConfig.supportsAccounts {
+                    Text("Saved on this device. Cloud backup and syncing are not available in this version.")
+                        .font(.system(size: 13))
+                        .foregroundStyle(RallyUIKit.Palette.cloud)
+                }
                 Text("Your player. Your current match kit.")
                     .font(.system(size: 13))
                     .foregroundStyle(RallyUIKit.Palette.cloud)
@@ -176,20 +220,29 @@ struct LockerHubView: View {
     private var accountMenu: some View {
         Menu {
             if auth.isGuestMode {
-                Label("Offline on this device", systemImage: "wifi.slash")
+                Label("Saved on this device", systemImage: "internaldrive")
             }
             if let email = auth.userEmail {
                 Label(email, systemImage: "envelope.fill")
             }
-            Button(auth.isGuestMode ? "Leave offline mode…" : "Sign out", role: .destructive) {
-                auth.logout()
+            if auth.isAuthenticated {
+                Button("Delete account…", role: .destructive) {
+                    deletionPassword = ""
+                    deletionError = nil
+                    showsDeleteAccount = true
+                }
+            }
+            if RallyAPIConfig.supportsAccounts {
+                Button(auth.isGuestMode ? "Leave offline mode…" : "Sign out", role: .destructive) {
+                    auth.logout()
+                }
             }
         } label: {
             Image(systemName: auth.isGuestMode ? "icloud.slash" : "person.text.rectangle")
                 .font(.body.weight(.semibold))
                 .foregroundStyle(RallyUIKit.Palette.cyan)
         }
-        .accessibilityLabel("Account")
+        .accessibilityLabel(RallyAPIConfig.supportsAccounts ? "Account" : "On-device storage")
     }
 
     // MARK: - Shop rows (from ShopView)
@@ -592,7 +645,8 @@ struct LockerHubView: View {
         case .bottom: return avatar.equippedBottomID == item.id
         case .shoes:  return avatar.equippedShoesID  == item.id
         case .racket: return avatar.equippedRacketID == item.id
-        case .bag, .accessory: return false
+        case .accessory: return avatar.equippedHeadbandID == item.id
+        case .bag: return false
         }
     }
 

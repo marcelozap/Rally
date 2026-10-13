@@ -16,6 +16,7 @@ struct ShopItemDetailView: View {
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var avatarAppearanceStore: RallyAvatarAppearanceStore
     @State private var tryingOn: Bool = true
+    @State private var equipError: String?
     @State private var stageEmote: AvatarShopEmote = .shopLook
 
     private var vendor: Vendor? { ShopCatalog.vendor(id: item.vendorID) }
@@ -83,7 +84,7 @@ struct ShopItemDetailView: View {
 
                 AvatarShopStageView(
                     config: avatar,
-                    preview: tryingOn && item.category != .bag && item.category != .accessory
+                    preview: tryingOn && item.category != .bag
                         ? (slot: item.category, item: item)
                         : nil,
                     tone: isLocker ? .calm : .shop,
@@ -98,7 +99,7 @@ struct ShopItemDetailView: View {
                     racketSpecsSection(racketProfile)
                 }
 
-                if item.category != .bag, item.category != .accessory {
+                if item.category != .bag {
                     tryOnToggle
                 }
 
@@ -108,7 +109,7 @@ struct ShopItemDetailView: View {
                     relatedItemsRail
                 }
 
-                if !isLocker, let vendor = vendor {
+                if !isLocker, item.vendorID != "vela", let vendor = vendor {
                     vendorLink(vendor)
                 }
             }
@@ -117,12 +118,18 @@ struct ShopItemDetailView: View {
             .padding(.bottom, 48)
         }
         .background(RallyUIKit.screenBackground)
+        .alert("Could not save outfit", isPresented: Binding(get: { equipError != nil }, set: { if !$0 { equipError = nil } })) {
+            Button("OK") { equipError = nil }
+        } message: { Text(equipError ?? "") }
         .navigationTitle(item.name)
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
             if canTryOnItem, tryingOn {
                 avatarAppearanceStore.tryOn(item, from: avatar)
             }
+        }
+        .onDisappear {
+            avatarAppearanceStore.clearTryOn(from: avatar)
         }
     }
 
@@ -278,7 +285,7 @@ struct ShopItemDetailView: View {
     private func productIconFallback(accent: Color) -> some View {
         RallyMerchFallbackGlyph(
             category: item.category,
-            primary: productImageURL == nil ? RallyUIKit.Palette.frost : RallyUIKit.Palette.obsidian,
+            primary: item.color,
             accent: accent
         )
             .frame(width: 140, height: 150)
@@ -445,7 +452,7 @@ struct ShopItemDetailView: View {
         case "newbalance": return "Quiet tournament luxury."
         case "nike": return "Sharper contrast, faster silhouette."
         case "wilson": return "Big-match frame energy."
-        default: return "Curated for the Rally floor."
+        default: return "Original Vela gear for your next match."
         }
     }
 
@@ -544,7 +551,7 @@ struct ShopItemDetailView: View {
 
     private var actionRow: some View {
         VStack(spacing: 10) {
-            if item.category == .bag || item.category == .accessory {
+            if item.category == .bag {
                 EmptyView()
             } else if isEquipped {
                 HStack(spacing: 8) {
@@ -573,7 +580,7 @@ struct ShopItemDetailView: View {
                 .buttonStyle(PrimaryButtonStyle(tint: item.accentColor ?? RallyUIKit.Palette.cyan))
             }
 
-            if !isLocker {
+            if !isLocker && item.vendorID != "vela" {
                 // Route through RallyReferralLinkRouter — S-5 audit gate.
                 // Prefer the referral catalog URL (has {REFERRAL_CODE} injection);
                 // fall back to the ShopItem trackingProductURL.
@@ -1046,12 +1053,13 @@ struct ShopItemDetailView: View {
         case .bottom: return avatar.equippedBottomID == item.id
         case .shoes:  return avatar.equippedShoesID  == item.id
         case .racket: return avatar.equippedRacketID == item.id
-        case .bag, .accessory: return false
+        case .accessory: return avatar.equippedHeadbandID == item.id
+        case .bag: return false
         }
     }
 
     private var canTryOnItem: Bool {
-        item.category != .bag && item.category != .accessory
+        item.category != .bag
     }
 
     private func setTryingOn(_ enabled: Bool) {
@@ -1067,19 +1075,11 @@ struct ShopItemDetailView: View {
     }
 
     private func equip() {
-        switch item.category {
-        case .top:    avatar.equippedTopID    = item.id
-        case .bottom: avatar.equippedBottomID = item.id
-        case .shoes:  avatar.equippedShoesID  = item.id
-        case .racket: avatar.equippedRacketID = item.id
-        case .bag, .accessory: return
-        }
-        try? modelContext.save()
-        // North Star law 4: gear selection writes to the shared appearance
-        // store so Home, Locker, and GameScene update immediately (A-4/S-4).
-        // Without this, the store stays stale until another surface's
-        // onAppear happens to re-sync.
-        avatarAppearanceStore.commitPersisted(from: avatar)
-        RallySyncTriggers.pushAvatarAfterLocalSave(modelContext: modelContext)
+        do {
+            guard try avatar.equip(item, in: modelContext) else { return }
+            tryingOn = false
+            avatarAppearanceStore.commitPersisted(from: avatar)
+            RallySyncTriggers.pushAvatarAfterLocalSave(modelContext: modelContext)
+        } catch { equipError = "Your outfit could not be saved. Please try again." }
     }
 }

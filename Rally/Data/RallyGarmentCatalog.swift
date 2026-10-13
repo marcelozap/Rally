@@ -131,6 +131,11 @@ struct RallyGarmentCatalog: Decodable {
     }
 
     func garmentKind(for id: String?, slot: RallyGearSlot) -> RallyGarmentKind {
+        // Original release gear uses the verified generic tee/shorts meshes.
+        // Historical IDs must not select the old retailer polo/tank cuts.
+        if let id, ShopCatalog.item(id: id)?.brand == "Vela" {
+            return slot == .shorts ? .shorts : .tee
+        }
         if let id, let reference = reference(for: id, slot: slot) { return reference.garmentKind }
         if let id, let kind = Self.legacyKinds[id], kind.slot.gearSlot == slot { return kind }
         return slot == .shorts ? .shorts : .tee

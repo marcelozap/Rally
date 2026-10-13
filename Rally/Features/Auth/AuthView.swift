@@ -25,6 +25,7 @@ struct AuthView: View {
                 VStack(spacing: 22) {
                     header
 
+                    if RallyAPIConfig.supportsAccounts {
                     modeRail
 
                     RallyUIKit.LuxePanel(tint: RallyUIKit.Palette.cyan) {
@@ -71,6 +72,8 @@ struct AuthView: View {
                     }
                     .buttonStyle(PrimaryButtonStyle(tint: RallyUIKit.Palette.cyan))
                     .disabled(busy || !canSubmit)
+
+                    }
 
                     Button {
                         auth.enterGuestMode()
@@ -197,7 +200,7 @@ struct AuthView: View {
                 .font(.system(.title2, design: .rounded).weight(.heavy))
                 .foregroundStyle(.white)
                 .multilineTextAlignment(.center)
-            Text("Fun tennis mini-games, swipe timing, avatar customization, tennis fashion, court travel ideas, match journaling and movement practice. Sign in or continue offline.")
+            Text(RallyAPIConfig.supportsAccounts ? "Fun tennis mini-games, swipe timing, avatar customization, tennis fashion, court travel ideas, match journaling and movement practice. Sign in or continue offline." : "Tennis mini-games, player customization and match journaling. Your progress stays on this device.")
                 .font(.system(.subheadline, design: .rounded).weight(.medium))
                 .foregroundStyle(.white.opacity(0.6))
                 .multilineTextAlignment(.center)
