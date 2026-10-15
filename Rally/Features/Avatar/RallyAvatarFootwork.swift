@@ -8,6 +8,7 @@ struct RallyAvatarFootwork {
         var offset: Float = 0
         var lift: Float = 0
         var isPlanted = true
+        var pitch: Float = 0
     }
 
     struct Pose: Equatable {
@@ -157,6 +158,8 @@ struct RallyAvatarFootwork {
 
         var leftLift: Float = 0
         var rightLift: Float = 0
+        var leftPitch: Float = 0
+        var rightPitch: Float = 0
         if var active = step {
             // Time completes a step after stopping. Actual distance accelerates
             // it during a wide chase, before the planted leg runs out of reach.
@@ -183,13 +186,19 @@ struct RallyAvatarFootwork {
             let phase = active.progress
             let ease = phase * phase * (3 - 2 * phase)
             let placement = active.start + (destination - active.start) * ease
-            let lift = sin(phase * .pi) * active.clearance
+            // Zero vertical velocity at lift-off and touchdown avoids a hard
+            // ankle pop. The ankle rolls only while the shoe is airborne.
+            let arc = sin(phase * .pi)
+            let lift = arc * arc * active.clearance
+            let pitch = -sin(phase * 2 * .pi) * arc * arc * 0.12
             if active.foot == .left {
                 leftAnchor = placement
                 leftLift = phase < 1 ? lift : 0
+                leftPitch = phase < 1 ? pitch : 0
             } else {
                 rightAnchor = placement
                 rightLift = phase < 1 ? lift : 0
+                rightPitch = phase < 1 ? pitch : 0
             }
             step = phase < 1 ? active : nil
         }
@@ -207,8 +216,8 @@ struct RallyAvatarFootwork {
         else { supportX = (leftOffset + rightOffset) * 0.5 }
         let shift = min(0.035 * bodyScale, max(-0.035 * bodyScale, supportX * 0.08 + velocity * 0.009))
         pelvisShift += (shift - pelvisShift) * (1 - exp(-dt * 18))
-        lastPose = Pose(left: FootPose(offset: leftOffset, lift: leftLift, isPlanted: leftPlanted),
-                        right: FootPose(offset: rightOffset, lift: rightLift, isPlanted: rightPlanted),
+        lastPose = Pose(left: FootPose(offset: leftOffset, lift: leftLift, isPlanted: leftPlanted, pitch: leftPitch),
+                        right: FootPose(offset: rightOffset, lift: rightLift, isPlanted: rightPlanted, pitch: rightPitch),
                         pelvisOffset: pelvisShift,
                         pelvisDrop: activity * 0.048 * bodyScale + max(leftLift, rightLift) * 0.10)
     }

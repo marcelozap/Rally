@@ -10,6 +10,30 @@ final class RallyAvatarFootworkTests: XCTestCase {
         gait.sample(time: time, courtPosition: position, leftRestX: leftRest, rightRestX: rightRest)
     }
 
+    func testLandingHasSoftVerticalContactAndNoPlantedAnkleRoll() {
+        var gait = RallyAvatarFootwork()
+        var previous = sample(&gait, time: 0, position: 0)
+        var landed = 0
+        let dt: Float = 1 / 240
+        for frame in 1...720 {
+            let position = min(Float(frame) * dt * 0.8, 1.2)
+            let pose = sample(&gait, time: Double(frame) / 240, position: position)
+            for (old, new) in [(previous.left, pose.left), (previous.right, pose.right)] {
+                if new.isPlanted {
+                    XCTAssertEqual(new.pitch, 0)
+                    if !old.isPlanted {
+                        landed += 1
+                        XCTAssertLessThan(old.lift / dt, 0.20, "Shoe must brake vertically before ground contact")
+                    }
+                }
+                XCTAssertLessThan(abs(new.pitch), 0.13)
+                XCTAssertGreaterThanOrEqual(new.lift, 0)
+            }
+            previous = pose
+        }
+        XCTAssertGreaterThan(landed, 4)
+    }
+
     func testStationaryPlayerDoesNotMarch() {
         var gait = RallyAvatarFootwork()
         for frame in 0...600 {

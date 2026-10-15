@@ -128,20 +128,20 @@ final class AvatarRigTests: XCTestCase {
         XCTAssertEqual(persisted, RallyAvatarAppearance())
     }
 
-    func testSwitchingFromPoloToTeeRemovesItsCollar() {
+    func testLegacyPoloIDUsesVelaTeeWithoutCollar() {
         var look = RallyAvatarAppearance()
         look.top = RallyGearReference(id: "uniqlo.dry.polo.white", colorwayHex: "#117755")
         let rig = RallyAvatarRig(appearance: look, assetLoader: { name in
             if name == "polo" { throw CocoaError(.fileNoSuchFile) }
             return try RallyHumanMesh.load(name)
         })
-        XCTAssertNotNil(rig.root.childNode(withName: "Polo collar", recursively: true))
+        XCTAssertNil(rig.root.childNode(withName: "Polo collar", recursively: true))
         look.top = RallyGearReference(id: "preview.tee", colorwayHex: "#EEEEEE")
         rig.apply(look)
         XCTAssertNil(rig.root.childNode(withName: "Polo collar", recursively: true))
     }
 
-    func testTeeCoverageRestoresExposedSkinWhenSwitchingToATank() throws {
+    func testLegacyTankIDPreservesVelaTeeCoverage() throws {
         for preset in [RallyAthletePreset.maleEuropean, .femaleBlack] {
             var look = RallyAvatarAppearance(athletePreset: preset)
             let rig = RallyAvatarRig(appearance: look)
@@ -150,7 +150,7 @@ final class AvatarRigTests: XCTestCase {
             look.top = RallyGearReference(id: "newbalance.tournament.tank.white", colorwayHex: "#FFFFFF")
             rig.apply(look)
             let tankCount = try XCTUnwrap(body.geometry?.elements.first?.primitiveCount)
-            XCTAssertGreaterThan(tankCount, teeCount, "A tank must restore exposed shoulders instead of retaining the tee mask")
+            XCTAssertEqual(tankCount, teeCount, "Legacy product IDs now use the original Vela tee and its covered-body mask")
             look.top = nil
             rig.apply(look)
             XCTAssertEqual(body.geometry?.elements.first?.primitiveCount, teeCount)
@@ -870,13 +870,13 @@ final class AvatarRigTests: XCTestCase {
             try autoreleasepool {
                 let look = RallyAvatarAppearance(
                     athletePreset: spec.preset,
-                    top: RallyGearReference(id: "uniqlo.dry.polo.white", colorwayHex: "#F4F4F2"),
+                    top: RallyGearReference(id: "nb.tournament.tank.white", colorwayHex: "#F4F4F2"),
                     shorts: RallyGearReference(id: "proof.shorts", colorwayHex: "#15171B")
                 )
                 let rig = RallyAvatarRig(appearance: look, presentation: .studio)
                 XCTAssertNil(rig.assetError)
                 XCTAssertFalse(rig.root.isHidden)
-                _ = try XCTUnwrap(rig.root.childNode(withName: "Polo", recursively: true))
+                _ = try XCTUnwrap(rig.root.childNode(withName: "Performance tee", recursively: true))
                 _ = try XCTUnwrap(rig.root.childNode(withName: "Court shorts", recursively: true))
                 rig.scene.background.contents = UIColor(red: 0.055, green: 0.065, blue: 0.08, alpha: 1)
                 rig.animate(time: 1.0)

@@ -284,8 +284,8 @@ final class RallyAvatarRig {
         let dominantSuffix = leftHanded ? "L" : "R"
         let supportSuffix = leftHanded ? "R" : "L"
         if studio && swingProgress == nil {
-            solveArm(dominantSuffix, target: SIMD3<Float>(-0.26 * hand + weightShift * 0.6, 1.07 + breath * 0.004, 0.30))
-            solveArm(supportSuffix, target: SIMD3<Float>(0.18 * hand + weightShift * 0.6, 1.09 + breath * 0.004, 0.25))
+            solveArm(dominantSuffix, target: SIMD3<Float>(-0.27 * hand + weightShift * 0.6, 0.94 + breath * 0.003, 0.22))
+            solveArm(supportSuffix, target: SIMD3<Float>(0.25 * hand + weightShift * 0.6, 0.92 - breath * 0.002, 0.12))
         } else {
             let dominantTarget = Self.strokeWristTarget(progress: progress, backhand: backhand, leftHanded: leftHanded)
             solveArm(dominantSuffix, target: dominantTarget,
@@ -317,9 +317,11 @@ final class RallyAvatarRig {
                        endName: "foot.\(side)", target: ankle + SIMD3<Float>(spread, footPose.lift, 0) + travel,
                        pole: SIMD3<Float>(studio ? sideSign * 0.26 : spread, 0, 1))
             if let foot = boneByName["foot.\(side)"], let parent = foot.parent {
-                let pivot = twoHandedStroke ? bodyMotion.pelvisYaw * (side == dominantSuffix ? 0.65 : 0.9) : 0
+                let pivot = swingProgress != nil ? bodyMotion.pelvisYaw * (side == dominantSuffix ? 0.65 : 0.9) : 0
+                let toeOut = sideSign * Float(0.07)
                 foot.simdOrientation = simd_inverse(parent.simdWorldOrientation) * root.simdWorldOrientation
-                    * simd_quatf(angle: pivot, axis: SIMD3<Float>(0, 1, 0))
+                    * simd_quatf(angle: pivot + toeOut, axis: SIMD3<Float>(0, 1, 0))
+                    * simd_quatf(angle: footPose.pitch, axis: SIMD3<Float>(1, 0, 0))
             }
         }
     }
@@ -700,7 +702,7 @@ final class RallyAvatarRig {
         if studio {
             camera.position.y = 1.14
             camera.look(at: SCNVector3(0, 0.93, 0))
-            camera.camera?.screenSpaceAmbientOcclusionIntensity = 0.32
+            camera.camera?.screenSpaceAmbientOcclusionIntensity = 0.45
             camera.camera?.screenSpaceAmbientOcclusionRadius = 0.055
             camera.camera?.screenSpaceAmbientOcclusionBias = 0.012
             createStudioGrounding()
@@ -708,9 +710,9 @@ final class RallyAvatarRig {
         scene.rootNode.addChildNode(camera)
         // A broad front fill keeps every skin tone and both eyes readable on a phone.
         // The quieter side key and ivory rim retain athletic shape without a plastic sheen.
-        addLight(.ambient, position: SCNVector3Zero, intensity: 340, color: UIColor(white: 0.96, alpha: 1))
-        addLight(.directional, position: SCNVector3(-2.5, 3.4, 4), intensity: 760, color: UIColor(red: 1, green: 0.96, blue: 0.90, alpha: 1))
-        addLight(.directional, position: SCNVector3(2.4, 1.8, 4), intensity: 510, color: UIColor(red: 0.94, green: 0.97, blue: 1, alpha: 1))
+        addLight(.ambient, position: SCNVector3Zero, intensity: studio ? 260 : 340, color: UIColor(white: 0.96, alpha: 1))
+        addLight(.directional, position: SCNVector3(-2.5, 3.4, 4), intensity: studio ? 850 : 760, color: UIColor(red: 1, green: 0.96, blue: 0.90, alpha: 1))
+        addLight(.directional, position: SCNVector3(2.4, 1.8, 4), intensity: studio ? 420 : 510, color: UIColor(red: 0.94, green: 0.97, blue: 1, alpha: 1))
         addLight(.directional, position: SCNVector3(0.7, 2.8, -3), intensity: 640, color: UIColor(red: 1, green: 0.98, blue: 0.92, alpha: 1))
     }
 
