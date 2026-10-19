@@ -456,6 +456,40 @@ final class AvatarRigTests: XCTestCase {
         }
     }
 
+    func testRasterizeForehandsForVisualReview() throws {
+        let device = try XCTUnwrap(MTLCreateSystemDefaultDevice())
+        for spec in presetAssets {
+            try autoreleasepool {
+                let look = RallyAvatarAppearance(athletePreset: spec.preset,
+                    top: RallyGearReference(id: "proof.tee", colorwayHex: "#EFECE3"))
+                let rig = RallyAvatarRig(appearance: look, presentation: .gameplay)
+                XCTAssertNil(rig.assetError)
+                rig.scene.background.contents = UIColor(red: 0.055, green: 0.075, blue: 0.07, alpha: 1)
+                // Move a separate inspection camera, never the avatar or its
+                // gameplay camera. The complete head/racket/feet stay in view.
+                let inspectionCamera = SCNNode()
+                inspectionCamera.camera = SCNCamera()
+                inspectionCamera.camera?.usesOrthographicProjection = true
+                inspectionCamera.camera?.orthographicScale = 1.18
+                inspectionCamera.camera?.zNear = 0.05
+                inspectionCamera.camera?.zFar = 20
+                rig.scene.rootNode.addChildNode(inspectionCamera)
+                let renderer = SCNRenderer(device: device, options: nil)
+                renderer.scene = rig.scene
+                renderer.autoenablesDefaultLighting = false
+                for leftHanded in [false, true] {
+                    try autoreleasepool {
+                        inspectionCamera.position = SCNVector3(0.90, 1.05, -4)
+                        inspectionCamera.look(at: SCNVector3(0, 1.05, 0))
+                        try captureBackhandMotion(rig: rig, renderer: renderer,
+                                                  inspectionCamera: inspectionCamera,
+                                                  preset: spec.preset, leftHanded: leftHanded, backhand: false)
+                    }
+                }
+            }
+        }
+    }
+
     private struct BackhandProofPose {
         let label: String
         let progress: Float
@@ -465,8 +499,8 @@ final class AvatarRigTests: XCTestCase {
 
     private func captureBackhandMotion(rig: RallyAvatarRig, renderer: SCNRenderer,
                                        inspectionCamera: SCNNode, preset: RallyAthletePreset,
-                                       leftHanded: Bool) throws {
-        let name = "backhand-motion-\(preset.rawValue)-\(leftHanded ? "left" : "right")"
+                                       leftHanded: Bool, backhand: Bool = true) throws {
+        let name = "\(backhand ? "backhand" : "forehand")-motion-\(preset.rawValue)-\(leftHanded ? "left" : "right")"
         let phases = [0: "Ready", 6: "Load", 11: "Forward", 15: "Contact", 19: "Follow", 24: "Finish", 30: "Recover"]
         var poses: [BackhandProofPose] = []
         let animation = NSMutableData()
@@ -481,7 +515,7 @@ final class AvatarRigTests: XCTestCase {
             try autoreleasepool {
                 let p = Float(frame) / 30
                 let time = Double(p) * 0.7
-                rig.animate(time: time, swingProgress: p, backhand: true, leftHanded: leftHanded)
+                rig.animate(time: time, swingProgress: p, backhand: backhand, leftHanded: leftHanded)
                 SCNTransaction.flush()
                 renderer.pointOfView = inspectionCamera
                 let fullBody = renderer.snapshot(atTime: time, with: CGSize(width: 384, height: 480),
@@ -522,7 +556,7 @@ final class AvatarRigTests: XCTestCase {
         let strip = UIGraphicsImageRenderer(size: size, format: format).image { context in
             UIColor(white: 0.045, alpha: 1).setFill()
             context.fill(CGRect(origin: .zero, size: size))
-            drawProofLabel("\(preset.rawValue) · \(leftHanded ? "Left" : "Right") handed backhand · top: full body · bottom: unchanged gameplay camera",
+            drawProofLabel("\(preset.rawValue) · \(leftHanded ? "Left" : "Right") handed \(backhand ? "backhand" : "forehand") · top: full body · bottom: unchanged gameplay camera",
                            at: CGPoint(x: 12, y: 9), size: 18)
             for (index, pose) in poses.enumerated() {
                 let x = CGFloat(index) * width
@@ -546,6 +580,24 @@ final class AvatarRigTests: XCTestCase {
             .font: UIFont.systemFont(ofSize: size, weight: .medium),
             .foregroundColor: UIColor.white
         ])
+    }
+
+    func testForehandRotationAndWeightCarryThroughContactWithoutPausing() {
+        let epsilon: Float = 0.0001
+        for leftHanded in [false, true] {
+            let direction: Float = leftHanded ? -1 : 1
+            let before = RallyAvatarRig.groundstrokeBodyMotion(progress: 0.5 - epsilon, backhand: false, leftHanded: leftHanded)
+            let contact = RallyAvatarRig.groundstrokeBodyMotion(progress: 0.5, backhand: false, leftHanded: leftHanded)
+            let after = RallyAvatarRig.groundstrokeBodyMotion(progress: 0.5 + epsilon, backhand: false, leftHanded: leftHanded)
+            let incoming = (contact.lowerSpineYaw - before.lowerSpineYaw) / epsilon * direction
+            let outgoing = (after.lowerSpineYaw - contact.lowerSpineYaw) / epsilon * direction
+            XCTAssertGreaterThan(incoming, 0.5, "The shoulders must still turn into contact")
+            XCTAssertGreaterThan(outgoing, 0.5, "The shoulders continue turning after impact")
+            XCTAssertEqual(incoming, outgoing, accuracy: 0.02)
+            XCTAssertGreaterThan((after.pelvisOffset.z - before.pelvisOffset.z) / (2 * epsilon), 0.04,
+                                 "Weight keeps moving forward through contact")
+            XCTAssertEqual(contact, RallyAvatarRig.BodyMotion(), "Preserve the established exact contact pose")
+        }
     }
 
     func testAthleticLoadingCoilsBeforeContactAndTransfersWeightAfterIt() {

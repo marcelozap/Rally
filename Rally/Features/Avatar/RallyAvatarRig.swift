@@ -347,19 +347,29 @@ final class RallyAvatarRig {
                               lowerSpineYaw: rotation.y * hand, upperSpineYaw: rotation.z * hand,
                               forwardLean: 0.03 * backhandGripEngagement(progress: p))
         }
-        let direction: Float = (backhand ? -1 : 1) * (leftHanded ? -1 : 1)
+        let hand: Float = leftHanded ? -1 : 1
+        let rotation = sampleStroke(forehandBodyTurns, progress: p, times: forehandBodyTimes)
+        var offset = sampleStroke(forehandBodyOffsets, progress: p, times: forehandBodyTimes)
+        offset.x *= hand
         let load = phaseEnvelope(p, start: 0, peak: 0.22, end: 0.5)
         let finish = phaseEnvelope(p, start: 0.5, peak: 0.76, end: 1)
-        return BodyMotion(
-            pelvisOffset: SIMD3(direction * (-0.025 * load + 0.024 * finish),
-                                -0.020 * load + 0.004 * finish,
-                                -0.012 * load + 0.022 * finish),
-            pelvisYaw: direction * (-0.08 * load + 0.10 * finish),
-            lowerSpineYaw: direction * (-0.40 * load + 0.16 * finish),
-            upperSpineYaw: direction * (-0.38 * load + 0.18 * finish),
-            forwardLean: 0.025 * load + 0.035 * finish
-        )
+        return BodyMotion(pelvisOffset: offset, pelvisYaw: rotation.x * hand,
+                          lowerSpineYaw: rotation.y * hand, upperSpineYaw: rotation.z * hand,
+                          forwardLean: 0.025 * load + 0.035 * finish)
     }
+
+    // A single spline carries weight and rotation through contact. Separate
+    // load/finish envelopes previously stopped the torso at the moment of impact.
+    // The zero contact key preserves the established racket/ball contact pose.
+    private static let forehandBodyTimes: [Float] = [0, 0.22, 0.5, 0.76, 1]
+    private static let forehandBodyTurns: [SIMD3<Float>] = [
+        .zero, SIMD3(-0.08, -0.40, -0.38), .zero,
+        SIMD3(0.10, 0.16, 0.18), .zero
+    ]
+    private static let forehandBodyOffsets: [SIMD3<Float>] = [
+        .zero, SIMD3(-0.025, -0.020, -0.012), .zero,
+        SIMD3(0.024, 0.004, 0.022), .zero
+    ]
 
     private static func smoothUnit(_ value: Float) -> Float {
         let t = min(1, max(0, value))
