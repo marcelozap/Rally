@@ -126,7 +126,7 @@ struct ContentView: View {
                 .foregroundStyle(RallyUIKit.Palette.iconCyan)
 
             VStack(spacing: 8) {
-                Text("Setting up Rally")
+                Text("Setting up Vela Tennis")
                     .font(RallyUIKit.Typography.title(.title2, weight: .bold))
                     .tracking(0.4)
                     .foregroundStyle(.white)

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT="/Users/a14/Desktop/Rally"
+ROOT="/Users/a14/Desktop/_XIV Desktop System/99 Inbox - To Sort/Rally"
 cd "$ROOT"
 
 echo "Rally fast status"

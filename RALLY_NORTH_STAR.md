@@ -1,4 +1,6 @@
-# RALLY NORTH STAR
+# VELA TENNIS NORTH STAR
+
+The public product name is **Vela Tennis** (owner clarification, October 17, 2026). Historical Rally names below and source/bundle identifiers refer to this same app.
 
 ## Initial public release — owner decision, October 13, 2026
 

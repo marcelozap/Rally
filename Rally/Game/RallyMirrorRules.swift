@@ -11,6 +11,13 @@ enum RallyMirrorRules {
         return 0.64
     }
 
+    /// Only the outgoing shot takes its pace from the swipe. The double's
+    /// return retains the phrase's beat, leaving time to prepare the next shot.
+    static func outboundSeconds(forCombo combo: Int, power: Double) -> Double {
+        let strength = power.isFinite ? min(1, max(0, power)) : 0.5
+        return max(0.54, beatSeconds(forCombo: combo) * (1.20 - 0.40 * strength))
+    }
+
     static func remainingSeconds(at elapsed: Double) -> Double {
         guard elapsed.isFinite else { return 0 }
         return min(durationSeconds, max(0, durationSeconds - elapsed))

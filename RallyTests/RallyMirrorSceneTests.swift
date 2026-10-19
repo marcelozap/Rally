@@ -196,8 +196,155 @@ final class RallyMirrorSceneTests: XCTestCase {
         XCTAssertTrue(ballNodes(in: retryScene).isEmpty)
     }
 
-    private func makeScene(autoPlay: Bool) -> (GameScene, SKView) {
-        let size = CGSize(width: 402, height: 874)
+    func testHumanSwipeCanAimEitherSideFromEitherIncomingLaneAndHand() throws {
+        for hand in GamePreferences.DominantHand.allCases {
+            for lane in [Lane.left, .right] {
+                for direction: CGFloat in [-90, 90] {
+                    let (scene, view) = makeScene(autoPlay: false)
+                    defer { removeSceneContents(scene, retaining: view) }
+                    scene.dominantHand = hand
+                    XCTAssertNotNil(view.texture(from: scene))
+                    scene.spawnBall(BeatmapNote(arrivalTime: 1.1, lane: lane, kind: .normal, role: .rally))
+                    for frame in 0...66 { scene.update(100 + Double(frame) / 60) }
+                    let ball = try XCTUnwrap(ballNodes(in: scene).first)
+                    let flick = try makeFlick(lane: lane, horizontal: direction, speed: 700, width: scene.size.width)
+                    scene.previewRallyFlick(flick)
+                    let cue = try XCTUnwrap(scene.childNode(withName: "shot.aim"))
+                    let previewX = cue.position.x
+                    scene.submitRallyFlick(flick)
+                    let shot = try XCTUnwrap(scene.activeExchanges.first)
+                    XCTAssertTrue(shot.ball === ball, "A hit retains the same ball")
+                    XCTAssertEqual(shot.farContactPoint.x, previewX, accuracy: 0.001)
+                    XCTAssertGreaterThan((shot.farContactPoint.x - scene.size.width / 2) * direction, 0,
+                                         "The actual projected shot must follow either diagonal from either stroke side")
+                    XCTAssertEqual(scene.buildResult().totalHits, 1)
+                    XCTAssertEqual(scene.buildResult().misses, 0)
+                }
+            }
+        }
+    }
+
+    func testHumanSwipeSpeedChangesRealFlightButKeepsReturnBeatAndRacketContact() throws {
+        for fps in [30, 60] {
+            for hand in GamePreferences.DominantHand.allCases {
+                var durations: [Double] = []
+                for speed: CGFloat in [200, 1200] {
+                    let (scene, view) = makeScene(autoPlay: false)
+                    defer { removeSceneContents(scene, retaining: view) }
+                    scene.dominantHand = hand
+                    XCTAssertNotNil(view.texture(from: scene), "Initialize the real SK3DNode projection before checking racket contact")
+                    spawnOpeningBall(in: scene)
+                    for frame in 0...Int(1.1 * Double(fps)) { scene.update(100 + Double(frame) / Double(fps)) }
+                    let flick = try makeFlick(lane: .right, horizontal: -90, speed: speed, width: scene.size.width)
+                    scene.submitRallyFlick(flick)
+                    let shot = try XCTUnwrap(scene.activeExchanges.first)
+                    durations.append(shot.farContactTime - shot.startTime)
+                    var time = shot.startTime
+                    while time + 1 / Double(fps) < shot.farContactTime {
+                        time += 1 / Double(fps)
+                        scene.update(time)
+                    }
+                    scene.update(shot.farContactTime)
+                    let racket = scene.opponentRacketPoint()
+                    XCTAssertEqual(racket.x, shot.farContactPoint.x, accuracy: 5,
+                                   "The moving far player must meet a wide shot at its scheduled contact")
+                    XCTAssertEqual(racket.y, shot.farContactPoint.y, accuracy: 5)
+                    time = shot.farContactTime
+                    let handoff = shot.startTime + shot.totalDuration + 0.001
+                    while time + 1 / Double(fps) < handoff {
+                        time += 1 / Double(fps)
+                        scene.update(time)
+                    }
+                    scene.update(handoff)
+                    XCTAssertTrue(scene.activeExchanges.isEmpty)
+                    XCTAssertEqual(ballNodes(in: scene).count, 1)
+                    XCTAssertTrue(shot.ball.parent === scene)
+                    XCTAssertEqual(shot.ball.lane, .left)
+                    XCTAssertEqual(shot.ball.effectiveArrivalTime + 100 - shot.farContactTime,
+                                   RallyMirrorRules.beatSeconds(forCombo: 1), accuracy: 0.001)
+                    XCTAssertEqual(scene.buildResult().totalHits, 1, "Far impact and handoff must not score twice")
+                    XCTAssertEqual(scene.buildResult().misses, 0)
+                }
+                XCTAssertGreaterThan(durations[0] - durations[1], 0.2,
+                                     "A faster human swipe must produce a materially quicker actual shot")
+            }
+        }
+    }
+
+    func testAimCueAndPendingGestureClearOnCancelPauseAndFinish() throws {
+        let (scene, view) = makeScene(autoPlay: false)
+        defer { removeSceneContents(scene, retaining: view) }
+        spawnOpeningBall(in: scene)
+        scene.update(100.8)
+        let flick = try makeFlick(lane: .right, horizontal: -90, speed: 700, width: scene.size.width)
+        scene.previewRallyFlick(flick)
+        XCTAssertNotNil(scene.childNode(withName: "shot.aim"))
+        scene.previewRallyFlick(nil)
+        XCTAssertNil(scene.childNode(withName: "shot.aim"))
+        scene.previewRallyFlick(flick)
+        scene.pauseSession()
+        XCTAssertNil(scene.childNode(withName: "shot.aim"))
+        scene.submitRallyFlick(flick)
+        XCTAssertTrue(scene.activeExchanges.isEmpty)
+        scene.resumeSession()
+        scene.update(110)
+        scene.previewRallyFlick(flick)
+        XCTAssertNotNil(scene.childNode(withName: "shot.aim"))
+        scene.update(130)
+        XCTAssertTrue(scene.sessionIsOver)
+        XCTAssertNil(scene.childNode(withName: "shot.aim"))
+        scene.submitRallyFlick(flick)
+        XCTAssertTrue(scene.activeExchanges.isEmpty)
+    }
+
+    func testWideTabletRallyReachesAlternatingFastShotsThroughTopTempoTier() throws {
+        for hand in GamePreferences.DominantHand.allCases {
+            let (scene, view) = makeScene(autoPlay: false, size: CGSize(width: 820, height: 1180))
+            defer { removeSceneContents(scene, retaining: view) }
+            scene.dominantHand = hand
+            XCTAssertNotNil(view.texture(from: scene))
+            spawnOpeningBall(in: scene)
+            var now = 100.0
+            func advance(to deadline: Double) {
+                while now + 1.0 / 30 < deadline {
+                    now += 1.0 / 30
+                    scene.update(now)
+                }
+                now = deadline
+                scene.update(now)
+            }
+            for index in 0..<10 {
+                let incoming = try XCTUnwrap(ballNodes(in: scene).first { $0.ownershipPhase.isHittable })
+                advance(to: 100 + incoming.effectiveArrivalTime)
+                let flick = try makeFlick(lane: incoming.lane, horizontal: index.isMultiple(of: 2) ? -160 : 160,
+                                         speed: 1200, width: scene.size.width)
+                scene.submitRallyFlick(flick)
+                let shot = try XCTUnwrap(scene.activeExchanges.first)
+                advance(to: shot.farContactTime)
+                let racket = scene.opponentRacketPoint()
+                XCTAssertEqual(racket.x, shot.farContactPoint.x, accuracy: 5,
+                               "Tablet shot \(index + 1) must be reachable at its actual contact time")
+                XCTAssertEqual(racket.y, shot.farContactPoint.y, accuracy: 5)
+                advance(to: shot.startTime + shot.totalDuration + 0.001)
+                XCTAssertEqual(ballNodes(in: scene).count, 1)
+                XCTAssertEqual(scene.buildResult().totalHits, index + 1)
+                XCTAssertEqual(scene.buildResult().misses, 0)
+            }
+        }
+    }
+
+    private func makeFlick(lane: Lane, horizontal: CGFloat, speed: CGFloat,
+                           width: CGFloat) throws -> RallyFlickInput.Result {
+        let scale = width / 390
+        return try XCTUnwrap(RallyFlickInput.evaluate(
+            start: CGPoint(x: 195 * scale, y: 100 * scale),
+            end: CGPoint(x: (195 + horizontal) * scale, y: 180 * scale),
+            velocity: CGVector(dx: 0, dy: speed * scale), duration: 1,
+            viewportWidth: width, incomingLane: lane
+        ))
+    }
+
+    private func makeScene(autoPlay: Bool, size: CGSize = CGSize(width: 402, height: 874)) -> (GameScene, SKView) {
         let view = SKView(frame: CGRect(origin: .zero, size: size))
         let scene = GameScene(size: size)
         scene.sessionDurationSeconds = RallyMirrorRules.durationSeconds

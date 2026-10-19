@@ -267,6 +267,105 @@ final class RallyFlickInputTests: XCTestCase {
         XCTAssertNil(flick(width: -390))
     }
 
+    func testMirrorAimCanReachEitherCourtSideFromEitherIncomingLane() throws {
+        for width: CGFloat in [320, 390, 820] {
+            let scale = width / 390
+            for incomingLane in [Lane.left, .right] {
+                for startX: CGFloat in [90, 300] {
+                    var targets: [CGFloat] = []
+                    for horizontal: CGFloat in [-70, 0, 70] {
+                        let gesture = try XCTUnwrap(flick(
+                            start: CGPoint(x: startX * scale, y: 100 * scale),
+                            end: CGPoint(x: (startX + horizontal) * scale, y: 180 * scale),
+                            velocity: CGVector(dx: 0, dy: 500 * scale), width: width,
+                            incomingLane: incomingLane
+                        ))
+                        XCTAssertEqual(gesture.lane, incomingLane,
+                                       "The incoming lane chooses the stroke, independently of outgoing aim")
+                        targets.append(RallyFlickInput.mirrorTargetX(
+                            direction: gesture.direction, viewportWidth: width
+                        ))
+                    }
+                    XCTAssertLessThan(targets[0], width * 0.4,
+                                      "A leftward swipe must cross court even on a right-side return")
+                    XCTAssertEqual(targets[1], width * 0.5, accuracy: 0.0001)
+                    XCTAssertGreaterThan(targets[2], width * 0.6,
+                                         "A rightward swipe must cross court even on a left-side return")
+                    XCTAssertEqual(targets[0] + targets[2], width, accuracy: 0.0001)
+                }
+            }
+        }
+    }
+
+    func testMirrorAimIsMirroredAndPreservesRelativePlacementAcrossScreenSizes() {
+        for direction: CGFloat in [-1, -0.6, 0, 0.6, 1] {
+            let reference = RallyFlickInput.mirrorTargetX(direction: direction, viewportWidth: 390) / 390
+            for width: CGFloat in [320, 390, 820] {
+                let target = RallyFlickInput.mirrorTargetX(direction: direction, viewportWidth: width)
+                let mirrored = RallyFlickInput.mirrorTargetX(direction: -direction, viewportWidth: width)
+                XCTAssertEqual(target / width, reference, accuracy: 0.0001)
+                XCTAssertEqual(target + mirrored, width, accuracy: 0.0001)
+                XCTAssertGreaterThanOrEqual(target, width * 0.28 - 0.0001)
+                XCTAssertLessThanOrEqual(target, width * 0.72 + 0.0001)
+            }
+        }
+    }
+
+    func testMirrorAimClampsOvershootAndHandlesInvalidGeometry() {
+        for width: CGFloat in [320, 390, 820] {
+            for direction: CGFloat in [-100, -2] {
+                XCTAssertEqual(RallyFlickInput.mirrorTargetX(direction: direction, viewportWidth: width),
+                               RallyFlickInput.mirrorTargetX(direction: -1, viewportWidth: width))
+            }
+            for direction: CGFloat in [2, 100] {
+                XCTAssertEqual(RallyFlickInput.mirrorTargetX(direction: direction, viewportWidth: width),
+                               RallyFlickInput.mirrorTargetX(direction: 1, viewportWidth: width))
+            }
+            for invalid: CGFloat in [.nan, .infinity, -.infinity] {
+                XCTAssertEqual(RallyFlickInput.mirrorTargetX(direction: invalid, viewportWidth: width),
+                               width * 0.5, accuracy: 0.0001)
+            }
+        }
+        for width: CGFloat in [0, -390, .nan, .infinity, -.infinity] {
+            XCTAssertEqual(RallyFlickInput.mirrorTargetX(direction: 0.7, viewportWidth: width), 0)
+        }
+    }
+
+    func testShotPowerRisesWithSwipeSpeedAndSaturatesAtFullPower() {
+        let speeds: [CGFloat] = [140, 300, 500, 670, 900, 1_200]
+        let powers = speeds.map { RallyFlickInput.power(forSpeed: $0) }
+        XCTAssertEqual(powers.first, 0)
+        XCTAssertEqual(powers.last, 1)
+        for index in 1..<powers.count {
+            XCTAssertGreaterThan(powers[index], powers[index - 1])
+            XCTAssertGreaterThanOrEqual(powers[index], 0)
+            XCTAssertLessThanOrEqual(powers[index], 1)
+        }
+        for speed: CGFloat in [1_201, 5_000, .greatestFiniteMagnitude] {
+            XCTAssertEqual(RallyFlickInput.power(forSpeed: speed), 1)
+        }
+        for speed: CGFloat in [-1_000, -1, 0, 139] {
+            XCTAssertEqual(RallyFlickInput.power(forSpeed: speed), 0)
+        }
+        for invalid: CGFloat in [.nan, .infinity, -.infinity] {
+            XCTAssertEqual(RallyFlickInput.power(forSpeed: invalid), 0)
+        }
+    }
+
+    func testEquivalentFlicksHaveTheSamePowerAcrossScreenSizes() throws {
+        let reference = try XCTUnwrap(flick())
+        for width: CGFloat in [320, 390, 820] {
+            let scale = width / 390
+            let gesture = try XCTUnwrap(flick(
+                start: CGPoint(x: 90 * scale, y: 100 * scale),
+                end: CGPoint(x: 90 * scale, y: 180 * scale),
+                velocity: CGVector(dx: 0, dy: 500 * scale), width: width
+            ))
+            XCTAssertEqual(RallyFlickInput.power(forSpeed: gesture.speed),
+                           RallyFlickInput.power(forSpeed: reference.speed), accuracy: 0.0001)
+        }
+    }
+
     func testTimingFeedbackHasInclusiveSymmetricPerfectBoundaries() {
         let window = 0.033
         XCTAssertEqual(RallyFlickInput.timingFeedback(signedDelta: -0.0331, perfectWindow: window), .early)

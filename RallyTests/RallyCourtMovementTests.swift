@@ -86,6 +86,37 @@ final class RallyCourtMovementTests: XCTestCase {
                        accuracy: 0.0001, "The final small step can land exactly without overshooting")
     }
 
+    func testFarPlayerCanCoverWideCourtDuringAFastShotWithoutTeleporting() {
+        for fps in [30, 60] {
+            let dt = 1 / Double(fps)
+            let availableTime = 0.51
+            let scale: CGFloat = 71.4
+            for direction: CGFloat in [-1, 1] {
+                var position: CGFloat = 195
+                let target = position + 96 * direction
+                var elapsed = 0.0
+                while elapsed < availableTime {
+                    let step = min(dt, availableTime - elapsed)
+                    let next = RallyCourtMovement.arrive(
+                        from: position, toward: target, deltaTime: step,
+                        secondsRemaining: availableTime - elapsed, pointsPerMeter: scale,
+                        maximumMetersPerSecond: 3.6
+                    )
+                    XCTAssertLessThanOrEqual(abs(next - position), scale * 3.6 * CGFloat(step) + 0.001)
+                    XCTAssertLessThanOrEqual(abs(target - next), abs(target - position))
+                    position = next
+                    elapsed += step
+                }
+                XCTAssertEqual(position, target, accuracy: 0.01)
+            }
+        }
+        for invalid: CGFloat in [0, -1, .nan, .infinity] {
+            XCTAssertEqual(RallyCourtMovement.arrive(from: 195, toward: 290, deltaTime: 0.03,
+                                                     secondsRemaining: 0.51, pointsPerMeter: 71.4,
+                                                     maximumMetersPerSecond: invalid), 195)
+        }
+    }
+
     func testPausedOrInvalidArrivalCannotTeleport() {
         for dt: TimeInterval in [0, -1, .infinity, .nan] {
             XCTAssertEqual(RallyCourtMovement.arrive(from: 220, toward: 270, deltaTime: dt,

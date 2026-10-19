@@ -54,7 +54,7 @@ struct RallyPlayHubView: View {
                                 Text("Make your next\nshot count.")
                                     .font(RallyUIKit.Typography.display(38, weight: .medium))
                                     .fixedSize(horizontal: false, vertical: true)
-                                Text("A quick rally or a little focused practice.")
+                                Text("Swipe up to hit. Angle left or right to aim; swipe faster for pace.")
                                     .font(.subheadline)
                                     .foregroundStyle(RallyUIKit.Palette.cloud)
                             }

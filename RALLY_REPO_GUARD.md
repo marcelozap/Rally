@@ -1,5 +1,9 @@
 # RALLY REPO GUARD
 
+## Current Vela Tennis checkout — October 18, 2026
+
+Vela Tennis is the current product name. This is the owner-approved relocated checkout, recorded in the September–October work locks and verified against `https://github.com/marcelozap/Rally.git`. Use the path below; the former Desktop/Rally folder no longer exists. `rally/dev` remains the shared development branch; `codex/vela-*` branches are valid next-release work. Verify the remote, current branch and dirty files before edits. Internal Rally project and bundle identifiers remain stable.
+
 This file prevents agents from working in an old or wrong Rally folder.
 
 ## Canonical Repo
@@ -7,13 +11,13 @@ This file prevents agents from working in an old or wrong Rally folder.
 The only valid Rally project folder is:
 
 ```bash
-/Users/a14/Desktop/Rally
+/Users/a14/Desktop/_XIV Desktop System/99 Inbox - To Sort/Rally
 ```
 
 The canonical Xcode project is:
 
 ```bash
-/Users/a14/Desktop/Rally/Rally.xcodeproj
+/Users/a14/Desktop/_XIV Desktop System/99 Inbox - To Sort/Rally/Rally.xcodeproj
 ```
 
 The canonical branch is:
@@ -39,14 +43,14 @@ Do not work from any of these paths:
 /Users/a14/mac-trade-dashboard/Rally_STALE_DO_NOT_USE.xcodeproj
 ```
 
-If a tool opens in any folder except `/Users/a14/Desktop/Rally`, immediately switch to the canonical repo before reading, editing, building, or committing.
+If a tool opens in any folder except `/Users/a14/Desktop/_XIV Desktop System/99 Inbox - To Sort/Rally`, immediately switch to the canonical repo before reading, editing, building, or committing.
 
 ## Mandatory First Commands
 
 Every agent session must run these commands before doing any work:
 
 ```bash
-cd /Users/a14/Desktop/Rally || exit 1
+cd "/Users/a14/Desktop/_XIV Desktop System/99 Inbox - To Sort/Rally" || exit 1
 pwd
 git rev-parse --show-toplevel
 git branch --show-current
@@ -57,15 +61,15 @@ git status --short
 Expected output:
 
 ```bash
-/Users/a14/Desktop/Rally
-/Users/a14/Desktop/Rally
+/Users/a14/Desktop/_XIV Desktop System/99 Inbox - To Sort/Rally
+/Users/a14/Desktop/_XIV Desktop System/99 Inbox - To Sort/Rally
 rally/dev
 ```
 
-If `pwd` or `git rev-parse --show-toplevel` is anything other than `/Users/a14/Desktop/Rally`, stop and report:
+If `pwd` or `git rev-parse --show-toplevel` is anything other than `/Users/a14/Desktop/_XIV Desktop System/99 Inbox - To Sort/Rally`, stop and report:
 
 ```text
-STOP: wrong Rally folder. I am not editing because this is not /Users/a14/Desktop/Rally.
+STOP: wrong Rally folder. I am not editing because this is not /Users/a14/Desktop/_XIV Desktop System/99 Inbox - To Sort/Rally.
 ```
 
 ## Claude Folder Picker
@@ -73,7 +77,7 @@ STOP: wrong Rally folder. I am not editing because this is not /Users/a14/Deskto
 When Claude asks to "Use an existing folder", choose:
 
 ```text
-Macintosh HD -> Users -> a14 -> Desktop -> Rally
+Macintosh HD -> Users -> a14 -> Desktop -> _XIV Desktop System -> 99 Inbox - To Sort -> Rally
 ```
 
 Do not choose:
@@ -81,7 +85,7 @@ Do not choose:
 ```text
 Macintosh HD -> Users -> a14
 Macintosh HD -> Users -> a14 -> Documents -> New project
-Any folder named Rally outside Desktop/Rally
+Any Rally copy other than the verified checkout above
 ```
 
 ## Current Standing Request
@@ -90,7 +94,7 @@ The user's standing request is:
 
 ```text
 Never open, edit, build, commit, or reason from an old Rally copy again.
-Before any Rally work, prove the path is /Users/a14/Desktop/Rally.
+Before any Rally work, prove the path is /Users/a14/Desktop/_XIV Desktop System/99 Inbox - To Sort/Rally.
 If the path is wrong, stop instead of guessing.
 ```
 
@@ -128,7 +132,7 @@ unless the user explicitly asks for them.
 For code changes, build from the canonical repo only:
 
 ```bash
-cd /Users/a14/Desktop/Rally
+cd "/Users/a14/Desktop/_XIV Desktop System/99 Inbox - To Sort/Rally"
 xcodebuild -project Rally.xcodeproj -scheme Rally -configuration Debug -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build
 ```
 

@@ -1,5 +1,9 @@
 # Rally Agent Boot
 
+## Current Vela Tennis checkout — October 18, 2026
+
+Vela Tennis is the current product name. This is the owner-approved relocated checkout, recorded in the September–October work locks and verified against `https://github.com/marcelozap/Rally.git`. Use the path below; the former Desktop/Rally folder no longer exists. `rally/dev` remains the shared development branch; `codex/vela-*` branches are valid next-release work. Verify the remote, current branch and dirty files before edits. Internal Rally project and bundle identifiers remain stable.
+
 Before doing any work in this repository, read the agent system in `agents/`.
 
 ## Mandatory First Action
@@ -10,7 +14,7 @@ Before doing any work in this repository, read the agent system in `agents/`.
 4. Read `agents/credit-saving.md`.
 5. Run the handshake commands from `agents/session-handshake.md`.
 
-If the repo path is not `/Users/a14/Desktop/Rally`, stop. Do not inspect, edit, build, or commit from any other Rally copy.
+If the repo path is not `/Users/a14/Desktop/_XIV Desktop System/99 Inbox - To Sort/Rally`, stop. Do not inspect, edit, build, or commit from any other Rally copy.
 
 ## Canonical Direction
 
@@ -46,7 +50,7 @@ If anything conflicts, priority order is:
 
 ## Canonical Repo
 
-- Path: `/Users/a14/Desktop/Rally`
+- Path: `/Users/a14/Desktop/_XIV Desktop System/99 Inbox - To Sort/Rally`
 - Remote: `https://github.com/marcelozap/Rally.git`
 - Branch: `rally/dev`
 
@@ -55,6 +59,6 @@ If anything conflicts, priority order is:
 Every code task ends with a passing Rally build unless explicitly documentation-only.
 
 ```bash
-cd /Users/a14/Desktop/Rally
+cd "/Users/a14/Desktop/_XIV Desktop System/99 Inbox - To Sort/Rally"
 xcodebuild -project Rally.xcodeproj -scheme Rally -configuration Debug -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build
 ```

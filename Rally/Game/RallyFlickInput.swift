@@ -114,4 +114,18 @@ struct RallyFlickInput {
         let aimed = neutral + min(1, max(-1, direction)) * 0.12
         return min(0.80, max(0.20, aimed)) * viewportWidth
     }
+
+    /// Placement follows the swipe, independently of the incoming stroke side.
+    /// A straight swipe aims through the middle; either diagonal can cross court.
+    static func mirrorTargetX(direction: CGFloat, viewportWidth: CGFloat) -> CGFloat {
+        guard viewportWidth.isFinite, viewportWidth > 0 else { return 0 }
+        let aim = direction.isFinite ? min(1, max(-1, direction)) : 0
+        return viewportWidth * (0.5 + aim * 0.22)
+    }
+
+    /// Speed has already been normalized to a 390-point viewport by evaluate.
+    static func power(forSpeed speed: CGFloat) -> CGFloat {
+        guard speed.isFinite else { return 0 }
+        return min(1, max(0, (speed - minimumCommitmentSpeed) / 1060))
+    }
 }

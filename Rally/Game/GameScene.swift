@@ -87,6 +87,10 @@ final class GameScene: SKScene {
         didSet { applyMatchPaceIfNeeded() }
     }
     var autoPlayEnabled = false
+    #if DEBUG
+    /// Exercises measured directional swipes in the native simulator capture.
+    private let directionalSwipeDemoEnabled = ProcessInfo.processInfo.arguments.contains("-VelaSwipeDemo")
+    #endif
     private var isProofAutoPlayEnabled: Bool {
         autoPlayEnabled || ProcessInfo.processInfo.arguments.contains("-RallyAutoPlay")
     }
@@ -127,7 +131,7 @@ final class GameScene: SKScene {
     private var pressureHolds: Int = 0
     private var pressureExchangeStreak: Int = 0
     private var activeBalls: [BallNode] = []
-    private var activeExchanges: [RallyContinuousBallExchange] = []
+    private(set) var activeExchanges: [RallyContinuousBallExchange] = []
     private var startTime: TimeInterval = 0
     private var currentTimeSnapshot: TimeInterval = 0
     private var currentTrackTime: TimeInterval = 0
@@ -213,6 +217,8 @@ final class GameScene: SKScene {
     private var opponentAvatarRig: RallyAvatarRig?
     private var opponentAvatarNode: SK3DNode?
     private var opponentHitTime: TimeInterval?
+    private var opponentContactOffsets: [Lane: CGPoint] = [:]
+    private var shotAimNode: SKNode?
     private var mirrorTargetX: CGFloat?
     private var mirrorBackhand = false
     private var mirrorReturnArrivalTime: TimeInterval?
@@ -360,6 +366,9 @@ final class GameScene: SKScene {
         avatarAppearance = appearance
         playerAvatarRig?.apply(appearance)
         opponentAvatarRig?.apply(appearance)
+        refreshPlayerContactOffsets()
+        refreshOpponentContactOffsets()
+        clearShotAim()
         updateCourtAvatar(trackTime: currentTrackTime)
     }
 
@@ -622,6 +631,7 @@ final class GameScene: SKScene {
         isPaused = true
         swingOriginScene = nil; swingCurrentScene = nil; swingStartedAt = nil
         committedFlick = nil
+        clearShotAim()
         fadeSwingTrail()
     }
 
@@ -653,6 +663,8 @@ final class GameScene: SKScene {
         cameraNode?.position = cameraHomePosition
         background?.resize(to: size, strikeYRatio: Tunables.strikeLineYRatio)
         opponentRoot?.position = CGPoint(x: size.width / 2, y: mirrorFloorY)
+        clearShotAim()
+        refreshOpponentContactOffsets()
 
         let strikeY = size.height * Tunables.strikeLineYRatio
         let wallY = size.height * Tunables.wallSurfaceYRatio
@@ -1184,6 +1196,7 @@ final class GameScene: SKScene {
         root.addChild(shadow)
         opponentAvatarNode = makeAvatarNode(rig: rig, viewport: CGSize(width: 160, height: 150), parent: root)
         rig.animate(time: 0, leftHanded: dominantHand == .left)
+        refreshOpponentContactOffsets()
     }
 
     private func animateOpponentHit() {
@@ -1196,7 +1209,7 @@ final class GameScene: SKScene {
         alignAvatarToCourt(rig: rig, node: node)
     }
 
-    private func opponentRacketPoint() -> CGPoint {
+    func opponentRacketPoint() -> CGPoint {
         guard let rig = opponentAvatarRig, let node = opponentAvatarNode,
               let point = avatarPoint(rig.racketHeadWorldPosition, rig: rig, node: node) else {
             return CGPoint(x: size.width / 2, y: mirrorFloorY + 100)
@@ -1204,26 +1217,43 @@ final class GameScene: SKScene {
         return node.convert(point, to: self)
     }
 
-    /// Plan the ball and the double from the same projected racket pose.
-    /// The target is fixed for this exchange; it never chases a moving body.
-    private func prepareMirrorContact(targetX: CGFloat) -> CGPoint {
-        guard let rig = opponentAvatarRig, let node = opponentAvatarNode, let opponentRoot else {
-            return CGPoint(x: targetX, y: mirrorFloorY + 100)
-        }
-        mirrorBackhand = dominantHand == .right ? targetX > size.width / 2 : targetX < size.width / 2
+    /// Cache both racket contact poses so a live aim cue can use the same
+    /// projection as the flight without disturbing the double's animation.
+    private func refreshOpponentContactOffsets() {
+        guard let rig = opponentAvatarRig, let node = opponentAvatarNode, let opponentRoot else { return }
+        opponentContactOffsets.removeAll()
         let scale = avatarPointsPerMeter(rig: rig, node: node)
-        rig.animate(time: currentTrackTime, swingProgress: 0.5, backhand: mirrorBackhand,
-                    leftHanded: dominantHand == .left,
-                    courtPosition: Float((opponentRoot.position.x - size.width / 2) / scale))
+        let courtPosition = Float((opponentRoot.position.x - size.width / 2) / scale)
+        for lane in [Lane.left, .right] {
+            let backhand = dominantHand == .right ? lane == .right : lane == .left
+            rig.animate(time: currentTrackTime, swingProgress: 0.5, backhand: backhand,
+                        leftHanded: dominantHand == .left, courtPosition: courtPosition)
+            alignAvatarToCourt(rig: rig, node: node)
+            guard let point = avatarPoint(rig.racketHeadWorldPosition, rig: rig, node: node) else { continue }
+            let projected = node.convert(point, to: self)
+            opponentContactOffsets[lane] = CGPoint(x: projected.x - opponentRoot.position.x,
+                                                   y: projected.y - opponentRoot.position.y)
+        }
+        rig.animate(time: currentTrackTime, swingProgress: opponentStrokeProgress, backhand: mirrorBackhand,
+                    leftHanded: dominantHand == .left, courtPosition: courtPosition)
         alignAvatarToCourt(rig: rig, node: node)
-        let projected = opponentRacketPoint()
-        let reach = projected.x - opponentRoot.position.x
-        let desired = min(size.width * 0.62, max(size.width * 0.38, targetX - reach))
-        mirrorTargetX = desired
-        rig.animate(time: currentTrackTime, backhand: mirrorBackhand,
-                    leftHanded: dominantHand == .left,
-                    courtPosition: Float((opponentRoot.position.x - size.width / 2) / scale))
-        return CGPoint(x: desired + reach, y: projected.y)
+    }
+
+    private func mirrorContactPlan(targetX: CGFloat) -> (point: CGPoint, stanceX: CGFloat, backhand: Bool) {
+        let lane: Lane = targetX < size.width / 2 ? .left : .right
+        let offset = opponentContactOffsets[lane] ?? CGPoint(x: 0, y: 100)
+        let stance = min(size.width * 0.62, max(size.width * 0.38, targetX - offset.x))
+        return (CGPoint(x: stance + offset.x, y: mirrorFloorY + offset.y), stance,
+                dominantHand == .right ? lane == .right : lane == .left)
+    }
+
+    /// The cue, ball and double all share this fixed projected contact target.
+    private func prepareMirrorContact(targetX: CGFloat) -> CGPoint {
+        if opponentContactOffsets.count < 2 { refreshOpponentContactOffsets() }
+        let plan = mirrorContactPlan(targetX: targetX)
+        mirrorTargetX = plan.stanceX
+        mirrorBackhand = plan.backhand
+        return plan.point
     }
 
     private func setupCourtAvatar() {
@@ -1699,6 +1729,26 @@ final class GameScene: SKScene {
         guard isProofAutoPlayEnabled, sessionMode == .wallRally, !sessionEnded, !isCountingDown else { return }
         guard let ball = primaryWallBall() else { return }
         guard ball.effectiveSpawnTime != lastAutoPlaySpawnTime else { return }
+        #if DEBUG
+        if directionalSwipeDemoEnabled {
+            let scale = size.width / 390
+            let horizontal: CGFloat = combo.isMultiple(of: 2) ? -100 : 100
+            let speed: CGFloat = combo.isMultiple(of: 3) ? 250 : 1200
+            guard let flick = RallyFlickInput.evaluate(
+                start: CGPoint(x: 195 * scale, y: 100 * scale),
+                end: CGPoint(x: (195 + horizontal) * scale, y: 180 * scale),
+                velocity: CGVector(dx: 0, dy: speed * scale), duration: 1,
+                viewportWidth: size.width, incomingLane: ball.lane
+            ) else { return }
+            if currentTrackTime < ball.effectiveArrivalTime {
+                if currentTrackTime >= ball.effectiveArrivalTime - 0.22 { previewRallyFlick(flick) }
+                return
+            }
+            lastAutoPlaySpawnTime = ball.effectiveSpawnTime
+            submitRallyFlick(flick)
+            return
+        }
+        #endif
         let triggerTime = ball.effectiveArrivalTime + Tunables.wallAutoPlayContactDelaySeconds
         guard currentTrackTime >= triggerTime else { return }
         lastAutoPlaySpawnTime = ball.effectiveSpawnTime
@@ -1984,7 +2034,8 @@ final class GameScene: SKScene {
                     opponentRoot.position.x = RallyCourtMovement.arrive(
                         from: opponentRoot.position.x, toward: mirrorTargetX ?? size.width / 2,
                         deltaTime: deltaTime, secondsRemaining: 0.15 - elapsed,
-                        pointsPerMeter: scale
+                        pointsPerMeter: scale,
+                        maximumMetersPerSecond: 3.6 * max(1, size.width / 402)
                     )
                 }
             } else {
@@ -2962,20 +3013,19 @@ final class GameScene: SKScene {
         }
     }
 
-    // MARK: - Input — Pokemon-Go-style pan gesture
+    // MARK: - Input — directional tennis swipe
 
     /// Single-finger swing recognizer.
     ///
     /// - `.began`: capture the touch origin in scene coords, instantiate the
     ///   swing trail node.
     /// - `.changed`: redraw the trail from origin → current finger position.
-    /// - `.ended`: compute the release vector + velocity. In wall rally,
-    ///   the lane is the side where the swipe happens, while upward release
-    ///   supplies the stroke commitment. The player should not have to drag
-    ///   across the center axis to hit a down-the-line ball.
+    /// - `.ended`: the incoming ball selects the stroke side; the swipe
+    ///   direction selects placement and its speed sets outgoing shot pace.
     @objc private func handlePan(_ pan: UIPanGestureRecognizer) {
         guard let view = self.view else { return }
-        guard !isDying, !isCountingDown, !sessionEnded else {
+        guard !isDying, !isCountingDown, !sessionEnded, !sessionSuspended else {
+            clearShotAim()
             swingOriginScene = nil
             swingCurrentScene = nil
             swingStartedAt = nil
@@ -2995,11 +3045,25 @@ final class GameScene: SKScene {
             swingVisualReach = hypot(scenePoint.x - origin.x, scenePoint.y - origin.y)
             installSwingTrail(at: origin)
             updateSwingTrail(from: origin, to: scenePoint)
+            let velocity = pan.velocity(in: view)
+            previewRallyFlick(RallyFlickInput.evaluate(
+                start: origin, end: scenePoint,
+                velocity: CGVector(dx: velocity.x, dy: -velocity.y),
+                duration: max(0.001, now - (swingStartedAt ?? now)), viewportWidth: size.width,
+                incomingLane: primaryWallBall()?.lane
+            ))
         case .changed:
             guard let origin = swingOriginScene else { return }
             swingCurrentScene = scenePoint
             swingVisualReach = hypot(scenePoint.x - origin.x, scenePoint.y - origin.y)
             updateSwingTrail(from: origin, to: scenePoint)
+            let velocity = pan.velocity(in: view)
+            previewRallyFlick(RallyFlickInput.evaluate(
+                start: origin, end: scenePoint,
+                velocity: CGVector(dx: velocity.x, dy: -velocity.y),
+                duration: max(0.001, now - (swingStartedAt ?? now)), viewportWidth: size.width,
+                incomingLane: primaryWallBall()?.lane
+            ))
         case .ended:
             defer {
                 swingOriginScene = nil
@@ -3007,6 +3071,7 @@ final class GameScene: SKScene {
                 swingStartedAt = nil
                 committedFlick = nil
                 fadeSwingTrail()
+                if activeExchanges.isEmpty { clearShotAim() }
             }
             guard let origin = swingOriginScene, let began = swingStartedAt else { return }
             let velocity = pan.velocity(in: view)
@@ -3049,8 +3114,13 @@ final class GameScene: SKScene {
                 attemptServe(at: now)
                 return
             }
-            resolveSwing(lane: lane, swingSpeed: speed, swingIntent: intent, strokeSide: strokeSide(for: lane))
+            if let flick = committedFlick {
+                submitRallyFlick(flick)
+            } else {
+                resolveSwing(lane: lane, swingSpeed: speed, swingIntent: intent, strokeSide: strokeSide(for: lane))
+            }
         case .cancelled, .failed:
+            clearShotAim()
             swingOriginScene = nil
             swingCurrentScene = nil
             swingStartedAt = nil
@@ -3059,6 +3129,65 @@ final class GameScene: SKScene {
         default:
             break
         }
+    }
+
+    /// A validated human swipe uses the same resolution path in live play and
+    /// deterministic scene checks. Timing still comes from the rally clock.
+    func submitRallyFlick(_ flick: RallyFlickInput.Result) {
+        guard sessionMode == .wallRally, serveCycle.phase == .rally,
+              !sessionSuspended, !sessionEnded, !isDying, !isCountingDown else { return }
+        committedFlick = flick
+        defer { committedFlick = nil }
+        swingVisualLane = flick.lane
+        swingVisualIntent = flick.stroke == .topspin ? .topspin : .drive
+        playerSwingStartProgress = playerPreparationLane == flick.lane ? playerPreparationProgress : 0
+        playerContactFollowThrough = false
+        resolveSwing(lane: flick.lane, swingSpeed: flick.speed, swingIntent: swingVisualIntent,
+                     strokeSide: strokeSide(for: flick.lane))
+    }
+
+    func previewRallyFlick(_ flick: RallyFlickInput.Result?) {
+        guard let flick, sessionMode == .wallRally, !practiceMode.isTargetMode,
+              serveCycle.phase == .rally, primaryWallBall() != nil,
+              !sessionSuspended, !sessionEnded, !isCountingDown else {
+            clearShotAim()
+            return
+        }
+        if opponentContactOffsets.count < 2 { refreshOpponentContactOffsets() }
+        let targetX = RallyFlickInput.mirrorTargetX(direction: flick.direction, viewportWidth: size.width)
+        showShotAim(at: mirrorContactPlan(targetX: targetX).point,
+                    power: RallyFlickInput.power(forSpeed: flick.speed))
+    }
+
+    private func showShotAim(at target: CGPoint, power: CGFloat) {
+        clearShotAim()
+        let cue = SKNode()
+        cue.name = "shot.aim"
+        cue.position = CGPoint(x: target.x, y: mirrorFloorY - 6)
+        cue.zPosition = 11
+        let color = UIColor(red: 0.38 + power * 0.57, green: 0.88 - power * 0.18,
+                            blue: 0.88 - power * 0.5, alpha: 1)
+        let ring = SKShapeNode(ellipseOf: CGSize(width: 28, height: 11))
+        ring.lineWidth = 1.5
+        ring.strokeColor = color
+        ring.fillColor = color.withAlphaComponent(0.12)
+        cue.addChild(ring)
+        let track = SKShapeNode(rect: CGRect(x: -14, y: -14, width: 28, height: 3), cornerRadius: 1.5)
+        track.fillColor = UIColor.white.withAlphaComponent(0.22)
+        track.strokeColor = .clear
+        cue.addChild(track)
+        let fill = SKShapeNode(rect: CGRect(x: -14, y: -14, width: max(2, 28 * power), height: 3), cornerRadius: 1.5)
+        fill.fillColor = color
+        fill.strokeColor = .clear
+        cue.addChild(fill)
+        addChild(cue)
+        shotAimNode = cue
+    }
+
+    private func clearShotAim() {
+        shotAimNode?.removeAllActions()
+        shotAimNode?.removeFromParent()
+        shotAimNode = nil
     }
 
     // MARK: - Swing trail rendering
@@ -4910,16 +5039,26 @@ final class GameScene: SKScene {
     ) {
         let aim = committedFlick?.direction ?? 0
         let lift = committedFlick?.lift ?? 0.5
-        let rawTarget = RallyFlickInput.wallTargetX(lane: lane, direction: aim, viewportWidth: size.width)
-        let targetX = size.width / 2 + (rawTarget - size.width / 2) * 0.65
         let isTargetShot = practiceMode == .servePractice || (practiceMode == .targetPractice && !isServingFlight)
+        let isDirectionalShot = committedFlick != nil && !practiceMode.isTargetMode && !isServingFlight
+        let rawTarget = RallyFlickInput.wallTargetX(lane: lane, direction: aim, viewportWidth: size.width)
+        let targetX = isDirectionalShot
+            ? RallyFlickInput.mirrorTargetX(direction: aim, viewportWidth: size.width)
+            : size.width / 2 + (rawTarget - size.width / 2) * 0.65
         let wallPoint = isTargetShot ? CGPoint(x: targetX, y: size.height * 0.62) : prepareMirrorContact(targetX: targetX)
         if isTargetShot { practiceShotBall = ball }
         let beat = RallyMirrorRules.beatSeconds(forCombo: combo)
+        let power = RallyFlickInput.power(forSpeed: committedFlick?.speed ?? 0)
+        let outbound = isDirectionalShot
+            ? RallyMirrorRules.outboundSeconds(forCombo: combo, power: Double(power)) : beat
+        if isDirectionalShot {
+            showShotAim(at: wallPoint, power: power)
+            shotAimNode?.run(.sequence([.wait(forDuration: outbound), .fadeOut(withDuration: 0.16), .removeFromParent()]))
+        }
         var exchangeConfig = RallyExchangeConfig.rallyDefault
         let contactTail = exchangeConfig.wall.compressionDuration + exchangeConfig.wall.dwellDuration
             + exchangeConfig.wall.decompressionDuration + 0.05
-        exchangeConfig.wall.totalDuration = beat - exchangeConfig.racket.totalDuration + contactTail
+        exchangeConfig.wall.totalDuration = outbound - exchangeConfig.racket.totalDuration + contactTail
         exchangeConfig.wall.reboundArcLift *= 0.75 + lift * 0.75
         exchangeConfig.wall.reboundTravelDistance = 12
         let direction: CGFloat = lane == .right ? 1 : -1
@@ -5145,6 +5284,8 @@ final class GameScene: SKScene {
         guard playerRoot != nil else { return }
         playerContactOffsets.removeAll()
         refreshPlayerContactOffsets()
+        refreshOpponentContactOffsets()
+        clearShotAim()
         leftContactPocket?.position = racketContactPoint(for: .left)
         rightContactPocket?.position = racketContactPoint(for: .right)
     }
@@ -5727,6 +5868,7 @@ final class GameScene: SKScene {
         mirrorTargetX = nil
         mirrorReturnArrivalTime = nil
         opponentHitTime = nil
+        clearShotAim()
         fadeSwingTrail()
     }
 

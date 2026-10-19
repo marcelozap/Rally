@@ -31,6 +31,49 @@ final class RallyMirrorRulesTests: XCTestCase {
         XCTAssertTrue(RallyMirrorRules.hasFinished(at: 25))
     }
 
+    func testIncreasingShotPowerShortensOutboundFlightInEveryComboTier() {
+        for combo in [Int.min, 0, 3, 4, 7, 8, 12, Int.max] {
+            let beat = RallyMirrorRules.beatSeconds(forCombo: combo)
+            let powers: [Double] = [0, 0.25, 0.5, 0.75, 1]
+            let flights = powers.map { RallyMirrorRules.outboundSeconds(forCombo: combo, power: $0) }
+            XCTAssertGreaterThan(flights[0], beat, "A soft shot gives the double more time to move")
+            XCTAssertEqual(flights[2], beat, accuracy: 0.0001,
+                           "Neutral power preserves the established rally pace")
+            XCTAssertLessThan(flights[4], beat, "A hard shot must visibly reach the double sooner")
+            for index in 1..<flights.count {
+                XCTAssertLessThan(flights[index], flights[index - 1])
+                XCTAssertGreaterThanOrEqual(flights[index], 0.54)
+            }
+            XCTAssertLessThanOrEqual(flights[0], 0.912 + 0.0001)
+        }
+    }
+
+    func testOutboundFlightRemainsBoundedForExtremePowerAndComboValues() {
+        for combo in [Int.min, -1, 0, 4, 8, 100, Int.max] {
+            let soft = RallyMirrorRules.outboundSeconds(forCombo: combo, power: 0)
+            let hard = RallyMirrorRules.outboundSeconds(forCombo: combo, power: 1)
+            for power: Double in [-Double.greatestFiniteMagnitude, -100, -0.01] {
+                XCTAssertEqual(RallyMirrorRules.outboundSeconds(forCombo: combo, power: power), soft)
+            }
+            for power: Double in [1.01, 100, Double.greatestFiniteMagnitude] {
+                XCTAssertEqual(RallyMirrorRules.outboundSeconds(forCombo: combo, power: power), hard)
+            }
+            XCTAssertGreaterThanOrEqual(hard, 0.54,
+                                        "Even a full-power late-rally shot must leave visible travel time")
+            XCTAssertTrue(soft.isFinite)
+            XCTAssertTrue(hard.isFinite)
+        }
+    }
+
+    func testInvalidPowerFallsBackToNeutralOutboundTiming() {
+        for combo in [0, 4, 8, Int.max] {
+            for invalid: Double in [.nan, .infinity, -.infinity] {
+                XCTAssertEqual(RallyMirrorRules.outboundSeconds(forCombo: combo, power: invalid),
+                               RallyMirrorRules.beatSeconds(forCombo: combo), accuracy: 0.0001)
+            }
+        }
+    }
+
     func testRemainingTimeClampsBeforeStartAndAfterFinish() {
         XCTAssertEqual(RallyMirrorRules.remainingSeconds(at: -3), 20)
         XCTAssertEqual(RallyMirrorRules.remainingSeconds(at: 0), 20)

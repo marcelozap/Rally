@@ -503,7 +503,7 @@ struct HomeView: View {
                         .foregroundStyle(RallyUIKit.Palette.frost)
                         .lineLimit(1)
 
-                    Text(selectedLoadoutItem?.brand.uppercased() ?? "RALLY")
+                    Text(selectedLoadoutItem?.brand.uppercased() ?? "VELA")
                         .font(.system(size: 9, weight: .black, design: .rounded))
                         .tracking(1.1)
                         .foregroundStyle(RallyUIKit.Palette.cloud.opacity(0.48))
@@ -735,7 +735,7 @@ struct HomeView: View {
             HStack(spacing: 12) {
                 Image(systemName: "play.fill")
                     .font(.system(size: 17, weight: .semibold))
-                Text("Play Rally")
+                Text("Play Vela Tennis")
                     .font(.system(size: 19, weight: .bold))
                     .tracking(-0.3)
                 Spacer()

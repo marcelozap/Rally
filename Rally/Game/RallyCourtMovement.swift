@@ -32,13 +32,14 @@ enum RallyCourtMovement {
     /// travel-speed limit rather than snapping the player across the court.
     static func arrive(from position: CGFloat, toward target: CGFloat,
                        deltaTime: TimeInterval, secondsRemaining: TimeInterval,
-                       pointsPerMeter: CGFloat) -> CGFloat {
+                       pointsPerMeter: CGFloat, maximumMetersPerSecond: CGFloat = 1.35) -> CGFloat {
         guard position.isFinite, target.isFinite, deltaTime.isFinite, deltaTime > 0,
-              secondsRemaining.isFinite, pointsPerMeter.isFinite, pointsPerMeter > 0 else { return position }
+              secondsRemaining.isFinite, pointsPerMeter.isFinite, pointsPerMeter > 0,
+              maximumMetersPerSecond.isFinite, maximumMetersPerSecond > 0 else { return position }
         let dt = min(deltaTime, 1.0 / 15.0)
         let distance = target - position
         let guidedStep = distance * CGFloat(dt / max(dt, secondsRemaining))
-        let maximumStep = pointsPerMeter * 1.35 * CGFloat(dt)
+        let maximumStep = pointsPerMeter * maximumMetersPerSecond * CGFloat(dt)
         return position + min(maximumStep, max(-maximumStep, guidedStep))
     }
 }
