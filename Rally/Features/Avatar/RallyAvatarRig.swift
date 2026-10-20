@@ -4,6 +4,8 @@ import UIKit
 /// The same skinned human and wardrobe are used by every preview and both court players.
 /// Assets are authored in meters, Y up, +Z forward; bones retain world axes at bind pose.
 final class RallyAvatarRig {
+    // Expand the render target and orthographic span together to preserve court scale.
+    static let gameplayViewportSize = CGSize(width: 350, height: 400)
     enum Presentation { case studio, gameplay, opponent }
 
     let scene = SCNScene()
@@ -709,6 +711,11 @@ final class RallyAvatarRig {
         // Preserve highlights on white tennis clothing instead of washing away its folds.
         camera.camera?.exposureOffset = -0.18
         camera.position = SCNVector3(0, 0.93, 4)
+        if presentation == .gameplay {
+            // Leave room for the overhead racket without shrinking the athlete.
+            camera.camera?.orthographicScale = 1.3125
+            camera.position.y = 1.18
+        }
         if studio {
             camera.position.y = 1.14
             camera.look(at: SCNVector3(0, 0.93, 0))

@@ -692,6 +692,49 @@ final class AvatarRigTests: XCTestCase {
         }
     }
 
+    func testGameplayServeKeepsBodyAndRacketInsideFrameForEveryAthleteAndHand() throws {
+        let device = try XCTUnwrap(MTLCreateSystemDefaultDevice())
+        let size = RallyAvatarRig.gameplayViewportSize
+        for spec in presetAssets {
+            let rig = RallyAvatarRig(appearance: .init(athletePreset: spec.preset), presentation: .gameplay)
+            let renderer = SCNRenderer(device: device, options: nil)
+            renderer.scene = rig.scene
+            renderer.pointOfView = rig.camera
+            rig.camera.camera?.wantsHDR = false
+            _ = renderer.snapshot(atTime: 0, with: size, antialiasingMode: .none)
+            let skin = try XCTUnwrap(rig.root.childNode(withName: "Human skin", recursively: true)?.skinner)
+            let racket = try XCTUnwrap(rig.root.childNode(withName: "Tennis racket", recursively: true))
+            for leftHanded in [false, true] {
+                var minX = Float.infinity, maxX = -Float.infinity
+                var minY = Float.infinity, maxY = -Float.infinity
+                for frame in 0...60 {
+                    rig.animateLesson(progress: Float(frame) / 60, leftHanded: leftHanded, serve: true)
+                    let box = racket.boundingBox
+                    var points = skin.bones.map(\.worldPosition)
+                    for x in [box.min.x, box.max.x] {
+                        for y in [box.min.y, box.max.y] {
+                            for z in [box.min.z, box.max.z] {
+                                points.append(racket.convertPosition(SCNVector3(x, y, z), to: nil))
+                            }
+                        }
+                    }
+                    for point in points {
+                        let projected = renderer.projectPoint(point)
+                        minX = min(minX, projected.x); maxX = max(maxX, projected.x)
+                        minY = min(minY, projected.y); maxY = max(maxY, projected.y)
+                    }
+                }
+                let context = "\(spec.preset.rawValue), \(leftHanded ? "left" : "right") hand"
+                // Eight pixels around joints covers the nearby skin surface;
+                // racket corners include its entire attached frame and grip.
+                XCTAssertGreaterThanOrEqual(minX, 8, context)
+                XCTAssertLessThanOrEqual(maxX, Float(size.width) - 8, context)
+                XCTAssertGreaterThanOrEqual(minY, 8, context)
+                XCTAssertLessThanOrEqual(maxY, Float(size.height) - 8, context)
+            }
+        }
+    }
+
     func testClippedGarmentEdgesStayOnTheSeamAndRetainNormalizedSkinning() throws {
         for prefix in ["", "female-"] {
             let source = try RallyHumanMesh.load(prefix + "shoes")

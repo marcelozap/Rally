@@ -1275,7 +1275,7 @@ final class GameScene: SKScene {
         shadow.zPosition = -1
         root.addChild(shadow)
         playerShadow = shadow
-        playerAvatarNode = makeAvatarNode(rig: rig, viewport: CGSize(width: 280, height: 320), parent: root)
+        playerAvatarNode = makeAvatarNode(rig: rig, viewport: RallyAvatarRig.gameplayViewportSize, parent: root)
         rig.animate(time: currentTrackTime, leftHanded: dominantHand == .left)
     }
 
